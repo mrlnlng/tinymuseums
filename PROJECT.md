@@ -5,8 +5,9 @@ can be updated as tasks close.
 
 - **Status:** running locally, end to end. Not deployed.
 - **Stack:** TypeScript, Next.js 15 (App Router, React 19), Node worker, Postgres, sharp,
-  Three.js. Amplify Hosting + Amplify Gen 2 for deployment.
-- **Companion docs:** `README.md` (how to run it), `docs/` (none yet).
+  Three.js, Motion (Framer Motion v13). Amplify Hosting + Amplify Gen 2 for deployment.
+- **Companion docs:** `README.md` (how to run it), `apps/web/public/assets/README.md`
+  (generated assets), `apps/web/public/audio/README.md` (the music clip).
 
 ---
 
@@ -35,7 +36,7 @@ you arrive with no artist in mind and wander.
 | Layout control | **Layout templates** (single / pair / trio / quad) | Full composer is an upgrade to the same data, not a rewrite |
 | Viewing | One piece at a time, in the artist's order | Where the product's promise actually lives |
 | Rendering | **Flat 2D**, WebGL scene + DOM overlay | Art is painted for 2D; text stays real DOM |
-| Visitor | A **character** (the bunny) walked left/right | Camera follows through a deadzone |
+| Visitor | A **character** (the bunny). Input drives the *camera*; the bunny walks after it | Dragging the character makes it move at finger speed, which no walk cycle can match |
 | Ordering | **Epoch rotation** — deterministic permutation, reseeded on a schedule | Fair entrance position, no artist buried forever |
 | Cursor stability | **Epoch snapshot**; cursor is `(epoch_id, index)` | Walking back shows the same hall |
 | Takedown | Read-time suppression, outside the epoch snapshot | A takedown cannot wait for the next boundary |
@@ -44,6 +45,8 @@ you arrive with no artist in mind and wander.
 | Sales | **Inquiry only** — emails the artist | Platform takes no revenue and is not party to the sale |
 | Commerce schema | Modelled now, inert | Stripe lands additively |
 | Screens | **One 9:16 frame** in CSS; no page sets its own size | Matches the 1080×1920 mockups |
+| UI animation | **Motion** (Framer Motion) for React surfaces only | The 60fps hall loop stays imperative; Motion never touches it |
+| Hall entrance | The visitor **walks in** from off-screen left | The hall is revealed as arrival, not as a page load |
 | Deployment | Amplify Hosting + Gen 2 (auth/storage/functions), **keep Postgres** | Relational model does not port to DynamoDB |
 
 **Rejected, with reasons:** DynamoDB (keyset epoch pagination, `uuid[]`, `SKIP LOCKED`,
@@ -184,6 +187,111 @@ state at 60fps makes overlays visibly swim.
 - [x] Screen chrome: home + speaker paired top-right as in the mockups, rendered
       once in the root layout, hidden on the studio and home hidden on the landing
 
+### Motion and entrance polish (latest pass)
+
+- [x] Motion (Framer Motion v13) added to `@tiny/web` for React-side animation
+- [x] **Hall entrance sequence.** The museum starts at opacity 0 and stays hidden until
+      the first display is actually mounted; then it fades in over 600ms and the visitor
+      **walks in automatically** from 8 world units left of the first display
+- [x] `Traversal.playIntro(startX, targetX)` — an automated walk that ignores input;
+      pointer, wheel and tap-to-open are all gated on the new `isIntro` flag, and the
+      camera holds on the destination rather than trailing the visitor in
+- [x] Enlarged view animates in and out (spring), and slides **directionally** between
+      works — forward and back are visually distinct
+- [x] `AnimatePresence` around the enlarged view, so closing it animates out instead of
+      vanishing
+- [x] Screen chrome slides down and fades in on mount, after a 0.5s delay
+- [x] Upload form: animated error/success notices and an animated button label that
+      tracks the hashing → uploading → saving phases
+- [x] Follow form: animated swap between the form and its confirmation
+- [x] Per-display fade-in on mount **removed** — displays now appear at full opacity,
+      since the whole hall fades in as one
+- [x] Fixed a typecheck break in the new slide animation: `initial`/`exit` were passed
+      functions, which is not a valid Motion API. Dynamic values must be *variants*
+      keyed by label, with `custom` supplying the direction — now `SLIDE` in
+      `Walkthrough.tsx`. It neither compiled nor animated before the fix
+
+### Enlarged-view layout
+
+- [x] **Root cause found: viewport units inside a non-viewport container.** The title,
+      gaps, padding, frame height (`min(50vh, 500px)`) and description size were all
+      measured against the viewport, but they live inside `.screen`, whose height is
+      `min(100dvh - 24px, width * 16/9)`. On a wide or short window the container is far
+      shorter than `100dvh`, so the pieces were spending from a budget none of them could
+      see — which is why adjusting one covered another
+- [x] Second cause: nothing claimed the leftover space. `.wt-stage` had `min-height: 0`
+      (permission to shrink) but no `flex` value (no claim on the remainder), so every
+      child was intrinsically sized and the total simply overflowed
+- [x] `.wt` is now a **size container**; every child measures in `cqh`/`cqi` against the
+      screen frame. No viewport units remain in the enlarged view
+- [x] `.wt-stage` is the single flexible row (`flex: 1 1 0` + `min-height: 0`); title,
+      plaque, meta and actions are `flex: none` and cannot be squeezed
+- [x] The frame fits **both** axes: `height: min(100cqh, 100cqi / var(--frame-aspect))`.
+      The ratio arrives from the manifest as a number (`FRAME_RATIO`), since
+      `aspect-ratio` alone needs one dimension given to derive the other
+- [x] Title clamped to two lines; description grows the plaque and scrolls inside it past
+      a cap — so neither text can crowd out the artwork
+- [x] Stage reserves horizontal room for the arrows, so they never overlap the frame
+
+### Mobile
+
+This is primarily a phone product, so the desktop letterbox is a preview device, not
+the target.
+
+- [x] **The frame is the phone.** Below 460px (or any coarse pointer under 900px) the
+      screen goes full-bleed — `100dvw` × `100dvh`, no margin, radius or shadow. Phones
+      are 19.5:9 and 20:9, so forcing 9:16 banded away a third of the screen
+- [x] `viewport-fit=cover` via Next's `viewport` export, plus `env(safe-area-inset-*)`
+      on the chrome, the enlarged view, the landing floor and content pages — without
+      `cover` the safe-area values are all zero and the notch sits on the UI
+- [x] `overscroll-behavior: none` so pull-to-refresh cannot steal a horizontal swipe
+- [x] Touch targets raised to 44px (arrows) and 40px (chrome, back) on coarse pointers
+- [x] **The camera fits by width, not just height.** A height-driven frustum leaves only
+      ~2.95 world units visible at 19.5:9 — barely one display. The frustum now grows on
+      tall screens to keep `minVisibleWidth` (3.6u) on screen: 6.4 at 9:16, 7.8 at
+      19.5:9, 8.0 at 20:9. The view zooms out rather than cropping the corridor
+- [x] **Fixed: the bunny did not animate while dragging.** `pointermove` moved `x`
+      directly but never set `velocity`, and the walk cycle reads `velocity` — so on
+      touch, the primary gesture, the hall slid past a motionless rabbit. Traversal now
+      exposes `apparentVelocity`, measured from real displacement per frame, so keys,
+      drag, flick momentum and the intro walk all drive the animation identically
+- [x] **Drag is 1:1 with the wall.** `worldPerPixel` is computed from the live camera and
+      viewport instead of a hardcoded `dragScale`, so a finger moves exactly the wall it
+      is touching at any screen size. Wheel stays deliberately below 1:1
+- [x] Tap-vs-drag slop is finger-sized on touch (12px) and mouse-sized otherwise (6px) —
+      a thumb tap routinely travels several pixels and was being swallowed as a drag
+
+### The walking mechanic, inverted
+
+The first attempt — measuring the visitor's real displacement so the walk cycle matched
+it — was treating the symptom. The cause was that **the bunny was the thing being
+dragged**, so it moved at finger speed. No walk animation can match a finger, and no
+amount of tuning fixes that.
+
+- [x] **Input now drives the camera; the bunny walks after it.** A drag scrolls the hall
+      like scrolling anything else on a phone. The bunny notices it has been left behind
+      and walks over at its own pace, so its feet always agree with its speed
+- [x] `Traversal.cameraX` is the value input moves; `x` (the bunny) is derived. Keys,
+      drag, wheel, momentum, snapping and the hall bounds all act on the camera
+- [x] The bunny follows with **hysteresis** — sets off once `followStartDistance` (0.7u)
+      behind, keeps going until within `followStopDistance` (0.05u). A bare deadzone
+      leaves it twitching in and out of the walk cycle on every small nudge
+- [x] Two speed ceilings, and the split is the point: the view may scroll at
+      `maxScrollSpeed` (7 u/s) but the bunny never exceeds `maxSpeed` (2.4 u/s). A flick
+      throws the hall along and the bunny arrives on foot a moment later
+- [x] The opening walk-in is no longer a special animation path — it is the ordinary
+      follow behaviour with the camera parked on the first display and input held off
+- [x] Grabbing the hall stops its momentum dead, the way grabbing a scrolling list does
+- [x] Prefetching, mounting and view-counting now key off the camera rather than the
+      bunny — you should be loading what is coming into view, not what the character has
+      reached
+- [x] **Leashed at 4.8u.** A flick scrolls faster than anything can walk, so the bunny is
+      pulled forward once it falls further behind than that — invisibly, since it is
+      already off-screen at that distance — and still walks the last stretch once the
+      hall stops. Worst case is two seconds of catching up
+- [x] The opening walk-in now starts at exactly `maxTrailDistance`, so the entrance and
+      the leash are one number rather than two that can drift apart
+
 ---
 
 ## 6. Remaining work
@@ -204,6 +312,30 @@ Ordered roughly by what blocks what.
 - [ ] **A7.** With a track in place: confirm music starts on the first gesture, survives
       the walk from `/` into `/museum` without restarting, fades rather than cuts, and
       that the preference persists across a reload
+- [ ] **A8.** The intro walk-in: does the hall fade in at the right moment, does the
+      bunny's automated walk read as arriving rather than as lag, and is the 8-unit
+      start distance right? (`Museum.tsx`, `firstCenter - 8`)
+- [ ] **A9.** The enlarged view's directional slide — forward and back should feel
+      distinct; check the artwork does not visibly re-load between works
+- [ ] **A11.** The reworked enlarged-view layout: resize the window through tall, short
+      and wide shapes and confirm title, artwork and description stay visible with no
+      scrolling and nothing overlapping. Then check a long title (2-line clamp) and a
+      long description (plaque grows, then scrolls internally)
+- [ ] **A12.** **On a real phone**, not just a narrow browser window. Emulators do not
+      reproduce safe areas, momentum, or the address bar collapsing. Check the hall, the
+      landing page, the enlarged view and the studio on at least one notched iPhone and
+      one Android
+- [ ] **A13.** Swipe the hall and watch the bunny: it should stay put on a small drag,
+      then set off walking and arrive a beat after a bigger one. It should never slide —
+      if it looks like it is gliding rather than walking, `arriveSeconds` or
+      `maxSpeed` is the knob
+- [ ] **A14.** Confirm drag feels 1:1 — the wall should track the finger exactly, not
+      lag or overshoot
+- [ ] **A15.** Landscape on a phone: the frame becomes very wide and short. Untested,
+      and the fit-by-width rule does nothing there — decide whether to support it, lock
+      to portrait, or show a rotate prompt
+- [ ] **A10.** Confirm input is genuinely dead during the intro (drag, wheel, tapping a
+      work) and becomes live the instant it ends
 
 ### B. Pacing and feel (needs A done)
 - [ ] **B1.** Tune `statue.minDwellMs` (currently 700ms) against a warm cache
@@ -213,6 +345,25 @@ Ordered roughly by what blocks what.
 - [ ] **B4.** Tune `character.cyclesPerUnit` (0.9) until the feet stop sliding
 - [ ] **B5.** Decide snap-to-display on or off
 - [ ] **B6.** Decide prefetch runway (`prefetchAheadUnits` 9u) and mount radius (14u)
+- [ ] **B7.** Tune the intro: start distance (8u), the 0.8× speed cap during it, and the
+      600ms hall fade — all in `Museum.tsx` / `Traversal.playIntro`
+- [ ] **B8.** Decide whether the intro should replay on every entry to `/museum` or only
+      on a visitor's first arrival
+- [ ] **B9.** Tune the follow. `followStartDistance` (0.7u) is how far the bunny may
+      drift before setting off — larger means it ignores small drags, smaller means it
+      is more eagerly at your heels. `arriveSeconds` (0.5) is how briskly it closes the
+      last of the gap. `maxScrollSpeed` (7 u/s) vs `maxSpeed` (2.4 u/s) sets how far
+      behind a hard flick leaves it
+- [ ] **B12.** ~~Decide what happens when the bunny is a long way behind.~~ **Decided:**
+      a leash of `maxTrailDistance` = 4.8u. Still worth feeling on a device — at a phone's
+      3.6u of visible hall that is 1.33 screens back, so a leashed bunny is just out of
+      sight and two seconds' walk from the middle
+- [ ] **B10.** Decide whether a first-time visitor needs a swipe hint. The intro walk-in
+      demonstrates rightward motion, which may be enough; a persistent affordance would
+      fight the calm the hall is going for
+- [ ] **B11.** Re-check `minVisibleWidth` (3.6u) against a `cluster` display (5.4u wide).
+      A four-work wall will not fit on screen at once on any phone — decide whether that
+      is acceptable or whether phones should cap the layout template
 
 ### C. Product decisions still open
 - [ ] **C1.** **One work per wall, or several?** Templates go to four; the mockups show
@@ -254,6 +405,18 @@ Ordered roughly by what blocks what.
       folder's README for what the track needs to be
 - [ ] **E8.** `icon-no-photos.png` and `bunny_accessory.png` are prepped but unused
 - [ ] **E10.** Empty and error states for the hall when a slice fails repeatedly
+- [ ] **E12.** **The hall's error message is currently invisible.** `.hall-error` sits
+      inside the `motion.div` that stays at `opacity: 0` until `ready` flips true — and
+      `ready` only flips once a display mounts. So the exact failure it exists to report
+      (assets or the first slice not loading) leaves a blank cream screen with no message
+      and no way forward. Either hoist the error outside the fading container, or treat
+      an error as a reason to reveal the hall
+- [ ] **E13.** **`prefers-reduced-motion` no longer covers the UI.** The global CSS rule
+      kills CSS transitions and animations, but Motion drives transforms from JavaScript
+      and ignores it entirely — so the intro walk-in, the slide between works and the
+      chrome entrance all still play for someone who asked for less motion. Wrap the app
+      in `<MotionConfig reducedMotion="user">` and gate the intro walk on
+      `useReducedMotion()`
 - [ ] **E11.** Decide whether music defaults on or off for a first-time visitor
       (`DEFAULT_ENABLED` in `SoundProvider.tsx`, currently on)
 
@@ -268,6 +431,14 @@ Ordered roughly by what blocks what.
 - [ ] **F6.** Licence Lazy Dog (specs.md) or commit to uppercase Sniglet for all-caps
 - [ ] **F7.** The seed's five paintings repeat across artists — fine for seed, worth
       knowing before showing anyone
+- [ ] **F8.** Dead code left by removing the per-display fade: `REVEAL_MS` is unused,
+      `MountedDisplay.mountedAt` is written and never read, and `HallScene.fadeOf()` now
+      returns a constant `1` — which makes the `fadeOf` callback threaded through
+      `Placards.sync` pointless indirection. Either delete the plumbing or reinstate the
+      fade; leaving a function that always returns 1 invites someone to trust it
+- [ ] **F9.** `Museum.tsx` and `Walkthrough.tsx` have `import` statements partway down
+      the file, below other declarations. Valid, but they hide from the import block
+      where everyone looks
 
 ### G. Later
 - [ ] **G1.** Stripe checkout — schema fields exist and are inert
@@ -293,6 +464,16 @@ Everything else on the list is work; that one is a fork.
 
 **No tests.** The riskiest untested logic is the epoch permutation and the job claim —
 both are correctness-critical and neither fails loudly.
+
+**The hall now fails silently.** Gating the whole hall on `ready` means any failure
+before the first display mounts shows a blank screen rather than an error (E12). It is a
+small fix, but until it lands, "nothing happens" is the failure mode a visitor sees for
+a dead API, a missing asset, or an empty epoch alike.
+
+**Motion is a second animation system.** CSS transitions and Motion now coexist. They do
+not share the reduced-motion setting (E13), and only one of them is visible to the
+stylesheet. Worth keeping the boundary sharp: Motion for React surfaces, CSS for
+everything else, and neither anywhere near the 60fps hall loop.
 
 ---
 

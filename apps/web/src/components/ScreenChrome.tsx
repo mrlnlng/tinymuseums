@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { SoundToggle } from './SoundProvider'
+import { motion } from 'motion/react'
 
 /**
  * The icon pair in the screen's top-right corner, as the mockups have it:
@@ -22,7 +23,12 @@ export default function ScreenChrome() {
   const showHome = pathname !== '/'
 
   return (
-    <div className="screen-chrome">
+    <motion.div 
+      className="screen-chrome"
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.5 }}
+    >
       {showHome ? (
         <button
           type="button"
@@ -35,6 +41,6 @@ export default function ScreenChrome() {
         </button>
       ) : null}
       <SoundToggle />
-    </div>
+    </motion.div>
   )
 }

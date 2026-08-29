@@ -36,12 +36,17 @@ interface OpenPiece {
   pieceId: string
 }
 
+import { motion, AnimatePresence } from 'motion/react'
+
 export default function Museum({ initialSlice }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const characterRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState<OpenPiece | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const [ready, setReady] = useState(false)
+  const readyRef = useRef(false)
 
   // The frame loop must not restart when the walk-through opens, so the
   // suspend flag is passed to the loop through a ref rather than a dependency.
@@ -105,6 +110,8 @@ export default function Museum({ initialSlice }: Props) {
         viewport = { width, height, left: 0, top: 0 }
         renderer.setSize(width, height)
         rig.resize(width, height)
+        // Keep dragging 1:1 with the wall at this screen size.
+        traversal.setWorldPerPixel(rig.viewWidth / width)
       }
 
       applyViewport()
@@ -112,7 +119,11 @@ export default function Museum({ initialSlice }: Props) {
       const resizeObserver = new ResizeObserver(applyViewport)
       resizeObserver.observe(host)
 
-      traversal.reset(hall.layout.centerX[0] ?? 0)
+      const firstCenter = hall.layout.centerX[0] ?? 0
+      // The bunny enters from exactly as far back as it is ever allowed to
+      // trail, so the opening and the leash are the same number.
+      const introStart = firstCenter - CONFIG.character.maxTrailDistance
+      traversal.reset(firstCenter)
 
       // --- fetching more of the hall ---
 
@@ -147,8 +158,18 @@ export default function Museum({ initialSlice }: Props) {
 
       const onPointerUp = (e: PointerEvent) => {
         const moved = Math.hypot(e.clientX - pressX, e.clientY - pressY)
-        // A drag that ends over a work is not a request to open it.
-        if (moved > 6 || performance.now() - pressAt > 600 || suspendedRef.current) return
+        // A drag that ends over a work is not a request to open it. The
+        // threshold is finger-sized, not mouse-sized: a thumb tap routinely
+        // travels several pixels and would otherwise be swallowed as a drag.
+        const slop = e.pointerType === 'touch' ? 12 : 6
+        if (
+          moved > slop ||
+          performance.now() - pressAt > 600 ||
+          suspendedRef.current ||
+          traversal.isIntro
+        ) {
+          return
+        }
 
         // Read the rect at event time: the frame moves when the window resizes
         // or the page scrolls, and a stale offset aims the ray at the wrong work.
@@ -180,22 +201,34 @@ export default function Museum({ initialSlice }: Props) {
         const dt = Math.min(0.05, (now - last) / 1000)
         last = now
 
-        traversal.setSuspended(suspendedRef.current)
-        traversal.update(dt, hall.layout)
+        if (!readyRef.current) {
+          const stats = hall.stats()
+          if (stats.mounted > 0 || stats.total === 0) {
+            readyRef.current = true
+            setReady(true)
+            traversal.playIntro(introStart, firstCenter)
+          }
+        } else {
+          traversal.setSuspended(suspendedRef.current)
+          traversal.update(dt, hall.layout)
+        }
+
         rig.sync(traversal.cameraX)
         // After rig.sync: the sprite is positioned by projecting through the
         // camera, so the camera must already be where it is going this frame.
-        character.update(dt, traversal.x, traversal.velocity, rig.camera, viewport)
-        hall.update(now, dt, traversal.cameraX, traversal.x)
+        // walkVelocity is the bunny's own pace, measured from how far it
+        // actually walked — never the scroll speed of the hall.
+        character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+        hall.update(now, dt, traversal.cameraX, traversal.cameraX)
         placards.sync(hall.getMounted(), rig.camera, viewport, (i) => hall.fadeOf(i))
 
-        if (hall.needsMore(traversal.x)) void fetchMore()
+        if (hall.needsMore(traversal.cameraX)) void fetchMore()
 
         // Count a display as viewed once, when the visitor is actually at it.
-        const nearest = nearestSlot(hall.layout, traversal.x)
+        const nearest = nearestSlot(hall.layout, traversal.cameraX)
         if (!seenDisplays.has(nearest)) {
           const mounted = hall.getMounted().find((m) => m.index === nearest)
-          if (mounted && Math.abs(mounted.centerX - traversal.x) < 1.2) {
+          if (mounted && Math.abs(mounted.centerX - traversal.cameraX) < 1.2) {
             seenDisplays.add(nearest)
             void fetch('/api/events', {
               method: 'POST',
@@ -233,7 +266,12 @@ export default function Museum({ initialSlice }: Props) {
   }, [])
 
   return (
-    <div className="museum">
+    <motion.div 
+      className="museum"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: ready ? 1 : 0 }}
+      transition={{ duration: 0.6 }}
+    >
       <div className="hall-host" ref={hostRef} />
       <div className="hall-overlay" ref={overlayRef} />
       {/* Above the plaques, so the visitor is never painted over. */}
@@ -241,14 +279,17 @@ export default function Museum({ initialSlice }: Props) {
 
       {error ? <div className="hall-error">{error}</div> : null}
 
-      {open ? (
-        <Walkthrough
-          slug={open.slug}
-          artistId={open.artistId}
-          initialPieceId={open.pieceId}
-          onClose={() => setOpen(null)}
-        />
-      ) : null}
-    </div>
+      <AnimatePresence>
+        {open ? (
+          <Walkthrough
+            key="walkthrough"
+            slug={open.slug}
+            artistId={open.artistId}
+            initialPieceId={open.pieceId}
+            onClose={() => setOpen(null)}
+          />
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
   )
 }

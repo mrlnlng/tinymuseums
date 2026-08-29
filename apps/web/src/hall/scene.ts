@@ -52,7 +52,6 @@ export class HallScene {
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
   private pedestals = new Map<number, Pedestal>()
-  private fading = new Map<number, THREE.MeshBasicMaterial[]>()
 
   constructor(
     private scene: THREE.Scene,
@@ -129,7 +128,6 @@ export class HallScene {
       }
     }
 
-    this.updateReveals(now)
     this.updatePedestals(dt, cameraX)
   }
 
@@ -156,24 +154,21 @@ export class HallScene {
     const group = new THREE.Group()
     group.position.set(centerX, 0, 0)
 
-    const fading: THREE.MeshBasicMaterial[] = []
-
     const material = new THREE.MeshBasicMaterial({
       map: slot.texture,
       transparent: true,
-      opacity: 0,
+      opacity: 1,
     })
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.w, canvas.h), material)
     mesh.position.y = CONFIG.displayCenterY
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
-    fading.push(material)
 
     // Wall label. The text on it is DOM, positioned by Placards.
     const plaqueMaterial = new THREE.MeshBasicMaterial({
       map: this.assets.textures.plaque,
       transparent: true,
-      opacity: 0,
+      opacity: 1,
     })
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.plaque.width, CONFIG.plaque.width / this.assets.aspect.plaque),
@@ -181,12 +176,11 @@ export class HallScene {
     )
     plaque.position.set(0, CONFIG.plaque.centerY, 0.02)
     group.add(plaque)
-    fading.push(plaqueMaterial)
 
     const ropeMaterial = new THREE.MeshBasicMaterial({
       map: this.assets.textures.rope,
       transparent: true,
-      opacity: 0,
+      opacity: 1,
     })
     const rope = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.rope.height * this.assets.aspect.rope, CONFIG.rope.height),
@@ -194,10 +188,8 @@ export class HallScene {
     )
     rope.position.set(0, CONFIG.rope.centerY, CONFIG.rope.z)
     group.add(rope)
-    fading.push(ropeMaterial)
 
     this.scene.add(group)
-    this.fading.set(slot.index, fading)
     this.mounted.set(slot.index, {
       index: slot.index,
       display: slot.display,
@@ -209,14 +201,6 @@ export class HallScene {
       mountedAt: now,
       plaqueY: CONFIG.plaque.centerY,
     })
-  }
-
-  private updateReveals(now: number): void {
-    for (const mount of this.mounted.values()) {
-      const t = Math.min(1, (now - mount.mountedAt) / REVEAL_MS)
-      const eased = 1 - Math.pow(1 - t, 3)
-      for (const material of this.fading.get(mount.index) ?? []) material.opacity = eased
-    }
   }
 
   private updatePedestals(dt: number, cameraX: number): void {
@@ -264,7 +248,6 @@ export class HallScene {
       slot.status = 'idle'
     }
 
-    this.fading.delete(index)
     this.mounted.delete(index)
   }
 
@@ -305,8 +288,7 @@ export class HallScene {
   }
 
   fadeOf(index: number): number {
-    const materials = this.fading.get(index)
-    return materials && materials.length > 0 ? materials[0].opacity : 0
+    return 1
   }
 
   stats(): { mounted: number; loaded: number; total: number } {

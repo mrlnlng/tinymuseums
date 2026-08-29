@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { BRAND } from '@tiny/core'
 import ScreenChrome from '@/components/ScreenChrome'
 import SoundProvider from '@/components/SoundProvider'
@@ -8,6 +8,18 @@ export const metadata: Metadata = {
   title: BRAND,
   description:
     'A tiny museum you can walk through. Every artist gets a wall; every wall is worth stopping at.',
+}
+
+/**
+ * `viewportFit: 'cover'` is what makes `env(safe-area-inset-*)` report real
+ * values — without it they are all zero and the notch and home indicator will
+ * sit on top of the UI once the app goes edge to edge on a phone.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#fff1d2',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

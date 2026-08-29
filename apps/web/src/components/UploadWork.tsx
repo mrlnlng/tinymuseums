@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 
 /**
  * Uploading a work, without the file ever touching the application.
@@ -111,7 +112,8 @@ export default function UploadWork() {
   const busy = phase !== 'idle'
 
   return (
-    <form
+    <motion.form
+      layout
       className="card"
       action={(formData) => {
         void submit(formData)
@@ -119,8 +121,30 @@ export default function UploadWork() {
     >
       <h2 style={{ fontSize: 17, marginTop: 0 }}>Add a work</h2>
 
-      {error ? <p className="notice bad">{error}</p> : null}
-      {done ? <p className="notice ok">{done}</p> : null}
+      <AnimatePresence mode="popLayout">
+        {error ? (
+          <motion.p
+            key="error"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="notice bad"
+          >
+            {error}
+          </motion.p>
+        ) : null}
+        {done ? (
+          <motion.p
+            key="done"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="notice ok"
+          >
+            {done}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
 
       <div className="field">
         <label htmlFor="image">Image</label>
@@ -162,8 +186,18 @@ export default function UploadWork() {
       </div>
 
       <button className="button" type="submit" disabled={busy}>
-        {PHASE_LABEL[phase]}
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={phase}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{ display: 'inline-block' }}
+          >
+            {PHASE_LABEL[phase]}
+          </motion.span>
+        </AnimatePresence>
       </button>
-    </form>
+    </motion.form>
   )
 }

@@ -85,8 +85,10 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       const screenY = (-projected.y * 0.5 + 0.5) * viewport.height
 
       // World height converted to pixels: the ortho frustum height maps to the
-      // viewport height, so the bunny scales with the hall.
-      const heightPx = (CONFIG.character.height / CONFIG.world.viewHeight) * viewport.height
+      // viewport height, so the bunny scales with the hall. Read from the
+      // camera rather than the config — the frustum grows on tall screens.
+      const frustumHeight = camera.top - camera.bottom
+      const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
       sprite.style.height = `${heightPx.toFixed(1)}px`
 
       const direction =

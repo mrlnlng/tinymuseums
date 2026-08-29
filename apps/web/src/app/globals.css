@@ -40,6 +40,8 @@ html, body {
   background: var(--surround);
   color: var(--ink);
   font-family: var(--font-ui);
+  /* No pull-to-refresh or rubber-banding stealing a horizontal swipe. */
+  overscroll-behavior: none;
 }
 
 .screen {
@@ -53,6 +55,39 @@ html, body {
   overflow-x: hidden;
   box-shadow: 0 18px 60px rgba(70, 45, 25, 0.3);
   overscroll-behavior: contain;
+}
+
+/*
+ * On a phone the frame is the phone. The desktop letterbox exists to preview
+ * the app at mockup proportions; a real device is already portrait, and phones
+ * are far taller than 9:16 (19.5:9, 20:9), so forcing that ratio would band
+ * the screen top and bottom and waste a third of it.
+ */
+@media (max-width: 460px), (pointer: coarse) and (max-width: 900px) {
+  .screen {
+    width: 100dvw;
+    height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Clear of the notch, the status bar and the home indicator. */
+  .screen-chrome {
+    top: calc(12px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+  }
+
+  .wt { padding-top: calc(clamp(8px, 2cqh, 18px) + env(safe-area-inset-top)); }
+  .wt,
+  .landing { padding-bottom: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
+  .page { padding-bottom: calc(44px + env(safe-area-inset-bottom)); }
+
+  /* Comfortable finger targets: 44px is the accepted floor. */
+  .wt-nav { width: 44px; height: 44px; }
+  .wt-icon,
+  .chrome-button { width: 40px; height: 40px; }
+  .wt-stage { padding-inline: 52px; }
 }
 
 a { color: var(--script); }
@@ -262,17 +297,34 @@ code.token {
   inset: 0;
   z-index: 10;
   background: var(--wall);
+
+  /*
+   * Measure children against THIS box, not the viewport.
+   *
+   * The screen frame is min(100dvh - 24px, width * 16/9), so on a wide or short
+   * window it is much shorter than 100dvh. Sizing children in vh — as this
+   * layout used to — spends from a budget they cannot see, which is why
+   * adjusting one element pushed another off the screen.
+   */
+  container-type: size;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.4vh;
-  padding: 2vh 5% 3vh;
-  overflow-y: auto;
+  gap: clamp(4px, 1.4cqh, 14px);
+  padding: clamp(8px, 2cqh, 18px) 4% clamp(10px, 2.5cqh, 22px);
+  overflow: hidden;
 }
 
-/* Home and sound now live in the screen's own top-right chrome, so the
-   enlarged view's close control moves to the left rather than stacking under
-   them. Left is back, right is home and sound. */
+/* Fixed-size rows: they take what they need and never get squeezed. */
+.wt-top,
+.wt-title,
+.wt-plaque,
+.wt-meta,
+.wt-sent,
+.wt-actions,
+.wt-ask { flex: none; }
+
 .wt-top { align-self: flex-start; }
 
 .wt-icon {
@@ -282,24 +334,47 @@ code.token {
   border: none; border-radius: 50%; cursor: pointer;
 }
 
-.wt-title { margin: 0; font-size: clamp(24px, 5vh, 40px); text-align: center; }
-
-.wt-loading { color: var(--ink-soft); margin-top: 30vh; }
-
-.wt-stage {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 0;
+.wt-title {
+  margin: 0;
+  font-size: clamp(18px, 5.2cqh, 34px);
+  text-align: center;
+  /* A long title must not be allowed to eat the artwork's space. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* Sized by height; the aspect ratio comes from the manifest, set inline. */
+.wt-loading { color: var(--ink-soft); margin: auto; }
+
+/*
+ * The one flexible row: it absorbs whatever the fixed rows leave.
+ * `flex: 1 1 0` with `min-height: 0` is what actually claims that space —
+ * `min-height: 0` alone (the previous state) only permits shrinking.
+ */
+.wt-stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  /* Room for the arrows, so they never sit on top of the frame. */
+  padding-inline: 46px;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
 .wt-frame {
   position: relative;
-  height: min(50vh, 500px);
-  max-width: 72%;
+  grid-area: 1 / 1;
+  aspect-ratio: var(--frame-aspect);
+  /*
+   * The largest frame that fits BOTH axes of the stage: as tall as the stage,
+   * unless that would make it wider than the stage, in which case width wins.
+   */
+  height: min(100cqh, calc(100cqi / var(--frame-aspect)));
+  max-width: 100%;
 }
 
 /* Under the frame. Its edges are meant to be overlapped by the ornament. */
@@ -343,30 +418,57 @@ code.token {
 .wt-nav.prev { left: 0; }
 .wt-nav.next { right: 0; }
 
+/*
+ * The label grows with its text rather than being a fixed shape, so the
+ * description is always fully readable — the artwork yields the space. The
+ * cap stops a very long description from crowding out the art entirely; past
+ * it, the text scrolls inside the plaque.
+ */
 .wt-plaque {
-  display: grid; place-items: center;
-  width: min(80%, 420px);
-  padding: 3% 7%;
-  aspect-ratio: 926 / 459;
+  display: grid;
+  place-items: center;
+  width: min(88%, 420px);
+  min-height: clamp(46px, 12cqh, 88px);
+  max-height: 34cqh;
+  padding: 3.5% 8%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
 }
+
 .wt-plaque p {
-  margin: 0; text-align: center;
-  font-size: clamp(11px, 1.7vh, 15px); line-height: 1.45;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(10px, 2.3cqh, 14px);
+  line-height: 1.4;
   color: var(--plaque-ink);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-.wt-meta { margin: 0; font-size: 12px; color: var(--ink-soft); text-align: center; }
-.wt-sent { margin: 0; font-size: 13px; font-weight: 700; color: var(--script); text-align: center; }
+.wt-meta {
+  margin: 0;
+  font-size: clamp(9px, 1.7cqh, 12px);
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.wt-sent {
+  margin: 0;
+  font-size: clamp(10px, 1.9cqh, 13px);
+  font-weight: 700;
+  color: var(--script);
+  text-align: center;
+}
 
 .wt-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.wt-actions .button { padding: clamp(7px, 1.6cqh, 11px) 18px; font-size: clamp(10px, 1.7cqh, 13px); }
 
 .wt-ask { display: grid; gap: 8px; width: min(100%, 420px); }
 .wt-ask input, .wt-ask textarea {
   padding: 9px 12px; font: inherit; font-size: 14px;
   background: #fffaf0; border: 2px solid rgba(139, 86, 65, 0.22); border-radius: 10px;
 }
-.wt-ask textarea { min-height: 80px; resize: vertical; }
+.wt-ask textarea { min-height: 64px; resize: vertical; }
 
 /* ---------------------------------------------------------------- landing */
 

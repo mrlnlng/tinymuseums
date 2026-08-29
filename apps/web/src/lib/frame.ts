@@ -22,3 +22,13 @@ export const FRAME_WINDOW = {
 
 /** The frame image's own aspect, for sizing the box it is drawn in. */
 export const FRAME_ASPECT = `${frameWidth} / ${frameHeight}`
+
+/**
+ * The same ratio as a bare number, for CSS math.
+ *
+ * `aspect-ratio` alone cannot size a box to fit *both* axes of its parent — it
+ * needs one dimension to derive the other. Exposing the ratio as a custom
+ * property lets the stylesheet compute the largest height that also fits the
+ * available width.
+ */
+export const FRAME_RATIO = frameWidth / frameHeight

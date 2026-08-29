@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 
 /**
  * Following an artist — the only thing a visitor does that needs an identity,
@@ -27,25 +28,43 @@ export default function FollowForm({ slug, artistName }: { slug: string; artistN
     }
   }
 
-  if (message) return <p className="notice ok">{message}</p>
-
   return (
-    <form
-      className="card"
-      action={(formData) => {
-        void submit(formData)
-      }}
-    >
-      <div className="field">
-        <label htmlFor="follow-email">Hear when {artistName} hangs something new</label>
-        <input id="follow-email" name="email" type="email" required placeholder="you@example.com" />
-        <span className="hint">
-          One email when there is new work. Nothing else, and no account needed.
-        </span>
-      </div>
-      <button className="button" type="submit" disabled={busy}>
-        {busy ? 'Sending…' : 'Follow'}
-      </button>
-    </form>
+    <motion.div layout style={{ overflow: 'hidden' }}>
+      <AnimatePresence mode="wait">
+        {message ? (
+          <motion.p
+            key="success"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="notice ok"
+          >
+            {message}
+          </motion.p>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="card"
+            action={(formData) => {
+              void submit(formData)
+            }}
+          >
+            <div className="field">
+              <label htmlFor="follow-email">Hear when {artistName} hangs something new</label>
+              <input id="follow-email" name="email" type="email" required placeholder="you@example.com" />
+              <span className="hint">
+                One email when there is new work. Nothing else, and no account needed.
+              </span>
+            </div>
+            <button className="button" type="submit" disabled={busy}>
+              {busy ? 'Sending…' : 'Follow'}
+            </button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

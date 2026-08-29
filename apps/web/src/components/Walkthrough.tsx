@@ -20,11 +20,27 @@ interface Props {
   onClose: () => void
 }
 
-import { FRAME_ASPECT, FRAME_WINDOW } from '@/lib/frame'
+import { FRAME_RATIO, FRAME_WINDOW } from '@/lib/frame'
+import { motion, AnimatePresence, type Variants } from 'motion/react'
+
+/**
+ * Directional slide between works.
+ *
+ * These have to be *variants* rather than inline `initial`/`exit` objects:
+ * only a variant may be a function, and that function is what receives the
+ * `custom` value carrying the step direction. Passing a function straight to
+ * `initial`/`exit` does not typecheck and does not animate.
+ */
+const SLIDE: Variants = {
+  enter: (direction: number) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({ x: direction > 0 ? -50 : 50, opacity: 0 }),
+}
 
 export default function Walkthrough({ slug, artistId, initialPieceId, onClose }: Props) {
   const [pieces, setPieces] = useState<PieceDto[] | null>(null)
   const [index, setIndex] = useState(0)
+  const [direction, setDirection] = useState(0)
   const [asking, setAsking] = useState(false)
   const [sent, setSent] = useState<string | null>(null)
 
@@ -48,11 +64,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const piece = pieces?.[index] ?? null
 
   const step = useCallback(
-    (direction: number) => {
+    (stepDir: number) => {
       if (!pieces || pieces.length === 0) return
       setAsking(false)
       setSent(null)
-      setIndex((i) => (i + direction + pieces.length) % pieces.length)
+      setDirection(stepDir)
+      setIndex((i) => (i + stepDir + pieces.length) % pieces.length)
     },
     [pieces],
   )
@@ -98,7 +115,16 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   }
 
   return (
-    <div className="wt" role="dialog" aria-modal="true" aria-label="Artwork">
+    <motion.div
+      className="wt"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Artwork"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.05 }}
+      transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+    >
       {/*
         Home and sound live in the screen's top-right chrome now, so this is
         the one control that belongs to the enlarged view itself: back to the
@@ -117,16 +143,24 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
           <h2 className="script wt-title">{piece.title}</h2>
 
           <div className="wt-stage">
-            {/*
-              The artwork sits under the frame image, not inside it as a
-              background. The ornament has an inner lip that must overlap the
-              artwork's edges — which is exactly how the server composites a
-              display, so the two views now match.
-            */}
-            <div className="wt-frame" style={{ aspectRatio: FRAME_ASPECT }}>
-              <div className="wt-artwork" style={artworkStyle} />
-              <img className="wt-frame-art" src="/assets/frame.png" alt="" aria-hidden="true" />
-            </div>
+            <AnimatePresence custom={direction} initial={false}>
+              <motion.div
+                key={index}
+                custom={direction}
+                variants={SLIDE}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: 'spring', bounce: 0, duration: 0.7 }}
+                className="wt-frame"
+                // The stylesheet needs the ratio as a number to size the frame
+                // against both axes of the stage; grid placement is in CSS.
+                style={{ '--frame-aspect': FRAME_RATIO } as React.CSSProperties}
+              >
+                <div className="wt-artwork" style={artworkStyle} />
+                <img className="wt-frame-art" src="/assets/frame.png" alt="" aria-hidden="true" />
+              </motion.div>
+            </AnimatePresence>
 
             {/*
               Pinned to the stage edges rather than sharing a grid row with the
@@ -185,6 +219,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
           )}
         </>
       )}
-    </div>
+    </motion.div>
   )
 }

@@ -19,6 +19,7 @@
      so uppercase Sniglet stands in until it is licensed. */
   --font-script: "Beth Ellen", "Segoe Script", cursive;
   --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
+  --font-button: "Autour One", "Sniglet", ui-rounded, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /*
@@ -136,10 +137,18 @@ h1, h2, h3 { text-wrap: balance; }
 .button {
   display: inline-block;
   padding: 11px 22px;
-  font: inherit;
-  font-weight: 800;
+  font-family: var(--font-button);
+  /*
+   * Autour One ships a single weight. Asking for bold gets a synthetic one —
+   * the browser smearing the outlines — which looks obviously wrong on a
+   * display face, so the weight is pinned to what actually exists.
+   */
+  font-weight: 400;
   font-size: 13px;
-  letter-spacing: 0.06em;
+  /* Explicit, because dropping `font: inherit` also drops the inherited
+     line-height, and form controls default to `normal`. */
+  line-height: 1.2;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink);

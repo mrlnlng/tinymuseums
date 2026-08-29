@@ -1,0 +1,11 @@
+/**
+ * The museum's name, in one place.
+ *
+ * It had drifted between "Tiny Museum" and "Inspiratiq's Tiny Museum" across
+ * page titles, the topbar, and outbound email. A constant is the only way that
+ * stays fixed.
+ */
+export const BRAND = 'Inspiratiq’s Tiny Museum'
+
+/** For tight spaces where the full name will not fit. */
+export const BRAND_SHORT = 'Inspiratiq'

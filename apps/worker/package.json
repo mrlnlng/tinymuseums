@@ -1,0 +1,14 @@
+{
+  "name": "@tiny/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-strip-types --env-file=../../.env --watch src/index.ts",
+    "start": "node --experimental-strip-types --env-file=../../.env src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tiny/core": "*"
+  }
+}

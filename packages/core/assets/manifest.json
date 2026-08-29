@@ -1,0 +1,131 @@
+{
+  "room": {
+    "wallColor": "#fff1d2",
+    "floorColor": "#8b5641",
+    "floorTopRatio": 0.7766,
+    "mockupSize": [
+      1080,
+      1920
+    ]
+  },
+  "frame": {
+    "size": [
+      1480,
+      2091
+    ],
+    "window": [
+      0.1993,
+      0.1554,
+      0.5899,
+      0.659
+    ],
+    "windowAspect": 0.6335
+  },
+  "rope": {
+    "size": [
+      804,
+      647
+    ]
+  },
+  "plaque": {
+    "size": [
+      987,
+      487
+    ]
+  },
+  "sticky": {
+    "size": [
+      1755,
+      790
+    ]
+  },
+  "bunny": {
+    "size": [
+      380,
+      552
+    ]
+  },
+  "ticket": {
+    "size": [
+      1372,
+      940
+    ]
+  },
+  "icon-home": {
+    "size": [
+      111,
+      111
+    ]
+  },
+  "icon-no-photos": {
+    "size": [
+      120,
+      120
+    ]
+  },
+  "floor": {
+    "size": [
+      1655,
+      684
+    ]
+  },
+  "bunnyWalk": {
+    "frames": 5,
+    "size": [
+      382,
+      593
+    ],
+    "files": [
+      "bunny-walk-1.png",
+      "bunny-walk-2.png",
+      "bunny-walk-3.png",
+      "bunny-walk-4.png",
+      "bunny-walk-5.png"
+    ]
+  },
+  "pedestals": [
+    {
+      "file": "pedestal-1.png",
+      "size": [
+        549,
+        1140
+      ]
+    },
+    {
+      "file": "pedestal-2.png",
+      "size": [
+        549,
+        1058
+      ]
+    },
+    {
+      "file": "pedestal-3.png",
+      "size": [
+        549,
+        1086
+      ]
+    },
+    {
+      "file": "pedestal-4.png",
+      "size": [
+        549,
+        1106
+      ]
+    },
+    {
+      "file": "pedestal-5.png",
+      "size": [
+        549,
+        1174
+      ]
+    }
+  ],
+  "artworks": [],
+  "audio": {
+    "file": "hall.mp3",
+    "sourceName": "first_track",
+    "seconds": 150.0,
+    "startedAt": 0.0,
+    "megabytes": 2.3
+  }
+}

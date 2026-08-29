@@ -1,0 +1,549 @@
+/* Palette and type from the asset pack's specs.md, not sampled or guessed. */
+:root {
+  --wall: #fff1d2;
+  --wall-deep: #fbebc0;
+  --floor: #8b5641;
+  --ink: #6d402e;
+  --ink-soft: #9a7361;
+  --script: #c22252;
+  --pink: #ffa1bd;
+  --pink-deep: #f98aab;
+  --orange: #ffc483;
+  --plaque: #f3ddba;
+  --plaque-ink: #6d402e;
+  --surround: #e3d2b6;
+  --ok: #4f8a63;
+  --bad: #c0533a;
+
+  /* specs.md names Lazy Dog for all-caps text; it is paid and not installed,
+     so uppercase Sniglet stands in until it is licensed. */
+  --font-script: "Beth Ellen", "Segoe Script", cursive;
+  --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /*
+   * The one screen size, used by every page.
+   *
+   * Portrait 9:16 to match the 1080x1920 mockups, capped so it never exceeds
+   * the window in either axis. Every route renders inside this and nothing
+   * sets its own width — that is what makes the screens uniform.
+   */
+  --screen-width: min(430px, calc(100dvw - 24px), calc((100dvh - 24px) * 9 / 16));
+  --screen-height: min(calc(100dvh - 24px), calc(var(--screen-width) * 16 / 9));
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--surround);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+.screen {
+  position: relative;
+  width: var(--screen-width);
+  height: var(--screen-height);
+  margin: 12px auto;
+  background: var(--wall);
+  border-radius: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 18px 60px rgba(70, 45, 25, 0.3);
+  overscroll-behavior: contain;
+}
+
+a { color: var(--script); }
+
+h1, h2, h3 { text-wrap: balance; }
+
+.script {
+  font-family: var(--font-script);
+  font-weight: 700;
+  color: var(--script);
+  line-height: 1.05;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+/* Content pages fill the screen; the frame owns the width. */
+.page {
+  padding: 20px 18px 44px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 22px;
+  background: var(--wall-deep);
+  border-bottom: 2px solid rgba(139, 86, 65, 0.15);
+}
+
+.topbar .brand {
+  font-family: var(--font-script);
+  font-size: 19px;
+  line-height: 1.15;
+  color: var(--script);
+  text-decoration: none;
+}
+
+.topbar nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; font-weight: 700; }
+.topbar nav a { color: var(--ink); text-decoration: none; }
+.topbar nav a:hover { color: var(--script); }
+
+/* ---------------------------------------------------------------- bits */
+
+.button {
+  display: inline-block;
+  padding: 11px 22px;
+  font: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--pink);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.button:hover { background: var(--pink-deep); }
+.button.secondary { background: var(--orange); }
+.button.quiet { background: transparent; border: 2px solid rgba(139, 86, 65, 0.25); }
+.button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.field { display: grid; gap: 5px; margin-bottom: 14px; }
+.field label { font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em; }
+.field input, .field textarea, .field select {
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fffaf0;
+  border: 2px solid rgba(139, 86, 65, 0.22);
+  border-radius: 10px;
+}
+.field textarea { min-height: 90px; resize: vertical; }
+.field .hint { font-size: 11.5px; color: var(--ink-soft); }
+
+.card {
+  padding: 18px 20px;
+  background: var(--wall-deep);
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+
+.plaque-card {
+  padding: 16px 20px;
+  background: var(--plaque);
+  border-radius: 8px;
+  color: var(--plaque-ink);
+}
+
+.notice { padding: 11px 15px; border-radius: 10px; font-size: 13.5px; margin-bottom: 16px; }
+.notice.ok { background: #e2f0e5; color: #2f5d3f; }
+.notice.bad { background: #f7e0d9; color: #8c3a26; }
+
+.muted { color: var(--ink-soft); }
+.small { font-size: 12.5px; }
+
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.checklist li { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: baseline; font-size: 14px; }
+.checklist .mark { font-weight: 800; }
+.checklist .pass .mark { color: var(--ok); }
+.checklist .fail .mark { color: var(--bad); }
+.checklist .detail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); }
+
+.grid { display: grid; gap: 14px; }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+
+.thumb {
+  aspect-ratio: 3 / 4;
+  background: #efe2c8 center/cover no-repeat;
+  border-radius: 8px;
+}
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(139, 86, 65, 0.16); }
+table.data th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+table.data td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+code.token {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: #fffaf0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------------------------------------------------------------- museum */
+
+/* The hall fills the screen exactly, so it never scrolls and the canvas
+   needs no rounding or shadow of its own — the frame provides both. */
+.museum { position: absolute; inset: 0; overflow: hidden; background: var(--wall); }
+.hall-host { position: absolute; inset: 0; }
+
+.hall-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+.hall-canvas:active { cursor: grabbing; }
+
+.hall-overlay { position: absolute; inset: 0; pointer-events: none; }
+
+/* The visitor's own layer, above the plaque overlay. Anything drawn in the
+   WebGL scene sits under that overlay, which is why the bunny is not in it. */
+.hall-character {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hall-bunny {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  will-change: transform;
+}
+
+.placard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  text-align: center;
+  line-height: 1.25;
+  color: var(--plaque-ink);
+  font-weight: 700;
+  will-change: transform, opacity;
+  user-select: text;
+  text-wrap: balance;
+}
+
+.hall-error {
+  position: absolute;
+  inset: auto 0 24px;
+  text-align: center;
+  color: var(--script);
+  font-weight: 700;
+}
+
+/* Present for screen readers and crawlers; the canvas is the visual surface. */
+.hall-index {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ enlarged */
+
+.wt {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--wall);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4vh;
+  padding: 2vh 5% 3vh;
+  overflow-y: auto;
+}
+
+/* Home and sound now live in the screen's own top-right chrome, so the
+   enlarged view's close control moves to the left rather than stacking under
+   them. Left is back, right is home and sound. */
+.wt-top { align-self: flex-start; }
+
+.wt-icon {
+  width: 34px; height: 34px;
+  font-size: 16px; line-height: 1;
+  color: var(--wall); background: var(--script);
+  border: none; border-radius: 50%; cursor: pointer;
+}
+
+.wt-title { margin: 0; font-size: clamp(24px, 5vh, 40px); text-align: center; }
+
+.wt-loading { color: var(--ink-soft); margin-top: 30vh; }
+
+.wt-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Sized by height; the aspect ratio comes from the manifest, set inline. */
+.wt-frame {
+  position: relative;
+  height: min(50vh, 500px);
+  max-width: 72%;
+}
+
+/* Under the frame. Its edges are meant to be overlapped by the ornament. */
+.wt-artwork {
+  position: absolute;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Over the artwork, and never intercepting the arrows behind it. */
+.wt-frame-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Pinned to the stage edges so the frame can never squeeze them away. */
+.wt-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-ui);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--orange);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.wt-nav:hover { filter: brightness(1.05); }
+.wt-nav.prev { left: 0; }
+.wt-nav.next { right: 0; }
+
+.wt-plaque {
+  display: grid; place-items: center;
+  width: min(80%, 420px);
+  padding: 3% 7%;
+  aspect-ratio: 926 / 459;
+  background: url('/assets/plaque.png') no-repeat center / 100% 100%;
+}
+.wt-plaque p {
+  margin: 0; text-align: center;
+  font-size: clamp(11px, 1.7vh, 15px); line-height: 1.45;
+  color: var(--plaque-ink);
+}
+
+.wt-meta { margin: 0; font-size: 12px; color: var(--ink-soft); text-align: center; }
+.wt-sent { margin: 0; font-size: 13px; font-weight: 700; color: var(--script); text-align: center; }
+
+.wt-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.wt-ask { display: grid; gap: 8px; width: min(100%, 420px); }
+.wt-ask input, .wt-ask textarea {
+  padding: 9px 12px; font: inherit; font-size: 14px;
+  background: #fffaf0; border: 2px solid rgba(139, 86, 65, 0.22); border-radius: 10px;
+}
+.wt-ask textarea { min-height: 80px; resize: vertical; }
+
+/* ---------------------------------------------------------------- landing */
+
+/* Fills the screen exactly. Nothing here scrolls: both choices are buttons
+   that lead to a screen of their own. */
+.landing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--wall);
+  overflow: hidden;
+}
+
+/* In the document for crawlers and screen readers, off the screen visually. */
+.offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.landing-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vh, 16px);
+  padding: clamp(14px, 3vh, 26px) 20px 0;
+  overflow: hidden;
+}
+
+/* The welcome plaque, on the plaque asset. */
+.welcome-plaque {
+  aspect-ratio: 926 / 459;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4% 9%;
+  background: url('/assets/plaque.png') no-repeat center / 100% 100%;
+  text-align: center;
+}
+
+.welcome-kicker {
+  font-size: clamp(11px, 3vw, 13px);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--script);
+}
+
+.welcome-title {
+  margin: 0;
+  font-size: clamp(26px, 8vw, 38px);
+}
+
+/* Guidelines, on the taped sticky-note asset. The asset includes its tape,
+   and the tape overhangs the note, so the text is inset well clear of it. */
+.guidelines {
+  padding: 11% 13% 12%;
+  background: url('/assets/sticky.png') no-repeat center / 100% 100%;
+}
+
+.guidelines h2 {
+  margin: 0 0 6px;
+  font-size: clamp(12px, 3.4vw, 15px);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.guidelines ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: clamp(11px, 3vw, 13.5px);
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.open-line {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: clamp(13px, 3.6vw, 16px);
+  color: var(--script);
+  text-wrap: balance;
+}
+
+/* Bunny, ticket and pedestal standing on the floor below. */
+.landing-props {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 0.7fr;
+  align-items: end;
+  gap: 2%;
+}
+
+.prop { display: block; width: 100%; height: auto; }
+.prop.bunny { transform: translateY(6%); }
+.prop.ticket { transform: rotate(-7deg) translateY(-8%); }
+.prop.pedestal { transform: translateY(8%); }
+
+.landing-floor {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 18px 16px;
+  background: url('/assets/floor.png') repeat-x center top / auto 100%;
+  background-color: var(--floor);
+}
+
+.landing-floor .button { padding: 12px 20px; font-size: 12.5px; }
+
+/* ------------------------------------------------------------ claim a wall */
+
+
+
+/* ---------------------------------------------------------------- sound */
+
+/* Home and speaker, paired in the top-right corner as the mockups have them.
+   Above the hall canvas and the enlarged view, so they are reachable wherever
+   the visitor is. */
+.screen-chrome {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chrome-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.chrome-button img { width: 100%; height: 100%; display: block; }
+
+.chrome-button:hover { opacity: 0.82; }
+
+.sound-toggle svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--script);
+  stroke: var(--script);
+}
+
+.sound-toggle .waves {
+  transition: opacity 180ms ease;
+}
+.sound-toggle .waves[data-on='false'] { opacity: 0.22; }
+
+.sound-toggle .slash { stroke: var(--script); }
+
+.chrome-button:focus-visible {
+  outline: 2px solid var(--script);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-toggle .waves { transition: none; }
+}

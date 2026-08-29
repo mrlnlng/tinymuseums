@@ -1,0 +1,27 @@
+# Amplify Hosting build for an npm-workspaces monorepo.
+#
+# appRoot is apps/web, but the install has to happen at the repo root or the
+# workspace links (@tiny/core) will not exist. Hence the cd ../.. in both
+# phases, and the root node_modules in the cache.
+#
+# UNVERIFIED: written from the monorepo build spec as I understand it, never
+# run against Amplify. Expect to adjust it on the first deploy.
+version: 1
+applications:
+  - appRoot: apps/web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd ../.. && npm ci
+        build:
+          commands:
+            - cd ../.. && npm run build --workspace @tiny/web
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - ../../node_modules/**/*
+          - .next/cache/**/*

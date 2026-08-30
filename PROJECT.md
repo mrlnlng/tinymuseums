@@ -442,9 +442,18 @@ no duplicate seal the second time.
 - [ ] **D12d.** Set the branch variables `S3_BUCKET`, `MEDIA_BASE_URL`, `PUBLIC_BASE_URL`,
       `STORAGE_DRIVER=s3`, `EPOCH_INTERVAL_MINUTES`. `backend.ts` reads these at synth
       time and bakes them in; they are not secret
-- [ ] **D12e.** First deploy will exercise the one thing that could not be checked here:
-      whether `defineBackend({})` with no Amplify-native resources synthesises. If it
-      objects, the fix is to give it a resource rather than to abandon the CDK stack
+- [x] **D12e.** `defineBackend({})` with no Amplify-native resources **does** synthesise.
+      Verified by running the compiled backend against a stubbed CDK context: it produces
+      one function (nodejs20.x, 2048MB, 60s, one layer), an EventBridge rule at
+      `rate(1 minute)`, the SSM and S3 policies, and `frame.png` + `manifest.json` copied
+      into the asset beside the bundle
+- [x] **D12g.** `amplify/` is deliberately **not** a workspace member. `@aws-amplify/backend`
+      pulls in `@aws-amplify/data-construct`, which ships bundled dependencies — a subtree
+      npm cannot write into a lockfile it will later accept, so `npm install` produces a
+      lock that `npm ci` rejects (`Missing: @aws-cdk/toolkit-lib@1.19.0`). Reproduced from
+      a clean install on npm 10.9.8 and npm 11. Keeping it out of the root keeps the root
+      lock `npm ci`-clean. `esbuild` stays at the root because CDK bundles by shelling out
+      to `npx --no-install esbuild` from the directory ampx runs in. See `amplify/README.md`
 - [ ] **D12f.** Confirm the EventBridge rule fires and CloudWatch shows
       `processed=… failed=… drained=…`
 

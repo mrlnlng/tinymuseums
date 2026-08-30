@@ -693,6 +693,15 @@ code.token {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /*
+   * Centred, so each card can take its own width.
+   *
+   * They stretched the full column before, and since both are drawn at a fixed
+   * aspect their heights followed — most of why they came out half again as
+   * tall as the mockup's. It sets the welcome plaque at 67% of the screen and
+   * the note at 79.5%; those two numbers bring the heights with them.
+   */
+  align-items: center;
   gap: clamp(8px, 2vh, 16px);
   /*
    * The top inset clears the sound and home buttons, which float in the
@@ -705,6 +714,7 @@ code.token {
 
 /* The welcome plaque, on the plaque asset. */
 .welcome-plaque {
+  width: 67%;
   aspect-ratio: 926 / 400;
   display: flex;
   flex-direction: column;
@@ -763,12 +773,13 @@ code.token {
    * contents, so sizing those contents against that height would be circular.
    * Width is the stable axis.
    */
+  width: 79.5%;
   container-type: inline-size;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2.4cqi;
-  padding: 10% 9% 12%;
+  gap: 2cqi;
+  padding: 8% 8% 12%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
@@ -777,8 +788,14 @@ code.token {
   /* Indented to the list's text column, so heading and rules share an edge. */
   padding-left: 4.5%;
   font-family: var(--font-button);
-  /* Roughly double the previous heading, per the brief. */
-  font-size: clamp(20px, 13cqi, 52px);
+  /*
+   * Sized to sit on one line.
+   *
+   * Doubled it wrapped to two, and a two-line heading in a face this heavy
+   * took a third of the note and pushed the rules down into the bunny. The
+   * mockup has a modest label above the list, not a banner.
+   */
+  font-size: clamp(13px, 5.6cqi, 24px);
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -790,8 +807,8 @@ code.token {
   /* The marker sits in this indent; the text starts where the heading does. */
   padding-left: 9%;
   display: grid;
-  gap: 2.2cqi;
-  font-size: clamp(11.5px, 4.4cqi, 16.5px);
+  gap: 1.4cqi;
+  font-size: clamp(9px, 3cqi, 13px);
   line-height: 1.36;
   color: var(--ink);
   text-wrap: pretty;
@@ -806,8 +823,7 @@ code.token {
   /* Kept off the tape in the note's bottom-right corner, which starts at 76%
      across and 70% down in the drawing. */
   padding-right: 18%;
-  /* 1.5x the previous closing line, per the brief. */
-  font-size: clamp(14px, 6.4cqi, 24px);
+  font-size: clamp(10px, 4.2cqi, 17px);
   font-weight: 700;
   color: var(--script);
   text-wrap: balance;
@@ -846,7 +862,7 @@ code.token {
 .landing-visitor {
   position: absolute;
   left: clamp(10px, 5%, 46px);
-  bottom: calc(var(--floor-height) * 0.34);
+  bottom: calc(var(--floor-height) * 0.42);
   width: clamp(104px, 30%, 190px);
   z-index: 5;
   pointer-events: none;
@@ -859,22 +875,6 @@ code.token {
 }
 
 /*
- * The ticket, pinched at the tip of the raised paw.
- *
- * Positioned against the sprite rather than the screen — the paw is at about
- * 74% across and 24% down in the drawing — so the ticket stays held at every
- * size. It turns about the held corner: a sway from the middle would look like
- * it was floating rather than being waved.
- */
-/*
- * Held at arm's length, clear of the fingers.
- *
- * At 74% it sat over the paw itself; starting at 88% leaves the hand visible
- * and reads as the ticket being offered rather than gripped. Half again as
- * large, which at this width still lands inside the screen: the visitor is
- * 30% of the screen wide and sits 5% in, so the ticket ends around 72% across.
- */
-/*
  * Held at arm's length, clear of the fingers.
  *
  * At 74% it sat over the paw itself; starting at 88% leaves the hand visible
@@ -886,8 +886,10 @@ code.token {
 .visitor-ticket {
   position: absolute;
   left: 90%;
-  top: 19%;
-  width: 165%;
+  /* Raised: lower down, its corner reached into the floor band and sat on
+     top of the Start visit button. */
+  top: 4%;
+  width: 132%;
   transform-origin: 4% 52%;
   animation: ticket-wave 3.6s ease-in-out infinite;
   /* The container is inert so it cannot swallow taps; this one child is not. */

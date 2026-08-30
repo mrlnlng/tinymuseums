@@ -21,7 +21,16 @@ export {
   type PresignedUpload,
   type Storage,
 } from './storage.ts'
-export { claim, complete, enqueue, fail, requeueStale, type Job, type JobKind } from './jobs.ts'
+export {
+  claim,
+  complete,
+  enqueue,
+  fail,
+  hasPendingJob,
+  requeueStale,
+  type Job,
+  type JobKind,
+} from './jobs.ts'
 export {
   FRAME_ASPECT,
   LAYOUTS,

@@ -1,0 +1,8 @@
+{
+  "name": "sharp-layer",
+  "private": true,
+  "description": "Staging directory for the sharp Lambda layer. Installed during the Amplify backend build; see amplify.yml.",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

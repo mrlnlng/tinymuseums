@@ -1,7 +1,7 @@
 # Amplify Hosting build for an npm-workspaces monorepo.
 #
 # appRoot is apps/web, but the install has to happen at the repo root or the
-# workspace links (@tiny/core) will not exist — hence the cd in both phases.
+# workspace links (@tiny/core) will not exist — hence the cd in every phase.
 #
 # Each cd is wrapped in a subshell on purpose. Amplify runs every phase in one
 # long-lived shell, so a bare `cd ../..` leaks into the next phase and the
@@ -10,6 +10,18 @@
 version: 1
 applications:
   - appRoot: apps/web
+    backend:
+      phases:
+        build:
+          commands:
+            # The backend deploys the scheduled worker (amplify/backend.ts).
+            # It runs before the frontend, so it does its own install.
+            - (cd ../.. && npm ci)
+            # sharp ships a native binary and is supplied to the function by a
+            # layer, not the bundle. Built for the Lambda platform explicitly,
+            # so this does not silently depend on the build host matching.
+            - (cd ../.. && npm run layer:sharp)
+            - (cd ../.. && npx ampx pipeline-deploy --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID")
     frontend:
       phases:
         preBuild:

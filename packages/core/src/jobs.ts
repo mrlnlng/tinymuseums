@@ -79,6 +79,22 @@ export async function fail(id: number, attempts: number, error: unknown): Promis
   )
 }
 
+/**
+ * True when a job of this kind is already waiting or being worked on.
+ *
+ * The long-running worker keeps the epoch rotation going with a timer it sets
+ * at startup. A scheduled Lambda has no such continuity — it wakes, drains,
+ * and forgets — so it keeps the schedule in the queue instead, and needs to
+ * know whether one is already there before adding another.
+ */
+export async function hasPendingJob(kind: JobKind): Promise<boolean> {
+  const rows = await query<{ id: number }>(
+    `select id from jobs where kind = $1 and status in ('pending', 'running') limit 1`,
+    [kind],
+  )
+  return rows.length > 0
+}
+
 /** Recovers jobs whose worker died mid-run. */
 export async function requeueStale(olderThanMinutes = 10): Promise<number> {
   const rows = await query<{ id: number }>(

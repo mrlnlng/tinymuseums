@@ -47,3 +47,8 @@ apps/web/public/assets/artwork-*
 # Python bytecode from the asset scripts.
 __pycache__/
 *.pyc
+
+# Amplify Gen 2. The generated config and the CDK build output are per-deploy
+# artifacts; the sharp layer's node_modules is installed during the build.
+.amplify/
+amplify_outputs.json

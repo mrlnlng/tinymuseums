@@ -1,5 +1,13 @@
-import { claim, complete, fail, requeueStale } from '@tiny/core'
-import { runJob } from '@tiny/core/worker'
+import {
+  claim,
+  complete,
+  env,
+  fail,
+  hasPendingJob,
+  requeueStale,
+} from '@tiny/core'
+import { runJob, scheduleNextSeal } from '@tiny/core/worker'
+import { loadSecrets } from './secrets.ts'
 
 /**
  * The worker, as an Amplify Gen 2 scheduled function.
@@ -22,13 +30,31 @@ export interface DrainResult {
   drained: boolean
 }
 
+/**
+ * Keeps the museum's ordering rotating.
+ *
+ * The long-running worker does this with a timer it sets at startup. A
+ * scheduled function has no such continuity, so the schedule lives in the
+ * queue itself: as long as exactly one seal is always waiting, the rotation
+ * carries on across invocations, deploys and cold starts alike.
+ */
+async function keepRotating(): Promise<void> {
+  if (await hasPendingJob('seal_epoch')) return
+  await scheduleNextSeal(env.epochIntervalMinutes)
+}
+
 export async function handler(): Promise<DrainResult> {
+  // Before anything touches core: env is read through getters at the point of
+  // use, so secrets fetched here are visible to everything downstream.
+  await loadSecrets()
+
   const deadline = Date.now() + TIME_BUDGET_MS
   let processed = 0
   let failed = 0
 
   // Recover anything a previous invocation was killed in the middle of.
   await requeueStale()
+  await keepRotating()
 
   while (Date.now() < deadline) {
     const job = await claim()

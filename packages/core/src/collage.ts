@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import sharp from 'sharp'
+import { repoRoot } from './env.ts'
 import { pickDerivative } from './images.ts'
 import { LAYOUTS } from './layouts.ts'
 import type { Storage } from './storage.ts'
@@ -16,7 +16,17 @@ import type { Derivative, LayoutName, Placement, RegionMap } from './types.ts'
  * coordinates rather than per-piece geometry.
  */
 
-const ASSETS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets')
+/**
+ * Where frame.png and manifest.json live.
+ *
+ * Anchored to the repo root rather than to this file's own URL. A bundler
+ * flattens the module graph into one file, so `import.meta.url` no longer
+ * points anywhere near packages/core — and under a CJS bundle it is not
+ * defined at all. CORE_ASSETS_DIR is how a deployment says where it put them;
+ * see amplify/backend.ts, which copies them beside the function bundle.
+ */
+const ASSETS_DIR =
+  process.env.CORE_ASSETS_DIR || join(repoRoot, 'packages', 'core', 'assets')
 
 /** Canvas resolution. 300px per world unit keeps a single display near 900x960. */
 export const PX_PER_UNIT = 300

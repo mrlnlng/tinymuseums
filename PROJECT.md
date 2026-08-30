@@ -375,23 +375,78 @@ Ordered roughly by what blocks what.
       exists but nothing sets it)
 
 ### D. Deployment (Amplify)
-- [ ] **D1.** **Confirm whether Amplify Hosting SSR compute can reach a VPC.** This
-      decides D2. My knowledge of it is past its cutoff
-- [ ] **D2.** Database: Aurora Serverless v2 + Data API (HTTP, no VPC) *or* RDS + RDS
-      Proxy. `pg.Pool` per process is wrong across many serverless instances either way
-- [ ] **D3.** Scaffold the Gen 2 backend with `npm create amplify@latest` — do not
-      hand-write `defineFunction` / `defineStorage` / `defineAuth`
-- [ ] **D4.** Wire the worker as a scheduled Gen 2 function using `apps/worker/src/lambda.ts`
-- [ ] **D5.** Verify `amplify.yml` — written from the monorepo spec, never run. The
-      `cd ../..` in both phases matters or the workspace link will not exist
+- [x] **D1.** **Amplify Hosting SSR compute cannot join a VPC.** Confirmed. The
+      database must therefore be reachable over the public internet with TLS. The Gen 2
+      worker *can* join a VPC (it is plain CDK), but there is no point in it reaching a
+      database the web tier cannot
+- [ ] **D2.** Database: Aurora Serverless v2 with public access, or a hosted Postgres
+      (Neon and similar). `pg.Pool` per process is still wrong across many serverless
+      instances — RDS Proxy or a pooling endpoint is the answer, not a smaller pool
+- [x] **D3/D4.** Gen 2 backend written by hand as plain CDK in `amplify/backend.ts`.
+      `defineFunction` was rejected deliberately: it gives no control over bundling, and
+      sharp ships a native binary that must be excluded from the bundle and supplied by a
+      linux/x64 layer. `defineBackend({})` + `createStack` is the documented escape hatch
+- [x] **D5.** `amplify.yml` fixed and verified. Amplify runs every phase in ONE shell, so
+      the old bare `cd ../..` leaked from preBuild into build and overshot the repo root.
+      Every cd is now in a subshell. The exact command sequence was run in a clean
+      worktree: `next build` completes with no env vars and no database
 - [ ] **D6.** Create the S3 bucket, set `STORAGE_DRIVER=s3` + `S3_BUCKET`, point
-      `MEDIA_BASE_URL` at CloudFront
+      `MEDIA_BASE_URL` at CloudFront. `amplify/backend.ts` grants the worker
+      Get/Put/Delete on `$S3_BUCKET/*` as soon as that variable is set
 - [ ] **D7.** Verify `S3Storage` against a real bucket, presigned PUT included
 - [ ] **D8.** Move mail to SES; verify the sending domain
 - [ ] **D9.** Decide whether sessions move to Cognito or stay in Postgres for now
 - [ ] **D10.** Set a real `SESSION_SECRET` in the Amplify environment
       (`openssl rand -hex 32`). The app now *refuses to start* in production without one,
       and refuses the published dev value, so this cannot be forgotten silently
+
+#### D11. The app is deployed as a static site and must be switched to SSR
+The 404 at `https://tinymuseums.com/` is not a build problem. Every response comes back
+`server: AmazonS3`, and `/build-manifest.json`, `/required-server-files.json` and
+`/server/app/page.js` all return 200 — Amplify uploaded the raw `.next` directory to S3
+and is serving it as a static bucket. A Next.js app whose routes are all dynamic produces
+no `index.html`, so every URL 404s.
+
+The cause is almost certainly framework detection at connect time: Amplify reads the
+**root** `package.json`, and ours declares only `concurrently`, `typescript` and
+`embedded-postgres`. No `next`, so the app was classified static. It is an app attribute,
+not a repo one, and no buildspec change fixes it.
+
+- [ ] **D11a.** `aws amplify update-app --app-id d1wkk955zsue1z --platform WEB_COMPUTE`
+- [ ] **D11b.** `aws amplify update-branch --app-id d1wkk955zsue1z --branch-name main
+      --framework "Next.js - SSR"`
+- [ ] **D11c.** Set `AMPLIFY_MONOREPO_APP_ROOT=apps/web` in the branch environment
+- [ ] **D11d.** Redeploy, then confirm `/` returns 200 or 500 — anything but 404 means
+      SSR is live. A 500 is expected until D2 lands
+- [ ] **D11e.** Fallback if the platform will not flip: delete and recreate the app with
+      the monorepo app root set to `apps/web` *at connect time*, so detection reads
+      `apps/web/package.json`. Cost is re-doing the `tinymuseums.com` domain association
+- [ ] **D11f.** Note: while the app is static, the whole server bundle is publicly
+      downloadable. No secrets are in it — `required-server-files.json` shows `"env": {}`,
+      because `env.ts` reads through getters at the point of use and bakes nothing at
+      build time — but it is source disclosure until D11a lands
+
+#### D12. Deploying the Gen 2 worker (written, never deployed)
+`amplify/backend.ts` defines one scheduled function that drains the job queue. What is
+verified locally: the handler bundles clean with esbuild, loads, exports `handler`,
+resolves sharp from the layer, and runs end to end against local Postgres — twice, adding
+no duplicate seal the second time.
+
+- [ ] **D12a.** CDK bootstrap the account/region if it has never been bootstrapped
+- [ ] **D12b.** Give the Amplify service role permission to deploy the backend
+- [ ] **D12c.** Set the branch secrets `DATABASE_URL` and `SESSION_SECRET` — Amplify
+      stores them at `/amplify/<app-id>/<branch>/`, which is what `SECRETS_SSM_PATH`
+      points the function at. They are fetched at runtime, never baked into the
+      function's configuration, because Lambda environment variables are readable by
+      anyone with `lambda:GetFunctionConfiguration`
+- [ ] **D12d.** Set the branch variables `S3_BUCKET`, `MEDIA_BASE_URL`, `PUBLIC_BASE_URL`,
+      `STORAGE_DRIVER=s3`, `EPOCH_INTERVAL_MINUTES`. `backend.ts` reads these at synth
+      time and bakes them in; they are not secret
+- [ ] **D12e.** First deploy will exercise the one thing that could not be checked here:
+      whether `defineBackend({})` with no Amplify-native resources synthesises. If it
+      objects, the fix is to give it a resource rather than to abandon the CDK stack
+- [ ] **D12f.** Confirm the EventBridge rule fires and CloudWatch shows
+      `processed=… failed=… drained=…`
 
 ### E. Product gaps
 - [ ] **E1.** Password reset — there is none

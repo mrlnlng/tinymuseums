@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Tiny Museum — a virtual gallery hall where artists hang their work and visitors walk between displays.",
+  "description": "Tiny Museum \u2014 a virtual gallery hall where artists hang their work and visitors walk between displays.",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -18,12 +18,19 @@
     "dev:web": "npm run dev --workspace @tiny/web",
     "dev:worker": "npm run dev --workspace @tiny/worker",
     "typecheck": "npm run typecheck --workspace @tiny/core && npm run typecheck --workspace @tiny/worker && npm run typecheck --workspace @tiny/web",
-    "build": "npm run build --workspace @tiny/web"
+    "build": "npm run build --workspace @tiny/web",
+    "sandbox": "ampx sandbox",
+    "layer:sharp": "npm install --prefix amplify/layers/sharp/nodejs --omit=dev --cpu=x64 --os=linux --no-audit --no-fund"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.14.0",
+    "@aws-amplify/backend-cli": "^1.6.0",
     "@types/node": "^22.9.0",
+    "aws-cdk-lib": "^2.180.0",
     "concurrently": "^9.1.0",
+    "constructs": "^10.3.0",
     "embedded-postgres": "^18.4.0-beta.17",
+    "esbuild": "^0.24.0",
     "typescript": "^5.6.3"
   }
 }

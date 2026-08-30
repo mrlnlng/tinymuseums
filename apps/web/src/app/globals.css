@@ -25,6 +25,8 @@
   --pink: #ffa1bd;
   --pink-deep: #f98aab;
   --orange: #ffc483;
+  /* The navigation triangles, sampled from the mockups. */
+  --arrow: #ffa75f;
   --plaque: #f3ddba;
   --plaque-ink: #6d402e;
   --surround: #e3d2b6;
@@ -374,12 +376,25 @@ code.token {
 }
 
 /* Fixed-size rows: they take what they need and never get squeezed. */
-.wt-top,
 .wt-title,
-.wt-plaque,
+.wt-plaque-row,
 .wt-meta,
+.wt-actions,
+.wt-rope { flex: none; }
 
-.wt-top { align-self: flex-start; }
+/*
+ * The back control floats in the corner rather than occupying a row.
+ *
+ * The mockup spends its vertical budget on the artwork; a full row for one
+ * 34px button is height the frame and the rope both need. Mirrors the home and
+ * speaker buttons on the opposite corner.
+ */
+.wt-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+}
 
 .wt-icon {
   width: 34px; height: 34px;
@@ -388,10 +403,26 @@ code.token {
   border: none; border-radius: 50%; cursor: pointer;
 }
 
+/*
+ * Always two lines tall, whether the title runs to one or two.
+ *
+ * Titles differ in length, so a box that sized itself to its text moved the
+ * painting up and down as you stepped through the works — the whole page
+ * jumped. Reserving the taller case costs one line of empty space on short
+ * titles and keeps everything below it still.
+ */
 .wt-title {
   margin: 0;
-  font-size: clamp(18px, 5.2cqh, 34px);
+  font-size: clamp(16px, 4.4cqh, 30px);
+  line-height: 1.15;
+  height: 2.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+}
+
+.wt-title span {
   /* A long title must not be allowed to eat the artwork's space. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -426,8 +457,6 @@ code.token {
   flex: 0 1 auto;
   min-height: 0;
   width: 100%;
-  /* Room for the arrows, so they never sit on top of the frame. */
-  padding-inline: 46px;
   display: grid;
   place-items: center;
 }
@@ -442,7 +471,12 @@ code.token {
    * width wins. The 92px is the arrow gutters either side, which are padding
    * on the stage and so are not part of `100cqi`.
    */
-  height: min(42cqh, calc((100cqi - 92px) / var(--frame-aspect)));
+  /*
+   * Measured off the mockup, where the frame runs about 87% of the screen wide
+   * and a little over 40% of it tall. Width usually wins for a landscape work,
+   * height for a portrait one.
+   */
+  height: min(40cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -462,30 +496,47 @@ code.token {
   pointer-events: none;
 }
 
-/* Pinned to the stage edges so the frame can never squeeze them away. */
-.wt-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-ui);
-  font-size: 26px;
-  line-height: 1;
-  color: var(--ink);
-  background: var(--orange);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 2;
+/*
+ * The plaque and its arrows share a row of fixed height.
+ *
+ * Fixed, because descriptions vary in length: a row that grew with its text
+ * moved the buttons and the rope every time you stepped to another work.
+ */
+.wt-plaque-row {
+  flex: none;
+  width: 100%;
+  height: clamp(58px, 13cqh, 122px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 2cqi, 18px);
 }
 
-.wt-nav:hover { filter: brightness(1.05); }
-.wt-nav.prev { left: 0; }
-.wt-nav.next { right: 0; }
+/*
+ * Solid triangles, as drawn in the mockups — not glyphs in circles.
+ *
+ * `clip-path` rather than the old border trick: it takes the element's real
+ * box, so the hit area matches what is drawn and the size can be expressed in
+ * container units instead of four hand-balanced border widths.
+ */
+.wt-nav {
+  flex: none;
+  width: clamp(24px, 7.5cqi, 52px);
+  height: clamp(32px, 10cqi, 70px);
+  padding: 0;
+  border: none;
+  background: var(--arrow);
+  cursor: pointer;
+  /* No text of its own; the accessible name is the aria-label. */
+  font-size: 0;
+  color: transparent;
+}
+
+.wt-nav.prev { clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+.wt-nav.next { clip-path: polygon(0 0, 0 100%, 100% 50%); }
+
+.wt-nav:hover { filter: brightness(1.04); }
+.wt-nav:active { transform: scale(0.94); }
 
 /*
  * The label grows with its text rather than being a fixed shape, so the
@@ -494,12 +545,13 @@ code.token {
  * it, the text scrolls inside the plaque.
  */
 .wt-plaque {
+  flex: 0 1 auto;
   display: grid;
   place-items: center;
-  width: min(88%, 420px);
-  min-height: clamp(46px, 12cqh, 88px);
-  max-height: 34cqh;
-  padding: 3.5% 8%;
+  /* About 55% of the screen in the mockup, between the two arrows. */
+  width: min(58%, 400px);
+  height: 100%;
+  padding: 3% 7%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
 }
 
@@ -514,11 +566,22 @@ code.token {
   overscroll-behavior: contain;
 }
 
+/*
+ * One line, always. Medium, year and dimensions differ per work, and a line
+ * that occasionally wrapped to two shifted everything below it as you stepped
+ * through the collection.
+ */
 .wt-meta {
   margin: 0;
   font-size: clamp(9px, 1.7cqh, 12px);
+  line-height: 1.3;
+  height: 1.3em;
   color: var(--ink-soft);
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 
@@ -869,7 +932,12 @@ code.token {
  */
 .wt-rope {
   flex: none;
-  width: min(118%, 560px);
+  /*
+   * 64% of the screen wide in the mockup, not the full width. The previous
+   * 118% is what made it look enormous: `cover` scales to fill the box, so an
+   * over-wide box magnified the drawing and cropped it to a thin band.
+   */
+  width: min(70%, 430px);
   max-width: none;
   /*
    * A band, not the whole drawing. At full width the rope's own proportions
@@ -878,7 +946,7 @@ code.token {
    * its posts and lets the rest run off the bottom edge — which is what the
    * mockup shows.
    */
-  height: clamp(48px, 12cqh, 110px);
+  height: clamp(64px, 21cqh, 190px);
   object-fit: cover;
   object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);

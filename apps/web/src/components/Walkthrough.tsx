@@ -162,7 +162,9 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
         <p className="wt-loading">Fetching the rest of the wall…</p>
       ) : (
         <>
-          <h2 className="script wt-title">{piece.title}</h2>
+          <h2 className="script wt-title">
+            <span>{piece.title}</span>
+          </h2>
 
           <div className="wt-stage">
             <AnimatePresence custom={direction} initial={false}>
@@ -195,20 +197,20 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
               </motion.div>
             </AnimatePresence>
 
-            {/*
-              Pinned to the stage edges rather than sharing a grid row with the
-              frame, so a wide frame can never squeeze them out of view.
-            */}
-            <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
-              ‹
-            </button>
-            <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
-              ›
-            </button>
           </div>
 
-          <div className="wt-plaque">
-            <p>{piece.description}</p>
+          {/*
+            The arrows flank the plaque rather than the frame, which is where
+            the mockup puts them and what lets the frame run the full width.
+            They are drawn entirely in CSS, so they carry no text of their own —
+            the accessible name is the aria-label.
+          */}
+          <div className="wt-plaque-row">
+            <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work" />
+            <div className="wt-plaque">
+              <p>{piece.description}</p>
+            </div>
+            <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work" />
           </div>
 
           <p className="wt-meta">

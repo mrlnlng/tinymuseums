@@ -37,6 +37,9 @@ export class Placards {
     const viewWidth = camera.right - camera.left
     // Keep the label locked to the plaque's painted width at any window size.
     const plaquePx = (CONFIG.plaque.width / viewWidth) * viewport.width
+    // Sized from its own width, so the plaque can grow without dragging the
+    // artist's name along with it.
+    const titlePx = (CONFIG.plaque.titleWidth / viewWidth) * viewport.width
 
     for (const m of mounted) {
       seen.add(m.index)
@@ -61,11 +64,17 @@ export class Placards {
         this.titles.set(m.index, title)
       }
 
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(7, plaquePx * 0.105))
+      /*
+       * Set small against the plaque so a whole statement fits on it.
+       *
+       * These run to about seventy characters, and at the old ratio that came
+       * to nine lines on a label clamped to two — most of the sentence was cut
+       * off mid-word. At this size the longest of them takes three.
+       */
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.068))
 
-      // Wider than the plaque: a name set in script needs the room, and there
-      // is nothing beside it to collide with up there.
-      this.place(title, m.centerX, m.titleY, camera, viewport, plaquePx * 1.9, Math.max(11, plaquePx * 0.23))
+      // Its own width: wide enough for a name, and unaffected by the plaque.
+      this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(11, titlePx * 0.121))
     }
 
     for (const map of [this.nodes, this.titles]) {

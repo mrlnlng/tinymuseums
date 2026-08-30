@@ -194,9 +194,23 @@ export class HallScene {
       new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
       plaqueMaterial,
     )
-    // Hung from the wall's lower edge, not from a fixed height, so it stays
-    // directly beneath whatever is above it.
-    const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
+    /*
+     * Hung beneath the lowest painting, not beneath the canvas.
+     *
+     * A canvas is taller than the art on it — a trio's frames occupy 62% of
+     * its height and sit centred, leaving nearly a fifth of the canvas empty
+     * below them. Hanging the plaque off the canvas edge therefore dropped it
+     * most of a world unit clear of the pictures, which is what put it down
+     * among the rope and the floor.
+     *
+     * The region map is the honest source for where the art actually ends: it
+     * is the same set of rectangles the compositor drew and hit-testing reads,
+     * so it already accounts for the salon hang's uneven offsets.
+     */
+    const regions = slot.display.regionMap
+    const lowest = regions.length > 0 ? Math.max(...regions.map((r) => r.y + r.h)) : 1
+    const artBottom = top - lowest * height
+    const plaqueY = artBottom - CONFIG.plaque.gap - plaqueHeight / 2
     /*
      * In front of the rope, not behind it.
      *

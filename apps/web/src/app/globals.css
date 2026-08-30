@@ -339,11 +339,11 @@ code.token {
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
-  /* Two lines on the plaque, then ellipsis: a long statement must not spill
-     off the brass and onto the wall. */
+  /* Three lines, which is what the longest seeded statement needs; past that
+     it ellipses rather than spilling off the brass and onto the wall. */
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

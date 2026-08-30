@@ -60,7 +60,18 @@ export const CONFIG = {
    * it hangs directly beneath the painting rather than at a fixed height. `z`
    * puts it behind the rope, which crosses in front of it.
    */
-  plaque: { width: 0.95, gap: 0.06, z: 0.4 },
+  plaque: {
+    /* Widened: at 0.95 it read as a token beside a wall several units across. */
+    width: 1.6,
+    gap: 0.09,
+    z: 0.4,
+    /*
+     * The artist's name above the wall is sized from its own width, not from
+     * the plaque's. They were tied together, so making the plaque bigger made
+     * the name bigger with it, which was not the intent.
+     */
+    titleWidth: 1.8,
+  },
   /**
    * The rope, at its drawn size.
    *

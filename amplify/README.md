@@ -36,4 +36,15 @@ root:
     npm ci
     npm install --prefix amplify
     npm run layer:sharp
-    ./amplify/node_modules/.bin/ampx pipeline-deploy --branch main --app-id <app-id>
+    npm run deploy:backend -- --branch main --app-id <app-id>
+
+Note the last line goes through `npm run` rather than calling the binary. ampx
+reads `npm_config_user_agent` to work out which package manager invoked it and
+refuses to start when it is unset:
+
+    AmplifyError [NoPackageManagerError]: npm_config_user_agent environment
+    variable is undefined
+
+Only npm sets that variable, so `./amplify/node_modules/.bin/ampx ...` fails
+even though the path is correct. The script also has to run from the repo root:
+ampx resolves `amplify/backend.ts` relative to the current directory.

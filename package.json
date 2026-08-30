@@ -19,7 +19,9 @@
     "dev:worker": "npm run dev --workspace @tiny/worker",
     "typecheck": "npm run typecheck --workspace @tiny/core && npm run typecheck --workspace @tiny/worker && npm run typecheck --workspace @tiny/web",
     "build": "npm run build --workspace @tiny/web",
-    "layer:sharp": "npm install --prefix amplify/layers/sharp/nodejs --omit=dev --cpu=x64 --os=linux --no-audit --no-fund"
+    "layer:sharp": "npm install --prefix amplify/layers/sharp/nodejs --omit=dev --cpu=x64 --os=linux --no-audit --no-fund",
+    "deploy:backend": "./amplify/node_modules/.bin/ampx pipeline-deploy",
+    "sandbox": "./amplify/node_modules/.bin/ampx sandbox"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

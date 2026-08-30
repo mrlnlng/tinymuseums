@@ -26,9 +26,12 @@ applications:
             # layer, not the bundle. Built for the Lambda platform explicitly,
             # so this does not silently depend on the build host matching.
             - (cd ../.. && npm run layer:sharp)
-            # ampx lives in amplify/node_modules, but runs from the repo root
-            # so that CDK's `npx --no-install esbuild` bundling resolves.
-            - (cd ../.. && ./amplify/node_modules/.bin/ampx pipeline-deploy --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID")
+            # Through `npm run`, not the binary directly: ampx reads
+            # npm_config_user_agent and refuses to start without it, and only
+            # npm sets that. The script runs from the repo root because ampx
+            # resolves amplify/backend.ts relative to the cwd, and CDK bundles
+            # by shelling out to esbuild from it as well.
+            - (cd ../.. && npm run deploy:backend -- --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID")
     frontend:
       phases:
         preBuild:

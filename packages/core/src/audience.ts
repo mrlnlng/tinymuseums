@@ -76,13 +76,6 @@ export async function ensureQrToken(artistId: string, placement: string): Promis
   return token
 }
 
-export async function revokeQrToken(artistId: string, token: string): Promise<void> {
-  await query(`update qr_tokens set revoked_at = now() where artist_id = $1 and token = $2`, [
-    artistId,
-    token,
-  ])
-}
-
 // ---------------------------------------------------------------- following
 
 export async function follow(artistSlug: string, email: string): Promise<'sent' | 'unknown'> {
@@ -177,42 +170,43 @@ export interface AnalyticsSummary {
 }
 
 export async function analyticsFor(artistId: string): Promise<AnalyticsSummary> {
-  const totals = await queryOne<{
-    display_views: number
-    piece_views: number
-    inquiries: number
-  }>(
-    `select count(*) filter (where kind = 'display_view')::int as display_views,
-            count(*) filter (where kind = 'piece_view')::int   as piece_views,
-            count(*) filter (where kind = 'inquiry')::int      as inquiries
-       from events where artist_id = $1`,
-    [artistId],
-  )
-
-  const followers = await queryOne<{ count: number }>(
-    `select count(*)::int as count from follows where artist_id = $1 and confirmed_at is not null`,
-    [artistId],
-  )
-
-  const scansByPlacement = await query<{ placement: string; scans: number }>(
-    `select coalesce(placement, 'unknown') as placement, count(*)::int as scans
-       from events
-      where artist_id = $1 and kind = 'scan'
-      group by 1
-      order by scans desc`,
-    [artistId],
-  )
-
-  const topPieces = await query<{ pieceId: string; title: string; views: number }>(
-    `select p.id as "pieceId", p.title, count(e.id)::int as views
-       from pieces p
-       left join events e on e.piece_id = p.id and e.kind = 'piece_view'
-      where p.artist_id = $1
-      group by p.id, p.title
-      order by views desc, p.title
-      limit 10`,
-    [artistId],
-  )
+  // Four independent queries: run them concurrently so the dashboard pays one
+  // round-trip of latency, not four in series.
+  const [totals, followers, scansByPlacement, topPieces] = await Promise.all([
+    queryOne<{
+      display_views: number
+      piece_views: number
+      inquiries: number
+    }>(
+      `select count(*) filter (where kind = 'display_view')::int as display_views,
+              count(*) filter (where kind = 'piece_view')::int   as piece_views,
+              count(*) filter (where kind = 'inquiry')::int      as inquiries
+         from events where artist_id = $1`,
+      [artistId],
+    ),
+    queryOne<{ count: number }>(
+      `select count(*)::int as count from follows where artist_id = $1 and confirmed_at is not null`,
+      [artistId],
+    ),
+    query<{ placement: string; scans: number }>(
+      `select coalesce(placement, 'unknown') as placement, count(*)::int as scans
+         from events
+        where artist_id = $1 and kind = 'scan'
+        group by 1
+        order by scans desc`,
+      [artistId],
+    ),
+    query<{ pieceId: string; title: string; views: number }>(
+      `select p.id as "pieceId", p.title, count(e.id)::int as views
+         from pieces p
+         left join events e on e.piece_id = p.id and e.kind = 'piece_view'
+        where p.artist_id = $1
+        group by p.id, p.title
+        order by views desc, p.title
+        limit 10`,
+      [artistId],
+    ),
+  ])
 
   return {
     displayViews: totals?.display_views ?? 0,

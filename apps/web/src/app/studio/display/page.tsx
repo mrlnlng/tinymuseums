@@ -1,4 +1,4 @@
-import { LAYOUTS, LAYOUT_NAMES, getStorage, getStudioDisplay, query, type Derivative } from '@tiny/core'
+import { LAYOUTS, LAYOUT_NAMES, getStorage, getStudioDisplay, pickDerivative, query, type Derivative } from '@tiny/core'
 import Message from '@/components/Message'
 import { requireArtist } from '@/lib/session'
 import { saveDisplayAction } from '../actions'
@@ -77,9 +77,7 @@ export default async function DisplayPage({
           </p>
           <div className="grid two">
             {ready.map((row) => {
-              const small = row.derivatives
-                ?.filter((d) => d.format === 'jpg')
-                .sort((a, b) => a.width - b.width)[0]
+              const small = pickDerivative(row.derivatives ?? [], 0)
               return (
                 <label key={row.id} className="card" style={{ cursor: 'pointer', margin: 0 }}>
                   <div

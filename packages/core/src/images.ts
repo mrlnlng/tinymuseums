@@ -88,12 +88,3 @@ export async function generateDerivatives(
 
   return { width, height, derivatives }
 }
-
-/** The smallest derivative at or above the requested width, else the largest. */
-export function pickDerivative(derivatives: Derivative[], minWidth: number, format = 'jpg'): Derivative | null {
-  const candidates = derivatives
-    .filter((d) => d.format === format)
-    .sort((a, b) => a.width - b.width)
-  if (candidates.length === 0) return null
-  return candidates.find((d) => d.width >= minWidth) ?? candidates[candidates.length - 1]
-}

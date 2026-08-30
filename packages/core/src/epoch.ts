@@ -1,6 +1,7 @@
 import { env } from './env.ts'
 import { query, queryOne, transaction } from './db.ts'
 import { LAYOUTS } from './layouts.ts'
+import { mulberry32 } from './random.ts'
 import { getStorage } from './storage.ts'
 import type { DisplayDto, HallSliceDto, LayoutName, RegionMap } from './types.ts'
 
@@ -16,16 +17,6 @@ import type { DisplayDto, HallSliceDto, LayoutName, RegionMap } from './types.ts
  * Suppression is checked here, at read time, deliberately outside that
  * immutability — a takedown must not wait for the next epoch boundary.
  */
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 export interface EpochRow {
   id: number
@@ -126,7 +117,7 @@ interface SliceRow {
 }
 
 export async function getHallSlice(
-  epochId: number,
+  epoch: EpochRow,
   fromIndex: number,
   limit: number,
 ): Promise<HallSliceDto> {
@@ -157,14 +148,12 @@ export async function getHallSlice(
         )
       order by s.index
       limit $3`,
-    [epochId, fromIndex, limit],
+    [epoch.id, fromIndex, limit],
   )
 
-  const total = await queryOne<{ count: number }>(
-    `select count(*)::int as count from epoch_slots where epoch_id = $1`,
-    [epochId],
-  )
-  const totalSlots = total?.count ?? 0
+  // The slot count is the epoch's own display_count — one per sealed display —
+  // so the pagination end is already known without a second round trip.
+  const totalSlots = epoch.display_count
 
   const slots = rows.map((row) => {
     const spec = LAYOUTS[row.layout]
@@ -188,14 +177,5 @@ export async function getHallSlice(
   const lastIndex = slots.length > 0 ? slots[slots.length - 1].index : fromIndex - 1
   const nextIndex = lastIndex + 1 < totalSlots ? lastIndex + 1 : null
 
-  return { epochId, slots, nextIndex, totalSlots }
-}
-
-/** Where an artist stands in the current epoch, for the QR exit into the hall. */
-export async function slotForArtist(epochId: number, artistId: string): Promise<number | null> {
-  const row = await queryOne<{ index: number }>(
-    `select index from epoch_slots where epoch_id = $1 and artist_id = $2`,
-    [epochId, artistId],
-  )
-  return row?.index ?? null
+  return { epochId: epoch.id, slots, nextIndex, totalSlots }
 }

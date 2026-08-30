@@ -32,7 +32,6 @@ export class Placards {
     mounted: MountedDisplay[],
     camera: THREE.OrthographicCamera,
     viewport: Viewport,
-    fadeOf: (index: number) => number,
   ): void {
     const seen = new Set<number>()
     const viewWidth = camera.right - camera.left
@@ -62,19 +61,11 @@ export class Placards {
         this.titles.set(m.index, title)
       }
 
-      const opacity = String(fadeOf(m.index))
-
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, {
-        fontSize: Math.max(7, plaquePx * 0.105),
-        opacity,
-      })
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(7, plaquePx * 0.105))
 
       // Wider than the plaque: a name set in script needs the room, and there
       // is nothing beside it to collide with up there.
-      this.place(title, m.centerX, m.titleY, camera, viewport, plaquePx * 1.9, {
-        fontSize: Math.max(11, plaquePx * 0.23),
-        opacity,
-      })
+      this.place(title, m.centerX, m.titleY, camera, viewport, plaquePx * 1.9, Math.max(11, plaquePx * 0.23))
     }
 
     for (const map of [this.nodes, this.titles]) {
@@ -100,7 +91,7 @@ export class Placards {
     camera: THREE.OrthographicCamera,
     viewport: Viewport,
     widthPx: number,
-    style: { fontSize: number; opacity: string },
+    fontSize: number,
   ): void {
     this.projected.set(x, y, 0.03)
     this.projected.project(camera)
@@ -114,11 +105,10 @@ export class Placards {
     const sy = viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height
 
     node.style.width = `${widthPx}px`
-    node.style.fontSize = `${style.fontSize}px`
+    node.style.fontSize = `${fontSize}px`
     node.style.transform =
       `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`
-    // Match the display's own fade-in rather than popping in ahead of it.
-    node.style.opacity = style.opacity
+    node.style.opacity = '1'
   }
 
   clear(): void {

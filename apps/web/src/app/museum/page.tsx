@@ -18,7 +18,7 @@ const FIRST_SLICE = 4
 export default async function MuseumPage() {
   const epoch = await ensureEpoch()
   const slice: HallSliceDto = epoch
-    ? await getHallSlice(epoch.id, 0, FIRST_SLICE)
+    ? await getHallSlice(epoch, 0, FIRST_SLICE)
     : { epochId: 0, slots: [], nextIndex: null, totalSlots: 0 }
 
   if (slice.slots.length === 0) {

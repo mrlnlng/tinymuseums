@@ -448,23 +448,11 @@ code.token {
 .wt-loading { color: var(--ink-soft); margin: auto; }
 
 /*
- * The one flexible row: it absorbs whatever the fixed rows leave.
- * `flex: 1 1 0` with `min-height: 0` is what actually claims that space —
- * `min-height: 0` alone (the previous state) only permits shrinking.
- */
-/*
- * The stage takes the size of the frame inside it, rather than absorbing the
- * column's spare height.
- *
- * It used to be `flex: 1 1 0` and its own size container, with the frame
- * measured in `cqh` against it. That works only while the stage actually
- * receives the free space — and an `auto` margin further down the column takes
- * every spare pixel *before* flex-grow is applied, which left the stage at its
- * zero basis and collapsed the artwork to nothing.
- *
- * Removing `container-type` here is the fix rather than an aside: the frame's
- * `cqh` now resolves against the screen, which is a length that exists whatever
- * the flex layout does, so the artwork can no longer be sized out of existence.
+ * The stage sizes itself to the frame inside it rather than absorbing the
+ * column's spare height. `flex: 0 1 auto` + `min-height: 0` lets it shrink
+ * without claiming leftover space — an `auto` margin further down the column
+ * takes that first — and the frame measures against the screen, not the stage,
+ * so the artwork cannot be sized out of existence by the flex layout.
  */
 .wt-stage {
   position: relative;
@@ -480,16 +468,9 @@ code.token {
   grid-area: 1 / 1;
   aspect-ratio: var(--frame-aspect);
   /*
-   * The largest frame that fits both axes of the screen: a little under half
-   * its height, unless the width is the tighter constraint, in which case
-   * width wins. The 92px is the arrow gutters either side, which are padding
-   * on the stage and so are not part of `100cqi`.
-   */
-  /*
-   * Measured off both mockups: a portrait work runs 54% of the screen tall and
-   * 74% wide, a landscape one 83% wide. The cap is the portrait figure, since
-   * that is the shape it binds on — a landscape frame reaches the width limit
-   * well before it, and stops there.
+   * The largest frame that fits both axes of the screen: the height bound is
+   * the portrait figure (a little under half the screen tall), and the width
+   * bound is what a landscape work reaches first and stops at.
    */
   height: min(48cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
@@ -528,13 +509,6 @@ code.token {
   gap: clamp(10px, 4.5cqi, 34px);
 }
 
-/*
- * Solid triangles, as drawn in the mockups — not glyphs in circles.
- *
- * `clip-path` rather than the old border trick: it takes the element's real
- * box, so the hit area matches what is drawn and the size can be expressed in
- * container units instead of four hand-balanced border widths.
- */
 /*
  * The close-up's chrome uses the museum face rather than the rounded UI one.
  *
@@ -823,20 +797,12 @@ code.token {
 }
 
 /*
- * The ticket, in the bunny's raised hand.
- *
- * Positioned against the sprite rather than the screen: the hand is at about
- * 70% across and 40% down in the drawing, and anchoring to those keeps the
- * ticket held at every size. It turns about the held corner — a sway from the
- * middle would look like it was floating rather than being waved.
- */
-/*
  * The ticket, pinched at the tip of the raised paw.
  *
- * The paw is at roughly 78% across and 40% down in the drawing, so the
- * ticket's left edge starts there and the whole thing sits to the right of it.
- * It used to begin at 56% and run 116% wide, which put a corner of it across
- * the bunny's face.
+ * Positioned against the sprite rather than the screen — the paw is at about
+ * 74% across and 24% down in the drawing — so the ticket stays held at every
+ * size. It turns about the held corner: a sway from the middle would look like
+ * it was floating rather than being waved.
  */
 .visitor-ticket {
   position: absolute;
@@ -857,10 +823,6 @@ code.token {
 @media (prefers-reduced-motion: reduce) {
   .visitor-ticket { animation: none; transform: rotate(-4deg); }
 }
-
-/* ------------------------------------------------------------ claim a wall */
-
-
 
 /* ---------------------------------------------------------------- sound */
 

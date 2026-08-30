@@ -15,6 +15,7 @@ import { setDisplay } from '../packages/core/src/artists.ts'
 import { publishArtist } from '../packages/core/src/publish.ts'
 import { layoutForCount } from '../packages/core/src/layouts.ts'
 import { handleDerivatives, handleRenderDisplay, handleSealEpoch } from '../packages/core/src/handlers.ts'
+import { mulberry32 } from '../packages/core/src/random.ts'
 
 const PASSWORD = 'tinymuseum'
 
@@ -47,16 +48,6 @@ const DESCRIPTIONS = [
   'Sanded back four times. What is left is mostly the fourth version of it.',
   'Painted quickly, in one sitting, after a long stretch of not painting at all.',
 ]
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 /**
  * The real paintings shipped in the asset pack.

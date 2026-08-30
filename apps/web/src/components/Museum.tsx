@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
 import { loadAssets } from '@/hall/assets'
 import { createBackdrop } from '@/hall/backdrop'
@@ -36,8 +37,6 @@ interface OpenPiece {
   artistId: string
   pieceId: string
 }
-
-import { motion, AnimatePresence } from 'motion/react'
 
 export default function Museum({ initialSlice }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -244,8 +243,8 @@ export default function Museum({ initialSlice }: Props) {
         // you see. The threshold is the one the sprite uses to decide it is
         // walking at all, so sound and animation start and stop together.
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > 0.12)
-        hall.update(now, dt, traversal.cameraX, traversal.cameraX)
-        placards.sync(hall.getMounted(), rig.camera, viewport, (i) => hall.fadeOf(i))
+        hall.update(now, dt, traversal.cameraX)
+        placards.sync(hall.getMounted(), rig.camera, viewport)
 
         if (hall.needsMore(traversal.cameraX)) void fetchMore()
 

@@ -12,8 +12,13 @@ import type { LayoutName, Placement } from './types.ts'
  * display's physical size on the wall is decided here and nowhere else.
  */
 
-/** Taken from frame.png: 2550 x 3300. */
-export const FRAME_ASPECT = 2550 / 3300
+/**
+ * The frame image's drawn aspect — frame.png is 1480 x 2091 in the current
+ * asset pack. Must match `frame.size` in packages/core/assets/manifest.json:
+ * a previous hardcoded value (2550 / 3300) went stale when the art was
+ * replaced, and the compositor stretched every frame to the old ratio.
+ */
+export const FRAME_ASPECT = 1480 / 2091
 
 export interface LayoutSpec {
   name: LayoutName

@@ -1,4 +1,4 @@
-import { getStorage, query, type Derivative } from '@tiny/core'
+import { getStorage, pickDerivative, query, type Derivative } from '@tiny/core'
 import Message from '@/components/Message'
 import UploadWork from '@/components/UploadWork'
 import { requireArtist } from '@/lib/session'
@@ -20,10 +20,7 @@ interface Row {
 }
 
 function thumbUrl(derivatives: Derivative[] | null): string | undefined {
-  if (!derivatives) return undefined
-  const small = derivatives
-    .filter((d) => d.format === 'jpg')
-    .sort((a, b) => a.width - b.width)[0]
+  const small = pickDerivative(derivatives ?? [], 0)
   return small ? getStorage().urlFor(small.key) : undefined
 }
 

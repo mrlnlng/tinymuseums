@@ -24,7 +24,7 @@ const GUIDELINES = [
 
 export default async function LandingPage() {
   const epoch = await ensureEpoch()
-  const slice = epoch ? await getHallSlice(epoch.id, 0, 8) : null
+  const slice = epoch ? await getHallSlice(epoch, 0, 8) : null
   const showing = slice?.slots.map((slot) => slot.display) ?? []
 
   return (

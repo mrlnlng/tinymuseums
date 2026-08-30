@@ -27,68 +27,67 @@ export interface PublishReport {
 }
 
 export async function evaluatePublishBar(artistId: string): Promise<PublishReport> {
-  const checks: PublishCheck[] = []
-
-  const counts = await queryOne<{
-    total: number
-    ready: number
-    described: number
-  }>(
-    `select count(*)::int                                              as total,
-            count(*) filter (where asset.status = 'ready')::int        as ready,
-            count(*) filter (where length(trim(p.description)) >= $2)::int as described
-       from pieces p
-       left join assets asset on asset.id = p.asset_id
-      where p.artist_id = $1`,
-    [artistId, MIN_DESCRIPTION_CHARS],
-  )
+  // The two lookups are independent; run them together so the studio home pays
+  // one round-trip of latency rather than two.
+  const [counts, display] = await Promise.all([
+    queryOne<{
+      total: number
+      ready: number
+      described: number
+    }>(
+      `select count(*)::int                                              as total,
+              count(*) filter (where asset.status = 'ready')::int        as ready,
+              count(*) filter (where length(trim(p.description)) >= $2)::int as described
+         from pieces p
+         left join assets asset on asset.id = p.asset_id
+        where p.artist_id = $1`,
+      [artistId, MIN_DESCRIPTION_CHARS],
+    ),
+    queryOne<{ hung: number; rendered: boolean }>(
+      `select coalesce(array_length(hung_piece_ids, 1), 0)::int as hung,
+              (flattened_key is not null)                      as rendered
+         from displays
+        where artist_id = $1`,
+      [artistId],
+    ),
+  ])
 
   const total = counts?.total ?? 0
   const ready = counts?.ready ?? 0
   const described = counts?.described ?? 0
 
-  checks.push({
-    code: 'min_pieces',
-    label: `At least ${MIN_PIECES} works`,
-    ok: total >= MIN_PIECES,
-    detail: `${total} uploaded`,
-  })
-
-  checks.push({
-    code: 'images_ready',
-    label: 'Every work has a processed image',
-    ok: total > 0 && ready === total,
-    detail: `${ready} of ${total} ready`,
-  })
-
-  checks.push({
-    code: 'descriptions',
-    label: `Every work has a description of ${MIN_DESCRIPTION_CHARS}+ characters`,
-    ok: total > 0 && described === total,
-    detail: `${described} of ${total} written`,
-  })
-
-  const display = await queryOne<{ hung: number; rendered: boolean }>(
-    `select coalesce(array_length(hung_piece_ids, 1), 0)::int as hung,
-            (flattened_key is not null)                      as rendered
-       from displays
-      where artist_id = $1`,
-    [artistId],
-  )
-
-  checks.push({
-    code: 'display_arranged',
-    label: 'A display has been arranged',
-    ok: (display?.hung ?? 0) > 0,
-    detail: display ? `${display.hung} hanging` : 'not arranged yet',
-  })
-
-  checks.push({
-    code: 'display_rendered',
-    label: 'The display has been composed',
-    ok: Boolean(display?.rendered),
-    detail: display?.rendered ? 'ready' : 'waiting for the compositor',
-  })
+  const checks: PublishCheck[] = [
+    {
+      code: 'min_pieces',
+      label: `At least ${MIN_PIECES} works`,
+      ok: total >= MIN_PIECES,
+      detail: `${total} uploaded`,
+    },
+    {
+      code: 'images_ready',
+      label: 'Every work has a processed image',
+      ok: total > 0 && ready === total,
+      detail: `${ready} of ${total} ready`,
+    },
+    {
+      code: 'descriptions',
+      label: `Every work has a description of ${MIN_DESCRIPTION_CHARS}+ characters`,
+      ok: total > 0 && described === total,
+      detail: `${described} of ${total} written`,
+    },
+    {
+      code: 'display_arranged',
+      label: 'A display has been arranged',
+      ok: (display?.hung ?? 0) > 0,
+      detail: display ? `${display.hung} hanging` : 'not arranged yet',
+    },
+    {
+      code: 'display_rendered',
+      label: 'The display has been composed',
+      ok: Boolean(display?.rendered),
+      detail: display?.rendered ? 'ready' : 'waiting for the compositor',
+    },
+  ]
 
   return { passed: checks.every((c) => c.ok), checks }
 }

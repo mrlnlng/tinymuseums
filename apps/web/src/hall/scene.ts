@@ -14,8 +14,6 @@ import { createPedestal, type Pedestal } from './pedestal'
  * right place, and free it when the visitor walks away.
  */
 
-const REVEAL_MS = 320
-
 interface SlotRuntime {
   index: number
   display: DisplayDto
@@ -34,7 +32,6 @@ export interface MountedDisplay {
   centerX: number
   width: number
   height: number
-  mountedAt: number
   plaqueY: number
   /** Where the artist's name sits, above the wall. */
   titleY: number
@@ -108,7 +105,7 @@ export class HallScene {
     return visitorX > lastCenter - CONFIG.loading.prefetchAheadUnits
   }
 
-  update(now: number, dt: number, cameraX: number, _visitorX: number): void {
+  update(now: number, dt: number, cameraX: number): void {
     const { mountRadiusUnits } = CONFIG.virtualization
 
     for (const slot of this.slots.values()) {
@@ -231,7 +228,6 @@ export class HallScene {
       centerX,
       width,
       height,
-      mountedAt: now,
       plaqueY,
       // Just above the wall's top edge, with room to clear the ceiling.
       titleY: top + CONFIG.displayTitleGap,
@@ -320,10 +316,6 @@ export class HallScene {
 
   getMounted(): MountedDisplay[] {
     return [...this.mounted.values()]
-  }
-
-  fadeOf(index: number): number {
-    return 1
   }
 
   stats(): { mounted: number; loaded: number; total: number } {

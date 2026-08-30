@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence, type Variants } from 'motion/react'
 import type { PieceDto } from '@tiny/core'
+import { frameFor } from '@/lib/frame'
 import { useSound } from './SoundProvider'
 
 /**
@@ -28,9 +30,6 @@ interface Props {
   initialPieceId: string
   onClose: () => void
 }
-
-import { frameFor } from '@/lib/frame'
-import { motion, AnimatePresence, type Variants } from 'motion/react'
 
 /**
  * Directional slide between works.

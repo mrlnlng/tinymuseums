@@ -1,4 +1,5 @@
 import { query, queryOne } from './db.ts'
+import { pickDerivative } from './derivatives.ts'
 import { enqueue } from './jobs.ts'
 import { LAYOUTS, composeLayout } from './layouts.ts'
 import { getStorage } from './storage.ts'
@@ -28,11 +29,8 @@ interface PieceRow {
 const ENLARGED_WIDTH = 1600
 
 function pieceImageUrl(derivatives: Derivative[] | null): string | null {
-  if (!derivatives || derivatives.length === 0) return null
-  const jpgs = derivatives.filter((d) => d.format === 'jpg').sort((a, b) => a.width - b.width)
-  if (jpgs.length === 0) return null
-  const chosen = jpgs.find((d) => d.width >= ENLARGED_WIDTH) ?? jpgs[jpgs.length - 1]
-  return getStorage().urlFor(chosen.key)
+  const chosen = pickDerivative(derivatives ?? [], ENLARGED_WIDTH)
+  return chosen ? getStorage().urlFor(chosen.key) : null
 }
 
 function toPieceDto(row: PieceRow): PieceDto {
@@ -96,11 +94,15 @@ export async function getArtistPage(slug: string): Promise<ArtistPageDto | null>
   )
   if (!artist) return null
 
-  const displayRow = await queryOne<DisplayRow>(
-    `select layout, flattened_key, flattened_width, flattened_height, region_map
-       from displays where artist_id = $1`,
-    [artist.id],
-  )
+  // The display and the pieces are independent once the artist is known.
+  const [displayRow, pieces] = await Promise.all([
+    queryOne<DisplayRow>(
+      `select layout, flattened_key, flattened_width, flattened_height, region_map
+         from displays where artist_id = $1`,
+      [artist.id],
+    ),
+    listPieces(artist.id),
+  ])
 
   let display: DisplayDto | null = null
   if (displayRow?.flattened_key) {
@@ -126,7 +128,7 @@ export async function getArtistPage(slug: string): Promise<ArtistPageDto | null>
     artistName: artist.display_name,
     statement: artist.statement,
     display,
-    pieces: await listPieces(artist.id),
+    pieces,
   }
 }
 

@@ -9,21 +9,13 @@ import * as THREE from 'three'
  */
 
 export interface AssetManifest {
-  room: {
-    wallColor: string
-    floorColor: string
-    floorTopRatio: number
-    mockupSize: [number, number]
-  }
-  frame: { size: [number, number]; window: [number, number, number, number] }
+  room: { wallColor: string }
   bunnyWalk: {
-    frames: number
-    size: [number, number]
     files: string[]
     /** Drawn cycles per direction. The bunny is no longer a mirrored sprite. */
     byFacing?: { left: string[]; right: string[] }
   }
-  pedestals: Array<{ file: string; size: [number, number] }>
+  pedestals: Array<{ file: string }>
 }
 
 /** Scenery drawn in the WebGL scene. The visitor is not among them — see below. */

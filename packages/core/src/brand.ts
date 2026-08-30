@@ -6,6 +6,3 @@
  * stays fixed.
  */
 export const BRAND = 'Inspiratiq’s Tiny Museum'
-
-/** For tight spaces where the full name will not fit. */
-export const BRAND_SHORT = 'Inspiratiq'

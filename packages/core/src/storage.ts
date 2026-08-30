@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { env } from './env.ts'
@@ -193,8 +193,4 @@ export function derivativeKey(
  */
 export function collageKey(artistId: string, version: number): string {
   return `artists/${artistId}/display/v${version}.png`
-}
-
-export function newId(): string {
-  return randomUUID()
 }

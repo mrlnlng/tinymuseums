@@ -11,7 +11,6 @@ export {
   ImageRejected,
   MIN_LONG_EDGE,
   generateDerivatives,
-  pickDerivative,
   type ProcessedAsset,
 } from './images.ts'
 export {

@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const slice = await getHallSlice(epoch.id, after, limit)
+  const slice = await getHallSlice(epoch, after, limit)
 
   return Response.json(slice, {
     headers: { 'cache-control': 'public, max-age=30, stale-while-revalidate=300' },

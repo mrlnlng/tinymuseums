@@ -38,17 +38,12 @@ export async function registerAction(formData: FormData): Promise<void> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const password = String(formData.get('password') ?? '')
 
-  // The same form appears on the landing page and in the studio; a validation
-  // failure should return the artist to whichever one they were using.
-  const raw = String(formData.get('returnTo') ?? '')
-  const failTo = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/studio/register'
-
-  if (name.length < 2) back(failTo, 'Tell us what to call you', 'bad')
-  if (!email.includes('@')) back(failTo, 'That email does not look right', 'bad')
-  if (password.length < 8) back(failTo, 'Use at least 8 characters', 'bad')
+  if (name.length < 2) back('/studio/register', 'Tell us what to call you', 'bad')
+  if (!email.includes('@')) back('/studio/register', 'That email does not look right', 'bad')
+  if (password.length < 8) back('/studio/register', 'Use at least 8 characters', 'bad')
 
   const taken = await queryOne(`select 1 from artists where email = $1`, [email])
-  if (taken) back(failTo, 'That email already has a wall', 'bad')
+  if (taken) back('/studio/register', 'That email already has a wall', 'bad')
 
   const slug = await uniqueSlug(name)
   const artist = await queryOne<{ id: string }>(
@@ -56,7 +51,7 @@ export async function registerAction(formData: FormData): Promise<void> {
      values ($1, $2, $3, $4) returning id`,
     [slug, name, email, await hashPassword(password)],
   )
-  if (!artist) back(failTo, 'Could not create your wall', 'bad')
+  if (!artist) back('/studio/register', 'Could not create your wall', 'bad')
 
   await query(`insert into displays (artist_id) values ($1) on conflict do nothing`, [artist.id])
 

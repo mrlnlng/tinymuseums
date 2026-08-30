@@ -375,6 +375,9 @@ Ordered roughly by what blocks what.
       exists but nothing sets it)
 
 ### D. Deployment (Amplify)
+> Live status, evidence and the current open problem are tracked in `DEPLOYMENT.md`.
+> This section records the decisions; that file records where the deploy actually is.
+
 - [x] **D1.** **Amplify Hosting SSR compute cannot join a VPC.** Confirmed. The
       database must therefore be reachable over the public internet with TLS. The Gen 2
       worker *can* join a VPC (it is plain CDK), but there is no point in it reaching a

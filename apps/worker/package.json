@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-ssm": "^3.1121.0",
     "@tiny/core": "*"
   },
   "main": "./src/index.ts",

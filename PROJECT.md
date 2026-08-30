@@ -434,11 +434,15 @@ no duplicate seal the second time.
 
 - [ ] **D12a.** CDK bootstrap the account/region if it has never been bootstrapped
 - [ ] **D12b.** Give the Amplify service role permission to deploy the backend
-- [ ] **D12c.** Set the branch secrets `DATABASE_URL` and `SESSION_SECRET` — Amplify
-      stores them at `/amplify/<app-id>/<branch>/`, which is what `SECRETS_SSM_PATH`
-      points the function at. They are fetched at runtime, never baked into the
-      function's configuration, because Lambda environment variables are readable by
-      anyone with `lambda:GetFunctionConfiguration`
+- [x] **D12c.** The worker takes `DATABASE_URL` and `SESSION_SECRET` from the branch
+      environment, exactly like the web tier. It first read them from SSM at runtime, to
+      keep them out of Lambda configuration where `lambda:GetFunctionConfiguration` can
+      read them — but that guarded one of two copies, since the web tier already holds
+      the same database URL as a plain branch variable, while adding a second place to
+      keep in sync and an SSM path to get wrong. Two failures came out of that path
+      before it was abandoned: the role had no `kms:Decrypt` for the SecureStrings, and
+      `ssm:GetParameters` reports a name it cannot read identically to one that does not
+      exist, so a permissions gap presented as "missing secret"
 - [ ] **D12d.** Set the branch variables `S3_BUCKET`, `MEDIA_BASE_URL`, `PUBLIC_BASE_URL`,
       `STORAGE_DRIVER=s3`, `EPOCH_INTERVAL_MINUTES`. `backend.ts` reads these at synth
       time and bakes them in; they are not secret

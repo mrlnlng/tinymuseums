@@ -7,7 +7,6 @@ import {
   requeueStale,
 } from '@tiny/core'
 import { runJob, scheduleNextSeal } from '@tiny/core/worker'
-import { loadSecrets } from './secrets.ts'
 
 /**
  * The worker, as an Amplify Gen 2 scheduled function.
@@ -44,10 +43,6 @@ async function keepRotating(): Promise<void> {
 }
 
 export async function handler(): Promise<DrainResult> {
-  // Before anything touches core: env is read through getters at the point of
-  // use, so secrets fetched here are visible to everything downstream.
-  await loadSecrets()
-
   const deadline = Date.now() + TIME_BUDGET_MS
   let processed = 0
   let failed = 0

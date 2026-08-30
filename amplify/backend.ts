@@ -58,20 +58,32 @@ const amplifyDir = join(repoRoot, 'amplify')
 const backend = defineBackend({})
 const stack = backend.createStack('tiny-museum-worker')
 
-// --- where the branch's secrets live ---
+// --- configuration ---
 
-// Amplify publishes a branch's secrets to SSM under this path; the build
-// environment names the app and branch. The function reads them at runtime
-// rather than having them baked into its configuration.
-const appId = setting('AWS_APP_ID', '')
-const branch = setting('AWS_BRANCH', 'main')
-if (!appId) {
-  throw new Error(
-    'AWS_APP_ID is not set. It is provided by the Amplify build environment; ' +
-      'when running `ampx sandbox` locally, set it to the Amplify app id.',
+/**
+ * The worker takes its configuration from the branch environment, the same
+ * place the web tier takes its own.
+ *
+ * An earlier version read the two sensitive values from SSM at runtime, to
+ * keep them out of the function's configuration where anyone with
+ * lambda:GetFunctionConfiguration could read them. That protection turned out
+ * to be worth very little in practice: the web tier already receives the same
+ * database URL as an ordinary branch variable, so SSM was guarding one of two
+ * copies while adding a second place to keep in sync and a path to get wrong.
+ */
+const REQUIRED = ['DATABASE_URL', 'SESSION_SECRET'] as const
+
+const missing = REQUIRED.filter((name) => !setting(name, ''))
+if (missing.length > 0) {
+  // Warn rather than throw: a backend deploy that fails here would take the
+  // web app's deploy down with it, and the worker reports the same problem
+  // clearly enough at runtime through env.ts.
+  console.warn(
+    `[backend] ${missing.join(' and ')} not set in the build environment, so ` +
+      'the worker will fail on its first invocation. Set them as branch ' +
+      'environment variables in the Amplify console.',
   )
 }
-const secretsPath = `/amplify/${appId}/${branch}/`
 
 // --- sharp, as a layer ---
 
@@ -129,7 +141,8 @@ const worker = new NodejsFunction(stack, 'Worker', {
   },
   environment: {
     NODE_ENV: 'production',
-    SECRETS_SSM_PATH: secretsPath,
+    DATABASE_URL: setting('DATABASE_URL', ''),
+    SESSION_SECRET: setting('SESSION_SECRET', ''),
     // Where afterBundling put frame.png and manifest.json. /var/task is the
     // Lambda package root, which is what the bundling output directory becomes.
     CORE_ASSETS_DIR: '/var/task/core-assets',
@@ -144,38 +157,6 @@ const worker = new NodejsFunction(stack, 'Worker', {
 })
 
 // --- permissions ---
-
-worker.addToRolePolicy(
-  new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ['ssm:GetParameters', 'ssm:GetParametersByPath'],
-    resources: [
-      `arn:aws:ssm:${stack.region}:${stack.account}:parameter${secretsPath}*`,
-      // GetParametersByPath is authorised against the path itself, without the
-      // trailing wildcard, so both forms of the ARN have to be allowed.
-      `arn:aws:ssm:${stack.region}:${stack.account}:parameter${secretsPath.replace(/\/$/, '')}`,
-    ],
-  }),
-)
-
-// Amplify stores secrets as SecureStrings, so reading one with WithDecryption
-// also needs the key that encrypted it. Without this the call does not fail
-// loudly — GetParameters reports anything it cannot decrypt as an *invalid
-// parameter*, which is indistinguishable from one that was never set.
-//
-// The resource is a wildcard because the AWS-managed aws/ssm key has no ARN
-// known at synth time; the condition is what narrows it, restricting this to
-// decryption performed on Parameter Store's behalf in this region.
-worker.addToRolePolicy(
-  new PolicyStatement({
-    effect: Effect.ALLOW,
-    actions: ['kms:Decrypt'],
-    resources: ['*'],
-    conditions: {
-      StringEquals: { 'kms:ViaService': `ssm.${stack.region}.amazonaws.com` },
-    },
-  }),
-)
 
 const mediaBucket = setting('S3_BUCKET', '')
 if (mediaBucket) {

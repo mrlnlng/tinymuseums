@@ -346,9 +346,6 @@ code.token {
 .wt-title,
 .wt-plaque,
 .wt-meta,
-.wt-sent,
-.wt-actions,
-.wt-ask { flex: none; }
 
 .wt-top { align-self: flex-start; }
 
@@ -382,12 +379,19 @@ code.token {
   position: relative;
   flex: 1 1 0;
   min-height: 0;
+  /*
+   * Capped so the artwork sits directly under the title instead of floating in
+   * the middle of the screen. Without a cap the stage absorbs every spare
+   * pixel and pushes the plaque to the bottom edge.
+   */
+  max-height: 56cqh;
   width: 100%;
   /* Room for the arrows, so they never sit on top of the frame. */
   padding-inline: 46px;
   container-type: size;
   display: grid;
-  place-items: center;
+  /* Top-aligned: the frame hangs from the title rather than centring below it. */
+  place-items: start center;
 }
 
 .wt-frame {
@@ -477,23 +481,10 @@ code.token {
   text-align: center;
 }
 
-.wt-sent {
-  margin: 0;
-  font-size: clamp(10px, 1.9cqh, 13px);
-  font-weight: 700;
-  color: var(--script);
-  text-align: center;
-}
 
 .wt-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .wt-actions .button { padding: clamp(7px, 1.6cqh, 11px) 18px; font-size: clamp(10px, 1.7cqh, 13px); }
 
-.wt-ask { display: grid; gap: 8px; width: min(100%, 420px); }
-.wt-ask input, .wt-ask textarea {
-  padding: 9px 12px; font: inherit; font-size: 14px;
-  background: #fffaf0; border: 2px solid rgba(139, 86, 65, 0.22); border-radius: 10px;
-}
-.wt-ask textarea { min-height: 64px; resize: vertical; }
 
 /* ---------------------------------------------------------------- landing */
 
@@ -524,7 +515,12 @@ code.token {
   display: flex;
   flex-direction: column;
   gap: clamp(8px, 2vh, 16px);
-  padding: clamp(14px, 3vh, 26px) 20px 0;
+  /*
+   * The top inset clears the sound and home buttons, which float in the
+   * corner at a fixed offset. Without it the plaque slides underneath them on
+   * a narrow screen and the speaker sits on the lettering.
+   */
+  padding: clamp(52px, 9vh, 72px) 20px 0;
   overflow: hidden;
 }
 
@@ -554,16 +550,36 @@ code.token {
   font-size: clamp(26px, 8vw, 38px);
 }
 
-/* Guidelines, on the taped sticky-note asset. The asset includes its tape,
-   and the tape overhangs the note, so the text is inset well clear of it. */
+/*
+ * Guidelines, on the post-it asset.
+ *
+ * The note is drawn at a fixed shape, so it is given that shape here rather
+ * than being stretched to whatever the text happens to need — a background
+ * sized `100% 100%` distorts the drawn paper as soon as the copy changes
+ * length.
+ *
+ * Its tape is part of the image and sits in two corners: top-left down to
+ * about 15% of the height, bottom-right from about 70%. The padding is set
+ * from those measurements, so nothing is written on the tape.
+ *
+ * Sizing text in `cqh` ties it to the note itself rather than the viewport,
+ * which is what lets the copy fill the paper at every screen size instead of
+ * leaving the bottom half empty.
+ */
 .guidelines {
-  padding: 11% 13% 12%;
+  aspect-ratio: 1063 / 711;
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3cqh;
+  padding: 16% 10% 28%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
 .guidelines h2 {
-  margin: 0 0 6px;
-  font-size: clamp(12px, 3.4vw, 15px);
+  margin: 0;
+  font-size: clamp(11px, 8.5cqh, 19px);
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -572,12 +588,13 @@ code.token {
 
 .guidelines ol {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 4.5%;
   display: grid;
-  gap: 4px;
-  font-size: clamp(11px, 3vw, 13.5px);
-  line-height: 1.4;
+  gap: 1.5cqh;
+  font-size: clamp(10px, 7.4cqh, 17px);
+  line-height: 1.32;
   color: var(--ink);
+  text-wrap: pretty;
 }
 
 .open-line {
@@ -589,32 +606,78 @@ code.token {
   text-wrap: balance;
 }
 
-/* Bunny, ticket and pedestal standing on the floor below. */
-.landing-props {
-  margin-top: auto;
-  display: grid;
-  grid-template-columns: 1fr 1.25fr 0.7fr;
-  align-items: end;
-  gap: 2%;
+/*
+ * The floor band. Given an explicit height so the visitor can be positioned
+ * against it — "stand the bunny on the floor" needs the floor to be a known
+ * size, not whatever its contents came to.
+ */
+.landing {
+  --floor-height: clamp(96px, 21%, 168px);
 }
 
-.prop { display: block; width: 100%; height: auto; }
-.prop.bunny { transform: translateY(6%); }
-.prop.ticket { transform: rotate(-7deg) translateY(-8%); }
-.prop.pedestal { transform: translateY(8%); }
-
 .landing-floor {
+  flex: none;
+  height: var(--floor-height);
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 18px 16px;
+  padding: 0 clamp(16px, 6%, 34px) 0 0;
   background: url('/assets/floor.png') repeat-x center top / auto 100%;
   background-color: var(--floor);
 }
 
-.landing-floor .button { padding: 12px 20px; font-size: 12.5px; }
+.landing-floor .button { padding: 12px 22px; font-size: 13px; }
+
+/*
+ * The visitor, standing in front of the floor.
+ *
+ * Anchored to the bottom of the screen and lifted by part of the floor's
+ * height, so the feet land on the boards while the body crosses the wall line.
+ * Its own stacking context puts it over the floor; `pointer-events: none`
+ * keeps it from swallowing taps meant for the button beside it.
+ */
+.landing-visitor {
+  position: absolute;
+  left: clamp(10px, 5%, 46px);
+  bottom: calc(var(--floor-height) * 0.34);
+  width: clamp(104px, 30%, 190px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.visitor-bunny {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/*
+ * The ticket, in the bunny's raised hand.
+ *
+ * Positioned against the sprite rather than the screen: the hand is at about
+ * 70% across and 40% down in the drawing, and anchoring to those keeps the
+ * ticket held at every size. It turns about the held corner — a sway from the
+ * middle would look like it was floating rather than being waved.
+ */
+.visitor-ticket {
+  position: absolute;
+  left: 56%;
+  top: 18%;
+  width: 116%;
+  height: auto;
+  transform-origin: 10% 58%;
+  animation: ticket-wave 3.6s ease-in-out infinite;
+}
+
+@keyframes ticket-wave {
+  0%,
+  100% { transform: rotate(-7deg) translateY(0); }
+  50%  { transform: rotate(1deg) translateY(-5%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visitor-ticket { animation: none; transform: rotate(-4deg); }
+}
 
 /* ------------------------------------------------------------ claim a wall */
 
@@ -713,4 +776,64 @@ code.token {
   .chrome-button {
     animation: none;
   }
+}
+
+/* ------------------------------------------------- painting screen extras */
+
+/*
+ * The no-photography mark, on the artwork's top-right corner.
+ *
+ * Positioned against the frame rather than the stage, so it stays on the
+ * corner when the frame changes shape between a portrait and a landscape work.
+ * Nudged outside the ornament, where the mockups put it.
+ */
+.wt-no-photos {
+  position: absolute;
+  top: 3%;
+  right: -3%;
+  width: 13%;
+  min-width: 22px;
+  max-width: 42px;
+  height: auto;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/*
+ * Everything below this is bottom-aligned: the slack in the column collects
+ * above the actions, which is what lifts the artwork and its plaque up under
+ * the title.
+ */
+.wt-actions { margin-top: auto; }
+
+.wt-shop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wt-shop-icon {
+  width: 1.25em;
+  height: 1.25em;
+  /* The cap height sits above the baseline; this centres the basket on it. */
+  margin-block: -0.15em;
+  flex: none;
+}
+
+/*
+ * The velvet rope, closing the composition along the bottom.
+ *
+ * Wider than its column on purpose — the mockups run it past both edges, so it
+ * reads as a rope crossing the room rather than an object on a shelf. Inert,
+ * so it can never take a tap meant for the buttons above it.
+ */
+.wt-rope {
+  flex: none;
+  width: min(118%, 560px);
+  max-width: none;
+  height: auto;
+  margin-top: clamp(2px, 1cqh, 10px);
+  margin-bottom: calc(env(safe-area-inset-bottom) * -1);
+  pointer-events: none;
+  user-select: none;
 }

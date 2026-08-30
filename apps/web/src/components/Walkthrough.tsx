@@ -13,6 +13,14 @@ import type { PieceDto } from '@tiny/core'
  * museum stays out of the transaction.
  */
 
+/**
+ * Where "Shop print" goes.
+ *
+ * The whole catalogue for now; the intent is a per-piece product link later,
+ * at which point this becomes a lookup and the button does not change.
+ */
+const SHOP_URL = 'https://www.inspiratiq.art/'
+
 interface Props {
   slug: string
   artistId: string
@@ -41,8 +49,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const [pieces, setPieces] = useState<PieceDto[] | null>(null)
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(0)
-  const [asking, setAsking] = useState(false)
-  const [sent, setSent] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -66,8 +72,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const step = useCallback(
     (stepDir: number) => {
       if (!pieces || pieces.length === 0) return
-      setAsking(false)
-      setSent(null)
       setDirection(stepDir)
       setIndex((i) => (i + stepDir + pieces.length) % pieces.length)
     },
@@ -101,18 +105,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     }),
     [piece],
   )
-
-  async function submitInquiry(form: FormData): Promise<void> {
-    if (!piece) return
-    const response = await fetch(`/api/pieces/${piece.id}/inquire`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: form.get('email'), message: form.get('message') }),
-    })
-    const data = (await response.json()) as { message?: string; error?: string }
-    setSent(data.message ?? data.error ?? 'Something went wrong')
-    if (response.ok) setAsking(false)
-  }
 
   return (
     <motion.div
@@ -159,6 +151,17 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
               >
                 <div className="wt-artwork" style={artworkStyle} />
                 <img className="wt-frame-art" src="/assets/frame.png" alt="" aria-hidden="true" />
+                {/*
+                  Inside the frame element so it tracks the artwork's real
+                  corner. Anchored to the stage instead, it would drift away
+                  from the frame whenever the aspect changed.
+                */}
+                <img
+                  className="wt-no-photos"
+                  src="/assets/icon-no-photos.png"
+                  alt=""
+                  aria-hidden="true"
+                />
               </motion.div>
             </AnimatePresence>
 
@@ -185,38 +188,32 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             {pieces ? ` · ${index + 1} of ${pieces.length}` : ''}
           </p>
 
-          {sent ? <p className="wt-sent">{sent}</p> : null}
-
-          {asking ? (
-            <form
-              className="wt-ask"
-              action={(formData) => {
-                void submitInquiry(formData)
-              }}
+          <div className="wt-actions">
+            {/*
+              One shop for the whole catalogue for now. When each piece has its
+              own product this becomes a per-piece URL and nothing else here
+              changes. rel="noreferrer" because it leaves the site.
+            */}
+            <a
+              className="button secondary wt-shop"
+              href={SHOP_URL}
+              target="_blank"
+              rel="noreferrer"
             >
-              <input name="email" type="email" required placeholder="your email" />
-              <textarea name="message" required placeholder={`Ask about "${piece.title}"`} />
-              <div className="wt-actions">
-                <button className="button secondary" type="submit">
-                  Send
-                </button>
-                <button className="button quiet" type="button" onClick={() => setAsking(false)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="wt-actions">
-              {piece.availability === 'available' ? (
-                <button className="button secondary" onClick={() => setAsking(true)}>
-                  Ask about this
-                </button>
-              ) : null}
-              <button className="button" onClick={onClose}>
-                Keep exploring
-              </button>
-            </div>
-          )}
+              <img className="wt-shop-icon" src="/assets/icon-basket.svg" alt="" aria-hidden="true" />
+              Shop print
+            </a>
+            <button className="button" onClick={onClose}>
+              Keep exploring
+            </button>
+          </div>
+
+          {/*
+            The rope closes the composition along the bottom, as in mockups 4
+            and 8. Decorative and inert — it must never take a tap meant for
+            the buttons above it.
+          */}
+          <img className="wt-rope" src="/assets/rope.png" alt="" aria-hidden="true" />
         </>
       )}
     </motion.div>

@@ -46,20 +46,22 @@ export default async function LandingPage() {
 
         <p className="open-line">The gallery floor is officially open. Enjoy!</p>
 
-        <div className="landing-props" aria-hidden="true">
-          <img className="prop bunny" src="/assets/bunny.png" alt="" />
-          <img className="prop ticket" src="/assets/ticket.png" alt="" />
-          <img className="prop pedestal" src="/assets/pedestal.png" alt="" />
-        </div>
       </div>
 
       <div className="landing-floor">
         <Link className="button" href="/museum">
           Start visit
         </Link>
-        <Link className="button secondary" href="/studio/register">
-          Claim a wall
-        </Link>
+      </div>
+
+      {/*
+        The visitor stands in front of the floor rather than above it, so it
+        overlaps the boundary and reads as standing on the boards. It is the
+        last child and outside both bands for that reason: stacking, not order.
+      */}
+      <div className="landing-visitor" aria-hidden="true">
+        <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" />
+        <img className="visitor-ticket" src="/assets/ticket.png" alt="" />
       </div>
 
       <nav className="offscreen" aria-label="Artists currently showing">

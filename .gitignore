@@ -8,8 +8,7 @@
 
 # Agent-facing working notes. Kept locally for the coding agents; not part of
 # the public repository.
-PROJECT.md
-DEPLOYMENT.md
+.agents/
 
 # Keys, certificates and credential files — never in this repo.
 *.pem

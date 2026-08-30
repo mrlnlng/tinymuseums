@@ -215,14 +215,11 @@ export class HallScene {
       transparent: true,
       opacity: 1,
     })
-    // The rope runs the width of the wall, which is the width of the screen —
-    // it is a barrier across the room, not an ornament under the picture.
-    const ropeWidth = Math.max(width, CONFIG.rope.minWidth)
-    const ropeHeight = ropeWidth / this.assets.aspect.rope
-    const rope = new THREE.Mesh(new THREE.PlaneGeometry(ropeWidth, ropeHeight), ropeMaterial)
-    // Hung from its top edge: at this width the drawing is taller than the
-    // wall, and what matters is where the rope crosses, not where it ends.
-    rope.position.set(0, CONFIG.rope.topY - ropeHeight / 2, CONFIG.rope.z)
+    const rope = new THREE.Mesh(
+      new THREE.PlaneGeometry(CONFIG.rope.height * this.assets.aspect.rope, CONFIG.rope.height),
+      ropeMaterial,
+    )
+    rope.position.set(0, CONFIG.rope.centerY, CONFIG.rope.z)
     group.add(rope)
 
     this.scene.add(group)

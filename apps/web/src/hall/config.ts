@@ -46,34 +46,30 @@ export const CONFIG = {
      * re-composited — the flattened image and its region map are in canvas
      * coordinates, and scaling the mesh leaves both untouched.
      *
-     * Bounded by the room, not by taste: at this scale a 3.2-high canvas
-     * reaches 4.59, and the frustum tops out near 4.97, which leaves the title
-     * somewhere to sit.
+     * Bounded by the room, not by taste. Hung from displayTopY a 3.2-high
+     * canvas at this scale spans 0.74 to 4.42, which leaves the name room
+     * under the 4.97 ceiling and the plaque room beneath.
      */
     scale: 1.15,
   },
 
-  /*
-   * The plaque drops as the display grows, so the two do not overlap. The
-   * display's lower edge lands at 0.91 at the scale above; the plaque is
-   * about 0.47 tall, so centring it here keeps its top clear of that.
+  /**
+   * The wall label.
+   *
+   * `gap` is the drop from the wall's lower edge to the top of the plaque, so
+   * it hangs beneath whatever is above it rather than at a fixed height. `z`
+   * puts it in front of the rope: there is no height at which it clears one.
    */
-  /** `gap` is the drop from the wall's lower edge to the top of the plaque. */
   plaque: { width: 0.95, gap: 0.12, z: 0.6 },
   /**
-   * The rope spans the wall, so it reads as a barrier across the room. Its
-   * height follows from that width; `minWidth` covers the narrowest template.
-   */
-  /**
-   * The rope spans the wall, so it reads as a barrier across the room rather
-   * than an ornament under the picture.
+   * The rope, at its drawn size.
    *
-   * Its height follows its width, and at screen width that is over three units
-   * — taller than the wall itself. So it hangs from a fixed top edge instead
-   * of a centre, and its posts run down past the bottom of the view, which is
-   * where posts go. `minWidth` covers the narrowest template.
+   * It was briefly widened to span the wall, which made it tower over the hall
+   * — its own proportions turn a screen-width rope into something over three
+   * units tall, taller than the wall it stands in front of. It reads as a
+   * barrier at this size and does not compete with the art.
    */
-  rope: { minWidth: 3.9, topY: 1.15, z: 0.5 },
+  rope: { height: 1.33, centerY: 0.44, z: 0.5 },
   /*
    * Pedestals.
    *

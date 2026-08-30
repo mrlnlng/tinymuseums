@@ -491,7 +491,7 @@ code.token {
    * that is the shape it binds on — a landscape frame reaches the width limit
    * well before it, and stops there.
    */
-  height: min(54cqh, calc(100cqi / var(--frame-aspect)));
+  height: min(52cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -1009,26 +1009,18 @@ code.token {
 .wt-rope {
   flex: none;
   /*
-   * Widened by about a third, to 91% of the column.
+   * Whole, and therefore small.
    *
-   * Showing it whole at this width would take 42% of the screen's height, and
-   * the painting has only 58% to give — so it is still cropped from the top,
-   * just far less than before. Nothing above it moves when this changes.
+   * Its own proportions decide this: a rope wide enough to span the screen is
+   * over forty percent of the screen tall, which is height the painting needs.
+   * Sizing by height and letting the width follow shows all of it — both posts
+   * complete, nothing sliced by the bottom edge — at the cost of it being a
+   * smaller object than the mockup's cropped one.
    */
-  width: min(91%, 560px);
-  max-width: none;
-  /*
-   * A band, not the whole drawing. At full width the rope's own proportions
-   * make it some four hundred pixels tall, which would push everything above
-   * it off the screen. Cropping from the top keeps the rope and the tops of
-   * its posts and lets the rest run off the bottom edge — which is what the
-   * mockup shows.
-   */
-  height: clamp(58px, 13cqh, 128px);
-  object-fit: cover;
-  object-position: center top;
+  height: clamp(52px, 17cqh, 155px);
+  width: auto;
+  max-width: 100%;
   margin-top: clamp(2px, 1cqh, 10px);
-  margin-bottom: calc(env(safe-area-inset-bottom) * -1);
   pointer-events: none;
   user-select: none;
 }

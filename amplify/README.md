@@ -59,17 +59,28 @@ Without them `ampx pipeline-deploy` fails *after* a successful synth:
     ... is not authorized to perform: ssm:GetParameter on resource:
     arn:aws:ssm:us-east-2:...:parameter/cdk-bootstrap/hnb659fds/version
 
-1. **A bootstrapped region.** CDK keeps its bootstrap version in SSM and reads
-   it before doing anything. Once per account/region:
+1. **A service role on the Amplify app.** This is the one that matters, and it
+   is worth reading the error carefully before acting on it. The account id in
+   it is *not* the account the app belongs to, and the role name says why:
+   `AemiliaControlPlaneLambda-CodeBuildRole-...` — Aemilia is Amplify's
+   internal service name. With no service role attached, builds run under
+   Amplify's managed infrastructure in an AWS-owned account, so CDK goes
+   looking for a bootstrap stack there. That account cannot be bootstrapped and
+   should not be.
 
-       npx cdk bootstrap aws://<account-id>/<region>
-
-2. **A service role on the Amplify app.** The role in the error above,
-   `AemiliaControlPlaneLambda-CodeBuildRole-...`, is Amplify's internal
-   default, which means no service role is attached to the app. Create a role
-   Amplify can assume, give it the managed policy
+   Attaching a service role is what makes the build run in your own account
+   instead. Create a role Amplify can assume, give it the managed policy
    `AmplifyBackendDeployFullAccess`, and set it in the console under App
    settings.
+
+2. **A bootstrapped region — in your account, not the one in the error.** CDK
+   keeps its bootstrap version in SSM and reads it before doing anything. Once
+   per account/region:
+
+       npx cdk bootstrap aws://<your-account-id>/<app-region>
+
+   The region is the one the Amplify app runs in, which the SSM ARN in the
+   error does report correctly even when the account does not.
 
 ## Shipping the frontend without the backend
 

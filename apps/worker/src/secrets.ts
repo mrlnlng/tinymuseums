@@ -53,10 +53,17 @@ export async function loadSecrets(): Promise<void> {
   )
 
   if (response.InvalidParameters?.length) {
+    // Deliberately does not claim the parameter is missing. GetParameters
+    // reports a name it cannot read in exactly the same way whether it was
+    // never set or the function lacks ssm:GetParameters on it — or, most
+    // easily overlooked, lacks kms:Decrypt for the key behind the SecureString.
     throw new Error(
-      `Missing Amplify secret(s): ${response.InvalidParameters.join(', ')}. ` +
-        'Set each one in the Amplify console under Hosting → Secrets, ' +
-        'or with `npx ampx sandbox secret set <NAME>`.',
+      `Could not read Amplify secret(s): ${response.InvalidParameters.join(', ')}. ` +
+        'Either they are not set, or this function is not permitted to read ' +
+        'them. Check both: that each exists in the Amplify console under ' +
+        'Hosting → Secrets, and that the listed path matches. ' +
+        'Confirm with: aws ssm get-parameters-by-path --path ' +
+        `'${prefix}' --recursive --query 'Parameters[].Name'`,
     )
   }
 

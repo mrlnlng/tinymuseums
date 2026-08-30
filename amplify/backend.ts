@@ -148,10 +148,32 @@ const worker = new NodejsFunction(stack, 'Worker', {
 worker.addToRolePolicy(
   new PolicyStatement({
     effect: Effect.ALLOW,
-    actions: ['ssm:GetParameters'],
+    actions: ['ssm:GetParameters', 'ssm:GetParametersByPath'],
     resources: [
       `arn:aws:ssm:${stack.region}:${stack.account}:parameter${secretsPath}*`,
+      // GetParametersByPath is authorised against the path itself, without the
+      // trailing wildcard, so both forms of the ARN have to be allowed.
+      `arn:aws:ssm:${stack.region}:${stack.account}:parameter${secretsPath.replace(/\/$/, '')}`,
     ],
+  }),
+)
+
+// Amplify stores secrets as SecureStrings, so reading one with WithDecryption
+// also needs the key that encrypted it. Without this the call does not fail
+// loudly — GetParameters reports anything it cannot decrypt as an *invalid
+// parameter*, which is indistinguishable from one that was never set.
+//
+// The resource is a wildcard because the AWS-managed aws/ssm key has no ARN
+// known at synth time; the condition is what narrows it, restricting this to
+// decryption performed on Parameter Store's behalf in this region.
+worker.addToRolePolicy(
+  new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ['kms:Decrypt'],
+    resources: ['*'],
+    conditions: {
+      StringEquals: { 'kms:ViaService': `ssm.${stack.region}.amazonaws.com` },
+    },
   }),
 )
 

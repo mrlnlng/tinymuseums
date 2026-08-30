@@ -1,48 +1,46 @@
 import { CONFIG } from './config'
 
 /**
- * Positions displays and pedestals along the hall's single axis.
+ * Positions paintings and pedestals along the hall's single axis.
  *
- * Unlike the prototype, display widths are not fixed: the layout template an
- * artist chose decides how wide their canvas is, and that arrives from the
- * API. So the layout is rebuilt as slices load rather than computed once.
+ * Every slot is now one painting on its own wall, so the layout is a flat list
+ * of piece widths, spaced with a constant gap between them. Widths come from
+ * each piece's own framed image (`canvas.w` from the API) — decided by the
+ * scene — and this module only spaces them out.
  */
 
 export interface HallLayout {
+  /** Per-piece horizontal centres, left to right, in world units. */
   centerX: number[]
+  /** Per-piece plane widths, parallel to centerX. */
   width: number[]
-  /** pedestalX[i] sits between display i and display i + 1. */
+  /** pedestalX[i] stands mid-gap after piece i, between it and piece i + 1. */
   pedestalX: number[]
   totalLength: number
-  /** Highest slot index laid out so far. */
+  /** Number of pieces laid out so far. */
   known: number
 }
 
-export interface SlotSize {
-  index: number
-  width: number
-}
-
 /**
- * Builds positions for a contiguous run of slots starting at index 0.
- * Gaps are impossible: the hall is walked in order, so slices always extend
- * the run rather than landing somewhere ahead of it.
+ * Builds positions for a contiguous run of pieces. Gaps are impossible: the
+ * hall is walked in order, so slices always extend the run rather than landing
+ * somewhere ahead of it.
  */
-export function computeLayout(sizes: SlotSize[]): HallLayout {
+export function computeLayout(widths: number[]): HallLayout {
   const centerX: number[] = []
   const width: number[] = []
   const pedestalX: number[] = []
 
   let cursor = 0
-  sizes.forEach((slot, i) => {
-    centerX.push(cursor + slot.width / 2)
-    width.push(slot.width)
-    cursor += slot.width
-    if (i < sizes.length - 1) {
+  widths.forEach((w, i) => {
+    centerX.push(cursor + w / 2)
+    width.push(w)
+    cursor += w
+    if (i < widths.length - 1) {
       // The gap is constant whether or not something stands in it, so the
-      // walls stay evenly spaced and only the pedestals come and go.
-      if (hasPedestal(i)) pedestalX.push(cursor + CONFIG.statueSpan / 2)
-      cursor += CONFIG.statueSpan
+      // planes stay evenly spaced and only the pedestals come and go.
+      if (hasPedestal(i)) pedestalX.push(cursor + CONFIG.piece.gap / 2)
+      cursor += CONFIG.piece.gap
     }
   })
 
@@ -50,15 +48,15 @@ export function computeLayout(sizes: SlotSize[]): HallLayout {
     centerX,
     width,
     pedestalX,
-    // Leave a pedestal's worth of room past the last display so the hall does
-    // not end abruptly at a wall while more is still loading.
-    totalLength: cursor + CONFIG.statueSpan,
-    known: sizes.length,
+    // Leave a gap's worth of room past the last piece so the hall does not end
+    // abruptly at a wall while more is still loading.
+    totalLength: cursor + CONFIG.piece.gap,
+    known: widths.length,
   }
 }
 
 /**
- * Whether a pedestal stands in the gap after display `index`.
+ * Whether a pedestal stands in the gap after piece `index`.
  *
  * Pseudo-random rather than random: the layout is rebuilt from scratch every
  * time a slice arrives, and a real `Math.random()` would deal a different hall

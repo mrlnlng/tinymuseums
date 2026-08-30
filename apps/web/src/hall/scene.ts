@@ -1,22 +1,23 @@
 import * as THREE from 'three'
-import type { DisplayDto, HallSliceDto } from '@tiny/core'
+import type { HallPieceDto, HallSliceDto } from '@tiny/core'
 import { loadDisplayTexture, type Assets } from './assets'
 import { CONFIG } from './config'
-import { computeLayout, type HallLayout, type SlotSize } from './layout'
+import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal } from './pedestal'
 
 /**
  * Owns what exists in the hall at any moment.
  *
- * Unlike the prototype there is no client-side compositing: a display arrives
- * from the API as one flattened image the server produced, plus a region map
- * for hit testing. The client's job is to load that texture, hang it in the
- * right place, and free it when the visitor walks away.
+ * Every slot is now one painting on its own wall: the server renders each work
+ * to its own framed image (portrait or landscape, whichever its proportions
+ * need), and the client hangs that image as a single plane with the painting's
+ * name above it and the artist's plaque below. The client's job is to load the
+ * image, hang it, and free it when the visitor walks away.
  */
 
 interface SlotRuntime {
   index: number
-  display: DisplayDto
+  piece: HallPieceDto
   status: 'idle' | 'loading' | 'ready' | 'error'
   texture?: THREE.Texture
   /** When texture loading began; the pedestal's dwell floor runs from here. */
@@ -24,16 +25,23 @@ interface SlotRuntime {
   readyAt?: number
 }
 
+/**
+ * One painting, hung on its own wall.
+ *
+ * The plane is the framed image, sized to the piece's own canvas (the server
+ * rendered it to that proportion). The tile hangs from the common top edge, so
+ * a row of paintings stays level; the plaque hangs directly beneath it and the
+ * rope crosses the screen below the plaque.
+ */
 export interface MountedDisplay {
   index: number
-  display: DisplayDto
+  display: HallPieceDto
   group: THREE.Group
   mesh: THREE.Mesh
   centerX: number
   width: number
   height: number
   plaqueY: number
-  /** Where the artist's name sits, above the wall. */
   titleY: number
 }
 
@@ -57,7 +65,7 @@ export class HallScene {
     private assets: Assets,
   ) {}
 
-  /** Adds displays from an API slice and extends the hall's geometry. */
+  /** Adds paintings from an API slice and extends the hall's geometry. */
   ingestSlice(slice: HallSliceDto): void {
     this.epochId = slice.epochId
     this.nextIndex = slice.nextIndex
@@ -65,30 +73,22 @@ export class HallScene {
 
     for (const slot of slice.slots) {
       if (this.slots.has(slot.index)) continue
-      this.slots.set(slot.index, { index: slot.index, display: slot.display, status: 'idle' })
+      this.slots.set(slot.index, { index: slot.index, piece: slot.display, status: 'idle' })
     }
 
     this.rebuildLayout()
   }
 
   private rebuildLayout(): void {
-    const sizes: SlotSize[] = []
-    // Only a contiguous run from zero can be positioned; a gap would put every
-    // later display at the wrong place on the wall.
+    const widths: number[] = []
     for (let i = 0; this.slots.has(i); i++) {
-      sizes.push({
-        index: i,
-        width: this.slots.get(i)!.display.canvas.w * CONFIG.display.scale,
-      })
+      widths.push(this.slots.get(i)!.piece.canvas.w)
     }
-    this.layout = computeLayout(sizes)
+    this.layout = computeLayout(widths)
 
     for (const mount of this.mounted.values()) {
       const x = this.layout.centerX[mount.index]
-      if (x !== undefined) {
-        mount.centerX = x
-        mount.group.position.x = x
-      }
+      if (x !== undefined) mount.group.position.x = x
     }
     for (const [i, pedestal] of this.pedestals) {
       const x = this.layout.pedestalX[i]
@@ -126,7 +126,7 @@ export class HallScene {
 
       if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
         const earliest = (slot.startedAt ?? now) + CONFIG.statue.minDwellMs
-        if (now >= Math.max(slot.readyAt ?? now, earliest)) this.mount(slot, now)
+        if (now >= Math.max(slot.readyAt ?? now, earliest)) this.mount(slot)
       }
     }
 
@@ -137,7 +137,7 @@ export class HallScene {
     slot.status = 'loading'
     slot.startedAt = now
 
-    loadDisplayTexture(slot.display.image.url)
+    loadDisplayTexture(slot.piece.image.url)
       .then((texture) => {
         slot.texture = texture
         slot.status = 'ready'
@@ -148,94 +148,61 @@ export class HallScene {
       })
   }
 
-  private mount(slot: SlotRuntime, now: number): void {
+  private mount(slot: SlotRuntime): void {
     const centerX = this.layout.centerX[slot.index]
     if (centerX === undefined || !slot.texture) return
 
-    const { canvas } = slot.display
+    const piece = slot.piece
     const group = new THREE.Group()
     group.position.set(centerX, 0, 0)
 
-    const material = new THREE.MeshBasicMaterial({
-      map: slot.texture,
-      transparent: true,
-      opacity: 1,
-    })
-    // Drawn larger than the composited canvas. Only the mesh grows: the
-    // flattened image and the region map hit-testing reads from are both in
-    // canvas coordinates, and scaling geometry leaves both correct.
-    const scale = CONFIG.display.scale
-    const width = canvas.w * scale
-    const height = canvas.h * scale
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material)
-
     /*
-     * Walls hang from a common top edge rather than a common centre.
-     *
-     * Layout templates differ in canvas height, and centring them put the
-     * bottoms of a tall wall and a short one at different heights — so the
-     * plaque beneath each sat at a different distance, and the row of labels
-     * along the hall stepped up and down as you walked.
+     * Walls hang from a common top edge rather than a common centre, so a row
+     * of paintings stays level. The plane is the server's framed image at the
+     * piece's own canvas proportion, so a landscape painting hangs wide and a
+     * portrait one tall, and each still reads at about the same size.
      */
     const top = CONFIG.displayTopY
-    mesh.position.y = top - height / 2
-    const bottom = top - height
+    const height = piece.canvas.h
+    const width = piece.canvas.w
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, height),
+      new THREE.MeshBasicMaterial({ map: slot.texture, transparent: true, opacity: 1 }),
+    )
+    mesh.position.set(0, top - height / 2, 0)
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
-    // Wall label. The text on it is DOM, positioned by Placards.
-    const plaqueMaterial = new THREE.MeshBasicMaterial({
-      map: this.assets.textures.plaque,
-      transparent: true,
-      opacity: 1,
-    })
+    // The plaque beneath the drawing. The text on it is DOM, positioned by
+    // Placards; the sprite hangs below the plane's bottom edge, above the rope,
+    // and keeps drawing over it (z) as before.
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
+    const plaqueY = top - height - CONFIG.plaque.gap - plaqueHeight / 2
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
-      plaqueMaterial,
+      new THREE.MeshBasicMaterial({
+        map: this.assets.textures.plaque,
+        transparent: true,
+        opacity: 1,
+      }),
     )
-    /*
-     * Hung beneath the lowest painting, not beneath the canvas.
-     *
-     * A canvas is taller than the art on it — a trio's frames occupy 62% of
-     * its height and sit centred, leaving nearly a fifth of the canvas empty
-     * below them. Hanging the plaque off the canvas edge therefore dropped it
-     * most of a world unit clear of the pictures, which is what put it down
-     * among the rope and the floor.
-     *
-     * The region map is the honest source for where the art actually ends: it
-     * is the same set of rectangles the compositor drew and hit-testing reads,
-     * so it already accounts for the salon hang's uneven offsets.
-     */
-    const regions = slot.display.regionMap
-    const lowest = regions.length > 0 ? Math.max(...regions.map((r) => r.y + r.h)) : 1
-    const artBottom = top - lowest * height
-    const plaqueY = artBottom - CONFIG.plaque.gap - plaqueHeight / 2
-    /*
-     * In front of the rope, not behind it.
-     *
-     * The wall's lower edge is at 0.74 and the rope crosses at 1.15, so there
-     * is no height at which the plaque clears the rope — it has to be drawn
-     * over it. Still behind the visitor, who walks in front of everything.
-     */
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
     /*
-     * The rope, stretched across the wall without stretching its posts.
+     * The rope, stretched across this painting without stretching its posts.
      *
-     * Scaling the whole drawing to the wall's width magnifies it — at a wall's
+     * Scaling the whole drawing to the painting's width magnifies it — at that
      * width the posts come out over twice their drawn size, short and fat,
      * which is what went wrong when this was tried as one quad.
      *
      * So it is cut into three vertical slices and rebuilt: the two posts keep
      * their drawn proportions at either end, and only the swag between them is
      * stretched to close the distance. The posts sit at 0.075-0.184 and
-     * 0.820-0.940 across the image, so the cuts at 0.24 and 0.78 fall in
-     * empty space on both sides of each.
+     * 0.820-0.940 across the image, so the cuts at 0.24 and 0.78 fall in empty
+     * space on both sides of each.
      */
     const ropeHeight = CONFIG.rope.height
-    // Width the whole drawing would have at that height.
     const ropeNaturalWidth = ropeHeight * this.assets.aspect.rope
 
     const CUTS = [0, 0.24, 0.78, 1] as const
@@ -243,11 +210,14 @@ export class HallScene {
       (CUTS[1] - CUTS[0]) * ropeNaturalWidth,
       (CUTS[3] - CUTS[2]) * ropeNaturalWidth,
     ]
-    // The swag takes whatever the posts leave. On a wall too narrow to need
+    // The swag takes whatever the posts leave. On a painting too narrow to need
     // stretching it keeps its own width and the rope simply spans less.
+    // `ropeSpan` is the barrier's width, deliberately wider than the frame so
+    // the rope reads as crossing the screen rather than tucked under the art.
+    const ropeSpan = Math.max(width, CONFIG.piece.ropeWidth)
     const middleWidth = Math.max(
       (CUTS[2] - CUTS[1]) * ropeNaturalWidth,
-      width - endWidths[0] - endWidths[1],
+      ropeSpan - endWidths[0] - endWidths[1],
     )
 
     const sliceWidths = [endWidths[0], middleWidth, endWidths[1]]
@@ -273,14 +243,13 @@ export class HallScene {
     this.scene.add(group)
     this.mounted.set(slot.index, {
       index: slot.index,
-      display: slot.display,
+      display: piece,
       group,
       mesh,
       centerX,
       width,
       height,
       plaqueY,
-      // Just above the wall's top edge, with room to clear the ceiling.
       titleY: top + CONFIG.displayTitleGap,
     })
   }
@@ -303,7 +272,7 @@ export class HallScene {
         this.pedestals.set(i, pedestal)
       }
 
-      // Pending while the display on its far side is not yet hanging. The only
+      // Pending while the painting on its far side is not yet hanging. The only
       // loading affordance in the whole product.
       pedestal.setPending(!this.mounted.has(i + 1))
       pedestal.update(dt)
@@ -320,17 +289,17 @@ export class HallScene {
       obj.geometry.dispose()
       const material = obj.material as THREE.MeshBasicMaterial
       /*
-       * Textures made for this display are freed with it. The rope's is cloned
-       * per wall, because its crop depends on how wide that wall is — without
-       * this, walking the hall would leak one texture per wall passed.
-       * Textures the asset loader owns carry no such mark and are left alone.
+       * Textures made for this painting are freed with it. The rope's slices
+       * are cloned per wall, because the crop depends on how wide that wall is
+       * — without this, walking the hall would leak one texture per wall
+       * passed. The piece's own image belongs to this slot and is freed with it.
+       * Scenery textures the asset loader owns carry no such mark and are left
+       * alone.
        */
       if (material.map?.userData.ownedByDisplay) material.map.dispose()
       material.dispose()
     })
 
-    // The display texture belongs to this slot; scenery textures are shared
-    // and owned by the asset loader, so they are deliberately left alone.
     const slot = this.slots.get(index)
     if (slot?.texture) {
       slot.texture.dispose()
@@ -359,18 +328,7 @@ export class HallScene {
     const mounted = this.mounted.get(hit.object.userData.slotIndex as number)
     if (!mounted) return null
 
-    // Three's uv origin is bottom-left; the region map is top-left.
-    const u = hit.uv.x
-    const v = 1 - hit.uv.y
-    const map = mounted.display.regionMap
-
-    for (let i = map.length - 1; i >= 0; i--) {
-      const r = map[i]
-      if (u >= r.x && u <= r.x + r.w && v >= r.y && v <= r.y + r.h) {
-        return { mounted, pieceId: r.pieceId }
-      }
-    }
-    return null
+    return { mounted, pieceId: mounted.display.pieceId }
   }
 
   getMounted(): MountedDisplay[] {

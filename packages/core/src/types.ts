@@ -48,9 +48,31 @@ export interface DisplayDto {
   regionMap: RegionMap
 }
 
+/**
+ * One painting, hung on its own wall in the hall.
+ *
+ * Unlike a DisplayDto (an artist's flattened collage, still used on the artist
+ * page), each slot is a single framed work rendered to its own image, so a
+ * landscape work gets a landscape frame. The client renders the whole image as
+ * one plane and tags it with `pieceId` for hit testing.
+ */
+export interface HallPieceDto {
+  pieceId: string
+  artistId: string
+  slug: string
+  artistName: string
+  /** The painting's own title, hung above it. */
+  title: string
+  /** The artist's statement, shown on the plaque below. */
+  statement: string
+  /** The framed painting's size in world units. */
+  canvas: { w: number; h: number }
+  image: { url: string; width: number; height: number }
+}
+
 export interface HallSlotDto {
   index: number
-  display: DisplayDto
+  display: HallPieceDto
 }
 
 export interface HallSliceDto {

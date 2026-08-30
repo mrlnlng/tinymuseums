@@ -47,10 +47,35 @@ export const CONFIG = {
      * coordinates, and scaling the mesh leaves both untouched.
      *
      * Bounded by the room, not by taste. Hung from displayTopY a 3.2-high
-     * canvas at this scale spans 0.74 to 4.42, which leaves the name room
-     * under the 4.97 ceiling and the plaque room beneath.
+     * canvas at this scale spans 1.54 to 4.42, so the frame finishes well short
+     * of the floor and leaves room for both the plaque and the rope beneath it.
+     * The mockups draw a single work about as tall as a 2.5-unit frame, and a
+     * canvas this size puts the single template's frame at 2.53 — so the walls
+     * read like the mock instead of towering over the hall.
      */
-    scale: 1.15,
+    scale: 0.9,
+  },
+
+  /**
+   * The per-painting planes.
+   *
+   * The hall hangs one painting per wall now: the server renders each work to
+   * its own framed image (portrait or landscape, whichever its proportions
+   * need), and the client hangs that image as a single plane from the common
+   * top edge, `displayTopY`, sized to the plane's own `canvas`. Because works
+   * are framed to about the same on-screen size whatever their orientation,
+   * the row of paintings stays level. `gap` is the left/right spacing between
+   * adjacent planes, where the pedestals stand.
+   */
+  piece: {
+    gap: 4.0,
+    /**
+     * How wide the rope under each painting spans. Wider than the painting
+     * itself, so it reads as a barrier across the screen — the mockups run the
+     * posts out past the art toward the edges of the composition, not snug
+     * under the frame. The posts keep their drawn width and the swag stretches.
+     */
+    ropeWidth: 3.4,
   },
 
   /**
@@ -65,19 +90,14 @@ export const CONFIG = {
     width: 1.6,
     gap: 0.09,
     /*
-     * In front of the rope again.
+     * Kept in front of the rope.
      *
      * The label's text is not part of the scene — it is DOM in a layer above
      * the canvas, which is what makes it selectable and readable by a screen
-     * reader. That layer is always in front, so the text cannot be put behind
-     * the rope no matter where the plaque sprite sits. With the plaque behind,
-     * the rope crossed it while the words stayed on top, and the sentence read
-     * across a pink swag.
-     *
-     * There is no height that avoids this either: the art ends at 1.36, the
-     * rope reaches 1.105, and the plaque is 0.79 tall — it does not fit in the
-     * quarter-unit between them. So the plaque goes in front and the rope
-     * passes behind it, which puts the words back on brass.
+     * reader. That layer is always in front, so the words can never be pushed
+     * behind a rope no matter where the plaque sprite sits. The rope now hangs
+     * below the art as a barrier, but the plaque still draws over it so the
+     * sentence never reads across a pink swag on a wall where the two are close.
      */
     z: 0.6,
     /*
@@ -92,10 +112,16 @@ export const CONFIG = {
    *
    * It was briefly widened to span the wall, which made it tower over the hall
    * — its own proportions turn a screen-width rope into something over three
-   * units tall, taller than the wall it stands in front of. It reads as a
-   * barrier at this size and does not compete with the art.
+   * units tall, taller than the wall it stands in front of. Kept to the mock's
+   * scale it reads as a barrier rather than a sculpture, and does not compete
+   * with the art.
+   *
+   * `centerY` is half the height so the posts' bases sit on the same floor line
+   * as the pedestals — the sprite is centred on its position, so standing it on
+   * the floor means giving back half its own rise. At that height the swag sags
+   * below the plaque, so the rope crosses the wall and not the label.
    */
-  rope: { height: 1.33, centerY: 0.44, z: 0.5 },
+  rope: { height: 1.0, centerY: 0.5, z: 0.5 },
   /*
    * Pedestals.
    *
@@ -106,8 +132,8 @@ export const CONFIG = {
    * position, so half of any growth has to be given back.
    */
   pedestal: {
-    height: 1.95,
-    centerY: 0.73,
+    height: 2.4,
+    centerY: 0.955,
     z: 0.3,
     /** Share of gaps that hold one. The rest are left as open floor. */
     frequency: 0.55,

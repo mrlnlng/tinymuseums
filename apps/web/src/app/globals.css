@@ -191,17 +191,18 @@ h1, h2, h3 { text-wrap: balance; }
 
 .button {
   display: inline-block;
-  padding: 11px 22px;
+  padding: 12px 24px;
   font-family: var(--font-button);
   /*
    * The face ships one weight, and asking for bold gets a synthetic one — the
    * browser smearing the outlines sideways, which is obvious on a display
    * face. A hairline stroke in the text's own colour thickens the strokes
-   * evenly instead, which is what synthetic bold only pretends to do.
+   * evenly instead, which is what synthetic bold only pretends to do. The
+   * stroke was raised a touch and the type sized up, per the brief.
    */
   font-weight: 400;
-  -webkit-text-stroke: 0.45px currentColor;
-  font-size: 15.5px;
+  -webkit-text-stroke: 0.6px currentColor;
+  font-size: 17px;
   /* Explicit, because dropping `font: inherit` also drops the inherited
      line-height, and form controls default to `normal`. */
   line-height: 1.2;
@@ -457,19 +458,20 @@ code.token {
  */
 .wt-title {
   /*
-   * Top margin so the ascenders are not clipped by the screen's edge — the
-   * column's own padding is only a few pixels, and this face rides high in its
-   * line box. The negative bottom margin eats part of the column gap, keeping
-   * the painting up under the title rather than leaving a band of wall.
+   * Top margin so the ascenders clear the screen edge and the home/speaker
+   * buttons, which float in the top corners at a fixed offset. The title sits
+   * below that row, so it can never sit over the icons. The negative bottom
+   * margin eats part of the column gap, keeping the painting up under the title
+   * rather than leaving a band of wall.
    */
-  margin: clamp(10px, 2.6cqh, 24px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
+  margin: clamp(22px, 5cqh, 40px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
   /*
    * Kept clear of the home and speaker buttons, which float in the corner at a
    * fixed offset. Constraining the text's width is what guarantees it — a top
    * margin only moves the collision, since a long title still reaches sideways
    * into the corner.
    */
-  padding-inline: clamp(46px, 13cqi, 76px);
+  padding-inline: clamp(52px, 18cqi, 96px);
   font-size: clamp(15px, 3.6cqh, 26px);
   line-height: 1.15;
   height: 2.3em;
@@ -703,13 +705,13 @@ code.token {
 
 /* The welcome plaque, on the plaque asset. */
 .welcome-plaque {
-  aspect-ratio: 926 / 459;
+  aspect-ratio: 926 / 400;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4% 9%;
+  padding: 3% 8%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
   text-align: center;
 }
@@ -746,7 +748,10 @@ code.token {
  */
 .guidelines {
   /*
-   * Sized by its contents, not pinned to the paper's drawn shape.
+   * Sized by its contents, not pinned to the paper's drawn shape, and not
+   * stretched to the floor — the visitor stands on the boards below it, so a
+   * note that fills the whole body would run into the bunny. Content is kept
+   * compact so the copy fills the paper and the sheet sits clear of the floor.
    *
    * Three rules that each wrap to two lines, a heading and a closing line come
    * to eight lines; at the sizes asked for they do not fit inside the drawn
@@ -754,16 +759,16 @@ code.token {
    * little instead, which on a hand-drawn note reads as a different sheet
    * rather than a distorted one.
    *
-   * `inline-size` rather than `size`: the container's height now depends on
-   * its contents, so sizing those contents against that height would be
-   * circular. Width is the stable axis.
+   * `inline-size` rather than `size`: the container's height now depends on its
+   * contents, so sizing those contents against that height would be circular.
+   * Width is the stable axis.
    */
   container-type: inline-size;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 2.4cqi;
-  padding: 10% 9% 15%;
+  padding: 10% 9% 12%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
@@ -772,7 +777,8 @@ code.token {
   /* Indented to the list's text column, so heading and rules share an edge. */
   padding-left: 4.5%;
   font-family: var(--font-button);
-  font-size: clamp(16px, 9.8cqi, 34px);
+  /* Roughly double the previous heading, per the brief. */
+  font-size: clamp(20px, 13cqi, 52px);
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -784,8 +790,8 @@ code.token {
   /* The marker sits in this indent; the text starts where the heading does. */
   padding-left: 9%;
   display: grid;
-  gap: 1.8cqi;
-  font-size: clamp(11px, 4.3cqi, 17px);
+  gap: 2.2cqi;
+  font-size: clamp(11.5px, 4.4cqi, 16.5px);
   line-height: 1.36;
   color: var(--ink);
   text-wrap: pretty;
@@ -800,7 +806,8 @@ code.token {
   /* Kept off the tape in the note's bottom-right corner, which starts at 76%
      across and 70% down in the drawing. */
   padding-right: 18%;
-  font-size: clamp(13px, 6.2cqi, 23px);
+  /* 1.5x the previous closing line, per the brief. */
+  font-size: clamp(14px, 6.4cqi, 24px);
   font-weight: 700;
   color: var(--script);
   text-wrap: balance;
@@ -812,7 +819,7 @@ code.token {
  * size, not whatever its contents came to.
  */
 .landing {
-  --floor-height: clamp(96px, 21%, 168px);
+  --floor-height: clamp(84px, 18%, 140px);
 }
 
 .landing-floor {
@@ -826,7 +833,7 @@ code.token {
   background-color: var(--floor);
 }
 
-.landing-floor .button { padding: 13px 26px; font-size: 17px; }
+.landing-floor .button { padding: 15px 32px; font-size: 20px; }
 
 /*
  * The visitor, standing in front of the floor.
@@ -867,11 +874,20 @@ code.token {
  * large, which at this width still lands inside the screen: the visitor is
  * 30% of the screen wide and sits 5% in, so the ticket ends around 72% across.
  */
+/*
+ * Held at arm's length, clear of the fingers.
+ *
+ * At 74% it sat over the paw itself; starting at 88% leaves the hand visible
+ * and reads as the ticket being offered rather than gripped. Half again as
+ * large — a couple of sizes bigger than before — and nudged a touch further
+ * right so the whole paw shows behind it, which at this width still lands
+ * inside the screen: the visitor is 30% of the screen wide and sits 5% in.
+ */
 .visitor-ticket {
   position: absolute;
-  left: 88%;
-  top: 18%;
-  width: 138%;
+  left: 90%;
+  top: 19%;
+  width: 165%;
   transform-origin: 4% 52%;
   animation: ticket-wave 3.6s ease-in-out infinite;
   /* The container is inert so it cannot swallow taps; this one child is not. */
@@ -1017,9 +1033,9 @@ code.token {
  */
 .wt-no-photos {
   position: absolute;
-  top: calc(-1 * clamp(5px, 1.8cqi, 13px));
-  right: calc(-1 * clamp(5px, 1.8cqi, 13px));
-  width: clamp(16px, 5.5cqi, 30px);
+  top: calc(-1 * clamp(6px, 2.2cqi, 15px));
+  right: calc(-1 * clamp(6px, 2.2cqi, 15px));
+  width: clamp(14px, 4.6cqi, 25px);
   height: auto;
   pointer-events: none;
   z-index: 3;
@@ -1056,25 +1072,17 @@ code.token {
 .wt-rope {
   flex: none;
   /*
-   * Standing on the bottom edge, as it does in the mockup.
-   *
-   * Two things were wrong before. It floated, with a band of wall beneath it,
-   * because the column's bottom padding sat under it — a negative margin
-   * cancels that so the rope reaches the edge. And it was sized to show all of
-   * itself, which made it a small object; the mockup runs it 64% of the screen
-   * wide and lets the posts leave the frame at the bottom, which is what posts
-   * standing on a floor do.
-   *
-   * `cover` from the top gives exactly that, provided the box is the right
-   * width. It is the box being too wide that magnified the drawing the first
-   * time, not the cropping.
+   * About 1.3x the previous width, and kept on the screen rather than driven
+   * off the bottom edge. `cover` from the top shows the swag and the tops of
+   * the posts, with only the feet cropped — which is what posts standing on a
+   * floor do — while the element itself never leaves the frame.
    */
-  width: min(68%, 440px);
-  height: clamp(68px, 22cqh, 200px);
+  width: min(84%, 540px);
+  height: clamp(64px, 19cqh, 172px);
   object-fit: cover;
   object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);
-  margin-bottom: calc(-1 * (clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)));
+  margin-bottom: clamp(2px, 1cqh, 8px);
   pointer-events: none;
   user-select: none;
 }

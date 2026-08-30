@@ -9,7 +9,6 @@ import { createBackdrop } from '@/hall/backdrop'
 import { CameraRig } from '@/hall/cameras'
 import { createCharacter } from '@/hall/character'
 import { CONFIG } from '@/hall/config'
-import { nearestSlot } from '@/hall/layout'
 import { Placards, type Viewport } from '@/hall/overlay'
 import { HallScene } from '@/hall/scene'
 import { Traversal } from '@/hall/traversal'
@@ -249,17 +248,28 @@ export default function Museum({ initialSlice }: Props) {
         if (hall.needsMore(traversal.cameraX)) void fetchMore()
 
         // Count a display as viewed once, when the visitor is actually at it.
-        const nearest = nearestSlot(hall.layout, traversal.cameraX)
-        if (!seenDisplays.has(nearest)) {
-          const mounted = hall.getMounted().find((m) => m.index === nearest)
-          if (mounted && Math.abs(mounted.centerX - traversal.cameraX) < 1.2) {
-            seenDisplays.add(nearest)
-            void fetch('/api/events', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ kind: 'display_view', artistId: mounted.display.artistId }),
-            }).catch(() => {})
+        // The hall is laid out per piece now, so the nearest display is found by
+        // its span midpoint rather than by a slot index.
+        const mountedList = hall.getMounted()
+        let nearestMounted = null
+        let nearestDist = Infinity
+        for (const m of mountedList) {
+          const d = Math.abs(m.centerX - traversal.cameraX)
+          if (d < nearestDist) {
+            nearestDist = d
+            nearestMounted = m
           }
+        }
+        if (nearestMounted && !seenDisplays.has(nearestMounted.index) && nearestDist < 3.0) {
+          seenDisplays.add(nearestMounted.index)
+          void fetch('/api/events', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              kind: 'display_view',
+              artistId: nearestMounted.display.artistId,
+            }),
+          }).catch(() => {})
         }
 
         renderer.render(scene, rig.camera)

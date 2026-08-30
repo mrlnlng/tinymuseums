@@ -37,10 +37,23 @@ interface FrameManifest {
     /** [x, y, w, h] normalised: where artwork sits inside the frame. */
     window: [number, number, number, number]
   }
+  /** The same frame turned a quarter-turn, for work wider than it is tall. */
+  frameLandscape: {
+    size: [number, number]
+    window: [number, number, number, number]
+  }
+}
+
+interface FrameSpec {
+  buffer: Buffer
+  window: [number, number, number, number]
+  /** Frame width / height, so the frame is rendered without distorting it. */
+  aspect: number
 }
 
 let manifestCache: FrameManifest | null = null
 let frameCache: Buffer | null = null
+let landscapeFrameCache: Buffer | null = null
 
 async function loadFrameAssets(): Promise<{ manifest: FrameManifest; frame: Buffer }> {
   if (!manifestCache) {
@@ -50,6 +63,99 @@ async function loadFrameAssets(): Promise<{ manifest: FrameManifest; frame: Buff
   }
   if (!frameCache) frameCache = await readFile(join(ASSETS_DIR, 'frame.png'))
   return { manifest: manifestCache, frame: frameCache }
+}
+
+/** The portrait and landscape frame drawings together, for a single piece. */
+async function loadPieceFrames(): Promise<{ portrait: FrameSpec; landscape: FrameSpec }> {
+  const { manifest, frame } = await loadFrameAssets()
+  if (!landscapeFrameCache) {
+    landscapeFrameCache = await readFile(join(ASSETS_DIR, 'frame-landscape.png'))
+  }
+  const [fw, fh] = manifest.frame.size
+  const [lw, lh] = manifest.frameLandscape.size
+  return {
+    portrait: { buffer: frame, window: manifest.frame.window, aspect: fw / fh },
+    landscape: {
+      buffer: landscapeFrameCache,
+      window: manifest.frameLandscape.window,
+      aspect: lw / lh,
+    },
+  }
+}
+
+export interface SinglePieceInput {
+  /** The artwork's own width/height, to choose the frame orientation. */
+  aspect: number
+  derivatives: Derivative[]
+  storage: Storage
+}
+
+export interface SinglePieceOutput {
+  buffer: Buffer
+  width: number
+  height: number
+  /** The framed painting's size in world units, so the client can size it. */
+  canvas: { w: number; h: number }
+}
+
+/**
+ * Renders one painting into its own framed image, using whatever orientation
+ * the work needs — a landscape work gets the landscape frame instead of being
+ * letterboxed into a portrait one. The canvas is sized to the frame's own
+ * proportion at a target dimension, so a landscape painting is drawn wide and a
+ * portrait one tall rather than both being forced into one shape.
+ */
+export async function renderSinglePieceFrame({
+  aspect,
+  derivatives,
+  storage,
+}: SinglePieceInput): Promise<SinglePieceOutput> {
+  const { portrait, landscape } = await loadPieceFrames()
+  const isLandscape = aspect > 1
+  const spec = isLandscape ? landscape : portrait
+  const [winX, winY, winW, winH] = spec.window
+
+  // Target the frame so its long edge is a consistent on-screen size. A
+  // portrait work is sized by height; a landscape one by width, so neither is
+  // forced into the other's shape and they both read about the same size.
+  const TARGET = 2.9
+  const canvasW = isLandscape ? TARGET : TARGET * spec.aspect
+  const canvasH = isLandscape ? TARGET / spec.aspect : TARGET
+  const width = Math.max(1, Math.round(canvasW * PX_PER_UNIT))
+  const height = Math.max(1, Math.round(canvasH * PX_PER_UNIT))
+
+  const windowLeft = Math.round(winX * width)
+  const windowTop = Math.round(winY * height)
+  const windowW = Math.max(1, Math.round(winW * width))
+  const windowH = Math.max(1, Math.round(winH * height))
+
+  const overlays: sharp.OverlayOptions[] = []
+
+  const source = pickDerivative(derivatives, windowW, 'jpg')
+  if (source) {
+    const artwork = await storage.get(source.key)
+    const fitted = await sharp(artwork)
+      .resize(windowW, windowH, { fit: 'cover', position: 'centre' })
+      .png()
+      .toBuffer()
+    overlays.push({ input: fitted, left: windowLeft, top: windowTop })
+  }
+
+  // The frame goes on last: its ornament overlaps the artwork's edges.
+  const framed = await sharp(spec.buffer)
+    .resize(width, height, { fit: 'fill' })
+    .png()
+    .toBuffer()
+  overlays.push({ input: framed, left: 0, top: 0 })
+
+  const buffer = await sharp({
+    create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite(overlays)
+    .png({ compressionLevel: 9 })
+    .toBuffer()
+
+  return { buffer, width, height, canvas: { w: canvasW, h: canvasH } }
 }
 
 export interface CollageInput {

@@ -127,5 +127,18 @@
     "seconds": 150.0,
     "startedAt": 0.0,
     "megabytes": 2.3
+  },
+  "frameLandscape": {
+    "size": [
+      2091,
+      1480
+    ],
+    "window": [
+      0.1856,
+      0.1993,
+      0.659,
+      0.5899
+    ],
+    "windowAspect": 1.4128
   }
 }

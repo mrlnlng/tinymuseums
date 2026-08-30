@@ -194,3 +194,8 @@ export function derivativeKey(
 export function collageKey(artistId: string, version: number): string {
   return `artists/${artistId}/display/v${version}.png`
 }
+
+/** The key for a single hanging piece's framed image. */
+export function pieceFrameKey(pieceId: string, version: number): string {
+  return `pieces/${pieceId}/frame/v${version}.png`
+}

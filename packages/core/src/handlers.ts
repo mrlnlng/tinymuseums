@@ -1,10 +1,10 @@
 import { query, queryOne } from './db.ts'
-import { renderDisplayCollage } from './collage.ts'
+import { renderDisplayCollage, renderSinglePieceFrame } from './collage.ts'
 import { sealEpoch } from './epoch.ts'
 import { ImageRejected, generateDerivatives } from './images.ts'
 import { enqueue, type Job } from './jobs.ts'
 import { getMailer, newWorkNotice } from './mail.ts'
-import { collageKey, getStorage } from './storage.ts'
+import { collageKey, pieceFrameKey, getStorage } from './storage.ts'
 import { confirmedFollowers } from './audience.ts'
 import type { Derivative, LayoutName, Placement } from './types.ts'
 
@@ -56,8 +56,13 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
   )
   if (!display || display.composition.length === 0) return
 
-  const rows = await query<{ piece_id: string; derivatives: Derivative[] | null }>(
-    `select p.id as piece_id, a.derivatives
+  const rows = await query<{
+    piece_id: string
+    width: number
+    height: number
+    derivatives: Derivative[] | null
+  }>(
+    `select p.id as piece_id, a.width, a.height, a.derivatives
        from pieces p
        join assets a on a.id = p.asset_id
       where p.id = any($1::uuid[]) and a.status = 'ready'`,
@@ -68,6 +73,31 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
   for (const row of rows) derivativesByPiece.set(row.piece_id, row.derivatives ?? [])
 
   const storage = getStorage()
+
+  // Each hanging work gets its own framed image for the hall, sized to the
+  // work's own orientation so a landscape painting gets a landscape frame.
+  const version = display.version
+  for (const row of rows) {
+    const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
+    const output = await renderSinglePieceFrame({
+      aspect,
+      derivatives: derivativesByPiece.get(row.piece_id) ?? [],
+      storage,
+    })
+    const key = pieceFrameKey(row.piece_id, version)
+    await storage.put(key, output.buffer, 'image/png')
+    await query(
+      `update pieces
+          set flattened_key = $2,
+              flattened_width = $3,
+              flattened_height = $4,
+              flattened_version = $5
+        where id = $1`,
+      [row.piece_id, key, output.width, output.height, version],
+    )
+  }
+
+  // The collage is still produced for the artist page and the studio preview.
   const output = await renderDisplayCollage({
     layout: display.layout,
     composition: display.composition,

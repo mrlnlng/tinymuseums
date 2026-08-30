@@ -10,7 +10,8 @@ export interface Viewport {
 }
 
 /**
- * The artist's name, sitting on the plaque beside their display.
+ * One placard per painting: the painting's title above the plane, and the
+ * artist's statement on the plaque beneath it.
  *
  * The plaque itself is a sprite in the scene; the text on it is real DOM —
  * selectable, translatable, and the surface a screen reader and a crawler
@@ -22,8 +23,8 @@ export interface Viewport {
  * geometry they belong to.
  */
 export class Placards {
-  private nodes = new Map<number, HTMLElement>()
-  private titles = new Map<number, HTMLElement>()
+  private nodes = new Map<string, HTMLElement>()
+  private titles = new Map<string, HTMLElement>()
   private projected = new THREE.Vector3()
 
   constructor(private container: HTMLElement) {}
@@ -33,17 +34,18 @@ export class Placards {
     camera: THREE.OrthographicCamera,
     viewport: Viewport,
   ): void {
-    const seen = new Set<number>()
+    const seen = new Set<string>()
     const viewWidth = camera.right - camera.left
     // Keep the label locked to the plaque's painted width at any window size.
     const plaquePx = (CONFIG.plaque.width / viewWidth) * viewport.width
     // Sized from its own width, so the plaque can grow without dragging the
-    // artist's name along with it.
+    // painting's title along with it.
     const titlePx = (CONFIG.plaque.titleWidth / viewWidth) * viewport.width
 
     for (const m of mounted) {
-      seen.add(m.index)
-      let node = this.nodes.get(m.index)
+      const key = `${m.index}`
+      seen.add(key)
+      let node = this.nodes.get(key)
 
       if (!node) {
         node = document.createElement('div')
@@ -52,16 +54,16 @@ export class Placards {
         node.querySelector('.placard-name')!.textContent = m.display.statement
         node.dataset.slug = m.display.slug
         this.container.appendChild(node)
-        this.nodes.set(m.index, node)
+        this.nodes.set(key, node)
       }
 
-      let title = this.titles.get(m.index)
+      let title = this.titles.get(key)
       if (!title) {
         title = document.createElement('div')
         title.className = 'placard-title script'
-        title.textContent = m.display.artistName
+        title.textContent = m.display.title
         this.container.appendChild(title)
-        this.titles.set(m.index, title)
+        this.titles.set(key, title)
       }
 
       /*
@@ -73,15 +75,15 @@ export class Placards {
        */
       this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.061))
 
-      // Its own width: wide enough for a name, and unaffected by the plaque.
+      // Its own width: wide enough for a title, and unaffected by the plaque.
       this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(11, titlePx * 0.121))
     }
 
     for (const map of [this.nodes, this.titles]) {
-      for (const [index, node] of map) {
-        if (seen.has(index)) continue
-        node.remove()
-        map.delete(index)
+      for (const [key, el] of map) {
+        if (seen.has(key)) continue
+        el.remove()
+        map.delete(key)
       }
     }
   }

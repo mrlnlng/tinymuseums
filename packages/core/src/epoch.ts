@@ -1,9 +1,9 @@
 import { env } from './env.ts'
 import { query, queryOne, transaction } from './db.ts'
-import { LAYOUTS } from './layouts.ts'
+import { PX_PER_UNIT } from './collage.ts'
 import { mulberry32 } from './random.ts'
 import { getStorage } from './storage.ts'
-import type { DisplayDto, HallSliceDto, LayoutName, RegionMap } from './types.ts'
+import type { HallPieceDto, HallSliceDto } from './types.ts'
 
 /**
  * The museum's ordering.
@@ -33,13 +33,18 @@ export interface EpochRow {
  * the previous epoch keep resolving rather than hitting a dead end.
  */
 export async function sealEpoch(): Promise<EpochRow | null> {
+  // The hall hangs individual works now, so a slot is a piece: every hanging
+  // work of a live artist is its own wall, and the ordering permutes pieces
+  // (not artist walls) the way it used to permute displays.
   const candidates = await query<{ id: string }>(
-    `select a.id
-       from artists a
+    `select p.id
+       from pieces p
+       join artists  a on a.id = p.artist_id
        join displays d on d.artist_id = a.id
       where a.status = 'live'
-        and d.flattened_key is not null
-      order by a.id`,
+        and p.flattened_key is not null
+        and p.id = any(d.hung_piece_ids)
+      order by p.id`,
   )
 
   if (candidates.length === 0) return null
@@ -48,7 +53,7 @@ export async function sealEpoch(): Promise<EpochRow | null> {
   const rng = mulberry32(seed)
   const order = candidates.map((row) => row.id)
 
-  // Fisher-Yates. Every artist rotates through prime entrance positions over
+  // Fisher-Yates. Every piece rotates through prime entrance positions over
   // time instead of position being decided once, forever, by insertion order.
   for (let i = order.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))
@@ -69,9 +74,9 @@ export async function sealEpoch(): Promise<EpochRow | null> {
     // One statement rather than N inserts: unnest turns the ordered array into
     // rows with their index already attached.
     await client.query(
-      `insert into epoch_slots (epoch_id, index, artist_id)
-       select $1, ordinality - 1, artist_id
-         from unnest($2::uuid[]) with ordinality as t(artist_id, ordinality)`,
+      `insert into epoch_slots (epoch_id, index, piece_id)
+       select $1, ordinality - 1, piece_id
+         from unnest($2::uuid[]) with ordinality as t(piece_id, ordinality)`,
       [epoch.id, order],
     )
 
@@ -109,11 +114,11 @@ interface SliceRow {
   slug: string
   display_name: string
   statement: string
-  layout: LayoutName
+  piece_id: string
+  title: string
   flattened_key: string
   flattened_width: number
   flattened_height: number
-  region_map: RegionMap
 }
 
 export async function getHallSlice(
@@ -129,47 +134,50 @@ export async function getHallSlice(
             a.slug,
             a.display_name,
             a.statement,
-            d.layout,
-            d.flattened_key,
-            d.flattened_width,
-            d.flattened_height,
-            d.region_map
+            p.id            as piece_id,
+            p.title,
+            p.flattened_key,
+            p.flattened_width,
+            p.flattened_height
        from epoch_slots s
-       join artists  a on a.id = s.artist_id
-       join displays d on d.artist_id = a.id
+       join pieces   p on p.id = s.piece_id
+       join artists  a on a.id = p.artist_id
       where s.epoch_id = $1
         and s.index >= $2
         and a.status = 'live'
-        and d.flattened_key is not null
+        and p.flattened_key is not null
         -- Read-time takedown. Outside the epoch snapshot on purpose.
         and not exists (
           select 1 from suppressions sup
-           where sup.subject_type = 'artist' and sup.subject_id = a.id
+           where (sup.subject_type = 'artist' and sup.subject_id = a.id)
+              or (sup.subject_type = 'piece'  and sup.subject_id = p.id)
         )
       order by s.index
       limit $3`,
     [epoch.id, fromIndex, limit],
   )
 
-  // The slot count is the epoch's own display_count — one per sealed display —
+  // The slot count is the epoch's own display_count — one per sealed piece —
   // so the pagination end is already known without a second round trip.
   const totalSlots = epoch.display_count
 
   const slots = rows.map((row) => {
-    const spec = LAYOUTS[row.layout]
-    const display: DisplayDto = {
+    const display: HallPieceDto = {
+      pieceId: row.piece_id,
       artistId: row.artist_id,
       slug: row.slug,
       artistName: row.display_name,
+      title: row.title,
       statement: row.statement,
-      layout: row.layout,
-      canvas: spec.canvas,
+      canvas: {
+        w: row.flattened_width / PX_PER_UNIT,
+        h: row.flattened_height / PX_PER_UNIT,
+      },
       image: {
         url: storage.urlFor(row.flattened_key),
         width: row.flattened_width,
         height: row.flattened_height,
       },
-      regionMap: row.region_map ?? [],
     }
     return { index: row.index, display }
   })

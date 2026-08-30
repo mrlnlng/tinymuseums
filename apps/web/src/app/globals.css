@@ -378,7 +378,6 @@ code.token {
 /* Fixed-size rows: they take what they need and never get squeezed. */
 .wt-title,
 .wt-plaque-row,
-.wt-meta,
 .wt-actions,
 .wt-rope { flex: none; }
 
@@ -413,7 +412,7 @@ code.token {
  */
 .wt-title {
   margin: 0;
-  font-size: clamp(16px, 4.1cqh, 28px);
+  font-size: clamp(15px, 3.6cqh, 26px);
   line-height: 1.15;
   height: 2.3em;
   display: flex;
@@ -472,11 +471,12 @@ code.token {
    * on the stage and so are not part of `100cqi`.
    */
   /*
-   * Measured off the mockup, where the frame runs about 87% of the screen wide
-   * and a little over 40% of it tall. Width usually wins for a landscape work,
-   * height for a portrait one.
+   * Measured off both mockups: a portrait work runs 54% of the screen tall and
+   * 74% wide, a landscape one 83% wide. The cap is the portrait figure, since
+   * that is the shape it binds on — a landscape frame reaches the width limit
+   * well before it, and stops there.
    */
-  height: min(43cqh, calc(100cqi / var(--frame-aspect)));
+  height: min(58cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -505,7 +505,7 @@ code.token {
 .wt-plaque-row {
   flex: none;
   width: 100%;
-  height: clamp(58px, 13cqh, 122px);
+  height: clamp(50px, 10.5cqh, 100px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,6 +546,17 @@ code.token {
   animation: arrow-float 2.8s ease-in-out infinite;
 }
 
+/*
+ * The left arrow is the same drawing mirrored.
+ *
+ * The flip has to live in the keyframes, not in a rule of its own: the float
+ * animates `transform`, and an animated transform replaces a static one
+ * outright. Setting `scaleX(-1)` separately is silently discarded — which is
+ * exactly how both arrows ended up pointing the same way.
+ *
+ * With the flip applied first, a positive translateX carries the arrow to the
+ * left on screen, so both drift outward from the same keyframe values.
+ */
 .wt-nav.prev svg { animation-name: arrow-float-left; }
 
 @keyframes arrow-float {
@@ -554,8 +565,8 @@ code.token {
 }
 
 @keyframes arrow-float-left {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(-14%); }
+  0%, 100% { transform: scaleX(-1) translateX(0); }
+  50%      { transform: scaleX(-1) translateX(14%); }
 }
 
 .wt-nav:hover { filter: brightness(1.04); }
@@ -563,6 +574,8 @@ code.token {
 
 @media (prefers-reduced-motion: reduce) {
   .wt-nav svg { animation: none; }
+  /* Still mirrored — the flip was only in the keyframes. */
+  .wt-nav.prev svg { transform: scaleX(-1); }
 }
 
 /*
@@ -602,24 +615,6 @@ code.token {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/*
- * One line, always. Medium, year and dimensions differ per work, and a line
- * that occasionally wrapped to two shifted everything below it as you stepped
- * through the collection.
- */
-.wt-meta {
-  margin: 0;
-  font-size: clamp(9px, 1.7cqh, 12px);
-  line-height: 1.3;
-  height: 1.3em;
-  color: var(--ink-soft);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 
@@ -984,7 +979,7 @@ code.token {
    * its posts and lets the rest run off the bottom edge — which is what the
    * mockup shows.
    */
-  height: clamp(60px, 19cqh, 170px);
+  height: clamp(44px, 10cqh, 96px);
   object-fit: cover;
   object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);

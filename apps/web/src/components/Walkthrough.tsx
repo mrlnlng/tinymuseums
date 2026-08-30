@@ -242,13 +242,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             </button>
           </div>
 
-          <p className="wt-meta">
-            {piece.medium}
-            {piece.year ? `, ${piece.year}` : ''}
-            {piece.dimensions ? ` · ${piece.dimensions}` : ''}
-            {pieces ? ` · ${index + 1} of ${pieces.length}` : ''}
-          </p>
-
           <div className="wt-actions">
             {/*
               One shop for the whole catalogue for now. When each piece has its

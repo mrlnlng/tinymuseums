@@ -17,21 +17,35 @@ applications:
             # The backend deploys the scheduled worker (amplify/backend.ts).
             # It runs before the frontend, so it does its own install.
             - (cd ../.. && npm ci)
-            # amplify/ is not a workspace member and installs on its own. It
-            # must be `npm install`, not `npm ci`: @aws-amplify/data-construct
-            # ships bundled dependencies that npm cannot write into a lockfile
-            # it will later accept. See amplify/README.md.
-            - (cd ../../amplify && npm install --no-audit --no-fund)
-            # sharp ships a native binary and is supplied to the function by a
-            # layer, not the bundle. Built for the Lambda platform explicitly,
-            # so this does not silently depend on the build host matching.
-            - (cd ../.. && npm run layer:sharp)
-            # Through `npm run`, not the binary directly: ampx reads
-            # npm_config_user_agent and refuses to start without it, and only
-            # npm sets that. The script runs from the repo root because ampx
-            # resolves amplify/backend.ts relative to the cwd, and CDK bundles
-            # by shelling out to esbuild from it as well.
-            - (cd ../.. && npm run deploy:backend -- --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID")
+            # The backend deploy needs a service role with
+            # AmplifyBackendDeployFullAccess and a bootstrapped region. Until
+            # both are in place it fails, and a failed backend phase blocks the
+            # frontend with it — so there is an explicit escape hatch. Set the
+            # branch variable SKIP_BACKEND_DEPLOY=true to ship the web app on
+            # its own; unset it to resume deploying the worker.
+            - |
+              (
+                if [ "$SKIP_BACKEND_DEPLOY" = "true" ]; then
+                  echo "SKIP_BACKEND_DEPLOY=true - not deploying amplify/backend.ts."
+                  exit 0
+                fi
+                # amplify/ is not a workspace member and installs on its own.
+                # It must be `npm install`, not `npm ci`:
+                # @aws-amplify/data-construct ships bundled dependencies that
+                # npm cannot write into a lockfile it will later accept.
+                (cd ../../amplify && npm install --no-audit --no-fund) || exit 1
+                # sharp ships a native binary and is supplied to the function
+                # by a layer, not the bundle. Built for the Lambda platform
+                # explicitly, so this does not silently depend on the build
+                # host matching.
+                (cd ../.. && npm run layer:sharp) || exit 1
+                # Through `npm run`, not the binary directly: ampx reads
+                # npm_config_user_agent and refuses to start without it, and
+                # only npm sets that. It runs from the repo root because ampx
+                # resolves amplify/backend.ts relative to the cwd, and CDK
+                # bundles by shelling out to esbuild from it as well.
+                (cd ../.. && npm run deploy:backend -- --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID") || exit 1
+              )
     frontend:
       phases:
         preBuild:

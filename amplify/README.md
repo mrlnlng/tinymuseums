@@ -48,3 +48,32 @@ refuses to start when it is unset:
 Only npm sets that variable, so `./amplify/node_modules/.bin/ampx ...` fails
 even though the path is correct. The script also has to run from the repo root:
 ampx resolves `amplify/backend.ts` relative to the current directory.
+
+## Prerequisites in AWS
+
+The backend deploy needs two things that live in the account, not the repo.
+Without them `ampx pipeline-deploy` fails *after* a successful synth:
+
+    [BootstrapDetectionError] Unable to detect CDK bootstrap stack due to
+    permission issues.
+    ... is not authorized to perform: ssm:GetParameter on resource:
+    arn:aws:ssm:us-east-2:...:parameter/cdk-bootstrap/hnb659fds/version
+
+1. **A bootstrapped region.** CDK keeps its bootstrap version in SSM and reads
+   it before doing anything. Once per account/region:
+
+       npx cdk bootstrap aws://<account-id>/<region>
+
+2. **A service role on the Amplify app.** The role in the error above,
+   `AemiliaControlPlaneLambda-CodeBuildRole-...`, is Amplify's internal
+   default, which means no service role is attached to the app. Create a role
+   Amplify can assume, give it the managed policy
+   `AmplifyBackendDeployFullAccess`, and set it in the console under App
+   settings.
+
+## Shipping the frontend without the backend
+
+A failed backend phase blocks the frontend with it. Set the branch variable
+`SKIP_BACKEND_DEPLOY=true` to deploy the web app on its own, and remove it once
+the two prerequisites above are in place.
+

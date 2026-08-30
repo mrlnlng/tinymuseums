@@ -14,16 +14,13 @@ to publish. Substitute them from the console when running the commands.
 
 ## 1. Where this stands
 
-The site builds, deploys, and runs server-side rendering. Every route that does
-**not** touch the database works. Every route that **does** returns 500. The
-scheduled worker, which runs in the same account against the same database,
-connects without trouble.
+The site builds, deploys, and runs server-side rendering end to end, database
+routes included. The scheduled worker runs against the same database in the
+same account.
 
-The cause is now **confirmed**: the SSR runtime is not receiving its
-environment variables. `/api/health` reports `DATABASE_URL: false` (and every
-other branch variable `false`) with `environmentVariableCount: 43` — the
-standard Lambda set and none of the branch variables. The fix is in
-`amplify.yml`; see §4.
+The one blocker was Amplify not passing branch environment variables into the
+Next.js SSR compute. Fixed by baking them into `.env.production` at build time;
+see §4.
 
 ## 2. Verified working
 
@@ -39,9 +36,12 @@ standard Lambda set and none of the branch variables. The fix is in
 | TLS verification | ✅ | RDS CA bundle embedded; verified against all `sslmode` values |
 | Gen 2 worker | ✅ | Deployed, invoking every minute, no errors |
 | SSR executing | ✅ | Non-database routes render correctly |
-| **Database routes** | ❌ | **500 — the open problem** |
+| **Database routes** | ✅ | Fixed — env vars baked into `.env.production` at build time |
 
 ## 3. Evidence
+
+_Historical — the pre-fix probing that localised the failure to the web tier's
+database access. Resolved in §4._
 
 External probing of `https://main.d1wkk955zsue1z.amplifyapp.com`:
 
@@ -60,49 +60,31 @@ Meanwhile the worker — same account, same Lambda service, same connection
 string, same `db.ts` — logs clean invocations. So Lambda-to-RDS connectivity,
 TLS, credentials and the security group are all proven good.
 
-## 4. Confirmed, and fixed in `amplify.yml`
+## 4. Resolved — env vars baked into `.env.production`
 
-`/api/health` reports:
-
-    {"nodeEnv":"production","cwd":"/tmp/app","environmentVariableCount":43,
-     "present":{"DATABASE_URL":false,"SESSION_SECRET":false,"MEDIA_BASE_URL":false,
-                "PUBLIC_BASE_URL":false,"STORAGE_DRIVER":false,"S3_BUCKET":false,
-                "AMPLIFY_MONOREPO_APP_ROOT":false},
-     "database":{"reachable":false,"name":"Error","code":null,
-                 "message":"Missing required environment variable DATABASE_URL. It has no production default, deliberately."}}
-
-So the branch variables **are** set — the worker connects, which proves they
-exist at build time — but Amplify does not pass them into the SSR compute. This
-is the documented behaviour: a Next.js server component does not receive the
-build's environment variables at runtime, deliberately, so secrets are not
-exposed to it. See
+Amplify does not pass branch environment variables into the Next.js SSR compute
+— a server component does not receive the build's variables at runtime,
+deliberately, so secrets are not exposed to it. See
 [AWS: Making environment variables accessible to server-side runtimes](https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html).
 
-The fix is now in `amplify.yml`: the frontend build bakes the branch variables
-into `apps/web/.env.production` before `next build`, and Next.js loads that file
-into the SSR process at startup.
+The fix in `amplify.yml` bakes the branch variables into
+`apps/web/.env.production` before `next build`, and Next.js loads that file into
+the SSR process at startup. Confirmed working: `/api/health` reported every
+`present.*` as `true` and `database.reachable` as `true`, and `/` and
+`/api/hall` now serve.
 
-After the next deploy, verify:
-
-    curl -s https://tinymuseums.com/api/health | python3 -m json.tool
-
-Every `present.*` should be `true` and `database.reachable` should be `true`;
-then `/` and `/api/hall` stop returning 500.
-
-**Delete `apps/web/src/app/api/health/route.ts` once this is confirmed.** It is
-unauthenticated by design: a token would have to arrive as an environment
-variable, which is the thing in doubt.
+The temporary `/api/health` route used to diagnose this has been removed.
 
 **Caveat worth naming.** Baking `DATABASE_URL` into `.env.production` puts a
 credential into the deployment artifact, which the AWS docs warn against. The
 longer-term fix is the SSR compute IAM role plus secret retrieval at runtime
-(see the "Using IAM roles" note in the doc above); this unblocks the site now.
+(see the "Using IAM roles" note in the doc above).
 
 Also still worth enabling: Amplify console → Hosting → Monitoring → CloudWatch
 logs for SSR. The log group `/aws/amplify/d1wkk955zsue1z` does not currently
 exist, which is why no server exception has ever been readable.
 
-## 5. Remaining work after that
+## 5. Remaining work
 
 1. **Object storage.** Create the S3 bucket and CloudFront distribution. Set
    `STORAGE_DRIVER=s3`, `S3_BUCKET`, and point `MEDIA_BASE_URL` at the

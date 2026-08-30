@@ -112,8 +112,11 @@ const worker = new NodejsFunction(stack, 'Worker', {
   handler: 'handler',
   runtime: Runtime.NODEJS_20_X,
   architecture: Architecture.X86_64,
-  // The handler's own budget is 50s; this leaves room to return cleanly.
-  timeout: Duration.seconds(60),
+  // The handler's own budget is 105s; this leaves room to return cleanly.
+  // Compositing a display with several works (each with its own frame) can
+  // take over a minute on a cold start with S3 latency, so this is deliberately
+  // generous.
+  timeout: Duration.seconds(120),
   // Compositing a full display collage is the memory-hungry step. Lambda
   // scales CPU with memory, so this buys speed as much as headroom.
   memorySize: 2048,

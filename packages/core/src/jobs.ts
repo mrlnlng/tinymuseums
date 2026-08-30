@@ -95,8 +95,14 @@ export async function hasPendingJob(kind: JobKind): Promise<boolean> {
   return rows.length > 0
 }
 
-/** Recovers jobs whose worker died mid-run. */
-export async function requeueStale(olderThanMinutes = 10): Promise<number> {
+/**
+ * Recovers jobs whose worker died mid-run.
+ *
+ * The threshold must comfortably exceed the function's timeout: an invocation
+ * killed mid-job leaves the claim `running` and locked for as long as the
+ * timeout, and recovering it any sooner risks double-processing a live job.
+ */
+export async function requeueStale(olderThanMinutes = 3): Promise<number> {
   const rows = await query<{ id: number }>(
     `update jobs
         set status = 'pending', locked_at = null

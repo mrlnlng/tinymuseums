@@ -21,7 +21,7 @@ import { runJob, scheduleNextSeal } from '@tiny/core/worker'
  */
 
 /** Leave headroom below the function's configured timeout to finish cleanly. */
-const TIME_BUDGET_MS = 50_000
+const TIME_BUDGET_MS = 105_000
 
 export interface DrainResult {
   processed: number

@@ -152,7 +152,7 @@ export async function renderSinglePieceFrame({
     create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(overlays)
-    .png({ compressionLevel: 9 })
+    .png({ compressionLevel: 6 })
     .toBuffer()
 
   return { buffer, width, height, canvas: { w: canvasW, h: canvasH } }
@@ -241,7 +241,7 @@ export async function renderDisplayCollage({
     },
   })
     .composite(tiles)
-    .png({ compressionLevel: 9 })
+    .png({ compressionLevel: 6 })
     .toBuffer()
 
   return {

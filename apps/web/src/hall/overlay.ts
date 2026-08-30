@@ -71,7 +71,7 @@ export class Placards {
        * to nine lines on a label clamped to two — most of the sentence was cut
        * off mid-word. At this size the longest of them takes three.
        */
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.068))
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.061))
 
       // Its own width: wide enough for a name, and unaffected by the plaque.
       this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(11, titlePx * 0.121))

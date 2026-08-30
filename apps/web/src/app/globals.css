@@ -329,9 +329,10 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
-  /* The museum face, with Sniglet behind it for the characters it lacks —
-     this carries the artist's own words, which may hold any of them. */
-  font-family: var(--font-ui);
+  /* The museum face, as everywhere else, with Sniglet behind it for the few
+     characters it lacks — a hyphen or a curly apostrophe in an artist's own
+     words falls through rather than vanishing. */
+  font-family: var(--font-button);
   text-align: center;
   line-height: 1.25;
   color: var(--plaque-ink);
@@ -339,11 +340,12 @@ code.token {
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
-  /* Three lines, which is what the longest seeded statement needs; past that
-     it ellipses rather than spilling off the brass and onto the wall. */
+  /* Four lines. The museum face sets lowercase as small capitals, which are
+     wider than Sniglet's lowercase, so the same sentence needs another line.
+     Past four it ellipses rather than spilling off the brass onto the wall. */
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

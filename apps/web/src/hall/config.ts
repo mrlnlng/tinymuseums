@@ -64,7 +64,22 @@ export const CONFIG = {
     /* Widened: at 0.95 it read as a token beside a wall several units across. */
     width: 1.6,
     gap: 0.09,
-    z: 0.4,
+    /*
+     * In front of the rope again.
+     *
+     * The label's text is not part of the scene — it is DOM in a layer above
+     * the canvas, which is what makes it selectable and readable by a screen
+     * reader. That layer is always in front, so the text cannot be put behind
+     * the rope no matter where the plaque sprite sits. With the plaque behind,
+     * the rope crossed it while the words stayed on top, and the sentence read
+     * across a pink swag.
+     *
+     * There is no height that avoids this either: the art ends at 1.36, the
+     * rope reaches 1.105, and the plaque is 0.79 tall — it does not fit in the
+     * quarter-unit between them. So the plaque goes in front and the rope
+     * passes behind it, which puts the words back on brass.
+     */
+    z: 0.6,
     /*
      * The artist's name above the wall is sized from its own width, not from
      * the plaque's. They were tied together, so making the plaque bigger made

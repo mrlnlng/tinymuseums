@@ -407,23 +407,29 @@ code.token {
  * `flex: 1 1 0` with `min-height: 0` is what actually claims that space —
  * `min-height: 0` alone (the previous state) only permits shrinking.
  */
+/*
+ * The stage takes the size of the frame inside it, rather than absorbing the
+ * column's spare height.
+ *
+ * It used to be `flex: 1 1 0` and its own size container, with the frame
+ * measured in `cqh` against it. That works only while the stage actually
+ * receives the free space — and an `auto` margin further down the column takes
+ * every spare pixel *before* flex-grow is applied, which left the stage at its
+ * zero basis and collapsed the artwork to nothing.
+ *
+ * Removing `container-type` here is the fix rather than an aside: the frame's
+ * `cqh` now resolves against the screen, which is a length that exists whatever
+ * the flex layout does, so the artwork can no longer be sized out of existence.
+ */
 .wt-stage {
   position: relative;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-height: 0;
-  /*
-   * Capped so the artwork sits directly under the title instead of floating in
-   * the middle of the screen. Without a cap the stage absorbs every spare
-   * pixel and pushes the plaque to the bottom edge.
-   */
-  max-height: 56cqh;
   width: 100%;
   /* Room for the arrows, so they never sit on top of the frame. */
   padding-inline: 46px;
-  container-type: size;
   display: grid;
-  /* Top-aligned: the frame hangs from the title rather than centring below it. */
-  place-items: start center;
+  place-items: center;
 }
 
 .wt-frame {
@@ -431,10 +437,12 @@ code.token {
   grid-area: 1 / 1;
   aspect-ratio: var(--frame-aspect);
   /*
-   * The largest frame that fits BOTH axes of the stage: as tall as the stage,
-   * unless that would make it wider than the stage, in which case width wins.
+   * The largest frame that fits both axes of the screen: a little under half
+   * its height, unless the width is the tighter constraint, in which case
+   * width wins. The 92px is the arrow gutters either side, which are padding
+   * on the stage and so are not part of `100cqi`.
    */
-  height: min(100cqh, calc(100cqi / var(--frame-aspect)));
+  height: min(42cqh, calc((100cqi - 92px) / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -863,7 +871,16 @@ code.token {
   flex: none;
   width: min(118%, 560px);
   max-width: none;
-  height: auto;
+  /*
+   * A band, not the whole drawing. At full width the rope's own proportions
+   * make it some four hundred pixels tall, which would push everything above
+   * it off the screen. Cropping from the top keeps the rope and the tops of
+   * its posts and lets the rest run off the bottom edge — which is what the
+   * mockup shows.
+   */
+  height: clamp(48px, 12cqh, 110px);
+  object-fit: cover;
+  object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);
   margin-bottom: calc(env(safe-area-inset-bottom) * -1);
   pointer-events: none;

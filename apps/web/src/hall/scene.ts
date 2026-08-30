@@ -208,38 +208,53 @@ export class HallScene {
     group.add(plaque)
 
     /*
-     * The rope spans the wall it stands in front of, but only the top of the
-     * drawing is shown.
+     * The rope, stretched across the wall without stretching its posts.
      *
-     * Matching the wall's width and keeping the drawing's proportions would
-     * make it over three units tall — twice the bunny — which is what made it
-     * tower over the hall when it was tried. So the plane is the width of the
-     * wall and the height a barrier should be, and the texture is cropped to
-     * its top: the swag and the upper posts, with the rest below the floor.
+     * Scaling the whole drawing to the wall's width magnifies it — at a wall's
+     * width the posts come out over twice their drawn size, short and fat,
+     * which is what went wrong when this was tried as one quad.
      *
-     * The texture is cloned because the crop is per-rope; the shared one is
-     * still used everywhere else and must keep its own coordinates.
+     * So it is cut into three vertical slices and rebuilt: the two posts keep
+     * their drawn proportions at either end, and only the swag between them is
+     * stretched to close the distance. The posts sit at 0.075-0.184 and
+     * 0.820-0.940 across the image, so the cuts at 0.24 and 0.78 fall in
+     * empty space on both sides of each.
      */
-    const ropeTexture = this.assets.textures.rope.clone()
-    const naturalHeight = width / this.assets.aspect.rope
-    const shown = Math.min(1, CONFIG.rope.height / naturalHeight)
-    ropeTexture.repeat.set(1, shown)
-    ropeTexture.offset.set(0, 1 - shown)
-    ropeTexture.userData.ownedByDisplay = true
-    ropeTexture.needsUpdate = true
+    const ropeHeight = CONFIG.rope.height
+    // Width the whole drawing would have at that height.
+    const ropeNaturalWidth = ropeHeight * this.assets.aspect.rope
 
-    const ropeMaterial = new THREE.MeshBasicMaterial({
-      map: ropeTexture,
-      transparent: true,
-      opacity: 1,
-    })
-
-    const rope = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, naturalHeight * shown),
-      ropeMaterial,
+    const CUTS = [0, 0.24, 0.78, 1] as const
+    const endWidths = [
+      (CUTS[1] - CUTS[0]) * ropeNaturalWidth,
+      (CUTS[3] - CUTS[2]) * ropeNaturalWidth,
+    ]
+    // The swag takes whatever the posts leave. On a wall too narrow to need
+    // stretching it keeps its own width and the rope simply spans less.
+    const middleWidth = Math.max(
+      (CUTS[2] - CUTS[1]) * ropeNaturalWidth,
+      width - endWidths[0] - endWidths[1],
     )
-    rope.position.set(0, CONFIG.rope.centerY, CONFIG.rope.z)
-    group.add(rope)
+
+    const sliceWidths = [endWidths[0], middleWidth, endWidths[1]]
+    const totalWidth = sliceWidths[0] + sliceWidths[1] + sliceWidths[2]
+
+    let cursorX = -totalWidth / 2
+    for (let i = 0; i < 3; i++) {
+      const sliceTexture = this.assets.textures.rope.clone()
+      sliceTexture.repeat.set(CUTS[i + 1] - CUTS[i], 1)
+      sliceTexture.offset.set(CUTS[i], 0)
+      sliceTexture.userData.ownedByDisplay = true
+      sliceTexture.needsUpdate = true
+
+      const slice = new THREE.Mesh(
+        new THREE.PlaneGeometry(sliceWidths[i], ropeHeight),
+        new THREE.MeshBasicMaterial({ map: sliceTexture, transparent: true, opacity: 1 }),
+      )
+      slice.position.set(cursorX + sliceWidths[i] / 2, CONFIG.rope.centerY, CONFIG.rope.z)
+      group.add(slice)
+      cursorX += sliceWidths[i]
+    }
 
     this.scene.add(group)
     this.mounted.set(slot.index, {

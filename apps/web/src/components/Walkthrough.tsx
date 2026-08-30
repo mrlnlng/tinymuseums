@@ -28,7 +28,7 @@ interface Props {
   onClose: () => void
 }
 
-import { FRAME_RATIO, FRAME_WINDOW } from '@/lib/frame'
+import { frameFor } from '@/lib/frame'
 import { motion, AnimatePresence, type Variants } from 'motion/react'
 
 /**
@@ -98,12 +98,42 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     }).catch(() => {})
   }, [piece, artistId])
 
+  /**
+   * The artwork's own proportions, measured rather than declared.
+   *
+   * PieceDto carries `dimensions` only as free text ("60 x 40cm"), which is
+   * for reading, not parsing. Loading the image and asking it is the one
+   * reliable source — and it is already being fetched for display, so this
+   * costs nothing but a moment's wait for the decoded header.
+   */
+  const [aspect, setAspect] = useState<number | null>(null)
+
+  useEffect(() => {
+    setAspect(null)
+    const url = piece?.imageUrl
+    if (!url) return
+
+    let cancelled = false
+    const probe = new Image()
+    probe.onload = () => {
+      if (!cancelled && probe.naturalHeight > 0) {
+        setAspect(probe.naturalWidth / probe.naturalHeight)
+      }
+    }
+    probe.src = url
+    return () => {
+      cancelled = true
+    }
+  }, [piece?.imageUrl])
+
+  const frame = useMemo(() => frameFor(aspect), [aspect])
+
   const artworkStyle = useMemo(
     () => ({
-      ...FRAME_WINDOW,
+      ...frame.window,
       backgroundImage: piece?.imageUrl ? `url(${piece.imageUrl})` : undefined,
     }),
-    [piece],
+    [piece, frame],
   )
 
   return (
@@ -147,10 +177,10 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 className="wt-frame"
                 // The stylesheet needs the ratio as a number to size the frame
                 // against both axes of the stage; grid placement is in CSS.
-                style={{ '--frame-aspect': FRAME_RATIO } as React.CSSProperties}
+                style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
               >
                 <div className="wt-artwork" style={artworkStyle} />
-                <img className="wt-frame-art" src="/assets/frame.png" alt="" aria-hidden="true" />
+                <img className="wt-frame-art" src={frame.src} alt="" aria-hidden="true" />
                 {/*
                   Inside the frame element so it tracks the artwork's real
                   corner. Anchored to the stage instead, it would drift away

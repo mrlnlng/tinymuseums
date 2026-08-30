@@ -119,6 +119,30 @@ y1 -= frame_box[1]
 fw, fh = frame.size
 
 frame.save(f"{OUT}/frame.png")
+
+# A landscape frame, for artwork that is wider than it is tall.
+#
+# Rotated here rather than in CSS. Turning the frame in the browser means
+# rotating an image inside a box whose aspect no longer matches it, and then
+# doing the same arithmetic to the window rect anyway — all of it repeated on
+# every render. A second file costs a few kilobytes and the geometry comes out
+# of the same measurement as the portrait one.
+#
+# PIL's -90 rotation maps a pixel at (x, y) to (fh - y, x), so the window's
+# axes swap and its top edge is measured from what used to be the right.
+frame_landscape = frame.rotate(-90, expand=True)
+frame_landscape.save(f"{OUT}/frame-landscape.png")
+
+manifest["frameLandscape"] = {
+    "size": list(frame_landscape.size),
+    "window": [
+        round((fh - y1) / fh, 4),
+        round(x0 / fw, 4),
+        round((y1 - y0) / fh, 4),
+        round((x1 - x0) / fw, 4),
+    ],
+}
+
 manifest["frame"] = {
     "size": [fw, fh],
     "window": [

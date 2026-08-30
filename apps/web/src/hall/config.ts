@@ -28,7 +28,16 @@ export const CONFIG = {
 
   plaque: { width: 0.95, centerY: 0.8 },
   rope: { height: 1.33, centerY: 0.44, z: 0.5 },
-  pedestal: { height: 1.32, centerY: 0.41, z: 0.3 },
+  /*
+   * Pedestals.
+   *
+   * The replacement assets are drawn taller than the ones they replace (about
+   * 1:2 rather than square), so the same height number made them read as
+   * posts. centerY moves with the height to keep the base standing on the same
+   * floor line rather than sinking into it: the sprite is centred on its
+   * position, so half of any growth has to be given back.
+   */
+  pedestal: { height: 1.95, centerY: 0.73, z: 0.3 },
 
   character: {
     height: 1.55,

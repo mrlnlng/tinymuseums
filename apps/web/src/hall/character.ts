@@ -19,6 +19,10 @@ import type { Viewport } from './overlay'
  * squash, no lean; they would fight the art. The cycle advances on distance
  * travelled, not time, so the bunny takes the same number of steps per metre
  * however fast it is moving. The sprites carry their own contact shadow.
+ *
+ * Facing is a change of cycle, not a mirror. The pack draws the bunny walking
+ * left and walking right, and the two are not reflections of each other — the
+ * bow sits on one side. Flipping with scaleX moved it across the chest.
  */
 
 export interface Character {
@@ -33,22 +37,25 @@ export interface Character {
 }
 
 export function createCharacter(assets: Assets, host: HTMLElement): Character {
-  const frames = assets.walk.length > 0 ? assets.walk : [assets.bunnyIdle]
+  const cycles = {
+    left: assets.walk.left.length > 0 ? assets.walk.left : [assets.bunnyIdle.left],
+    right: assets.walk.right.length > 0 ? assets.walk.right : [assets.bunnyIdle.right],
+  }
   const idle = assets.bunnyIdle
 
   const sprite = document.createElement('img')
   sprite.className = 'hall-bunny'
   sprite.alt = ''
   sprite.setAttribute('aria-hidden', 'true')
-  sprite.src = idle.src
+  sprite.src = idle.right.src
   host.appendChild(sprite)
 
   const projected = new THREE.Vector3()
 
   let distance = 0
-  let facing = 1
-  let facingBlend = 1
-  let currentSrc = idle.src
+  /** Which way the bunny last moved. It keeps facing that way once stopped. */
+  let facing: 'left' | 'right' = 'right'
+  let currentSrc = idle.right.src
 
   function setFrame(image: HTMLImageElement): void {
     if (currentSrc === image.src) return
@@ -64,15 +71,13 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       distance += speed * dt
 
       if (moving) {
-        facing = velocity > 0 ? 1 : -1
+        facing = velocity > 0 ? 'right' : 'left'
+        const frames = cycles[facing]
         const step = Math.floor(distance * CONFIG.character.cyclesPerUnit * frames.length)
         setFrame(frames[((step % frames.length) + frames.length) % frames.length])
       } else {
-        setFrame(idle)
+        setFrame(idle[facing])
       }
-
-      // Ease the turn so a direction change is not an instant mirror flip.
-      facingBlend += (facing - facingBlend) * Math.min(1, 12 * dt)
 
       const float = moving
         ? Math.sin(distance * CONFIG.character.cyclesPerUnit * Math.PI * 2) * CONFIG.character.bob
@@ -91,12 +96,9 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
       sprite.style.height = `${heightPx.toFixed(1)}px`
 
-      const direction =
-        facingBlend < 0 ? Math.min(-0.05, facingBlend) : Math.max(0.05, facingBlend)
-
       sprite.style.transform =
         `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0)` +
-        ` translate(-50%, -50%) scaleX(${direction.toFixed(3)})`
+        ' translate(-50%, -50%)'
     },
 
     dispose() {

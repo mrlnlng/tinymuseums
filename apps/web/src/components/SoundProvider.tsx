@@ -42,16 +42,38 @@ const FADE_MS = 600
  */
 const DEFAULT_ENABLED = true
 
+/**
+ * Short effects, kept separate from the music.
+ *
+ * Each is a small file loaded once and replayed, and each is gated on the same
+ * preference as the music: someone who muted the museum did not mute the
+ * soundtrack, they muted the museum.
+ */
+const EFFECTS = {
+  click: { file: '/audio/sfx-click.mp3', volume: 0.45 },
+  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 0.55 },
+} as const
+
+export type EffectName = keyof typeof EFFECTS
+
+const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
+
 interface SoundState {
   enabled: boolean
   available: boolean
   toggle: () => void
+  /** Fire a one-shot effect. Safe to call before anything has loaded. */
+  play: (name: EffectName) => void
+  /** Footsteps loop while this is true and stop when it goes false. */
+  setWalking: (walking: boolean) => void
 }
 
 const SoundContext = createContext<SoundState>({
   enabled: false,
   available: false,
   toggle: () => {},
+  play: () => {},
+  setWalking: () => {},
 })
 
 export function useSound(): SoundState {
@@ -193,6 +215,100 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
     }
   }, [])
 
+  // --- sound effects ---
+
+  // Built on the client only: `new Audio()` does not exist while rendering on
+  // the server, and these are useless before there is a document anyway.
+  const effectsRef = useRef<Partial<Record<EffectName, HTMLAudioElement>>>({})
+  const stepsRef = useRef<HTMLAudioElement | null>(null)
+  const walkingRef = useRef(false)
+
+  useEffect(() => {
+    for (const [name, spec] of Object.entries(EFFECTS)) {
+      const audio = new Audio(spec.file)
+      audio.preload = 'auto'
+      audio.volume = spec.volume
+      effectsRef.current[name as EffectName] = audio
+    }
+
+    const steps = new Audio(FOOTSTEPS.file)
+    steps.preload = 'auto'
+    steps.loop = true
+    steps.volume = FOOTSTEPS.volume
+    stepsRef.current = steps
+
+    return () => {
+      steps.pause()
+      for (const audio of Object.values(effectsRef.current)) audio?.pause()
+      effectsRef.current = {}
+      stepsRef.current = null
+    }
+  }, [])
+
+  const play = useCallback(
+    (name: EffectName) => {
+      if (!enabled) return
+      const source = effectsRef.current[name]
+      if (!source) return
+
+      // Cloned per call so rapid taps overlap instead of cutting each other
+      // off — restarting one element makes fast clicking sound broken.
+      const voice = source.cloneNode() as HTMLAudioElement
+      voice.volume = source.volume
+      void voice.play().catch(() => {
+        // Not yet unlocked by a gesture. Nothing to recover from.
+      })
+    },
+    [enabled],
+  )
+
+  const setWalking = useCallback(
+    (walking: boolean) => {
+      if (walking === walkingRef.current) return
+      walkingRef.current = walking
+
+      const steps = stepsRef.current
+      if (!steps) return
+
+      if (walking && enabled) {
+        void steps.play().catch(() => {})
+      } else {
+        steps.pause()
+        // Back to the top, so the next walk starts on a footfall rather than
+        // halfway between two.
+        steps.currentTime = 0
+      }
+    },
+    [enabled],
+  )
+
+  // Muting mid-stride has to stop the loop that is already running.
+  useEffect(() => {
+    if (enabled) return
+    const steps = stepsRef.current
+    if (steps) {
+      steps.pause()
+      steps.currentTime = 0
+    }
+    walkingRef.current = false
+  }, [enabled])
+
+  /**
+   * One click sound for every button, bound once here.
+   *
+   * Delegated from the document rather than wired into each control: there are
+   * a couple of dozen buttons across the app, and a rule that lives in one
+   * place cannot be forgotten by the next one somebody adds.
+   */
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('.button, .chrome-button')) play('click')
+    }
+    document.addEventListener('pointerdown', onPointerDown, { passive: true })
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [play])
+
   const toggle = useCallback(() => {
     setEnabled((was) => {
       const next = !was
@@ -206,7 +322,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <SoundContext.Provider value={{ enabled, available, toggle }}>
+    <SoundContext.Provider value={{ enabled, available, toggle, play, setWalking }}>
       <audio
         ref={audioRef}
         src={TRACK}

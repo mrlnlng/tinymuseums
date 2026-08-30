@@ -35,11 +35,23 @@
   },
   "sticky": {
     "size": [
-      1755,
-      790
+      1063,
+      711
     ]
   },
   "bunny": {
+    "size": [
+      380,
+      552
+    ]
+  },
+  "bunny-left": {
+    "size": [
+      380,
+      552
+    ]
+  },
+  "bunny-right": {
     "size": [
       380,
       552
@@ -63,6 +75,14 @@
       120
     ]
   },
+  "icon-basket": {
+    "file": "icon-basket.svg",
+    "vector": true
+  },
+  "icon-sound": {
+    "file": "icon-sound.svg",
+    "vector": true
+  },
   "floor": {
     "size": [
       1655,
@@ -81,51 +101,127 @@
       "bunny-walk-3.png",
       "bunny-walk-4.png",
       "bunny-walk-5.png"
-    ]
+    ],
+    "byFacing": {
+      "left": [
+        "bunny-walk-left-1.png",
+        "bunny-walk-left-2.png",
+        "bunny-walk-left-3.png",
+        "bunny-walk-left-4.png",
+        "bunny-walk-left-5.png"
+      ],
+      "right": [
+        "bunny-walk-right-1.png",
+        "bunny-walk-right-2.png",
+        "bunny-walk-right-3.png",
+        "bunny-walk-right-4.png",
+        "bunny-walk-right-5.png"
+      ]
+    }
   },
   "pedestals": [
     {
       "file": "pedestal-1.png",
       "size": [
         549,
-        1140
+        1076
       ]
     },
     {
       "file": "pedestal-2.png",
       "size": [
         549,
-        1058
+        1106
       ]
     },
     {
       "file": "pedestal-3.png",
       "size": [
         549,
-        1086
+        1058
       ]
     },
     {
       "file": "pedestal-4.png",
       "size": [
         549,
-        1106
+        1174
       ]
     },
     {
       "file": "pedestal-5.png",
       "size": [
         549,
-        1174
+        1140
       ]
     }
   ],
-  "artworks": [],
-  "audio": {
-    "file": "hall.mp3",
-    "sourceName": "first_track",
-    "seconds": 150.0,
-    "startedAt": 0.0,
-    "megabytes": 2.3
+  "artworks": [
+    {
+      "file": "artwork-floating-otters.jpg",
+      "title": "Floating Otters",
+      "size": [
+        1566,
+        2400
+      ],
+      "aspect": 0.6525
+    },
+    {
+      "file": "artwork-jiji-under-the-almond-blossoms.jpg",
+      "title": "Jiji Under The Almond Blossoms",
+      "size": [
+        1633,
+        1793
+      ],
+      "aspect": 0.9108
+    },
+    {
+      "file": "artwork-mount-rainier.jpg",
+      "title": "Mount Rainier",
+      "size": [
+        1561,
+        2400
+      ],
+      "aspect": 0.6504
+    },
+    {
+      "file": "artwork-ponyo-and-the-great-wave.jpg",
+      "title": "Ponyo And The Great Wave",
+      "size": [
+        1522,
+        2400
+      ],
+      "aspect": 0.6342
+    },
+    {
+      "file": "artwork-totoros-starry-night.jpg",
+      "title": "Totoros Starry Night",
+      "size": [
+        1588,
+        2400
+      ],
+      "aspect": 0.6617
+    }
+  ],
+  "fonts": [
+    "Inspiratiq_tiny_museum-Regular.otf",
+    "Inspiratiq_tiny_museum-Regular.ttf"
+  ],
+  "soundEffects": {
+    "footsteps": {
+      "file": "sfx-footsteps.mp3",
+      "kilobytes": 39.2,
+      "seconds": 3.25
+    },
+    "click": {
+      "file": "sfx-click.mp3",
+      "kilobytes": 9.6,
+      "seconds": 0.74
+    },
+    "painting-open": {
+      "file": "sfx-painting-open.mp3",
+      "kilobytes": 19.3,
+      "seconds": 1.55
+    }
   }
 }

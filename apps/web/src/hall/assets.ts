@@ -16,7 +16,13 @@ export interface AssetManifest {
     mockupSize: [number, number]
   }
   frame: { size: [number, number]; window: [number, number, number, number] }
-  bunnyWalk: { frames: number; size: [number, number]; files: string[] }
+  bunnyWalk: {
+    frames: number
+    size: [number, number]
+    files: string[]
+    /** Drawn cycles per direction. The bunny is no longer a mirrored sprite. */
+    byFacing?: { left: string[]; right: string[] }
+  }
   pedestals: Array<{ file: string; size: [number, number] }>
 }
 
@@ -46,8 +52,8 @@ export interface Assets {
    * in the WebGL scene is painted *under* that overlay — which had text
    * appearing in front of the character as it walked past a display.
    */
-  walk: HTMLImageElement[]
-  bunnyIdle: HTMLImageElement
+  walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
+  bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   /** Pedestal variants, so a long hall is not one object repeated. */
   pedestals: Sprite[]
 }
@@ -78,11 +84,26 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
 
   const names = Object.keys(IMAGE_FILES) as AssetName[]
 
-  const [staticImages, walkImages, pedestalImages, bunnyIdle] = await Promise.all([
+  // The pack ships a drawn cycle per direction. Older packs did not, so the
+  // single cycle stands in for both rather than failing to load at all.
+  const facing = manifest.bunnyWalk.byFacing
+  const leftFiles = facing?.left ?? manifest.bunnyWalk.files
+  const rightFiles = facing?.right ?? manifest.bunnyWalk.files
+
+  const [
+    staticImages,
+    walkLeft,
+    walkRight,
+    pedestalImages,
+    idleLeft,
+    idleRight,
+  ] = await Promise.all([
     Promise.all(names.map((n) => loadImage(`${base}/${IMAGE_FILES[n]}`))),
-    Promise.all(manifest.bunnyWalk.files.map((f) => loadImage(`${base}/${f}`))),
+    Promise.all(leftFiles.map((f) => loadImage(`${base}/${f}`))),
+    Promise.all(rightFiles.map((f) => loadImage(`${base}/${f}`))),
     Promise.all(manifest.pedestals.map((p) => loadImage(`${base}/${p.file}`))),
-    loadImage(`${base}/bunny.png`),
+    loadImage(`${base}/bunny-left.png`).catch(() => loadImage(`${base}/bunny.png`)),
+    loadImage(`${base}/bunny-right.png`).catch(() => loadImage(`${base}/bunny.png`)),
   ])
 
   const images = {} as Record<AssetName, HTMLImageElement>
@@ -109,8 +130,8 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     images,
     textures,
     aspect,
-    walk: walkImages,
-    bunnyIdle,
+    walk: { left: walkLeft, right: walkRight },
+    bunnyIdle: { left: idleLeft, right: idleRight },
     pedestals: pedestalImages.map(toSprite),
   }
 }

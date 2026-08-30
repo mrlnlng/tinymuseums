@@ -12,6 +12,7 @@ import { nearestSlot } from '@/hall/layout'
 import { Placards, type Viewport } from '@/hall/overlay'
 import { HallScene } from '@/hall/scene'
 import { Traversal } from '@/hall/traversal'
+import { useSound } from './SoundProvider'
 import Walkthrough from './Walkthrough'
 
 /**
@@ -48,10 +49,27 @@ export default function Museum({ initialSlice }: Props) {
   const [ready, setReady] = useState(false)
   const readyRef = useRef(false)
 
+  /**
+   * The frame loop is imperative and never restarts, so it cannot close over
+   * the sound context directly — the callbacks change identity whenever the
+   * mute preference does. A ref refreshed each render keeps the loop pointed
+   * at the current ones without rebuilding the scene.
+   */
+  const sound = useSound()
+  const soundRef = useRef(sound)
+  soundRef.current = sound
+
   // The frame loop must not restart when the walk-through opens, so the
   // suspend flag is passed to the loop through a ref rather than a dependency.
   const suspendedRef = useRef(false)
   suspendedRef.current = open !== null
+
+  // Opening a work stops the hall, so it must stop the footsteps too — the
+  // loop keeps running otherwise, and the bunny is standing still behind an
+  // open painting.
+  useEffect(() => {
+    if (open !== null) soundRef.current.setWalking(false)
+  }, [open])
 
   useEffect(() => {
     const host = hostRef.current
@@ -181,6 +199,7 @@ export default function Museum({ initialSlice }: Props) {
         const hit = hall.hitTest(raycaster)
         if (!hit) return
 
+        soundRef.current.play('painting-open')
         setOpen({
           slug: hit.mounted.display.slug,
           artistId: hit.mounted.display.artistId,
@@ -219,6 +238,12 @@ export default function Museum({ initialSlice }: Props) {
         // walkVelocity is the bunny's own pace, measured from how far it
         // actually walked — never the scroll speed of the hall.
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+
+        // Footsteps follow the bunny's own pace, not the hall's scroll speed —
+        // the same number the walk cycle runs on, so what you hear matches what
+        // you see. The threshold is the one the sprite uses to decide it is
+        // walking at all, so sound and animation start and stop together.
+        soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > 0.12)
         hall.update(now, dt, traversal.cameraX, traversal.cameraX)
         placards.sync(hall.getMounted(), rig.camera, viewport, (i) => hall.fadeOf(i))
 
@@ -245,6 +270,7 @@ export default function Museum({ initialSlice }: Props) {
 
       cleanup = () => {
         cancelAnimationFrame(frameHandle)
+        soundRef.current.setWalking(false)
         resizeObserver.disconnect()
         renderer.domElement.removeEventListener('pointerdown', onPointerDown)
         renderer.domElement.removeEventListener('pointerup', onPointerUp)

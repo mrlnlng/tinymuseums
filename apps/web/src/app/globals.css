@@ -1,3 +1,19 @@
+/*
+ * The museum's own face, used everywhere small caps text appears.
+ *
+ * `swap` rather than the default: the file is small, but a webfont that blocks
+ * paint leaves the buttons invisible on a slow connection, and an unstyled
+ * button that restyles a moment later is much the better failure.
+ */
+@font-face {
+  font-family: "Inspiratiq Tiny Museum";
+  src: url("/fonts/Inspiratiq_tiny_museum-Regular.otf") format("opentype"),
+       url("/fonts/Inspiratiq_tiny_museum-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Palette and type from the asset pack's specs.md, not sampled or guessed. */
 :root {
   --wall: #fff1d2;
@@ -15,11 +31,11 @@
   --ok: #4f8a63;
   --bad: #c0533a;
 
-  /* specs.md names Lazy Dog for all-caps text; it is paid and not installed,
-     so uppercase Sniglet stands in until it is licensed. */
   --font-script: "Beth Ellen", "Segoe Script", cursive;
   --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
-  --font-button: "Autour One", "Sniglet", ui-rounded, system-ui, sans-serif;
+  /* The commissioned face, which replaces the Autour One stand-in that stood
+     for the all-caps font specs.md had not licensed yet. */
+  --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /*
@@ -139,9 +155,9 @@ h1, h2, h3 { text-wrap: balance; }
   padding: 11px 22px;
   font-family: var(--font-button);
   /*
-   * Autour One ships a single weight. Asking for bold gets a synthetic one —
-   * the browser smearing the outlines — which looks obviously wrong on a
-   * display face, so the weight is pinned to what actually exists.
+   * One weight only. Asking for bold gets a synthetic one — the browser
+   * smearing the outlines — which looks obviously wrong on a display face, so
+   * the weight is pinned to what actually exists.
    */
   font-weight: 400;
   font-size: 13px;
@@ -657,4 +673,44 @@ code.token {
 
 @media (prefers-reduced-motion: reduce) {
   .sound-toggle .waves { transition: none; }
+}
+
+/*
+ * Clickable things breathe.
+ *
+ * A slow scale pulse marks a control as live without demanding attention the
+ * way a colour flash would. It runs on transform alone so it never reflows,
+ * and it stops entirely for anyone who has asked for less motion — where a
+ * looping animation is the exact thing they turned off.
+ */
+@keyframes button-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+
+.button,
+.chrome-button {
+  animation: button-pulse 2.4s ease-in-out infinite;
+  /* Pausing on hover stops the target moving under a cursor already on it. */
+}
+
+.button:hover,
+.chrome-button:hover,
+.button:active,
+.chrome-button:active,
+.button:disabled,
+.button[aria-disabled='true'] {
+  animation-play-state: paused;
+}
+
+.button:active,
+.chrome-button:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .chrome-button {
+    animation: none;
+  }
 }

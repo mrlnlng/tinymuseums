@@ -57,10 +57,10 @@ export const CONFIG = {
    * The wall label.
    *
    * `gap` is the drop from the wall's lower edge to the top of the plaque, so
-   * it hangs beneath whatever is above it rather than at a fixed height. `z`
-   * puts it in front of the rope: there is no height at which it clears one.
+   * it hangs directly beneath the painting rather than at a fixed height. `z`
+   * puts it behind the rope, which crosses in front of it.
    */
-  plaque: { width: 0.95, gap: 0.12, z: 0.6 },
+  plaque: { width: 0.95, gap: 0.06, z: 0.4 },
   /**
    * The rope, at its drawn size.
    *
@@ -79,7 +79,13 @@ export const CONFIG = {
    * floor line rather than sinking into it: the sprite is centred on its
    * position, so half of any growth has to be given back.
    */
-  pedestal: { height: 1.95, centerY: 0.73, z: 0.3 },
+  pedestal: {
+    height: 1.95,
+    centerY: 0.73,
+    z: 0.3,
+    /** Share of gaps that hold one. The rest are left as open floor. */
+    frequency: 0.55,
+  },
 
   character: {
     height: 1.55,
@@ -130,7 +136,7 @@ export const CONFIG = {
    * Widened along with the displays: the point of a hall is that you walk
    * along it, and walls close enough to see two at once removed the walking.
    */
-  statueSpan: 4.6,
+  statueSpan: 5.4,
 
   move: {
     accel: 9,

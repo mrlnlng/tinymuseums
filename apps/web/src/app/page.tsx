@@ -59,9 +59,16 @@ export default async function LandingPage() {
         overlaps the boundary and reads as standing on the boards. It is the
         last child and outside both bands for that reason: stacking, not order.
       */}
-      <div className="landing-visitor" aria-hidden="true">
-        <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" />
-        <img className="visitor-ticket" src="/assets/ticket.png" alt="" />
+      <div className="landing-visitor">
+        <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" aria-hidden="true" />
+        {/*
+          The ticket is a way in, not decoration. It is a real link so it works
+          by keyboard and reads as a control, and it carries its own label —
+          "Free entry" is drawn into the image, where no reader can reach it.
+        */}
+        <Link className="visitor-ticket" href="/museum" aria-label="Start visit">
+          <img src="/assets/ticket.png" alt="" aria-hidden="true" />
+        </Link>
       </div>
 
       <nav className="offscreen" aria-label="Artists currently showing">

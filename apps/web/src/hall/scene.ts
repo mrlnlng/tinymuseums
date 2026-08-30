@@ -207,13 +207,35 @@ export class HallScene {
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
+    /*
+     * The rope spans the wall it stands in front of, but only the top of the
+     * drawing is shown.
+     *
+     * Matching the wall's width and keeping the drawing's proportions would
+     * make it over three units tall — twice the bunny — which is what made it
+     * tower over the hall when it was tried. So the plane is the width of the
+     * wall and the height a barrier should be, and the texture is cropped to
+     * its top: the swag and the upper posts, with the rest below the floor.
+     *
+     * The texture is cloned because the crop is per-rope; the shared one is
+     * still used everywhere else and must keep its own coordinates.
+     */
+    const ropeTexture = this.assets.textures.rope.clone()
+    const naturalHeight = width / this.assets.aspect.rope
+    const shown = Math.min(1, CONFIG.rope.height / naturalHeight)
+    ropeTexture.repeat.set(1, shown)
+    ropeTexture.offset.set(0, 1 - shown)
+    ropeTexture.userData.ownedByDisplay = true
+    ropeTexture.needsUpdate = true
+
     const ropeMaterial = new THREE.MeshBasicMaterial({
-      map: this.assets.textures.rope,
+      map: ropeTexture,
       transparent: true,
       opacity: 1,
     })
+
     const rope = new THREE.Mesh(
-      new THREE.PlaneGeometry(CONFIG.rope.height * this.assets.aspect.rope, CONFIG.rope.height),
+      new THREE.PlaneGeometry(width, naturalHeight * shown),
       ropeMaterial,
     )
     rope.position.set(0, CONFIG.rope.centerY, CONFIG.rope.z)
@@ -267,7 +289,15 @@ export class HallScene {
     mount.group.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
-      ;(obj.material as THREE.Material).dispose()
+      const material = obj.material as THREE.MeshBasicMaterial
+      /*
+       * Textures made for this display are freed with it. The rope's is cloned
+       * per wall, because its crop depends on how wide that wall is — without
+       * this, walking the hall would leak one texture per wall passed.
+       * Textures the asset loader owns carry no such mark and are left alone.
+       */
+      if (material.map?.userData.ownedByDisplay) material.map.dispose()
+      material.dispose()
     })
 
     // The display texture belongs to this slot; scenery textures are shared

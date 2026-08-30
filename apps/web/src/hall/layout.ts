@@ -39,7 +39,9 @@ export function computeLayout(sizes: SlotSize[]): HallLayout {
     width.push(slot.width)
     cursor += slot.width
     if (i < sizes.length - 1) {
-      pedestalX.push(cursor + CONFIG.statueSpan / 2)
+      // The gap is constant whether or not something stands in it, so the
+      // walls stay evenly spaced and only the pedestals come and go.
+      if (hasPedestal(i)) pedestalX.push(cursor + CONFIG.statueSpan / 2)
       cursor += CONFIG.statueSpan
     }
   })
@@ -53,6 +55,20 @@ export function computeLayout(sizes: SlotSize[]): HallLayout {
     totalLength: cursor + CONFIG.statueSpan,
     known: sizes.length,
   }
+}
+
+/**
+ * Whether a pedestal stands in the gap after display `index`.
+ *
+ * Pseudo-random rather than random: the layout is rebuilt from scratch every
+ * time a slice arrives, and a real `Math.random()` would deal a different hall
+ * each time — pedestals appearing and vanishing as you walked. Hashing the
+ * index gives the same answer for the same gap forever, which is what makes it
+ * scenery rather than noise.
+ */
+function hasPedestal(index: number): boolean {
+  const noise = Math.sin((index + 1) * 12.9898) * 43758.5453
+  return noise - Math.floor(noise) < CONFIG.pedestal.frequency
 }
 
 export function nearestSlot(layout: HallLayout, x: number): number {

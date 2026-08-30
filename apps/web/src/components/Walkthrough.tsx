@@ -45,6 +45,31 @@ const SLIDE: Variants = {
   exit: (direction: number) => ({ x: direction > 0 ? -50 : 50, opacity: 0 }),
 }
 
+/**
+ * The navigation arrow: a triangle with generously rounded corners.
+ *
+ * Drawn with a stroke of the same colour and `stroke-linejoin: round` rather
+ * than a `clip-path`, because clip-path has no way to round a corner — the
+ * previous version came out sharp. The polygon is inset by half the stroke
+ * width so the rounded silhouette still fills the box.
+ *
+ * `currentColor` for both fill and stroke, so the colour stays in the
+ * stylesheet with everything else.
+ */
+function NavArrow() {
+  return (
+    <svg viewBox="0 0 68 100" aria-hidden="true" focusable="false">
+      <polygon
+        points="12,16 54,50 12,84"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="22"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export default function Walkthrough({ slug, artistId, initialPieceId, onClose }: Props) {
   const [pieces, setPieces] = useState<PieceDto[] | null>(null)
   const [index, setIndex] = useState(0)
@@ -206,11 +231,15 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             the accessible name is the aria-label.
           */}
           <div className="wt-plaque-row">
-            <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work" />
+            <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
+              <NavArrow />
+            </button>
             <div className="wt-plaque">
               <p>{piece.description}</p>
             </div>
-            <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work" />
+            <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
+              <NavArrow />
+            </button>
           </div>
 
           <p className="wt-meta">

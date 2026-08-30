@@ -36,6 +36,8 @@ export interface MountedDisplay {
   height: number
   mountedAt: number
   plaqueY: number
+  /** Where the artist's name sits, above the wall. */
+  titleY: number
 }
 
 export interface PieceHit {
@@ -77,7 +79,10 @@ export class HallScene {
     // Only a contiguous run from zero can be positioned; a gap would put every
     // later display at the wrong place on the wall.
     for (let i = 0; this.slots.has(i); i++) {
-      sizes.push({ index: i, width: this.slots.get(i)!.display.canvas.w })
+      sizes.push({
+        index: i,
+        width: this.slots.get(i)!.display.canvas.w * CONFIG.display.scale,
+      })
     }
     this.layout = computeLayout(sizes)
 
@@ -159,7 +164,11 @@ export class HallScene {
       transparent: true,
       opacity: 1,
     })
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.w, canvas.h), material)
+    // Drawn larger than the composited canvas. Only the mesh grows: the
+    // flattened image and the region map hit-testing reads from are both in
+    // canvas coordinates, and scaling geometry leaves both correct.
+    const scale = CONFIG.display.scale
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.w * scale, canvas.h * scale), material)
     mesh.position.y = CONFIG.displayCenterY
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
@@ -196,10 +205,12 @@ export class HallScene {
       group,
       mesh,
       centerX,
-      width: canvas.w,
-      height: canvas.h,
+      width: canvas.w * scale,
+      height: canvas.h * scale,
       mountedAt: now,
       plaqueY: CONFIG.plaque.centerY,
+      // Just above the frame's top edge, where the mockups put the name.
+      titleY: CONFIG.displayCenterY + (canvas.h * scale) / 2 + 0.22,
     })
   }
 

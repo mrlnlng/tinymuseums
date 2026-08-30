@@ -23,6 +23,7 @@ export interface Viewport {
  */
 export class Placards {
   private nodes = new Map<number, HTMLElement>()
+  private titles = new Map<number, HTMLElement>()
   private projected = new THREE.Vector3()
 
   constructor(private container: HTMLElement) {}
@@ -46,39 +47,84 @@ export class Placards {
         node = document.createElement('div')
         node.className = 'placard'
         node.innerHTML = '<span class="placard-name"></span>'
-        node.querySelector('.placard-name')!.textContent = m.display.artistName
+        node.querySelector('.placard-name')!.textContent = m.display.statement
         node.dataset.slug = m.display.slug
         this.container.appendChild(node)
         this.nodes.set(m.index, node)
       }
 
-      this.projected.set(m.centerX, m.plaqueY, 0.03)
-      this.projected.project(camera)
-
-      if (this.projected.x < -1.7 || this.projected.x > 1.7) {
-        node.style.opacity = '0'
-        continue
+      let title = this.titles.get(m.index)
+      if (!title) {
+        title = document.createElement('div')
+        title.className = 'placard-title script'
+        title.textContent = m.display.artistName
+        this.container.appendChild(title)
+        this.titles.set(m.index, title)
       }
 
-      const sx = viewport.left + (this.projected.x * 0.5 + 0.5) * viewport.width
-      const sy = viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height
+      const opacity = String(fadeOf(m.index))
 
-      node.style.width = `${plaquePx * 0.84}px`
-      node.style.fontSize = `${Math.max(7, plaquePx * 0.105)}px`
-      node.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`
-      // Match the display's own fade-in rather than popping in ahead of it.
-      node.style.opacity = String(fadeOf(m.index))
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, {
+        fontSize: Math.max(7, plaquePx * 0.105),
+        opacity,
+      })
+
+      // Wider than the plaque: a name set in script needs the room, and there
+      // is nothing beside it to collide with up there.
+      this.place(title, m.centerX, m.titleY, camera, viewport, plaquePx * 1.9, {
+        fontSize: Math.max(11, plaquePx * 0.23),
+        opacity,
+      })
     }
 
-    for (const [index, node] of this.nodes) {
-      if (seen.has(index)) continue
-      node.remove()
-      this.nodes.delete(index)
+    for (const map of [this.nodes, this.titles]) {
+      for (const [index, node] of map) {
+        if (seen.has(index)) continue
+        node.remove()
+        map.delete(index)
+      }
     }
+  }
+
+  /**
+   * Projects a world point and writes the result straight onto the element.
+   *
+   * Anything far enough off-screen is hidden rather than positioned: the
+   * projection stays valid well outside the frustum, so without this the
+   * browser keeps laying out labels nobody can see.
+   */
+  private place(
+    node: HTMLElement,
+    x: number,
+    y: number,
+    camera: THREE.OrthographicCamera,
+    viewport: Viewport,
+    widthPx: number,
+    style: { fontSize: number; opacity: string },
+  ): void {
+    this.projected.set(x, y, 0.03)
+    this.projected.project(camera)
+
+    if (this.projected.x < -1.7 || this.projected.x > 1.7) {
+      node.style.opacity = '0'
+      return
+    }
+
+    const sx = viewport.left + (this.projected.x * 0.5 + 0.5) * viewport.width
+    const sy = viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height
+
+    node.style.width = `${widthPx}px`
+    node.style.fontSize = `${style.fontSize}px`
+    node.style.transform =
+      `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`
+    // Match the display's own fade-in rather than popping in ahead of it.
+    node.style.opacity = style.opacity
   }
 
   clear(): void {
     for (const node of this.nodes.values()) node.remove()
+    for (const node of this.titles.values()) node.remove()
     this.nodes.clear()
+    this.titles.clear()
   }
 }

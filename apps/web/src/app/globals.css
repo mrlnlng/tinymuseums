@@ -295,6 +295,38 @@ code.token {
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
+  /* Two lines on the plaque, then ellipsis: a long statement must not spill
+     off the brass and onto the wall. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/*
+ * The artist's name, hung above their wall.
+ *
+ * Positioned by the same projection pass as the plaque, so it travels with the
+ * geometry rather than swimming against it. Inert: the wall behind it is what
+ * you tap to open a work, and a name that swallowed those taps would make the
+ * middle of each display dead.
+ */
+.placard-title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  text-align: center;
+  line-height: 1.15;
+  color: var(--script);
+  will-change: transform, opacity;
+  pointer-events: none;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hall-error {

@@ -24,9 +24,31 @@ export const CONFIG = {
   },
 
   /** Vertical centre of the hung frames. */
-  displayCenterY: 2.55,
+  displayCenterY: 2.75,
 
-  plaque: { width: 0.95, centerY: 0.8 },
+  display: {
+    /**
+     * How much bigger a wall hangs than its canvas says.
+     *
+     * The server composites a display at the size its layout template chose,
+     * and those sizes were picked to fit several walls on screen at once. One
+     * wall at a time reads better, so it is drawn larger here rather than
+     * re-composited — the flattened image and its region map are in canvas
+     * coordinates, and scaling the mesh leaves both untouched.
+     *
+     * Bounded by the room, not by taste: at this scale a 3.2-high canvas
+     * reaches 4.59, and the frustum tops out near 4.97, which leaves the title
+     * somewhere to sit.
+     */
+    scale: 1.15,
+  },
+
+  /*
+   * The plaque drops as the display grows, so the two do not overlap. The
+   * display's lower edge lands at 0.91 at the scale above; the plaque is
+   * about 0.47 tall, so centring it here keeps its top clear of that.
+   */
+  plaque: { width: 0.95, centerY: 0.62 },
   rope: { height: 1.33, centerY: 0.44, z: 0.5 },
   /*
    * Pedestals.
@@ -82,8 +104,13 @@ export const CONFIG = {
     maxTrailDistance: 4.8,
   },
 
-  /** Walking distance between one display's edge and the next. */
-  statueSpan: 2.9,
+  /**
+   * Walking distance between one display's edge and the next.
+   *
+   * Widened along with the displays: the point of a hall is that you walk
+   * along it, and walls close enough to see two at once removed the walking.
+   */
+  statueSpan: 4.6,
 
   move: {
     accel: 9,

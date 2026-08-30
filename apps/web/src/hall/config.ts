@@ -23,8 +23,18 @@ export const CONFIG = {
     floorTopRatio: 0.7766,
   },
 
-  /** Vertical centre of the hung frames. */
-  displayCenterY: 2.75,
+  /**
+   * The height every wall hangs from.
+   *
+   * A common top edge rather than a common centre: templates differ in canvas
+   * height, and centring them left the plaques beneath stepping up and down
+   * along the hall. The number leaves room above for the artist's name — the
+   * frustum reaches about 4.97 at the standard view height.
+   */
+  displayTopY: 4.42,
+
+  /** Space between a wall's top edge and the name above it. */
+  displayTitleGap: 0.3,
 
   display: {
     /**
@@ -48,8 +58,22 @@ export const CONFIG = {
    * display's lower edge lands at 0.91 at the scale above; the plaque is
    * about 0.47 tall, so centring it here keeps its top clear of that.
    */
-  plaque: { width: 0.95, centerY: 0.62 },
-  rope: { height: 1.33, centerY: 0.44, z: 0.5 },
+  /** `gap` is the drop from the wall's lower edge to the top of the plaque. */
+  plaque: { width: 0.95, gap: 0.12, z: 0.6 },
+  /**
+   * The rope spans the wall, so it reads as a barrier across the room. Its
+   * height follows from that width; `minWidth` covers the narrowest template.
+   */
+  /**
+   * The rope spans the wall, so it reads as a barrier across the room rather
+   * than an ornament under the picture.
+   *
+   * Its height follows its width, and at screen width that is over three units
+   * — taller than the wall itself. So it hangs from a fixed top edge instead
+   * of a centre, and its posts run down past the bottom of the view, which is
+   * where posts go. `minWidth` covers the narrowest template.
+   */
+  rope: { minWidth: 3.9, topY: 1.15, z: 0.5 },
   /*
    * Pedestals.
    *

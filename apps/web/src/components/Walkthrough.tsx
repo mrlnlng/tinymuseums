@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PieceDto } from '@tiny/core'
+import { useSound } from './SoundProvider'
 
 /**
  * The enlarged view: one work at a time, in the artist's order, with the
@@ -94,13 +95,26 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
   const piece = pieces?.[index] ?? null
 
+  const { play } = useSound()
+
   const step = useCallback(
     (stepDir: number) => {
       if (!pieces || pieces.length === 0) return
+      /*
+       * The click, not the one that plays when a work is first opened.
+       * Stepping between works is an ordinary button press; the opening sound
+       * marks arriving at a wall, and hearing it on every arrow makes the
+       * moment of arrival worth nothing.
+       *
+       * Played here rather than left to the document-level handler, so the
+       * arrows are not silently dependent on a class name matching elsewhere —
+       * they are also reachable by keyboard, which that handler never sees.
+       */
+      play('click')
       setDirection(stepDir)
       setIndex((i) => (i + stepDir + pieces.length) % pieces.length)
     },
-    [pieces],
+    [pieces, play],
   )
 
   useEffect(() => {

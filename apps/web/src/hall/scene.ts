@@ -168,8 +168,21 @@ export class HallScene {
     // flattened image and the region map hit-testing reads from are both in
     // canvas coordinates, and scaling geometry leaves both correct.
     const scale = CONFIG.display.scale
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.w * scale, canvas.h * scale), material)
-    mesh.position.y = CONFIG.displayCenterY
+    const width = canvas.w * scale
+    const height = canvas.h * scale
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material)
+
+    /*
+     * Walls hang from a common top edge rather than a common centre.
+     *
+     * Layout templates differ in canvas height, and centring them put the
+     * bottoms of a tall wall and a short one at different heights — so the
+     * plaque beneath each sat at a different distance, and the row of labels
+     * along the hall stepped up and down as you walked.
+     */
+    const top = CONFIG.displayTopY
+    mesh.position.y = top - height / 2
+    const bottom = top - height
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
@@ -179,11 +192,22 @@ export class HallScene {
       transparent: true,
       opacity: 1,
     })
+    const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
     const plaque = new THREE.Mesh(
-      new THREE.PlaneGeometry(CONFIG.plaque.width, CONFIG.plaque.width / this.assets.aspect.plaque),
+      new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
       plaqueMaterial,
     )
-    plaque.position.set(0, CONFIG.plaque.centerY, 0.02)
+    // Hung from the wall's lower edge, not from a fixed height, so it stays
+    // directly beneath whatever is above it.
+    const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
+    /*
+     * In front of the rope, not behind it.
+     *
+     * The wall's lower edge is at 0.74 and the rope crosses at 1.15, so there
+     * is no height at which the plaque clears the rope — it has to be drawn
+     * over it. Still behind the visitor, who walks in front of everything.
+     */
+    plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
     const ropeMaterial = new THREE.MeshBasicMaterial({
@@ -191,11 +215,14 @@ export class HallScene {
       transparent: true,
       opacity: 1,
     })
-    const rope = new THREE.Mesh(
-      new THREE.PlaneGeometry(CONFIG.rope.height * this.assets.aspect.rope, CONFIG.rope.height),
-      ropeMaterial,
-    )
-    rope.position.set(0, CONFIG.rope.centerY, CONFIG.rope.z)
+    // The rope runs the width of the wall, which is the width of the screen —
+    // it is a barrier across the room, not an ornament under the picture.
+    const ropeWidth = Math.max(width, CONFIG.rope.minWidth)
+    const ropeHeight = ropeWidth / this.assets.aspect.rope
+    const rope = new THREE.Mesh(new THREE.PlaneGeometry(ropeWidth, ropeHeight), ropeMaterial)
+    // Hung from its top edge: at this width the drawing is taller than the
+    // wall, and what matters is where the rope crosses, not where it ends.
+    rope.position.set(0, CONFIG.rope.topY - ropeHeight / 2, CONFIG.rope.z)
     group.add(rope)
 
     this.scene.add(group)
@@ -205,12 +232,12 @@ export class HallScene {
       group,
       mesh,
       centerX,
-      width: canvas.w * scale,
-      height: canvas.h * scale,
+      width,
+      height,
       mountedAt: now,
-      plaqueY: CONFIG.plaque.centerY,
-      // Just above the frame's top edge, where the mockups put the name.
-      titleY: CONFIG.displayCenterY + (canvas.h * scale) / 2 + 0.22,
+      plaqueY,
+      // Just above the wall's top edge, with room to clear the ceiling.
+      titleY: top + CONFIG.displayTitleGap,
     })
   }
 

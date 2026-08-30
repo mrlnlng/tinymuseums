@@ -36,15 +36,15 @@ export default async function LandingPage() {
         </div>
 
         <section className="guidelines" aria-labelledby="guidelines-heading">
-          <h2 id="guidelines-heading">Visitor&rsquo;s guidelines:</h2>
+          <h2 id="guidelines-heading">Visitor&apos;s guidelines:</h2>
           <ol>
             {GUIDELINES.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ol>
+          {/* On the note rather than below it, where the mockup has it. */}
+          <p className="open-line">The gallery floor is officially open. Enjoy!</p>
         </section>
-
-        <p className="open-line">The gallery floor is officially open. Enjoy!</p>
 
       </div>
 

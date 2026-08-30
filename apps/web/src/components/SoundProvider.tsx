@@ -303,7 +303,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('.button, .chrome-button, .wt-nav')) play('click')
+      if (target?.closest('.button, .chrome-button')) play('click')
     }
     document.addEventListener('pointerdown', onPointerDown, { passive: true })
     return () => document.removeEventListener('pointerdown', onPointerDown)

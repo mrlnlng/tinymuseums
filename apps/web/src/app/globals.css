@@ -157,12 +157,14 @@ h1, h2, h3 { text-wrap: balance; }
   padding: 11px 22px;
   font-family: var(--font-button);
   /*
-   * One weight only. Asking for bold gets a synthetic one — the browser
-   * smearing the outlines — which looks obviously wrong on a display face, so
-   * the weight is pinned to what actually exists.
+   * The face ships one weight, and asking for bold gets a synthetic one — the
+   * browser smearing the outlines sideways, which is obvious on a display
+   * face. A hairline stroke in the text's own colour thickens the strokes
+   * evenly instead, which is what synthetic bold only pretends to do.
    */
   font-weight: 400;
-  font-size: 13px;
+  -webkit-text-stroke: 0.45px currentColor;
+  font-size: 15.5px;
   /* Explicit, because dropping `font: inherit` also drops the inherited
      line-height, and form controls default to `normal`. */
   line-height: 1.2;
@@ -290,6 +292,9 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
+  /* Sniglet, explicitly: this is the artist's own words, and it must not
+     follow the museum face, which has no hyphen or curly apostrophe. */
+  font-family: var(--font-ui);
   text-align: center;
   line-height: 1.25;
   color: var(--plaque-ink);
@@ -314,6 +319,7 @@ code.token {
  * you tap to open a work, and a name that swallowed those taps would make the
  * middle of each display dead.
  */
+/* The name above the wall stays in the script face, as the mockups draw it. */
 .placard-title {
   position: absolute;
   top: 0;
@@ -411,7 +417,16 @@ code.token {
  * titles and keeps everything below it still.
  */
 .wt-title {
-  margin: 0;
+  /* Negative bottom margin eats part of the column gap, pulling the painting
+     up under the title instead of leaving a band of wall between them. */
+  margin: 0 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
+  /*
+   * Kept clear of the home and speaker buttons, which float in the corner at a
+   * fixed offset. Constraining the text's width is what guarantees it — a top
+   * margin only moves the collision, since a long title still reaches sideways
+   * into the corner.
+   */
+  padding-inline: clamp(46px, 13cqi, 76px);
   font-size: clamp(15px, 3.6cqh, 26px);
   line-height: 1.15;
   height: 2.3em;
@@ -476,7 +491,7 @@ code.token {
    * that is the shape it binds on — a landscape frame reaches the width limit
    * well before it, and stops there.
    */
-  height: min(58cqh, calc(100cqi / var(--frame-aspect)));
+  height: min(54cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -505,7 +520,7 @@ code.token {
 .wt-plaque-row {
   flex: none;
   width: 100%;
-  height: clamp(50px, 10.5cqh, 100px);
+  height: clamp(48px, 9.8cqh, 94px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -520,6 +535,18 @@ code.token {
  * box, so the hit area matches what is drawn and the size can be expressed in
  * container units instead of four hand-balanced border widths.
  */
+/*
+ * The close-up's chrome uses the museum face rather than the rounded UI one.
+ *
+ * Not the plaque, though: descriptions are the artist's own words and may hold
+ * a hyphen, a bracket or a curly apostrophe, none of which this face has —
+ * those characters would silently fall back and break the line mid-word.
+ */
+.wt-actions .button,
+.wt-plaque-row .wt-nav {
+  font-family: var(--font-button);
+}
+
 .wt-nav {
   flex: none;
   /* 7.6% of the screen wide in the mockup, at a 0.68 width-to-height ratio. */
@@ -619,7 +646,7 @@ code.token {
 
 
 .wt-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.wt-actions .button { padding: clamp(7px, 1.6cqh, 11px) 18px; font-size: clamp(10px, 1.7cqh, 13px); }
+.wt-actions .button { padding: clamp(8px, 1.8cqh, 12px) 20px; font-size: clamp(12px, 2.1cqh, 16px); }
 
 
 /* ---------------------------------------------------------------- landing */
@@ -674,8 +701,9 @@ code.token {
 }
 
 .welcome-kicker {
-  font-size: clamp(11px, 3vw, 13px);
-  font-weight: 800;
+  font-family: var(--font-button);
+  font-size: clamp(12px, 3.4vw, 15px);
+  font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--script);
@@ -708,36 +736,43 @@ code.token {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3cqh;
-  padding: 16% 10% 28%;
+  gap: 2.5cqh;
+  padding: 14% 9% 24%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
 .guidelines h2 {
   margin: 0;
-  font-size: clamp(11px, 8.5cqh, 19px);
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  /* Indented to the list's text column, so heading and rules share an edge. */
+  padding-left: 4.5%;
+  font-family: var(--font-button);
+  font-size: clamp(11px, 8cqh, 18px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink);
 }
 
 .guidelines ol {
   margin: 0;
-  padding-left: 4.5%;
+  /* The marker sits in this indent; the text starts where the heading does. */
+  padding-left: 9%;
   display: grid;
-  gap: 1.5cqh;
-  font-size: clamp(10px, 7.4cqh, 17px);
-  line-height: 1.32;
+  gap: 3cqh;
+  font-size: clamp(10px, 6.6cqh, 16px);
+  line-height: 1.38;
   color: var(--ink);
   text-wrap: pretty;
 }
 
+.guidelines ol li { padding-left: 1.5%; }
+
+/* On the note now, closing the guidelines rather than floating under them. */
 .open-line {
   margin: 0;
-  text-align: center;
+  padding-left: 4.5%;
+  font-size: clamp(10px, 6.2cqh, 15px);
   font-weight: 700;
-  font-size: clamp(13px, 3.6vw, 16px);
   color: var(--script);
   text-wrap: balance;
 }
@@ -762,7 +797,7 @@ code.token {
   background-color: var(--floor);
 }
 
-.landing-floor .button { padding: 12px 22px; font-size: 13px; }
+.landing-floor .button { padding: 13px 26px; font-size: 17px; }
 
 /*
  * The visitor, standing in front of the floor.
@@ -795,13 +830,21 @@ code.token {
  * ticket held at every size. It turns about the held corner — a sway from the
  * middle would look like it was floating rather than being waved.
  */
+/*
+ * The ticket, pinched at the tip of the raised paw.
+ *
+ * The paw is at roughly 78% across and 40% down in the drawing, so the
+ * ticket's left edge starts there and the whole thing sits to the right of it.
+ * It used to begin at 56% and run 116% wide, which put a corner of it across
+ * the bunny's face.
+ */
 .visitor-ticket {
   position: absolute;
-  left: 56%;
-  top: 18%;
-  width: 116%;
+  left: 74%;
+  top: 24%;
+  width: 92%;
   height: auto;
-  transform-origin: 10% 58%;
+  transform-origin: 4% 52%;
   animation: ticket-wave 3.6s ease-in-out infinite;
 }
 
@@ -966,11 +1009,13 @@ code.token {
 .wt-rope {
   flex: none;
   /*
-   * 64% of the screen wide in the mockup, not the full width. The previous
-   * 118% is what made it look enormous: `cover` scales to fill the box, so an
-   * over-wide box magnified the drawing and cropped it to a thin band.
+   * Widened by about a third, to 91% of the column.
+   *
+   * Showing it whole at this width would take 42% of the screen's height, and
+   * the painting has only 58% to give — so it is still cropped from the top,
+   * just far less than before. Nothing above it moves when this changes.
    */
-  width: min(70%, 430px);
+  width: min(91%, 560px);
   max-width: none;
   /*
    * A band, not the whole drawing. At full width the rope's own proportions
@@ -979,7 +1024,7 @@ code.token {
    * its posts and lets the rest run off the bottom edge — which is what the
    * mockup shows.
    */
-  height: clamp(44px, 10cqh, 96px);
+  height: clamp(58px, 13cqh, 128px);
   object-fit: cover;
   object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);

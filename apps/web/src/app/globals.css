@@ -491,7 +491,7 @@ code.token {
    * that is the shape it binds on — a landscape frame reaches the width limit
    * well before it, and stops there.
    */
-  height: min(52cqh, calc(100cqi / var(--frame-aspect)));
+  height: min(48cqh, calc(100cqi / var(--frame-aspect)));
   max-width: 100%;
 }
 
@@ -1009,18 +1009,25 @@ code.token {
 .wt-rope {
   flex: none;
   /*
-   * Whole, and therefore small.
+   * Standing on the bottom edge, as it does in the mockup.
    *
-   * Its own proportions decide this: a rope wide enough to span the screen is
-   * over forty percent of the screen tall, which is height the painting needs.
-   * Sizing by height and letting the width follow shows all of it — both posts
-   * complete, nothing sliced by the bottom edge — at the cost of it being a
-   * smaller object than the mockup's cropped one.
+   * Two things were wrong before. It floated, with a band of wall beneath it,
+   * because the column's bottom padding sat under it — a negative margin
+   * cancels that so the rope reaches the edge. And it was sized to show all of
+   * itself, which made it a small object; the mockup runs it 64% of the screen
+   * wide and lets the posts leave the frame at the bottom, which is what posts
+   * standing on a floor do.
+   *
+   * `cover` from the top gives exactly that, provided the box is the right
+   * width. It is the box being too wide that magnified the drawing the first
+   * time, not the cropping.
    */
-  height: clamp(52px, 17cqh, 155px);
-  width: auto;
-  max-width: 100%;
+  width: min(68%, 440px);
+  height: clamp(74px, 24cqh, 215px);
+  object-fit: cover;
+  object-position: center top;
   margin-top: clamp(2px, 1cqh, 10px);
+  margin-bottom: calc(-1 * (clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)));
   pointer-events: none;
   user-select: none;
 }

@@ -33,11 +33,28 @@
   --ok: #4f8a63;
   --bad: #c0533a;
 
-  --font-script: "Beth Ellen", "Segoe Script", cursive;
-  --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
-  /* The commissioned face, which replaces the Autour One stand-in that stood
-     for the all-caps font specs.md had not licensed yet. */
+  /*
+   * One face throughout: the commissioned Inspiratiq Tiny Museum.
+   *
+   * The three roles remain as separate variables because they are still
+   * separate decisions — a title, a label and a control can want different
+   * sizes and spacing even in one face — but they all resolve here now.
+   *
+   * Sniglet stays behind each of them, and is still loaded, as a fallback that
+   * is doing real work rather than ceremony: the museum face carries 80
+   * glyphs, and has no hyphen, parentheses, ampersand, slash, or curly quotes.
+   * Any of those in an artist's own words falls through to Sniglet, which is
+   * far better than falling through to whatever the device happens to have.
+   */
+  --font-script: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
+  --font-ui: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
   --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
+  /*
+   * The exception, and it is not a stylistic one. This is for QR tokens and
+   * numeric columns, where every character occupying the same width is the
+   * entire point; the museum face has no fixed-width metrics, so setting it
+   * here would misalign the things that exist to line up.
+   */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /*
@@ -59,6 +76,14 @@ html, body {
   background: var(--surround);
   color: var(--ink);
   font-family: var(--font-ui);
+  /*
+   * One weight exists in this family, so a rule asking for 700 gets a
+   * synthetic bold — the browser smearing the outlines sideways, which on a
+   * hand-drawn face looks like a rendering fault. Turning synthesis off makes
+   * those rules render the real weight instead. Emphasis comes from size,
+   * letter-spacing and the hairline stroke on controls.
+   */
+  font-synthesis-weight: none;
   /* No pull-to-refresh or rubber-banding stealing a horizontal swipe. */
   overscroll-behavior: none;
 }
@@ -292,8 +317,8 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
-  /* Sniglet, explicitly: this is the artist's own words, and it must not
-     follow the museum face, which has no hyphen or curly apostrophe. */
+  /* The museum face, with Sniglet behind it for the characters it lacks —
+     this carries the artist's own words, which may hold any of them. */
   font-family: var(--font-ui);
   text-align: center;
   line-height: 1.25;
@@ -507,18 +532,6 @@ code.token {
   justify-content: center;
   /* Deliberately wider than the mockup, which has them almost touching. */
   gap: clamp(10px, 4.5cqi, 34px);
-}
-
-/*
- * The close-up's chrome uses the museum face rather than the rounded UI one.
- *
- * Not the plaque, though: descriptions are the artist's own words and may hold
- * a hyphen, a bracket or a curly apostrophe, none of which this face has —
- * those characters would silently fall back and break the line mid-word.
- */
-.wt-actions .button,
-.wt-plaque-row .wt-nav {
-  font-family: var(--font-button);
 }
 
 .wt-nav {

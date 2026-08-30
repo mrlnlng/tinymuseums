@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Beth+Ellen&family=Sniglet:wght@400;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&display=swap"
           rel="stylesheet"
         />
       </head>

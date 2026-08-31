@@ -9,23 +9,27 @@ export const CONFIG = {
   },
 
   /** Walls hang from a common top edge, so their plaques line up along the hall. */
-  displayTopY: 4.42,
-  displayTitleGap: 0.3,
+  displayTopY: 4.49,
+  /*  The drop from the wall's top edge to the title's *lower* edge: the title is hung from its baseline upward, so a long one grows into the headroom instead of being cut. Small, because the title belongs to the painting, not to the top of the screen. */
+  displayTitleGap: 0.07,
 
-  piece: { gap: 4.0, ropeWidth: 3.4 },
+  /** `scale` enlarges the server's framed image on the wall without re-rendering it; the layout spaces the walls at the same scale, so the hall stays evenly spaced. */
+  piece: { gap: 4.0, ropeWidth: 3.4, scale: 1.10 },
 
   /** `gap` is the drop from the wall's lower edge; `z` puts it in front of the rope. */
-  plaque: { width: 1.6, gap: 0.09, z: 0.6, titleWidth: 1.8 },
+  plaque: { width: 1.2, gap: 0.06, z: 0.6, titleWidth: 2.45 },
 
-  rope: { height: 1.0, centerY: 0.5, z: 0.5 },
+  /*  Height and centre are measured off the mockup rather than chosen: the posts' feet land at y = -0.16, a little past the floor line, because the floor is a receding plane and something standing on it meets the line in front of it, not on it. At this height the sprite's own width is also the width the mockup draws it at. */
+  rope: { height: 1.27, centerY: 0.47, z: 0.5 },
 
   /** `frequency` is the share of gaps holding one; the rest are open floor. */
   pedestal: { height: 2.4, centerY: 0.955, z: 0.3, frequency: 0.55 },
 
   character: {
-    height: 1.55,
+    /*  Smaller and standing further down the floor than it once was: the walls grew, and at its old size the visitor stood head-and-ears over the plaque of whatever it had walked up to. */
+    height: 1.36,
     /** Below the floor line: the floor is a receding plane in the art. */
-    centerY: 0.26,
+    centerY: 0.12,
     z: 0.7,
     /** Cycles per unit travelled — distance, not time, stops foot-sliding. */
     cyclesPerUnit: 0.9,

@@ -14,6 +14,15 @@ export class Placards {
   private nodes = new Map<string, HTMLElement>()
   private titles = new Map<string, HTMLElement>()
   private projected = new THREE.Vector3()
+  /*  Rendered heights, kept up to date by the observer below. A bottom-hung label has to know how tall it grew before it can be kept on screen, and asking the element that inside the frame loop would force a layout per title per frame. */
+  private heights = new WeakMap<HTMLElement, number>()
+
+  /*  Watches the titles instead of measuring them: the height changes on a resize and again when the museum face arrives and the text rewraps, and both reach us here without the loop ever touching layout. */
+  private sizes = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      this.heights.set(entry.target as HTMLElement, entry.contentRect.height)
+    }
+  })
 
   constructor(private container: HTMLElement) {}
 
@@ -49,28 +58,34 @@ export class Placards {
       if (!title) {
         title = document.createElement('div')
         title.className = 'placard-title script'
+        this.sizes.observe(title)
         title.textContent = m.display.title
         this.container.appendChild(title)
         this.titles.set(key, title)
       }
 
-      // Set small against the plaque so a whole description fits on it.
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.061))
+      // Teeny tiny against the brass, so a whole description fits on it; what
+      // still will not fit is ellipsed, because the plaque is a label and the
+      // artist's page is where the long version lives.
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.86, Math.max(7, plaquePx * 0.058), 'center')
 
-      // Its own width: wide enough for a title, and unaffected by the plaque.
-      this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(11, titlePx * 0.121))
+      /* Its own width: wide enough for a title, and unaffected by the plaque. Hung by its lower edge — the title is never trimmed, so it must grow upward into the empty wall rather than down onto the painting. */
+      this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
     }
 
     for (const map of [this.nodes, this.titles]) {
       for (const [key, el] of map) {
         if (seen.has(key)) continue
+        // The observer holds its targets, so walking the hall would accumulate
+        // one dead title per wall passed without this.
+        this.sizes.unobserve(el)
         el.remove()
         map.delete(key)
       }
     }
   }
 
-  /*  Projects a world point and writes the result straight onto the element. Anything far enough off-screen is hidden rather than positioned, so the browser never lays out labels nobody can see. */
+  /*  Projects a world point and writes the result straight onto the element. Anything far enough off-screen is hidden rather than positioned, so the browser never lays out labels nobody can see. `anchor` picks which edge of the element the world point pins: 'center' for a label that sits on its mark, 'bottom' for one that hangs from it and grows upward. */
   private place(
     node: HTMLElement,
     x: number,
@@ -79,6 +94,7 @@ export class Placards {
     viewport: Viewport,
     widthPx: number,
     fontSize: number,
+    anchor: 'center' | 'bottom',
   ): void {
     this.projected.set(x, y, 0.03)
     this.projected.project(camera)
@@ -93,12 +109,23 @@ export class Placards {
 
     node.style.width = `${widthPx}px`
     node.style.fontSize = `${fontSize}px`
+
+    let screenY = sy
+    if (anchor === 'bottom') {
+      // A title long enough to need several lines grows up the wall, and a very
+      // long one would grow off the top of it. Pushing it back down costs a
+      // little of the painting's top edge, which is cheaper than losing words.
+      const height = this.heights.get(node) ?? node.offsetHeight
+      screenY = Math.max(screenY, viewport.top + height + 4)
+    }
+
     node.style.transform =
-      `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`
+      `translate3d(${sx.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, ${anchor === 'bottom' ? '-100%' : '-50%'})`
     node.style.opacity = '1'
   }
 
   clear(): void {
+    this.sizes.disconnect()
     for (const node of this.nodes.values()) node.remove()
     for (const node of this.titles.values()) node.remove()
     this.nodes.clear()

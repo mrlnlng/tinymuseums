@@ -221,8 +221,11 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
           {/* The rope closes the composition along the bottom, as in the
               mockups. Decorative and inert — it must never take a tap meant
-              for the buttons above it. */}
-          <img className="wt-rope" src="/assets/rope.png" alt="" aria-hidden="true" />
+              for the buttons above it. An element rather than an image because
+              the stylesheet cuts the sprite into three and stretches only the
+              middle, the way the hall does, so the posts keep their drawn
+              proportions at any width. */}
+          <div className="wt-rope" aria-hidden="true" />
         </>
       )}
     </motion.div>

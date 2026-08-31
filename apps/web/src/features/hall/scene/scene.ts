@@ -17,6 +17,12 @@ interface SlotRuntime {
   readyAt?: number
 }
 
+/* How large a piece hangs on the wall: the server renders every frame to one target size, and `piece.scale` is the client's say over how much of the wall that fills — enlarging it here rather than re-rendering keeps the images cached across a change of mind. */
+function wallSize(piece: HallPieceDto): { width: number; height: number } {
+  const scale = CONFIG.piece.scale
+  return { width: piece.canvas.w * scale, height: piece.canvas.h * scale }
+}
+
 /* One painting, hung on its own wall — the plane is the framed image at the piece's own canvas proportion, hanging from a common top edge so the row stays level. */
 export interface MountedDisplay {
   index: number
@@ -67,7 +73,7 @@ export class HallScene {
   private rebuildLayout(): void {
     const widths: number[] = []
     for (let i = 0; this.slots.has(i); i++) {
-      widths.push(this.slots.get(i)!.piece.canvas.w)
+      widths.push(wallSize(this.slots.get(i)!.piece).width)
     }
     this.layout = computeLayout(widths)
 
@@ -143,8 +149,7 @@ export class HallScene {
 
     /* Walls hang from a common top edge rather than a common centre, so the row stays level; the plane is the server's framed image at the piece's own proportion. */
     const top = CONFIG.displayTopY
-    const height = piece.canvas.h
-    const width = piece.canvas.w
+    const { width, height } = wallSize(piece)
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(width, height),
       new THREE.MeshBasicMaterial({ map: slot.texture, transparent: true, opacity: 1 }),

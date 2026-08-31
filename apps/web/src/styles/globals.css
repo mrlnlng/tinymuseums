@@ -83,7 +83,9 @@ html, body {
   }
 
   .wt { padding-top: calc(clamp(8px, 2cqh, 18px) + env(safe-area-inset-top)); }
-  .wt,
+  /* The home indicator's strip belongs to the floor the rope stands on, so it
+     is added to the same variable the rope bleeds through. */
+  .wt { --wt-floor: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
   .landing { padding-bottom: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
   .page { padding-bottom: calc(44px + env(safe-area-inset-bottom)); }
 
@@ -91,7 +93,6 @@ html, body {
   .wt-nav { width: 44px; height: 44px; }
   .wt-icon,
   .chrome-button { width: 40px; height: 40px; }
-  .wt-stage { padding-inline: 52px; }
 }
 
 a { color: var(--script); }
@@ -492,12 +493,14 @@ code.token {
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
-  /* Four lines. The museum face sets lowercase as small capitals, which are
-     wider than Sniglet's lowercase, so the same sentence needs another line.
-     Past four it ellipses rather than spilling off the brass onto the wall. */
+  /* Five lines of very small type. The museum face sets lowercase as small
+     capitals, which are wider than Sniglet's lowercase, so the same sentence
+     needs another line. Past five it ellipses rather than spilling off the
+     brass onto the wall — the plaque is a label, and the artist's own page
+     carries the description in full. */
   display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -514,11 +517,9 @@ code.token {
   will-change: transform, opacity;
   pointer-events: none;
   text-wrap: balance;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  /* No clamp: a painting's title is never abbreviated. It is hung by its lower
+     edge just above the frame, so the lines a long one needs grow up into the
+     empty wall rather than down over the painting. */
 }
 
 .hall-error {
@@ -554,8 +555,13 @@ code.token {
   flex-direction: column;
   align-items: center;
   gap: clamp(4px, 1.4cqh, 14px);
-  padding: clamp(8px, 2cqh, 18px) 4% clamp(10px, 2.5cqh, 22px);
+  padding: clamp(8px, 2cqh, 18px) 4% var(--wt-floor);
   overflow: hidden;
+
+  /* The rope hangs off the bottom edge of the screen rather than floating on
+     the wall above it, so the column's own bottom padding is what it bleeds
+     through; the two are named together to stay in step. */
+  --wt-floor: clamp(10px, 2.5cqh, 22px);
 }
 
 /* Fixed-size rows: they take what they need and never get squeezed. */
@@ -579,49 +585,46 @@ code.token {
   border: none; border-radius: 50%; cursor: pointer;
 }
 
-/* Always two lines tall, so stepping between works never moves the painting. */
+/* Two lines tall unless a title needs more, so stepping between works of ordinary title length never moves the painting. */
 .wt-title {
   /* Clears the floating home/speaker buttons; the negative bottom margin keeps the painting up under the title. */
   margin: clamp(22px, 5cqh, 40px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
   /* Kept clear of the corner buttons by constraining the text's width. */
   padding-inline: clamp(52px, 18cqi, 96px);
-  font-size: clamp(15px, 3.6cqh, 26px);
+  font-size: clamp(15px, 3.4cqh, 24px);
   line-height: 1.15;
-  height: 2.3em;
+  min-height: 2.3em;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
 
-.wt-title span {
-  /* A long title must not be allowed to eat the artwork's space. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+/* No clamp: a painting's title is shown in full here as it is in the hall. Two
+   lines is the height the row reserves, and a longer one grows the row rather
+   than losing its ending. */
+.wt-title span { display: block; }
 
 .wt-loading { color: var(--ink-soft); margin: auto; }
 
-/* The stage sizes itself to the frame; the frame measures against the screen, not the stage. */
+/* The stage takes whatever height the rows below leave it — every other row is `flex: none`, so all the column's slack collects here and the plaque, buttons and rope sit low against the floor. It is also the box the frame measures against: `flex: 1 1 0` gives it a height that comes from the column rather than from its contents, which is what lets it carry a size container without the two defining each other in a circle. */
 .wt-stage {
   position: relative;
-  flex: 0 1 auto;
-  min-height: 0;
+  flex: 1 1 0;
+  min-height: 24cqh;
   width: 100%;
+  container-type: size;
   display: grid;
-  place-items: center;
+  /* Hung low: the slack, when the frame is limited by width rather than height, collects above the painting rather than under it. */
+  place-items: end center;
 }
 
 .wt-frame {
   position: relative;
   grid-area: 1 / 1;
   aspect-ratio: var(--frame-aspect);
-  /* The largest frame that fits both axes of the screen. */
-  height: min(47cqh, calc(100cqi / var(--frame-aspect)));
-  max-width: 100%;
+  /*  The largest frame that fits the stage on both axes. Measured against the stage and not the screen: sized against the screen, a wide frame came out wider than the room it had, and `max-width` then squeezed it out of its own proportions. */
+  height: min(100cqh, calc(100cqi / var(--frame-aspect)));
 }
 
 /* Under the frame, scaled out a tenth so the artwork's edges sit beneath the ornament. */
@@ -641,11 +644,11 @@ code.token {
   pointer-events: none;
 }
 
-/* The plaque and its arrows share a row of fixed height, so descriptions of different lengths do not move the buttons and rope. */
+/* The plaque and its arrows share a row that grows with the description: the whole of what the artist wrote is shown, so it is the painting above that gives up the room, never the words. */
 .wt-plaque-row {
   flex: none;
   width: 100%;
-  height: clamp(48px, 9.8cqh, 94px);
+  min-height: clamp(48px, 9.8cqh, 94px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,30 +700,27 @@ code.token {
   .wt-nav.prev svg { transform: scaleX(-1); }
 }
 
-/* The label grows with its text; the cap stops a long description crowding out the art. */
+/* The drawn plaque stretches to whatever the description needs: the art is a background painted at `100% 100%`, so a label that grew a line is a taller plaque rather than a cropped one. */
 .wt-plaque {
   flex: 0 1 auto;
   display: grid;
   place-items: center;
-  /* Narrowed a little from the mockup's 55% to make room either side. */
-  width: min(52%, 370px);
-  height: 100%;
-  padding: 3% 7%;
+  /* Wider than the mockup's 55%: the description is shown whole, and every
+     character that fits on a line is a line the plaque does not have to grow. */
+  width: min(60%, 420px);
+  min-height: 100%;
+  padding: 4% 7%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
 }
 
-/* Trimmed, not scrolled — a scrollbar in a drawn plaque looks like a bug; long descriptions belong on the artist page. */
+/* Neither trimmed nor scrolled: the description is what the artist chose to say about the work, and this screen is where it is read. Small, so that it fits. */
 .wt-plaque p {
   margin: 0;
   text-align: center;
-  font-size: clamp(10px, 2.3cqh, 14px);
-  line-height: 1.4;
+  font-size: clamp(9px, 2cqh, 12.5px);
+  line-height: 1.35;
   color: var(--plaque-ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  text-wrap: pretty;
 }
 
 
@@ -1029,9 +1029,6 @@ code.token {
   z-index: 3;
 }
 
-/* Everything below this is bottom-aligned: the slack in the column collects above the actions, which is what lifts the artwork and its plaque up under the title. */
-.wt-actions { margin-top: auto; }
-
 .wt-shop {
   display: inline-flex;
   align-items: center;
@@ -1046,16 +1043,19 @@ code.token {
   flex: none;
 }
 
-/* The velvet rope closes the composition along the bottom — wider than its column, and inert. */
+/*  The velvet rope closes the composition along the bottom — wider than its column, and inert. Cut into three and rebuilt rather than cropped: `border-image` keeps the two posts at their drawn proportions in the side borders and stretches only the swag between them, which is what the hall does to the same sprite. Whole, so the posts stand on their feet instead of being sheared off at the shin. */
 .wt-rope {
   flex: none;
-  /* `cover` from the top shows the swag and post tops, cropping only the feet. */
   width: min(84%, 540px);
-  height: clamp(64px, 19cqh, 172px);
-  object-fit: cover;
-  object-position: center top;
+  /*  The post, foot to finial. Everything else about the rope is derived from it: 1.2427 is the sprite's aspect, and the cuts at 24% and 22% fall in the empty wall beside each post, so a border that wide is the post at its own scale. */
+  --rope-post: clamp(58px, 14.5cqh, 128px);
+  height: var(--rope-post);
+  border-style: solid;
+  border-width: 0 calc(var(--rope-post) * 1.2427 * 0.22) 0 calc(var(--rope-post) * 1.2427 * 0.24);
+  border-image-source: url('/assets/rope.png');
+  border-image-slice: 0 22% 0 24% fill;
+  border-image-repeat: stretch;
   margin-top: clamp(2px, 1cqh, 10px);
-  margin-bottom: clamp(2px, 1cqh, 8px);
   pointer-events: none;
   user-select: none;
 }

@@ -1,13 +1,7 @@
 import { claim, complete, closePool, env, fail, requeueStale } from '@tiny/core'
 import { runJob, scheduleNextSeal } from '@tiny/core/worker'
 
-/**
- * The worker loop.
- *
- * Polls the jobs table, claims one at a time, and dispatches. Deliberately
- * boring: the interesting logic lives in the handlers, so replacing this loop
- * with an SQS consumer later is a change to this file only.
- */
+/* The worker loop: polls the jobs table, claims one at a time, dispatches. Replacing it with an SQS consumer is a change to this file only. */
 
 const IDLE_DELAY_MS = 750
 const STALE_SWEEP_MS = 60_000

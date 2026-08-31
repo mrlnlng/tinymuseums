@@ -8,17 +8,7 @@ import {
 } from '@tiny/core'
 import { runJob, scheduleNextSeal } from '@tiny/core/worker'
 
-/**
- * The worker, as an Amplify Gen 2 scheduled function.
- *
- * Same handlers as the local loop — only the thing that drives them changes.
- * Instead of polling forever, this drains the queue until it is empty or the
- * time budget runs out, and gets invoked again on a schedule.
- *
- * The database pool is module-scoped on purpose: Lambda reuses a warm
- * container between invocations, so reconnecting per invocation would cost a
- * round trip every time and churn Postgres connections for no reason.
- */
+/* The worker as an Amplify scheduled function: same handlers, but it drains the queue until empty or out of time. The pool is module-scoped because Lambda reuses warm containers. */
 
 /** Leave headroom below the function's configured timeout to finish cleanly. */
 const TIME_BUDGET_MS = 105_000
@@ -29,14 +19,7 @@ export interface DrainResult {
   drained: boolean
 }
 
-/**
- * Keeps the museum's ordering rotating.
- *
- * The long-running worker does this with a timer it sets at startup. A
- * scheduled function has no such continuity, so the schedule lives in the
- * queue itself: as long as exactly one seal is always waiting, the rotation
- * carries on across invocations, deploys and cold starts alike.
- */
+/* Keeps the museum's ordering rotating — the schedule lives in the queue itself, so exactly one seal always waiting carries rotation across invocations and cold starts. */
 async function keepRotating(): Promise<void> {
   if (await hasPendingJob('seal_epoch')) return
   await scheduleNextSeal(env.epochIntervalMinutes)

@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Message from '@/components/Message'
-import { registerAction } from '../actions'
+import Message from '@/shared/components/Message'
+import { registerAction } from '@/features/studio/actions'
 
 export default async function Register({
   searchParams,
@@ -11,9 +11,7 @@ export default async function Register({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Claim a wall
-      </h1>
+      <h1 className="script page-title">Claim a wall</h1>
       <p className="muted">
         Anyone can have one. Nobody is turned away on taste — there is just a short list of
         things a wall needs before it can hang.

@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { BRAND } from '@tiny/core'
-import ScreenChrome from '@/components/ScreenChrome'
-import SoundProvider from '@/components/SoundProvider'
-import './globals.css'
+import ScreenChrome from '@/shared/components/ScreenChrome'
+import SoundProvider from '@/features/sound/components/SoundProvider'
+import '../styles/globals.css'
 
 export const metadata: Metadata = {
   title: BRAND,
@@ -10,11 +10,7 @@ export const metadata: Metadata = {
     'A tiny museum you can walk through. Every artist gets a wall; every wall is worth stopping at.',
 }
 
-/**
- * `viewportFit: 'cover'` is what makes `env(safe-area-inset-*)` report real
- * values — without it they are all zero and the notch and home indicator will
- * sit on top of the UI once the app goes edge to edge on a phone.
- */
+/* `viewportFit: 'cover'` is what makes `env(safe-area-inset-*)` report real values on a phone. */
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -34,10 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/*
-          The audio element lives here, above the screen, so walking from the
-          landing page into the hall does not restart the track.
-        */}
+        {/* The audio element lives here, above the screen, so walking from the
+            landing page into the hall does not restart the track. */}
         <SoundProvider>
           {/* One frame for every route, so no screen sets its own size. */}
           <div className="screen">

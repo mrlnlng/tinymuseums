@@ -1,14 +1,7 @@
 import { redirect } from 'next/navigation'
 import { recordEvent, resolveQrToken } from '@tiny/core'
 
-/**
- * A scanned QR code.
- *
- * The token is resolved, the scan is attributed to its placement — this is
- * what makes "the café poster outperforms the business card" answerable — and
- * the visitor is sent to the artist's page. Never cached: the whole point is
- * that every scan is counted.
- */
+/* A scanned QR code: resolved, attributed to its placement (what makes "the café poster outperforms the business card" answerable), then redirected to the artist's page. Never cached. */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> },

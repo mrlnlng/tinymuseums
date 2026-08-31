@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { evaluatePublishBar, getStudioDisplay, queryOne } from '@tiny/core'
-import Message from '@/components/Message'
-import { requireArtist } from '@/lib/session'
-import { publishAction, unpublishAction } from './actions'
+import Message from '@/shared/components/Message'
+import { requireArtist } from '@/shared/lib/session'
+import { publishAction, unpublishAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,18 +24,16 @@ export default async function StudioHome({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 42, marginBottom: 4 }}>
-        {artist.displayName}
-      </h1>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <h1 className="script page-title lg">{artist.displayName}</h1>
+      <p className="muted lead">
         Your wall is at <Link href={`/a/${artist.slug}`}>/a/{artist.slug}</Link>
       </p>
 
       <Message m={m} k={k} />
 
       <div className="card">
-        <h2 style={{ fontSize: 17, marginTop: 0 }}>Before your wall can hang</h2>
-        <p className="small muted" style={{ marginTop: 0 }}>
+        <h2 className="card-title">Before your wall can hang</h2>
+        <p className="small muted lead">
           Nobody is judged on their art. These are the only requirements, and they exist so the
           museum does not fill up with empty walls.
         </p>
@@ -51,7 +49,7 @@ export default async function StudioHome({
       </div>
 
       <div className="card">
-        <h2 style={{ fontSize: 17, marginTop: 0 }}>Status</h2>
+        <h2 className="card-title">Status</h2>
         {live ? (
           <>
             <p>
@@ -62,7 +60,7 @@ export default async function StudioHome({
                 Take it down
               </button>
             </form>
-            <p className="small muted" style={{ marginBottom: 0 }}>
+            <p className="small muted flush">
               Taking down is immediate — it does not wait for the next rotation.
             </p>
           </>
@@ -77,7 +75,7 @@ export default async function StudioHome({
               </button>
             </form>
             {!report.passed ? (
-              <p className="small muted" style={{ marginBottom: 0 }}>
+              <p className="small muted flush">
                 Finish the checklist above first.
               </p>
             ) : null}
@@ -86,12 +84,12 @@ export default async function StudioHome({
       </div>
 
       <div className="card">
-        <h2 style={{ fontSize: 17, marginTop: 0 }}>Your display</h2>
+        <h2 className="card-title">Your display</h2>
         {display.rendered && display.imageUrl ? (
           <img
             src={display.imageUrl}
             alt="Your arranged display"
-            style={{ width: '100%', height: 'auto' }}
+            className="display-preview"
           />
         ) : (
           <p className="muted">

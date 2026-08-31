@@ -176,7 +176,7 @@ for name, src in [
 
 # Vector icons pass through untouched — there is nothing to crop, and scaling
 # them in the browser is the whole point of shipping SVG.
-for name, src in [("icon-basket", "icons/basket.svg"), ("icon-sound", "sound_icon.svg")]:
+for name, src in [("icon-basket", "icons/basket.svg")]:
     if os.path.exists(f"{SRC}/{src}"):
         shutil.copyfile(f"{SRC}/{src}", f"{OUT}/{name}.svg")
         manifest[name] = {"file": f"{name}.svg", "vector": True}
@@ -228,16 +228,9 @@ for facing, images in loaded.items():
         img.crop(box).save(f"{OUT}/{out_name}")
         files.append(out_name)
     walk_manifest[facing] = files
-    # The right-facing cycle is also written under the original names, so a
-    # renderer that has not been taught about facing still finds its frames.
-    if facing == "right":
-        for i, img in enumerate(images):
-            img.crop(box).save(f"{OUT}/bunny-walk-{i + 1}.png")
 
 manifest["bunnyWalk"] = {
-    "frames": len(loaded["right"]),
     "size": [box[2] - box[0], box[3] - box[1]],
-    "files": [f"bunny-walk-{i + 1}.png" for i in range(len(loaded["right"]))],
     "byFacing": walk_manifest,
 }
 
@@ -283,14 +276,15 @@ manifest["artworks"] = artworks
 # ---------------------------------------------------------------- fonts
 
 # Copied rather than converted: the browser reads .woff2 fastest, but making
-# one needs a font toolchain, and .ttf works everywhere today.
+# one needs a font toolchain. Only the OTF ships — the app's @font-face lists
+# it alone, so a stray .ttf in the source pack must not be resurrected.
 font_src = os.path.join(SRC, "customFonts")
 if os.path.isdir(font_src):
     font_out = os.path.join(os.path.dirname(OUT.rstrip("/")), "fonts")
     os.makedirs(font_out, exist_ok=True)
     fonts = []
     for f in sorted(os.listdir(font_src)):
-        if f.lower().endswith((".ttf", ".otf", ".woff", ".woff2")):
+        if f.lower().endswith((".otf", ".woff", ".woff2")):
             shutil.copyfile(os.path.join(font_src, f), os.path.join(font_out, f))
             fonts.append(f)
     manifest["fonts"] = fonts

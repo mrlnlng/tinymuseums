@@ -1,14 +1,8 @@
-/**
- * Applies db/migrations/*.sql in filename order, once each.
- *
- * Plain SQL files rather than a migration framework: the schema is the part of
- * this system most likely to be read by someone who is not in this codebase,
- * and it should be readable without learning a DSL first.
- */
+/* Applies db/migrations/*.sql in filename order, once each — plain SQL files rather than a framework, so the schema stays readable. */
 
 import { readFile, readdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { closePool, query, transaction } from '../packages/core/src/db.ts'
+import { closePool, query, transaction } from '@tiny/core'
 
 const MIGRATIONS_DIR = resolve('./db/migrations')
 

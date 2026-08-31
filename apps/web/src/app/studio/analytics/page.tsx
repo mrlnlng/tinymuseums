@@ -1,5 +1,5 @@
 import { analyticsFor } from '@tiny/core'
-import { requireArtist } from '@/lib/session'
+import { requireArtist } from '@/shared/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,9 +9,7 @@ export default async function AnalyticsPage() {
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Who came by
-      </h1>
+      <h1 className="script page-title">Who came by</h1>
 
       <div className="grid two">
         {[
@@ -21,13 +19,13 @@ export default async function AnalyticsPage() {
           ['Followers', stats.followers],
         ].map(([label, value]) => (
           <div key={String(label)} className="plaque-card">
-            <div style={{ fontSize: 30, fontWeight: 800 }}>{value}</div>
+            <div className="stat-value">{value}</div>
             <div className="small">{label}</div>
           </div>
         ))}
       </div>
 
-      <h2 style={{ fontSize: 18, marginTop: 28 }}>Scans by placement</h2>
+      <h2 className="stat-section">Scans by placement</h2>
       {stats.scansByPlacement.length === 0 ? (
         <p className="muted">No scans yet. Codes live under Codes.</p>
       ) : (
@@ -49,7 +47,7 @@ export default async function AnalyticsPage() {
         </table>
       )}
 
-      <h2 style={{ fontSize: 18, marginTop: 28 }}>Most looked at</h2>
+      <h2 className="stat-section">Most looked at</h2>
       {stats.topPieces.length === 0 ? (
         <p className="muted">Nothing yet.</p>
       ) : (

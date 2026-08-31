@@ -1,20 +1,11 @@
-/**
- * Wire and domain types shared by the web app and the worker.
- *
- * These are the shapes the hall client consumes, so changing them is a
- * contract change rather than an implementation detail.
- */
+/*  Wire and domain types shared by the web app and the worker — the shapes the hall client consumes, so changing them is a contract change. */
 
 export type ArtistStatus = 'draft' | 'live' | 'suspended'
 export type AssetStatus = 'pending' | 'ready' | 'failed'
 export type Availability = 'not_for_sale' | 'available' | 'sold'
 export type LayoutName = 'single' | 'pair' | 'trio' | 'quad'
 
-/**
- * One framed piece's placement on the display canvas, in normalised
- * coordinates. Origin top-left, both axes 0..1. The rect covers the whole
- * frame including its ornament — that is what a visitor actually taps.
- */
+/* One framed piece's placement on the display canvas, in normalised coordinates covering the whole frame — that is what a visitor actually taps. */
 export interface Placement {
   pieceId: string
   x: number
@@ -47,23 +38,13 @@ export interface DisplayDto {
   image: { url: string; width: number; height: number }
   regionMap: RegionMap
 }
-
-/**
- * One painting, hung on its own wall in the hall.
- *
- * Unlike a DisplayDto (an artist's flattened collage, still used on the artist
- * page), each slot is a single framed work rendered to its own image, so a
- * landscape work gets a landscape frame. The client renders the whole image as
- * one plane and tags it with `pieceId` for hit testing.
- */
+/* One painting, hung on its own wall in the hall — unlike a DisplayDto, each slot is a single framed work rendered to its own image, so a landscape work gets a landscape frame; the client tags it with pieceId for hit testing. */
 export interface HallPieceDto {
   pieceId: string
   artistId: string
   slug: string
   artistName: string
-  /** The painting's own title, hung above it. */
   title: string
-  /** The artist's statement, shown on the plaque below. */
   statement: string
   /** The framed painting's size in world units. */
   canvas: { w: number; h: number }

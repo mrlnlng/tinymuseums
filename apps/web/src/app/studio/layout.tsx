@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { BRAND } from '@tiny/core'
-import { currentArtist } from '@/lib/session'
-import { signOutAction } from './actions'
+import { currentArtist } from '@/shared/lib/session'
+import { signOutAction } from '@/features/studio/actions'
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
   const artist = await currentArtist()
@@ -21,18 +21,7 @@ export default async function StudioLayout({ children }: { children: React.React
             <Link href="/studio/analytics">Visitors</Link>
             <Link href={`/a/${artist.slug}`}>View</Link>
             <form action={signOutAction}>
-              <button
-                type="submit"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  font: 'inherit',
-                  fontWeight: 700,
-                  color: 'inherit',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
+              <button type="submit" className="nav-button">
                 Sign out
               </button>
             </form>

@@ -1,7 +1,7 @@
 import { LAYOUTS, LAYOUT_NAMES, getStorage, getStudioDisplay, pickDerivative, query, type Derivative } from '@tiny/core'
-import Message from '@/components/Message'
-import { requireArtist } from '@/lib/session'
-import { saveDisplayAction } from '../actions'
+import Message from '@/shared/components/Message'
+import { requireArtist } from '@/shared/lib/session'
+import { saveDisplayAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,9 +35,7 @@ export default async function DisplayPage({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Arrange your wall
-      </h1>
+      <h1 className="script page-title">Arrange your wall</h1>
       <p className="muted">
         Choose a template and tick what hangs. Everything else stays on your page — visitors
         walk through your whole body of work once they step up to the wall.
@@ -51,10 +49,10 @@ export default async function DisplayPage({
         </p>
       ) : (
         <form action={saveDisplayAction} className="card">
-          <h2 style={{ fontSize: 17, marginTop: 0 }}>Template</h2>
+          <h2 className="card-title">Template</h2>
           <div className="grid two">
             {LAYOUT_NAMES.map((name) => (
-              <label key={name} className="plaque-card" style={{ cursor: 'pointer' }}>
+              <label key={name} className="plaque-card">
                 <input
                   type="radio"
                   name="layout"
@@ -70,8 +68,8 @@ export default async function DisplayPage({
             ))}
           </div>
 
-          <h2 style={{ fontSize: 17 }}>What hangs</h2>
-          <p className="small muted" style={{ marginTop: 0 }}>
+          <h2 className="subhead">What hangs</h2>
+          <p className="small muted lead">
             Tick in the order you want them, up to the template&rsquo;s capacity. Extras are
             ignored.
           </p>
@@ -79,7 +77,7 @@ export default async function DisplayPage({
             {ready.map((row) => {
               const small = pickDerivative(row.derivatives ?? [], 0)
               return (
-                <label key={row.id} className="card" style={{ cursor: 'pointer', margin: 0 }}>
+                <label key={row.id} className="card">
                   <div
                     className="thumb"
                     style={
@@ -88,7 +86,7 @@ export default async function DisplayPage({
                     role="img"
                     aria-label={row.title}
                   />
-                  <p className="small" style={{ margin: '10px 0 0' }}>
+                  <p className="small thumb-caption">
                     <input type="checkbox" name="piece" value={row.id} defaultChecked={hung.has(row.id)} />{' '}
                     {row.title}
                   </p>
@@ -97,7 +95,7 @@ export default async function DisplayPage({
             })}
           </div>
 
-          <button className="button" type="submit" style={{ marginTop: 14 }}>
+          <button className="button form-submit" type="submit">
             Hang these
           </button>
         </form>
@@ -105,8 +103,8 @@ export default async function DisplayPage({
 
       {display.rendered && display.imageUrl ? (
         <div className="card">
-          <h2 style={{ fontSize: 17, marginTop: 0 }}>How it looks</h2>
-          <img src={display.imageUrl} alt="Your display" style={{ width: '100%', height: 'auto' }} />
+          <h2 className="card-title">How it looks</h2>
+          <img src={display.imageUrl} alt="Your display" className="display-preview" />
         </div>
       ) : null}
     </>

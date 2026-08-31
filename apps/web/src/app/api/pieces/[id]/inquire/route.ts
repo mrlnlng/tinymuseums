@@ -3,13 +3,7 @@ import { createInquiry } from '@tiny/core'
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_MESSAGE = 2000
 
-/**
- * Asking an artist about a work.
- *
- * The message goes straight to the artist and the platform steps out of the
- * way — there is no checkout, no commission, and no order record, because the
- * platform takes no revenue and should not be a party to the sale.
- */
+/* Asking an artist about a work: the message goes straight to the artist and the platform steps out of the way — no checkout, no commission, no order record. */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

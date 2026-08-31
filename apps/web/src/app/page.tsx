@@ -1,18 +1,7 @@
 import Link from 'next/link'
 import { BRAND, ensureEpoch, getHallSlice } from '@tiny/core'
 
-/**
- * The front door, laid out against mockup 1.
- *
- * A visitor arrives here rather than mid-corridor: the welcome plaque sets the
- * tone, the guidelines set expectations, and the two buttons on the floor are
- * the only choices — walk in, or claim a wall. Both go to a full screen of
- * their own; nothing expands in place, so this screen never scrolls.
- *
- * The artists at the bottom are in the document but not on screen. They give
- * the most linked-to page in the product real, crawlable content pointing at
- * every artist's own page, without pushing the layout around.
- */
+/* The front door, laid out against mockup 1: welcome plaque, guidelines, and the two buttons on the floor — walk in, or claim a wall. The artists at the bottom are crawlable content, not on screen. */
 
 export const dynamic = 'force-dynamic'
 
@@ -54,24 +43,15 @@ export default async function LandingPage() {
         </Link>
       </div>
 
-      {/*
-        The visitor stands in front of the floor rather than above it, so it
-        overlaps the boundary and reads as standing on the boards. It is the
-        last child and outside both bands for that reason: stacking, not order.
-      */}
-      {/*
-        The column at the right edge, as in the mockup: standing on the boards,
-        running off the side of the screen. Behind the visitor and inert.
-      */}
+      {/* The visitor stands in front of the floor rather than above it, so it reads as standing on the boards. */}
+      {/* The column at the right edge, as in the mockup: standing on the
+          boards, running off the side of the screen. Behind the visitor and
+          inert. */}
       <img className="landing-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
 
       <div className="landing-visitor">
         <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" aria-hidden="true" />
-        {/*
-          The ticket is a way in, not decoration. It is a real link so it works
-          by keyboard and reads as a control, and it carries its own label —
-          "Free entry" is drawn into the image, where no reader can reach it.
-        */}
+        {/* The ticket is a way in, not decoration: a real link so it works by keyboard and reads as a control, with its own label. */}
         <Link className="visitor-ticket" href="/museum" aria-label="Start visit">
           <img src="/assets/ticket.png" alt="" aria-hidden="true" />
         </Link>

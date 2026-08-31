@@ -1,7 +1,7 @@
 import { env, listQrTokens } from '@tiny/core'
-import Message from '@/components/Message'
-import { requireArtist } from '@/lib/session'
-import { createCodeAction } from '../actions'
+import Message from '@/shared/components/Message'
+import { requireArtist } from '@/shared/lib/session'
+import { createCodeAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +16,7 @@ export default async function CodesPage({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Your codes
-      </h1>
+      <h1 className="script page-title">Your codes</h1>
       <p className="muted">
         Make a separate code for each place you put one. That is the only way to find out
         whether the café poster does better than the business card.

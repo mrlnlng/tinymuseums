@@ -10,10 +10,6 @@
   ],
   "scripts": {
     "setup": "cp -n .env.example .env || true",
-    "db": "node --experimental-strip-types --env-file=.env scripts/db.ts",
-    "db:migrate": "node --experimental-strip-types --env-file=.env scripts/migrate.ts",
-    "db:seed": "node --experimental-strip-types --env-file=.env scripts/seed.ts",
-    "db:reset": "rm -rf .data/pgdata .data/media && npm run db:migrate",
     "dev": "concurrently -n web,worker -c cyan,magenta \"npm:dev:web\" \"npm:dev:worker\"",
     "dev:web": "npm run dev --workspace @tiny/web",
     "dev:worker": "npm run dev --workspace @tiny/worker",
@@ -26,7 +22,6 @@
   "devDependencies": {
     "@types/node": "^22.9.0",
     "concurrently": "^9.1.0",
-    "embedded-postgres": "^18.4.0-beta.17",
     "esbuild": "^0.24.0",
     "typescript": "^5.6.3"
   }

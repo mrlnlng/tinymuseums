@@ -10,6 +10,12 @@
 # the public repository.
 .agents/
 
+# Local development tooling — the DB runner, migrations, seeding, and the asset
+# pipeline. Kept on this machine only; production deploys never use them.
+scripts/
+db/
+docker-compose.yml
+
 # Keys, certificates and credential files — never in this repo.
 *.pem
 *.key

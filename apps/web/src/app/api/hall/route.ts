@@ -1,14 +1,6 @@
 import { ensureEpoch, epochById, getHallSlice } from '@tiny/core'
 
-/**
- * A slice of the hall.
- *
- * The ordering inside an epoch never changes, so this response is stable for
- * a given (epoch, after, limit). It is not marked immutable, though: takedown
- * is checked at read time and must take effect quickly, so a short TTL with
- * revalidation is the honest header. In production the suppression list would
- * move to the edge and this could go back to being cached indefinitely.
- */
+/* A slice of the hall: stable for a given (epoch, after, limit), but not immutable — takedown is checked at read time, so a short TTL is the honest header. */
 
 const MAX_LIMIT = 12
 

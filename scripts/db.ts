@@ -1,14 +1,4 @@
-/**
- * Local Postgres.
- *
- * Docker is the intended way to run this (see docker-compose.yml) but is not
- * installed everywhere, and installing it needs root. embedded-postgres runs
- * the real Postgres binaries as the current user on the same port, so
- * DATABASE_URL is identical either way and nothing in the app can tell the
- * difference.
- *
- * Runs in the foreground, like `docker compose up`. Ctrl-C stops it cleanly.
- */
+/* Local Postgres: embedded-postgres runs the real binaries as the current user on the same port as docker-compose, so DATABASE_URL is identical either way. Runs in the foreground; Ctrl-C stops it cleanly. */
 
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'

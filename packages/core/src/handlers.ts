@@ -1,20 +1,14 @@
-import { query, queryOne } from './db.ts'
-import { renderDisplayCollage, renderSinglePieceFrame } from './collage.ts'
-import { sealEpoch } from './epoch.ts'
-import { ImageRejected, generateDerivatives } from './images.ts'
-import { enqueue, type Job } from './jobs.ts'
-import { getMailer, newWorkNotice } from './mail.ts'
-import { collageKey, pieceFrameKey, getStorage } from './storage.ts'
-import { confirmedFollowers } from './audience.ts'
+import { query, queryOne } from './infra/db.ts'
+import { renderDisplayCollage, renderSinglePieceFrame } from './media/collage.ts'
+import { sealEpoch } from './domain/epoch.ts'
+import { ImageRejected, generateDerivatives } from './media/images.ts'
+import { enqueue, type Job } from './infra/jobs.ts'
+import { getMailer, newWorkNotice } from './infra/mail.ts'
+import { collageKey, pieceFrameKey, getStorage } from './media/storage.ts'
+import { confirmedFollowers } from './domain/audience.ts'
 import type { Derivative, LayoutName, Placement } from './types.ts'
 
-/**
- * Job handlers.
- *
- * These live in core rather than in the worker app so the seed script can run
- * the same pipeline inline, and so swapping the polling loop for an SQS
- * consumer changes only how a handler is invoked, never what it does.
- */
+/* Job handlers live in core so the seed script runs the same pipeline inline, and an SQS consumer changes only how a handler is invoked. */
 
 export async function handleDerivatives(assetId: string): Promise<void> {
   const asset = await queryOne<{ id: string; artist_id: string; storage_key: string }>(

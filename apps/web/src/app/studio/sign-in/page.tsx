@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Message from '@/components/Message'
-import { signInAction } from '../actions'
+import Message from '@/shared/components/Message'
+import { signInAction } from '@/features/studio/actions'
 
 export default async function SignIn({
   searchParams,
@@ -11,9 +11,7 @@ export default async function SignIn({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Sign in
-      </h1>
+      <h1 className="script page-title">Sign in</h1>
       <Message m={m} k={k} />
 
       <form action={signInAction} className="card">
@@ -38,8 +36,7 @@ export default async function SignIn({
 
       <p className="small muted">
         No wall yet? <Link href="/studio/register">Claim one</Link>.
-        {/* The seed password is a development convenience; it has no business
-            being printed on a production sign-in page. */}
+        {/* Dev-only: the seed password has no business on a production page. */}
         {process.env.NODE_ENV === 'production' ? null : (
           <>
             {' '}

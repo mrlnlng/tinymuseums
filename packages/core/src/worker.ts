@@ -1,10 +1,4 @@
-/**
- * Entry point for the worker only.
- *
- * These modules pull in sharp and read files from the package's assets
- * directory. Keeping them behind a separate export means the web tier cannot
- * accidentally bundle an image codec into a request handler.
- */
+/* Entry point for the worker only — these modules pull in sharp, and keeping them behind a separate export keeps the image codec out of the web bundle. */
 
 export {
   DERIVATIVE_WIDTHS,
@@ -12,13 +6,13 @@ export {
   MIN_LONG_EDGE,
   generateDerivatives,
   type ProcessedAsset,
-} from './images.ts'
+} from './media/images.ts'
 export {
   PX_PER_UNIT,
   renderDisplayCollage,
   type CollageInput,
   type CollageOutput,
-} from './collage.ts'
+} from './media/collage.ts'
 export {
   handleDerivatives,
   handleNotifyFollowers,

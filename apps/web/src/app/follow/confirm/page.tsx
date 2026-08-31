@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { confirmFollow } from '@tiny/core'
+import FollowNotice from '@/features/audience/components/FollowNotice'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,18 +12,13 @@ export default async function ConfirmFollow({
   const ok = token ? await confirmFollow(token) : false
 
   return (
-    <main className="page">
-      <h1 className="script" style={{ fontSize: 40 }}>
-        {ok ? 'You are on the list' : 'That link has expired'}
-      </h1>
-      <p>
-        {ok
+    <FollowNotice
+      title={ok ? 'You are on the list' : 'That link has expired'}
+      body={
+        ok
           ? 'You will get one email when there is new work on that wall. Nothing else.'
-          : 'It may already have been used. Ask to follow again from the artist’s page.'}
-      </p>
-      <Link className="button" href="/">
-        Walk the museum
-      </Link>
-    </main>
+          : 'It may already have been used. Ask to follow again from the artist’s page.'
+      }
+    />
   )
 }

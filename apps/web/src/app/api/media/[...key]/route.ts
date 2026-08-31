@@ -1,13 +1,6 @@
 import { getStorage } from '@tiny/core'
 
-/**
- * Local stand-in for the CloudFront distribution.
- *
- * Objects are content-addressed or version-keyed, so they are immutable and
- * can be cached forever. That is the same header CloudFront will serve, which
- * means the caching behaviour we develop against is the caching behaviour we
- * ship.
- */
+/*  Local stand-in for the CloudFront distribution. Objects are content-addressed or version-keyed, so they are immutable and can be cached forever — the same header CloudFront will serve. */
 
 const CONTENT_TYPES: Record<string, string> = {
   png: 'image/png',

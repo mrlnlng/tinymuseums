@@ -1,21 +1,15 @@
-/**
- * Seeds a browsable museum.
- *
- * Runs the real pipeline inline — upload, derivatives, compose, publish, seal —
- * rather than inserting pre-baked rows, so seeding also exercises every step
- * the worker performs. If seeding succeeds, the pipeline works.
- */
+/* Seeds a browsable museum by running the real pipeline inline — upload, derivatives, compose, publish, seal — so seeding also exercises every step the worker performs. */
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { closePool, ensureQrToken, query, queryOne, repoRoot } from '../packages/core/src/index.ts'
-import { hashPassword, uniqueSlug } from '../packages/core/src/auth.ts'
-import { createAssetFromUpload } from '../packages/core/src/uploads.ts'
-import { setDisplay } from '../packages/core/src/artists.ts'
-import { publishArtist } from '../packages/core/src/publish.ts'
-import { layoutForCount } from '../packages/core/src/layouts.ts'
-import { handleDerivatives, handleRenderDisplay, handleSealEpoch } from '../packages/core/src/handlers.ts'
-import { mulberry32 } from '../packages/core/src/random.ts'
+import { closePool, ensureQrToken, query, queryOne, repoRoot } from '@tiny/core'
+import { hashPassword, uniqueSlug } from '@tiny/core'
+import { createAssetFromUpload } from '@tiny/core'
+import { setDisplay } from '@tiny/core'
+import { publishArtist } from '@tiny/core'
+import { layoutForCount } from '@tiny/core'
+import { handleDerivatives, handleRenderDisplay, handleSealEpoch } from '@tiny/core/worker'
+import { mulberry32 } from '@tiny/core'
 
 const PASSWORD = 'tinymuseum'
 
@@ -49,14 +43,7 @@ const DESCRIPTIONS = [
   'Painted quickly, in one sitting, after a long stretch of not painting at all.',
 ]
 
-/**
- * The real paintings shipped in the asset pack.
- *
- * There are five, and the publish bar needs three works per artist, so they
- * repeat across artists — each artist gets a distinct set of three, offset so
- * no two walls are identical. Obviously seed data, but it is real art in a real
- * frame, which is what makes the hall worth looking at while tuning it.
- */
+/* The five real paintings from the asset pack, repeated across artists with an offset so no two walls are identical. */
 interface Artwork {
   title: string
   bytes: Buffer

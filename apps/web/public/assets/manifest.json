@@ -91,10 +91,6 @@
     "file": "icon-basket.svg",
     "vector": true
   },
-  "icon-sound": {
-    "file": "icon-sound.svg",
-    "vector": true
-  },
   "floor": {
     "size": [
       1655,
@@ -102,17 +98,9 @@
     ]
   },
   "bunnyWalk": {
-    "frames": 5,
     "size": [
       382,
       593
-    ],
-    "files": [
-      "bunny-walk-1.png",
-      "bunny-walk-2.png",
-      "bunny-walk-3.png",
-      "bunny-walk-4.png",
-      "bunny-walk-5.png"
     ],
     "byFacing": {
       "left": [
@@ -216,8 +204,7 @@
     }
   ],
   "fonts": [
-    "Inspiratiq_tiny_museum-Regular.otf",
-    "Inspiratiq_tiny_museum-Regular.ttf"
+    "Inspiratiq_tiny_museum-Regular.otf"
   ],
   "soundEffects": {
     "footsteps": {

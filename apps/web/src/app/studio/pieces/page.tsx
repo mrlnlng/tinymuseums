@@ -1,8 +1,8 @@
 import { getStorage, pickDerivative, query, type Derivative } from '@tiny/core'
-import Message from '@/components/Message'
-import UploadWork from '@/components/UploadWork'
-import { requireArtist } from '@/lib/session'
-import { deletePieceAction, updatePieceAction } from '../actions'
+import Message from '@/shared/components/Message'
+import UploadWork from '@/features/studio/components/UploadWork'
+import { requireArtist } from '@/shared/lib/session'
+import { deletePieceAction, updatePieceAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,9 +44,7 @@ export default async function PiecesPage({
 
   return (
     <>
-      <h1 className="script" style={{ fontSize: 38 }}>
-        Your works
-      </h1>
+      <h1 className="script page-title">Your works</h1>
       <Message m={m} k={k} />
 
       <UploadWork />
@@ -55,14 +53,14 @@ export default async function PiecesPage({
 
       {rows.map((row) => (
         <div key={row.id} className="card">
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div className="piece-row">
             <div
-              className="thumb"
-              style={{ width: 90, flex: 'none', backgroundImage: thumbUrl(row.derivatives) ? `url(${thumbUrl(row.derivatives)})` : undefined }}
+              className="thumb thumb-sm"
+              style={{ backgroundImage: thumbUrl(row.derivatives) ? `url(${thumbUrl(row.derivatives)})` : undefined }}
               role="img"
               aria-label={row.title}
             />
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="piece-fields">
               {row.status === 'ready' ? null : (
                 <p className={`notice ${row.status === 'failed' ? 'bad' : 'ok'}`}>
                   {row.status === 'failed'
@@ -110,7 +108,7 @@ export default async function PiecesPage({
                 </button>
               </form>
 
-              <form action={deletePieceAction} style={{ marginTop: 10 }}>
+              <form action={deletePieceAction} className="piece-remove">
                 <input type="hidden" name="id" value={row.id} />
                 <button className="button quiet" type="submit">
                   Remove

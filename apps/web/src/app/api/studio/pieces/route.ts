@@ -1,11 +1,7 @@
 import { UploadRejected, queryOne, registerUpload } from '@tiny/core'
-import { currentArtist } from '@/lib/session'
+import { currentArtist } from '@/shared/lib/session'
 
-/**
- * Step two of an upload: record the object the browser PUT, and hang metadata
- * on it. The worker takes it from here — validation, EXIF stripping, and the
- * derivative ladder all happen out of band.
- */
+/*  Step two of an upload: record the object the browser PUT, and hang metadata on it. The worker takes it from here — validation, EXIF stripping, and the derivative ladder all happen out of band. */
 export async function POST(request: Request) {
   const artist = await currentArtist()
   if (!artist) return Response.json({ error: 'Sign in first' }, { status: 401 })

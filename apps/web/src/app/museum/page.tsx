@@ -1,15 +1,8 @@
 import Link from 'next/link'
 import { BRAND, ensureEpoch, getHallSlice, type HallSliceDto } from '@tiny/core'
-import Museum from '@/components/Museum'
+import Museum from '@/features/hall/components/Museum'
 
-/**
- * The museum entrance.
- *
- * The first slice is rendered on the server so the hall has something to hang
- * the moment the canvas comes up, and so there is a real document underneath
- * the WebGL — the hidden index below is the crawlable, screen-reader surface
- * that justified server rendering in the first place.
- */
+/* The museum entrance. The first slice is rendered on the server so the hall has something to hang immediately, and so there is a real crawlable document underneath the WebGL. */
 
 export const dynamic = 'force-dynamic'
 
@@ -24,9 +17,7 @@ export default async function MuseumPage() {
   if (slice.slots.length === 0) {
     return (
       <main className="page">
-        <h1 className="script" style={{ fontSize: 44 }}>
-          {BRAND} is empty
-        </h1>
+        <h1 className="script page-title lg">{BRAND} is empty</h1>
         <p>
           Nothing has been hung yet. The first artist to clear the publish bar gets the
           entrance to themselves.

@@ -715,7 +715,9 @@ code.token {
 /* The welcome plaque, on the plaque asset. */
 .welcome-plaque {
   width: 67%;
-  aspect-ratio: 926 / 400;
+  /* The asset's own ratio. Anything else stretches the drawn plaque, and this
+     is also what puts its height at the mockup's 18.7% of the screen. */
+  aspect-ratio: 1002 / 497;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -844,7 +846,8 @@ code.token {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 0 clamp(16px, 6%, 34px) 0 0;
+  /* Right inset keeps the button clear of the column at the screen's edge. */
+  padding: 0 clamp(40px, 17%, 90px) 0 0;
   background: url('/assets/floor.png') repeat-x center top / auto 100%;
   background-color: var(--floor);
 }
@@ -908,6 +911,24 @@ code.token {
   outline: 3px solid var(--script);
   outline-offset: 4px;
   border-radius: 6px;
+}
+
+/*
+ * The column at the right-hand edge.
+ *
+ * Measured from the mockup: its left edge lands at 87% across, its top at 59%
+ * down, and it runs off the side of the screen and down past the floor line —
+ * so it is anchored to the bottom and allowed to overflow rather than being
+ * fitted on screen. Behind the visitor, and inert.
+ */
+.landing-column {
+  position: absolute;
+  right: -9%;
+  bottom: calc(var(--floor-height) * 0.8);
+  width: 22%;
+  height: auto;
+  z-index: 1;
+  pointer-events: none;
 }
 
 @keyframes ticket-wave {

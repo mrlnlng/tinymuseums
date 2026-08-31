@@ -59,6 +59,12 @@ export default async function LandingPage() {
         overlaps the boundary and reads as standing on the boards. It is the
         last child and outside both bands for that reason: stacking, not order.
       */}
+      {/*
+        The column at the right edge, as in the mockup: standing on the boards,
+        running off the side of the screen. Behind the visitor and inert.
+      */}
+      <img className="landing-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
+
       <div className="landing-visitor">
         <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" aria-hidden="true" />
         {/*

@@ -132,13 +132,14 @@ const worker = new NodejsFunction(stack, 'Worker', {
     commandHooks: {
       beforeBundling: () => [],
       beforeInstall: () => [],
-      // The collage compositor reads frame.png and manifest.json at runtime.
-      // esbuild bundles modules, not data, so they have to be carried across
-      // by hand; CORE_ASSETS_DIR below tells core where they landed.
+      // The compositor reads the core assets (frames + manifest) at runtime.
+      // esbuild bundles modules, not data, so they have to be carried across by
+      // hand; CORE_ASSETS_DIR below tells core where they landed. Copy the whole
+      // directory so a new asset (e.g. frame-landscape.png) ships with the
+      // bundle instead of needing a line here each time.
       afterBundling: (inputDir: string, outputDir: string) => [
         `mkdir -p ${outputDir}/core-assets`,
-        `cp ${inputDir}/packages/core/assets/frame.png ${outputDir}/core-assets/`,
-        `cp ${inputDir}/packages/core/assets/manifest.json ${outputDir}/core-assets/`,
+        `cp -r ${inputDir}/packages/core/assets/. ${outputDir}/core-assets/`,
       ],
     },
   },
@@ -146,8 +147,8 @@ const worker = new NodejsFunction(stack, 'Worker', {
     NODE_ENV: 'production',
     DATABASE_URL: setting('DATABASE_URL', ''),
     SESSION_SECRET: setting('SESSION_SECRET', ''),
-    // Where afterBundling put frame.png and manifest.json. /var/task is the
-    // Lambda package root, which is what the bundling output directory becomes.
+    // Where afterBundling put the core assets. /var/task is the Lambda package
+    // root, which is what the bundling output directory becomes.
     CORE_ASSETS_DIR: '/var/task/core-assets',
     STORAGE_DRIVER: setting('STORAGE_DRIVER', 's3'),
     S3_BUCKET: setting('S3_BUCKET', ''),

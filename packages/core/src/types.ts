@@ -3,18 +3,6 @@
 export type ArtistStatus = 'draft' | 'live' | 'suspended'
 export type AssetStatus = 'pending' | 'ready' | 'failed'
 export type Availability = 'not_for_sale' | 'available' | 'sold'
-export type LayoutName = 'single' | 'pair' | 'trio' | 'quad'
-
-/* One framed piece's placement on the display canvas, in normalised coordinates covering the whole frame — that is what a visitor actually taps. */
-export interface Placement {
-  pieceId: string
-  x: number
-  y: number
-  w: number
-  h: number
-}
-
-export type RegionMap = Placement[]
 
 /** A derivative produced by the image pipeline. */
 export interface Derivative {
@@ -26,18 +14,6 @@ export interface Derivative {
   bytes: number
 }
 
-export interface DisplayDto {
-  artistId: string
-  slug: string
-  artistName: string
-  statement: string
-  layout: LayoutName
-  /** Display canvas size in world units, so the renderer can size the plane. */
-  canvas: { w: number; h: number }
-  /** The flattened collage: one image for the whole display. */
-  image: { url: string; width: number; height: number }
-  regionMap: RegionMap
-}
 /* One painting, hung on its own wall in the hall — unlike a DisplayDto, each slot is a single framed work rendered to its own image, so a landscape work gets a landscape frame; the client tags it with pieceId for hit testing. */
 export interface HallPieceDto {
   pieceId: string
@@ -45,7 +21,10 @@ export interface HallPieceDto {
   slug: string
   artistName: string
   title: string
+  /** The artist's own blurb (crawlable lists); the plaque shows `description`. */
   statement: string
+  /** The work's description — what a visitor reads standing in front of it. */
+  description: string
   /** The framed painting's size in world units. */
   canvas: { w: number; h: number }
   image: { url: string; width: number; height: number }
@@ -73,6 +52,12 @@ export interface PieceDto {
   dimensions: string | null
   orderIndex: number
   imageUrl: string | null
+  /** Where "Shop print" goes, if the artist set one. */
+  shopUrl: string | null
+  /** The work's own framed image (what hangs in the hall). */
+  frameUrl: string | null
+  frameWidth: number | null
+  frameHeight: number | null
   availability: Availability
   priceCents: number | null
   currency: string | null
@@ -83,6 +68,6 @@ export interface ArtistPageDto {
   slug: string
   artistName: string
   statement: string
-  display: DisplayDto | null
+  /** The arranged works (stands 1..30) in order — what a visitor can see. */
   pieces: PieceDto[]
 }

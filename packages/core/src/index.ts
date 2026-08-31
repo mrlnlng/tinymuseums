@@ -5,7 +5,6 @@ export { env, repoRoot } from './infra/env.ts'
 export { closePool, query, queryOne } from './infra/db.ts'
 export { getStorage, verifyUploadSignature } from './media/storage.ts'
 export { claim, complete, fail, hasPendingJob, requeueStale } from './infra/jobs.ts'
-export { LAYOUTS, LAYOUT_NAMES, isLayoutName, layoutForCount } from './media/layouts.ts'
 export { pickDerivative } from './media/derivatives.ts'
 export {
   artistForSession,
@@ -17,7 +16,16 @@ export {
   type AuthedArtist,
 } from './domain/auth.ts'
 export { ensureEpoch, epochById, getHallSlice } from './domain/epoch.ts'
-export { getArtistPage, getStudioDisplay, setDisplay } from './domain/artists.ts'
+export { getArtistPage } from './domain/artists.ts'
+export {
+  MAX_STANDS,
+  deletePiece,
+  getGallery,
+  hangPiece,
+  movePiece,
+  unhangPiece,
+  type GalleryPiece,
+} from './domain/gallery.ts'
 export {
   MAX_UPLOAD_BYTES,
   UploadRejected,
@@ -35,6 +43,7 @@ export {
   listQrTokens,
   recordEvent,
   resolveQrToken,
+  revokeQrToken,
   unsubscribe,
   type EventKind,
 } from './domain/audience.ts'

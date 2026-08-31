@@ -78,10 +78,7 @@ export default function UploadWork() {
           digest,
           title: formData.get('title'),
           description: formData.get('description'),
-          medium: formData.get('medium'),
-          year: Number(formData.get('year')) || undefined,
-          dimensions: formData.get('dimensions'),
-          forSale: Boolean(formData.get('forSale')),
+          shopUrl: formData.get('shopUrl'),
         }),
       })
       const saved = (await saveResponse.json()) as { error?: string }
@@ -154,25 +151,12 @@ export default function UploadWork() {
           At least 20 characters. This is what a visitor reads standing in front of it.
         </span>
       </div>
-      <div className="grid two">
-        <div className="field">
-          <label htmlFor="medium">Medium</label>
-          <input id="medium" name="medium" placeholder="Oil on linen" />
-        </div>
-        <div className="field">
-          <label htmlFor="year">Year</label>
-          <input id="year" name="year" type="number" min={1000} max={2100} />
-        </div>
-        <div className="field">
-          <label htmlFor="dimensions">Dimensions</label>
-          <input id="dimensions" name="dimensions" placeholder="40 x 60 cm" />
-        </div>
-        <div className="field">
-          <label htmlFor="forSale">
-            <input id="forSale" name="forSale" type="checkbox" /> Open to enquiries
-          </label>
-          <span className="hint">Visitors can email you about it. No payment happens here.</span>
-        </div>
+      <div className="field">
+        <label htmlFor="shopUrl">Shop print link (optional)</label>
+        <input id="shopUrl" name="shopUrl" type="url" placeholder="https://…" />
+        <span className="hint">
+          Where "Shop print" goes on this work. Leave empty to hide the button.
+        </span>
       </div>
 
       <button className="button" type="submit" disabled={busy}>

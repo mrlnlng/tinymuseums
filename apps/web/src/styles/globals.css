@@ -240,16 +240,26 @@ h1, h2, h3 { text-wrap: balance; }
 label.plaque-card,
 label.card { cursor: pointer; margin: 0; }
 
-/* The artist page: their display, and the pieces under it. */
-.display-image { width: 100%; height: auto; margin: 18px 0 26px; }
+/* The artist page: their wall, and the pieces under it. */
+
+/* The artist's wall: each arranged work's framed image, in gallery order. */
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 18px 0 26px;
+}
+.wall-frame {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background: var(--wall-deep);
+}
 .section-title { font-size: 20px; }
 .piece-title { font-size: 15px; margin: 12px 0 2px; }
 .piece-meta { margin: 0 0 8px; }
 .piece-desc { margin: 0; }
 .follow-block { margin-top: 30px; }
-
-/* Studio previews of the composed display. */
-.display-preview { width: 100%; height: auto; }
 
 /* The caption under a display-page thumbnail. */
 .thumb-caption { margin: 10px 0 0; }
@@ -291,6 +301,141 @@ code.token {
   padding: 2px 6px;
   border-radius: 4px;
   word-break: break-all;
+}
+
+/* ---------------------------------------------------------------- gallery */
+
+/* The stand list: numbered 1..30, one row per work, in museum order. */
+.stands {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.stand {
+  display: grid;
+  grid-template-columns: 26px 44px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--wall-deep);
+  border-radius: 12px;
+}
+
+/* The ▲▼/Unhang cluster, one flex row so the grid stays four columns. */
+.stand-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Fixed-width, so the column never jumps as the count climbs. */
+.stand-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.stand .thumb { width: 44px; }
+
+/* One line per row: long titles truncate rather than wrap the grid. */
+.stand-title {
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Arrow buttons: plaque-toned squares that read as controls but sit quietly. */
+.stand-move {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--plaque);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.stand-move:hover { background: var(--wall); }
+.stand-move:disabled { opacity: 0.35; cursor: default; }
+.stand-move:disabled:hover { background: var(--plaque); }
+.stand-move:focus-visible,
+.stand-unhang:focus-visible {
+  outline: 2px solid var(--script);
+  outline-offset: 2px;
+}
+
+.stand-unhang {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.stand-unhang:hover { color: var(--bad); background: #f7e0d9; }
+
+/* Stored works, awaiting a stand. */
+.storage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.storage-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.storage-title {
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storage-controls { display: flex; align-items: center; gap: 10px; }
+.storage-controls .notice { margin: 0; }
+.storage-list .button { padding: 8px 16px; font-size: 13px; }
+
+/* The codes form: input and button share one row on wide enough screens. */
+.codes-form { display: grid; gap: 12px; margin-bottom: 14px; }
+.codes-form .field { margin: 0; }
+@media (min-width: 400px) {
+  .codes-form { grid-template-columns: 1fr auto; align-items: end; }
+}
+
+/* Remove in the codes table: quiet text button, red on hover like Unhang. */
+.code-remove {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.code-remove:hover { color: var(--bad); background: #f7e0d9; }
+.code-remove:focus-visible {
+  outline: 2px solid var(--script);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

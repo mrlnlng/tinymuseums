@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { evaluatePublishBar, getStudioDisplay, queryOne } from '@tiny/core'
+import { evaluatePublishBar, getGallery, queryOne } from '@tiny/core'
 import Message from '@/shared/components/Message'
 import { requireArtist } from '@/shared/lib/session'
 import { publishAction, unpublishAction } from '@/features/studio/actions'
@@ -14,13 +14,14 @@ export default async function StudioHome({
   const { m, k } = await searchParams
   const artist = await requireArtist()
 
-  const [report, display, status] = await Promise.all([
+  const [report, gallery, status] = await Promise.all([
     evaluatePublishBar(artist.id),
-    getStudioDisplay(artist.id),
+    getGallery(artist.id),
     queryOne<{ status: string }>(`select status from artists where id = $1`, [artist.id]),
   ])
 
   const live = status?.status === 'live'
+  const framed = gallery.arranged.filter((work) => work.framed)
 
   return (
     <>
@@ -84,16 +85,30 @@ export default async function StudioHome({
       </div>
 
       <div className="card">
-        <h2 className="card-title">Your display</h2>
-        {display.rendered && display.imageUrl ? (
-          <img
-            src={display.imageUrl}
-            alt="Your arranged display"
-            className="display-preview"
-          />
+        <h2 className="card-title">Your wall</h2>
+        {framed.length > 0 ? (
+          <>
+            <div className="wall-grid">
+              {gallery.arranged.map((work) =>
+                work.framed ? (
+                  <img
+                    key={work.id}
+                    src={work.imageUrl ?? undefined}
+                    alt={work.title}
+                    className="wall-frame"
+                    loading="lazy"
+                  />
+                ) : null,
+              )}
+            </div>
+            <p className="small muted flush">
+              {gallery.arranged.length} of 30 stands in use.{' '}
+              <Link href="/studio/gallery">Arrange in Gallery</Link>.
+            </p>
+          </>
         ) : (
           <p className="muted">
-            Nothing arranged yet. <Link href="/studio/display">Choose what hangs</Link>.
+            Nothing hanging yet. <Link href="/studio/gallery">Upload and arrange your first works</Link>.
           </p>
         )}
       </div>

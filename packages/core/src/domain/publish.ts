@@ -1,5 +1,6 @@
 import { query, queryOne } from '../infra/db.ts'
 import { enqueue } from '../infra/jobs.ts'
+import { MAX_STANDS } from './gallery.ts'
 
 /* The publish bar: objective gates — enough works, a description on each, images large enough — that filter empty and careless displays without anyone exercising taste. */
 
@@ -21,7 +22,7 @@ export interface PublishReport {
 export async function evaluatePublishBar(artistId: string): Promise<PublishReport> {
   // The two lookups are independent; run them together so the studio home pays
   // one round-trip of latency rather than two.
-  const [counts, display] = await Promise.all([
+  const [counts, floor] = await Promise.all([
     queryOne<{
       total: number
       ready: number
@@ -35,18 +36,21 @@ export async function evaluatePublishBar(artistId: string): Promise<PublishRepor
         where p.artist_id = $1`,
       [artistId, MIN_DESCRIPTION_CHARS],
     ),
-    queryOne<{ hung: number; rendered: boolean }>(
-      `select coalesce(array_length(hung_piece_ids, 1), 0)::int as hung,
-              (flattened_key is not null)                      as rendered
-         from displays
-        where artist_id = $1`,
-      [artistId],
+    queryOne<{ arranged: number; framed: number }>(
+      `select count(*) filter (where p.order_index between 1 and $2)::int as arranged,
+              count(*) filter (where p.order_index between 1 and $2
+                               and p.flattened_key is not null)::int      as framed
+         from pieces p
+        where p.artist_id = $1`,
+      [artistId, MAX_STANDS],
     ),
   ])
 
   const total = counts?.total ?? 0
   const ready = counts?.ready ?? 0
   const described = counts?.described ?? 0
+  const arranged = floor?.arranged ?? 0
+  const framed = floor?.framed ?? 0
 
   const checks: PublishCheck[] = [
     {
@@ -69,15 +73,15 @@ export async function evaluatePublishBar(artistId: string): Promise<PublishRepor
     },
     {
       code: 'display_arranged',
-      label: 'A display has been arranged',
-      ok: (display?.hung ?? 0) > 0,
-      detail: display ? `${display.hung} hanging` : 'not arranged yet',
+      label: 'At least one work is on the floor',
+      ok: arranged > 0,
+      detail: arranged > 0 ? `${arranged} of ${MAX_STANDS} stands used` : 'nothing arranged yet',
     },
     {
       code: 'display_rendered',
-      label: 'The display has been composed',
-      ok: Boolean(display?.rendered),
-      detail: display?.rendered ? 'ready' : 'waiting for the compositor',
+      label: 'Every floor work has its framed image',
+      ok: arranged > 0 && framed === arranged,
+      detail: arranged > 0 ? `${framed} of ${arranged} framed` : 'waiting for the compositor',
     },
   ]
 

@@ -66,6 +66,16 @@ export async function ensureQrToken(artistId: string, placement: string): Promis
   return token
 }
 
+/** Removes a code by revoking it: printed copies stop resolving (the /q/ route
+ *  only honours un-revoked tokens) while the scans history stays in events. */
+export async function revokeQrToken(artistId: string, token: string): Promise<void> {
+  await query(
+    `update qr_tokens set revoked_at = now()
+      where token = $1 and artist_id = $2 and revoked_at is null`,
+    [token, artistId],
+  )
+}
+
 // ---------------------------------------------------------------- following
 
 export async function follow(artistSlug: string, email: string): Promise<'sent' | 'unknown'> {

@@ -132,4 +132,12 @@ export const env = {
   get epochIntervalMinutes(): number {
     return Number(setting('EPOCH_INTERVAL_MINUTES', '60'))
   },
+
+  /** The single artist whose museum /museum shows — the "1 or 2" hard-code:
+   *  local = testing2@example.com, prod = inspiratiq.art@gmail.com. Empty
+   *  means every live artist (the pre-owner model). A per-artist /{slug}/museum
+   *  replaces this later. */
+  get hallOwnerEmail(): string {
+    return setting('HALL_OWNER_EMAIL', '')
+  },
 }

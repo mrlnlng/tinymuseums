@@ -9,15 +9,16 @@ export {
 } from './media/images.ts'
 export {
   PX_PER_UNIT,
-  renderDisplayCollage,
-  type CollageInput,
-  type CollageOutput,
+  renderSinglePieceFrame,
+  type SinglePieceInput,
+  type SinglePieceOutput,
 } from './media/collage.ts'
 export {
   handleDerivatives,
   handleNotifyFollowers,
   handleRenderDisplay,
   handleSealEpoch,
+  repairUnframed,
   runJob,
   scheduleNextSeal,
 } from './handlers.ts'

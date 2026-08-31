@@ -9,7 +9,7 @@ export interface Viewport {
   top: number
 }
 
-/* One placard per painting: the title above the plane, the statement on the plaque beneath it. The plaque is a scene sprite; the text on it is real DOM — selectable, readable, crawlable — updated in one imperative pass per frame, because routing it through a render cycle at 60fps makes overlays swim. */
+/* One placard per painting: the title above the plane, the work's description on the plaque beneath it. The plaque is a scene sprite; the text on it is real DOM — selectable, readable, crawlable — updated in one imperative pass per frame, because routing it through a render cycle at 60fps makes overlays swim. */
 export class Placards {
   private nodes = new Map<string, HTMLElement>()
   private titles = new Map<string, HTMLElement>()
@@ -39,7 +39,7 @@ export class Placards {
         node = document.createElement('div')
         node.className = 'placard'
         node.innerHTML = '<span class="placard-name"></span>'
-        node.querySelector('.placard-name')!.textContent = m.display.statement
+        node.querySelector('.placard-name')!.textContent = m.display.description
         node.dataset.slug = m.display.slug
         this.container.appendChild(node)
         this.nodes.set(key, node)
@@ -54,7 +54,7 @@ export class Placards {
         this.titles.set(key, title)
       }
 
-      // Set small against the plaque so a whole statement fits on it.
+      // Set small against the plaque so a whole description fits on it.
       this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.84, Math.max(8, plaquePx * 0.061))
 
       // Its own width: wide enough for a title, and unaffected by the plaque.

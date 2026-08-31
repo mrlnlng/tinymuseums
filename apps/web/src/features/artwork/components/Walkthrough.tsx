@@ -8,9 +8,6 @@ import { useSound } from '@/features/sound/components/SoundProvider'
 
 /* The enlarged view: one work at a time in the artist's order, with the description they wrote. The hall is for discovery; inquiry replaces checkout — the message goes to the artist. */
 
-/** Where "Shop print" goes — the whole catalogue for now; per-piece products later. */
-const SHOP_URL = 'https://www.inspiratiq.art/'
-
 interface Props {
   slug: string
   artistId: string
@@ -203,18 +200,20 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
           </div>
 
           <div className="wt-actions">
-            {/* One shop for the whole catalogue for now; per-piece products
-                later change only this URL. rel="noreferrer" because it leaves
-                the site. */}
-            <a
-              className="button secondary wt-shop"
-              href={SHOP_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <img className="wt-shop-icon" src="/assets/icon-basket.svg" alt="" aria-hidden="true" />
-              Shop print
-            </a>
+            {/* The artist's own shop link, when they set one. rel="noreferrer"
+                because it leaves the site. No link, no button — a placeholder
+                shop is worse than none. */}
+            {piece.shopUrl ? (
+              <a
+                className="button secondary wt-shop"
+                href={piece.shopUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img className="wt-shop-icon" src="/assets/icon-basket.svg" alt="" aria-hidden="true" />
+                Shop print
+              </a>
+            ) : null}
             <button className="button" onClick={onClose}>
               Keep exploring
             </button>

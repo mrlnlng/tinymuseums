@@ -17,13 +17,16 @@ export async function generateMetadata({
   const page = await getArtistPage(slug)
   if (!page) return { title: 'Not in the museum' }
 
+  // Social preview: the first arranged work's framed image.
+  const first = page.pieces[0]
+
   return {
     title: `${page.artistName} — ${BRAND}`,
     description: page.statement,
     openGraph: {
       title: `${page.artistName} — ${BRAND}`,
       description: page.statement,
-      images: page.display ? [page.display.image.url] : [],
+      images: first?.frameUrl ? [first.frameUrl] : first?.imageUrl ? [first.imageUrl] : [],
     },
   }
 }
@@ -42,6 +45,10 @@ export default async function ArtistPage({
   if (!page) notFound()
 
   await recordEvent('display_view', { artistId: page.artistId })
+
+  // The wall: each arranged work's framed image, in gallery order. Works still
+  // processing (no frame yet) wait for their frame to appear here.
+  const framed = page.pieces.filter((piece) => piece.frameUrl)
 
   return (
     <>
@@ -64,14 +71,20 @@ export default async function ArtistPage({
         <h1 className="script artist-name">{page.artistName}</h1>
         <p className="muted lead">{page.statement}</p>
 
-        {page.display ? (
-          <img
-            src={page.display.image.url}
-            width={page.display.image.width}
-            height={page.display.image.height}
-            alt={`${page.artistName}'s display`}
-            className="display-image"
-          />
+        {framed.length > 0 ? (
+          <div className="wall-grid">
+            {framed.map((piece) => (
+              <img
+                key={piece.id}
+                src={piece.frameUrl ?? undefined}
+                width={piece.frameWidth ?? undefined}
+                height={piece.frameHeight ?? undefined}
+                alt={`${piece.title}, framed`}
+                className="wall-frame"
+                loading="lazy"
+              />
+            ))}
+          </div>
         ) : (
           <p className="notice bad">This wall is being hung right now. Come back shortly.</p>
         )}

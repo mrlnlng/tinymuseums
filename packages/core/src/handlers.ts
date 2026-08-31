@@ -1,12 +1,13 @@
 import { query, queryOne } from './infra/db.ts'
-import { renderDisplayCollage, renderSinglePieceFrame } from './media/collage.ts'
+import { renderSinglePieceFrame } from './media/collage.ts'
 import { sealEpoch } from './domain/epoch.ts'
 import { ImageRejected, generateDerivatives } from './media/images.ts'
 import { enqueue, type Job } from './infra/jobs.ts'
 import { getMailer, newWorkNotice } from './infra/mail.ts'
-import { collageKey, pieceFrameKey, getStorage } from './media/storage.ts'
+import { pieceFrameKey, getStorage } from './media/storage.ts'
 import { confirmedFollowers } from './domain/audience.ts'
-import type { Derivative, LayoutName, Placement } from './types.ts'
+import { MAX_STANDS } from './domain/gallery.ts'
+import type { Derivative } from './types.ts'
 
 /* Job handlers live in core so the seed script runs the same pipeline inline, and an SQS consumer changes only how a handler is invoked. */
 
@@ -28,6 +29,9 @@ export async function handleDerivatives(assetId: string): Promise<void> {
         where id = $1`,
       [asset.id, result.width, result.height, JSON.stringify(result.derivatives)],
     )
+    // The work may already be arranged (auto-hang on upload): frame it now
+    // that the image is ready. The handler no-ops for pieces without a stand.
+    await enqueue('render_display', { artistId: asset.artist_id })
   } catch (error) {
     if (!(error instanceof ImageRejected)) throw error
     // A rejected image is the artist's problem to fix, not a job to retry.
@@ -39,46 +43,37 @@ export async function handleDerivatives(assetId: string): Promise<void> {
 }
 
 export async function handleRenderDisplay(artistId: string): Promise<void> {
-  const display = await queryOne<{
-    layout: LayoutName
-    hung_piece_ids: string[]
-    composition: Placement[]
-    version: number
-  }>(
-    `select layout, hung_piece_ids, composition, version from displays where artist_id = $1`,
-    [artistId],
-  )
-  if (!display || display.composition.length === 0) return
-
   const rows = await query<{
     piece_id: string
     width: number
     height: number
     derivatives: Derivative[] | null
+    flattened_key: string | null
   }>(
-    `select p.id as piece_id, a.width, a.height, a.derivatives
+    `select p.id as piece_id, a.width, a.height, a.derivatives, p.flattened_key
        from pieces p
        join assets a on a.id = p.asset_id
-      where p.id = any($1::uuid[]) and a.status = 'ready'`,
-    [display.hung_piece_ids],
+      where p.artist_id = $1
+        and p.order_index between 1 and $2
+        and a.status = 'ready'`,
+    [artistId, MAX_STANDS],
   )
-
-  const derivativesByPiece = new Map<string, Derivative[]>()
-  for (const row of rows) derivativesByPiece.set(row.piece_id, row.derivatives ?? [])
+  if (rows.length === 0) return
 
   const storage = getStorage()
 
-  // Each hanging work gets its own framed image for the hall, sized to the
+  // Each arranged work gets its own framed image for the hall, sized to the
   // work's own orientation so a landscape painting gets a landscape frame.
-  const version = display.version
+  // Frames are immutable per piece, so already-framed works are skipped.
   for (const row of rows) {
+    if (row.flattened_key) continue
     const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
     const output = await renderSinglePieceFrame({
       aspect,
-      derivatives: derivativesByPiece.get(row.piece_id) ?? [],
+      derivatives: row.derivatives ?? [],
       storage,
     })
-    const key = pieceFrameKey(row.piece_id, version)
+    const key = pieceFrameKey(row.piece_id, 1)
     await storage.put(key, output.buffer, 'image/png')
     await query(
       `update pieces
@@ -87,33 +82,9 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
               flattened_height = $4,
               flattened_version = $5
         where id = $1`,
-      [row.piece_id, key, output.width, output.height, version],
+      [row.piece_id, key, output.width, output.height, 1],
     )
   }
-
-  // The collage is still produced for the artist page and the studio preview.
-  const output = await renderDisplayCollage({
-    layout: display.layout,
-    composition: display.composition,
-    derivativesByPiece,
-    storage,
-  })
-
-  // Versioned key: a republish writes a new immutable object rather than
-  // mutating one a CDN may already be serving.
-  const key = collageKey(artistId, display.version)
-  await storage.put(key, output.buffer, 'image/png')
-
-  await query(
-    `update displays
-        set flattened_key = $2,
-            flattened_width = $3,
-            flattened_height = $4,
-            region_map = $5::jsonb,
-            rendered_at = now()
-      where artist_id = $1`,
-    [artistId, key, output.width, output.height, JSON.stringify(output.regionMap)],
-  )
 }
 
 export async function handleSealEpoch(): Promise<void> {
@@ -165,4 +136,21 @@ export async function runJob(job: Job): Promise<void> {
 export async function scheduleNextSeal(intervalMinutes: number): Promise<void> {
   const runAfter = new Date(Date.now() + intervalMinutes * 60 * 1000)
   await enqueue('seal_epoch', { reason: 'scheduled' }, runAfter)
+}
+
+/** Requeues frame rendering for any arranged work still missing its frame —
+ *  covers pieces whose image finished during a transition or a worker gap.
+ *  Idempotent: the render handler skips works that already have a frame. */
+export async function repairUnframed(): Promise<number> {
+  const rows = await query<{ artist_id: string }>(
+    `select distinct p.artist_id
+       from pieces p
+       join assets a on a.id = p.asset_id
+      where p.order_index between 1 and $1
+        and p.flattened_key is null
+        and a.status = 'ready'`,
+    [MAX_STANDS],
+  )
+  for (const row of rows) await enqueue('render_display', { artistId: row.artist_id })
+  return rows.length
 }

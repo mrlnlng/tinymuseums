@@ -1,8 +1,8 @@
 import { env } from '../infra/env.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { PX_PER_UNIT } from '../media/collage.ts'
-import { mulberry32 } from '../infra/random.ts'
 import { getStorage } from '../media/storage.ts'
+import { MAX_STANDS } from './gallery.ts'
 import type { HallPieceDto, HallSliceDto } from '../types.ts'
 
 /* The museum's ordering: an epoch is a sealed, deterministic permutation of every publishable display, so slices cache indefinitely. Suppression is checked at read time, outside that immutability — a takedown must not wait for the next boundary. */
@@ -18,31 +18,27 @@ export interface EpochRow {
 /** Retention is longer than the interval, so visitors mid-walk on the
  * previous epoch keep resolving rather than hitting a dead end. */
 export async function sealEpoch(): Promise<EpochRow | null> {
-  // A slot is a piece now: every hanging work of a live artist is its own
-  // wall, and the ordering permutes pieces, not artist walls.
+  // A slot is a piece now: every arranged work (stands 1..30) of the hall's
+  // owner is its own wall, hung in gallery order — order_index is the walk.
+  // The hall is hard-coded to one artist per environment (HALL_OWNER_EMAIL);
+  // a per-artist /{slug}/museum replaces that later.
   const candidates = await query<{ id: string }>(
     `select p.id
        from pieces p
-       join artists  a on a.id = p.artist_id
-       join displays d on d.artist_id = a.id
+       join artists a on a.id = p.artist_id
       where a.status = 'live'
         and p.flattened_key is not null
-        and p.id = any(d.hung_piece_ids)
-      order by p.id`,
+        and p.order_index between 1 and $1
+        ${env.hallOwnerEmail ? `and a.email = $2` : ''}
+      order by p.order_index, p.created_at`,
+    env.hallOwnerEmail ? [MAX_STANDS, env.hallOwnerEmail] : [MAX_STANDS],
   )
 
   if (candidates.length === 0) return null
 
   const seed = Math.floor(Math.random() * 0x7fffffff)
-  const rng = mulberry32(seed)
+  // Kept for the epoch's history; ordering no longer shuffles.
   const order = candidates.map((row) => row.id)
-
-  // Fisher-Yates: every piece rotates through prime entrance positions over
-  // time instead of position being decided once, forever, by insertion order.
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[order[i], order[j]] = [order[j], order[i]]
-  }
 
   const graceMinutes = Math.max(env.epochIntervalMinutes * 3, 30)
 
@@ -100,6 +96,7 @@ interface SliceRow {
   statement: string
   piece_id: string
   title: string
+  description: string
   flattened_key: string
   flattened_width: number
   flattened_height: number
@@ -120,6 +117,7 @@ export async function getHallSlice(
             a.statement,
             p.id            as piece_id,
             p.title,
+            p.description,
             p.flattened_key,
             p.flattened_width,
             p.flattened_height
@@ -153,6 +151,7 @@ export async function getHallSlice(
       artistName: row.display_name,
       title: row.title,
       statement: row.statement,
+      description: row.description,
       canvas: {
         w: row.flattened_width / PX_PER_UNIT,
         h: row.flattened_height / PX_PER_UNIT,

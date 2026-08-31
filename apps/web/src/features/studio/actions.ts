@@ -4,15 +4,18 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
   createSession,
+  deletePiece,
   destroySession,
   ensureQrToken,
   hashPassword,
-  isLayoutName,
+  hangPiece,
+  movePiece,
   publishArtist,
   query,
   queryOne,
   republishArtist,
-  setDisplay,
+  revokeQrToken,
+  unhangPiece,
   uniqueSlug,
   unpublishArtist,
   verifyPassword,
@@ -83,55 +86,65 @@ export async function signOutAction(): Promise<void> {
 
 // ---------------------------------------------------------------- works
 
+const SHOP_URL = /^https?:\/\//i
+
 export async function updatePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   const id = String(formData.get('id') ?? '')
 
+  const shopUrl = String(formData.get('shopUrl') ?? '').trim() || null
+  if (shopUrl && !SHOP_URL.test(shopUrl)) {
+    back('/studio/gallery', 'The shop link must start with http:// or https://', 'bad')
+  }
+
   await query(
     `update pieces
-        set title = $3, description = $4, medium = $5, year = $6, dimensions = $7, availability = $8
+        set title = $3, description = $4, shop_url = $5
       where id = $1 and artist_id = $2`,
     [
       id,
       artist.id,
       String(formData.get('title') ?? '').trim(),
       String(formData.get('description') ?? '').trim(),
-      String(formData.get('medium') ?? '').trim(),
-      Number(formData.get('year')) || null,
-      String(formData.get('dimensions') ?? '').trim() || null,
-      formData.get('forSale') ? 'available' : 'not_for_sale',
+      shopUrl,
     ],
   )
 
-  revalidatePath('/studio/pieces')
-  back('/studio/pieces', 'Saved')
+  revalidatePath('/studio/gallery')
+  back('/studio/gallery', 'Saved')
 }
 
 export async function deletePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
-  await query(`delete from pieces where id = $1 and artist_id = $2`, [
-    String(formData.get('id') ?? ''),
-    artist.id,
-  ])
-  revalidatePath('/studio/pieces')
-  back('/studio/pieces', 'Removed')
+  await deletePiece(artist.id, String(formData.get('id') ?? ''))
+  revalidatePath('/studio/gallery')
+  back('/studio/gallery', 'Removed')
 }
 
-// ---------------------------------------------------------------- display
+// ---------------------------------------------------------------- arrange
 
-export async function saveDisplayAction(formData: FormData): Promise<void> {
+/* These are called from the client controls (ArrangeControls) so a reorder
+   keeps the visitor's scroll position — no redirect, no navigation. */
+
+export async function movePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
+  const direction = formData.get('direction') === 'down' ? 'down' : 'up'
+  await movePiece(artist.id, String(formData.get('id') ?? ''), direction)
+  revalidatePath('/studio/gallery')
+}
 
-  const layout = String(formData.get('layout') ?? 'single')
-  if (!isLayoutName(layout)) back('/studio/display', 'Unknown layout', 'bad')
+export async function unhangAction(formData: FormData): Promise<void> {
+  const artist = await requireArtist()
+  await unhangPiece(artist.id, String(formData.get('id') ?? ''))
+  revalidatePath('/studio/gallery')
+}
 
-  const pieceIds = formData.getAll('piece').map(String).filter(Boolean)
-  if (pieceIds.length === 0) back('/studio/display', 'Choose at least one work to hang', 'bad')
-
-  await setDisplay(artist.id, layout, pieceIds)
-
-  revalidatePath('/studio/display')
-  back('/studio/display', 'Arranged. The compositor is putting it together.')
+export async function hangAction(formData: FormData): Promise<{ error?: string }> {
+  const artist = await requireArtist()
+  const hung = await hangPiece(artist.id, String(formData.get('id') ?? ''))
+  revalidatePath('/studio/gallery')
+  if (!hung) return { error: 'The floor is full — unhang something first' }
+  return {}
 }
 
 // ---------------------------------------------------------------- publish
@@ -156,10 +169,28 @@ export async function unpublishAction(): Promise<void> {
 
 // ---------------------------------------------------------------- qr codes
 
-export async function createCodeAction(formData: FormData): Promise<void> {
+/* Called from the gallery's client CodesSection (scroll-preserving), so these
+   return errors instead of redirecting with a banner. */
+
+export async function createCodeAction(formData: FormData): Promise<{ error?: string }> {
   const artist = await requireArtist()
-  const placement = String(formData.get('placement') ?? '').trim() || 'default'
+  const placement = String(formData.get('placement') ?? '').trim()
+  if (!placement) return { error: 'Give the code a place' }
+
+  const existing = await queryOne<{ token: string }>(
+    `select token from qr_tokens
+      where artist_id = $1 and placement = $2 and revoked_at is null`,
+    [artist.id, placement],
+  )
+  if (existing) return { error: 'You already have a code for that placement' }
+
   await ensureQrToken(artist.id, placement)
-  revalidatePath('/studio/codes')
-  back('/studio/codes', `Code ready for "${placement}"`)
+  revalidatePath('/studio/gallery')
+  return {}
+}
+
+export async function deleteCodeAction(formData: FormData): Promise<void> {
+  const artist = await requireArtist()
+  await revokeQrToken(artist.id, String(formData.get('token') ?? ''))
+  revalidatePath('/studio/gallery')
 }

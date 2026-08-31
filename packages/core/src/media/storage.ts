@@ -153,12 +153,7 @@ export function derivativeKey(
   return `artists/${artistId}/derivatives/${assetId}/${variant}.${extension}`
 }
 
-/*  Flattened collages carry a version in the key so a republish writes a new immutable object rather than mutating one the CDN may already be serving. */
-export function collageKey(artistId: string, version: number): string {
-  return `artists/${artistId}/display/v${version}.png`
-}
-
-/** The key for a single hanging piece's framed image. */
+/*  The key for a single hanging piece's framed image. */
 export function pieceFrameKey(pieceId: string, version: number): string {
   return `pieces/${pieceId}/frame/v${version}.png`
 }

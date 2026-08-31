@@ -15,9 +15,7 @@ export default async function StudioLayout({ children }: { children: React.React
         {artist ? (
           <nav>
             <Link href="/studio">Wall</Link>
-            <Link href="/studio/pieces">Works</Link>
-            <Link href="/studio/display">Arrange</Link>
-            <Link href="/studio/codes">Codes</Link>
+            <Link href="/studio/gallery">Gallery</Link>
             <Link href="/studio/analytics">Visitors</Link>
             <Link href={`/a/${artist.slug}`}>View</Link>
             <form action={signOutAction}>

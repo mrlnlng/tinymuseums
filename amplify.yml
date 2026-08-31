@@ -62,7 +62,7 @@ applications:
             # variables into that file here, before the build. `env | grep`
             # copies NAME=value lines verbatim — no shell interpolation, so a
             # password with special characters survives intact.
-            - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|EPOCH_INTERVAL_MINUTES)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
+            - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|EPOCH_INTERVAL_MINUTES|HALL_OWNER_EMAIL)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
       artifacts:
         baseDirectory: .next
         files:

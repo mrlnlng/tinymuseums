@@ -156,6 +156,9 @@ const worker = new NodejsFunction(stack, 'Worker', {
     PUBLIC_BASE_URL: setting('PUBLIC_BASE_URL', ''),
     MAIL_TRANSPORT: setting('MAIL_TRANSPORT', 'console'),
     EPOCH_INTERVAL_MINUTES: setting('EPOCH_INTERVAL_MINUTES', '60'),
+    // The single artist whose museum /museum shows (local testing account,
+    // prod inspiratiq.art@gmail.com). Empty = every live artist.
+    HALL_OWNER_EMAIL: setting('HALL_OWNER_EMAIL', ''),
     NODE_OPTIONS: '--enable-source-maps',
   },
 })

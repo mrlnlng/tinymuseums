@@ -16,8 +16,18 @@ export const CONFIG = {
   /** `scale` enlarges the server's framed image on the wall without re-rendering it; the layout spaces the walls at the same scale, so the hall stays evenly spaced. */
   piece: { gap: 4.0, ropeWidth: 3.4, scale: 1.10 },
 
-  /** `gap` is the drop from the wall's lower edge; `z` puts it in front of the rope. */
-  plaque: { width: 1.2, gap: 0.06, z: 0.6, titleWidth: 2.45 },
+  /*  `gap` is the drop from the wall's lower edge; `z` puts it in front of the rope.
+
+      `titleWidth` is the band a title wraps inside, and it is narrower than the
+      wall it hangs over for one reason: the home and sound buttons float in the
+      screen's top-right corner, in the same band the title occupies, and the
+      title is centred on a painting that is itself centred. At 3.6 world units
+      to the screen's width, those buttons begin 1.09 out from the centre, so a
+      band of 2.02 keeps a title's longest line clear of them by a comfortable
+      margin. A title too long for the band wraps and grows upward into the
+      empty wall, which costs nothing; running underneath a button costs the
+      words. The enlarged view keeps its own title clear the same way. */
+  plaque: { width: 1.2, gap: 0.06, z: 0.6, titleWidth: 2.02 },
 
   /*  Height and centre are measured off the mockup rather than chosen: the posts' feet land at y = -0.16, a little past the floor line, because the floor is a receding plane and something standing on it meets the line in front of it, not on it. At this height the sprite's own width is also the width the mockup draws it at. */
   rope: { height: 1.27, centerY: 0.47, z: 0.5 },

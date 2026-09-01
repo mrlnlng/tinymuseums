@@ -647,6 +647,15 @@ code.token {
   place-items: end center;
 }
 
+/*  A tall work is held to the 74% of the screen mock 4 draws it at, rather than
+    the full width of the room. On the 9:16 preview it never comes to this — a
+    portrait frame runs out of height at about 67% and the cap is slack — but on
+    a phone, which is taller, the frame is limited by width instead and would
+    otherwise grow out to the walls and take the arrows under its own ornament.
+    A wide work keeps the full width: mock 8 gives it 88%, and its frame stops
+    well above the arrows, so the two never meet. */
+.wt:not([data-wide]) .wt-stage { width: 80.4%; }
+
 .wt-frame {
   position: relative;
   grid-area: 1 / 1;
@@ -678,14 +687,19 @@ code.token {
   width: 100%;
   display: flex;
   align-items: center;
-  /* The arrows sit against the side walls, as they do in the mockup, rather
-     than crowding the plaque; the gap is only their guarantee of daylight. */
-  justify-content: space-between;
-  gap: clamp(10px, 4.5cqi, 34px);
+  justify-content: center;
 }
 
+/*  Against the side walls at a fixed height, which is where both mockups put
+    them and, it turns out, the only placement that works for both. Tied to the
+    plaque they followed it down the screen under a tall painting and ended up
+    standing on the column; pinned here they sit beside the frame under a tall
+    work and beside the plaque under a wide one, exactly as mock 4 and mock 8
+    respectively have them. 61.33% is the centre line both mockups share. */
 .wt-nav {
-  flex: none;
+  position: absolute;
+  top: 61.33%;
+  transform: translateY(-50%);
   /* 7.6% of the screen wide in the mockup, at a 0.68 width-to-height ratio. */
   width: clamp(26px, 8cqi, 56px);
   height: clamp(38px, 11.8cqi, 82px);
@@ -719,8 +733,12 @@ code.token {
   50%      { transform: scaleX(-1) translateX(14%); }
 }
 
+.wt-nav.prev { left: 4.63%; }
+.wt-nav.next { right: 4.63%; }
+
 .wt-nav:hover { filter: brightness(1.04); }
-.wt-nav:active { transform: scale(0.94); }
+/* The centring translate has to be repeated: a transform replaces, not adds. */
+.wt-nav:active { transform: translateY(-50%) scale(0.94); }
 
 @media (prefers-reduced-motion: reduce) {
   .wt-nav svg { animation: none; }
@@ -1157,6 +1175,29 @@ code.token {
   user-select: none;
 }
 
+/*  The column mock 4 stands on that floor, at the right edge and half off it.
+    Without it a tall work ends on bare boards, and the rope's absence reads as
+    something missing rather than as different scenery — which matters more
+    than it sounds, because every work in the museum is taller than it is wide,
+    so this floor, and not mock 8's rope, is the one people actually see. Sized
+    and offset as the landing page's column is, and to the mockup's own figures:
+    a quarter of the screen wide with 9% of it past the edge leaves the 15% the
+    mockup shows, and its top lands at 73.4%.
+
+    Behind the plaque and the buttons: a negative z-index paints it over the
+    wall but under everything in the column's flow, so it can never take a tap
+    or cover a word. */
+.wt-column {
+  position: absolute;
+  right: -9%;
+  bottom: 0;
+  width: 24%;
+  height: auto;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+}
+
 /*  Under a tall work there is no rope at all: the painting has taken the floor
     it stood on, which is what mock 4 does — a portrait painting filling three
     fifths of the screen with bare boards beneath the buttons and the rope
@@ -1164,13 +1205,13 @@ code.token {
     buttons are never pressed against the bottom edge of the screen. A rope
     cannot be part-drawn here: a hand's width of finial poking up from the
     bottom edge reads as a mistake, not as a rope going out of frame. */
-.wt-rope[data-bare] {
+.wt:not([data-wide]) .wt-rope {
   flex: none;
   aspect-ratio: auto;
   height: 6.14cqh;
 }
 
-.wt-rope[data-bare]::before { content: none; }
+.wt:not([data-wide]) .wt-rope::before { content: none; }
 
 /*  The sprite, hung from the top of that row and left to run off the bottom of
     the screen; `.wt` clips it. 80.37% of a row that is itself 92% of the

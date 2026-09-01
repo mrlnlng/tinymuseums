@@ -135,6 +135,11 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
   const frame = useMemo(() => frameFor(aspect), [aspect])
 
+  /*  Wide enough to leave the floor to the rope. A tall work takes that floor
+      for itself — see `.wt-stage` — and the rope gives way to the column mock 4
+      stands there instead. */
+  const wide = frame.ratio > 1
+
   /*  Whether the description runs past the bottom of the plaque, and whether
       the reader has already got there. The board is a fixed size, so a long
       description scrolls inside it; without a mark saying so, text that stops
@@ -185,6 +190,10 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
          the same number, so that the height it asks for is the height its frame
          could actually use. */
       style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
+      /* One flag for the three things that differ between the two mockups of
+         this screen: how wide a frame may grow, whether the floor carries the
+         rope, and whether the column stands on it. */
+      data-wide={wide ? '' : undefined}
     >
       {/* Home and sound live in the top-right chrome now, so this is the one
           control that belongs to the enlarged view: back to the hall, on the
@@ -277,7 +286,13 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
               the floor the painting left over: the stylesheet gives the row
               whatever height remains and hangs the sprite from the top of it,
               so below a tall work the row is bare floor and the rope is gone. */}
-          <div className="wt-rope" data-bare={frame.ratio > 1 ? undefined : ''} aria-hidden="true" />
+          <div className="wt-rope" aria-hidden="true" />
+
+          {/* The scenery that stands in the rope's place under a tall work, as
+              mock 4 has it. Decorative, and behind everything else. */}
+          {wide ? null : (
+            <img className="wt-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
+          )}
         </>
       )}
     </motion.div>

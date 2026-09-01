@@ -639,6 +639,26 @@ code.token {
   place-items: end center;
 }
 
+/*  Stepping from a wide work to a tall one is a change of composition, not of
+    picture: the frame grows, the floor gives up the rope, and the column comes
+    in to stand on it. Done instantly all three read as a glitch, so each is
+    given the same 420ms as the slide between works and the same easing, and
+    they travel together. Only the properties that actually move are listed —
+    the stage's two axes, the rope's depth, and the opacity of the two pieces of
+    scenery that trade places — so nothing else is dragged into a transition it
+    has no business in. */
+.wt-stage { transition: height 420ms ease, width 420ms ease; }
+.wt-rope { transition: height 420ms ease; }
+.wt-rope::before,
+.wt-column { transition: opacity 420ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-stage,
+  .wt-rope,
+  .wt-rope::before,
+  .wt-column { transition: none; }
+}
+
 /*  A tall work is held to mock 4's 74% of the screen. On the 9:16 preview the
     cap is slack — a portrait frame runs out of height around 67% — but a phone
     is taller, and there the frame is bounded by width and would otherwise grow
@@ -738,6 +758,13 @@ code.token {
   place-items: center;
   width: min(60%, 420px);
   aspect-ratio: 2.0267;
+  /*  Not negotiable, and it has to be said out loud. A flex item's automatic
+      minimum size is its content, and this board is now a child of the column
+      itself rather than of a row of its own — so along the column's main axis
+      that minimum applies, and a long description pushed the board taller than
+      the size it is drawn at, taking the painting's wall with it. Zero here is
+      what lets the ratio above hold and the words scroll inside it instead. */
+  min-height: 0;
   position: relative;
   padding: 4% 7%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
@@ -770,8 +797,13 @@ code.token {
   position: absolute;
   right: 9.5%;
   bottom: 5%;
-  width: clamp(12px, 4.2cqi, 21px);
-  color: var(--arrow);
+  width: clamp(16px, 5.4cqi, 27px);
+  /*  The deep pink the museum uses for its own marks, not the orange of the
+      two arrows that step between works: those are controls the reader may
+      ignore, this is the plaque saying it has not finished talking. On a cream
+      board the orange sat too close to the ground to be noticed. */
+  color: var(--script);
+  filter: drop-shadow(0 1px 1px rgba(109, 64, 46, 0.25));
   pointer-events: none;
   animation: plaque-more 2.8s ease-in-out infinite;
 }
@@ -779,8 +811,8 @@ code.token {
 .wt-plaque-more svg { display: block; width: 100%; height: auto; }
 
 @keyframes plaque-more {
-  0%, 100% { transform: translateY(0); opacity: 0.75; }
-  50%      { transform: translateY(22%); opacity: 1; }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(26%); }
 }
 
 
@@ -1137,7 +1169,12 @@ code.token {
       shrink under a title long enough to need the room, which slides the rope
       further off the bottom rather than pushing the buttons off with it. */
   flex: 0 1 auto;
-  aspect-ratio: 2.284;
+  /*  The 22.66% of the screen's height mock 8 keeps for the rope, written the
+      long way — 100cqi is the row's own width and 2.284 its width-to-height on
+      the 9:16 screen — rather than as an `aspect-ratio`, because a height the
+      browser derives from a ratio computes to `auto` and cannot be animated,
+      and this height is the one that has to travel when the work changes shape. */
+  height: calc(100cqi / 2.284);
   min-height: 6.14cqh;
   /* Always on the floor: a work wide enough to leave the column slack leaves it
      above the rope, never underneath it. */
@@ -1169,20 +1206,16 @@ code.token {
   user-select: none;
 }
 
-/*  Under a tall work there is no rope at all: the painting has taken the floor
-    it stood on, which is what mock 4 does — a portrait painting filling three
-    fifths of the screen with bare boards beneath the buttons and the rope
-    nowhere in the picture. The row stays, as the floor itself, so that the
-    buttons are never pressed against the bottom edge of the screen. A rope
-    cannot be part-drawn here: a hand's width of finial poking up from the
-    bottom edge reads as a mistake, not as a rope going out of frame. */
-.wt:not([data-wide]) .wt-rope {
-  flex: none;
-  aspect-ratio: auto;
-  height: 6.14cqh;
-}
-
-.wt:not([data-wide]) .wt-rope::before { content: none; }
+/*  Under a tall work there is no rope: the painting has taken the floor it stood
+    on, which is what mock 4 does — bare boards beneath the buttons and the rope
+    nowhere in the picture. The row stays, as the floor itself, so the buttons
+    are never pressed against the bottom edge of the screen. The sprite is faded
+    out rather than removed, because the row shrinks to the floor's depth and a
+    hand's width of finial left poking up from the bottom edge reads as a
+    mistake rather than as a rope going out of frame. */
+.wt:not([data-wide]) .wt-rope { height: 6.14cqh; }
+.wt:not([data-wide]) .wt-rope::before { opacity: 0; }
+.wt[data-wide] .wt-column { opacity: 0; }
 
 /*  The sprite, hung from the top of that row and left to run off the bottom of
     the screen; `.wt` clips it. 80.37% of a row that is itself 92% of the

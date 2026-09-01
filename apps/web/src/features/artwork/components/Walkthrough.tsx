@@ -116,7 +116,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const [aspect, setAspect] = useState<number | null>(null)
 
   useEffect(() => {
-    setAspect(null)
+    /*  Deliberately not cleared first. Every work's proportions are measured
+        from its own file, which takes a moment to arrive, and clearing meant
+        the frame fell back to the default portrait in between — so stepping
+        from a wide work to a tall one snapped to portrait, then to the shape it
+        had measured. Holding the outgoing work's shape until the incoming one
+        is known makes that one move instead of two. */
     const url = piece?.imageUrl
     if (!url) return
 
@@ -220,9 +225,13 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 animate="center"
                 exit="exit"
                 transition={{ type: 'spring', bounce: 0, duration: 0.7 }}
-                // The ratio it is sized against is inherited from the root,
-                // where the stage reads it too; grid placement is in CSS.
                 className="wt-frame"
+                /*  Its own copy of the ratio, not the root's: the frame on its
+                    way out keeps the props it was last rendered with, so it
+                    holds the shape it was drawn at while it slides away instead
+                    of snapping to the incoming work's on the first frame. The
+                    root's copy is what the stage sizes itself from. */
+                style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
               >
                 <div className="wt-artwork" style={artworkStyle} />
                 <img className="wt-frame-art" src={frame.src} alt="" aria-hidden="true" />
@@ -287,10 +296,10 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
           <div className="wt-rope" aria-hidden="true" />
 
           {/* The scenery that stands in the rope's place under a tall work, as
-              mock 4 has it. Decorative, and behind everything else. */}
-          {wide ? null : (
-            <img className="wt-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
-          )}
+              mock 4 has it. Decorative, behind everything else, and always
+              mounted: it trades places with the rope by fading, and a thing that
+              is not there cannot fade. */}
+          <img className="wt-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
         </>
       )}
     </motion.div>

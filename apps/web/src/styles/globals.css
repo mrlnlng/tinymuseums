@@ -33,8 +33,13 @@
      museum's small capitals. The museum face names the museum; this names the
      painting, and the two are not the same voice. */
   --font-title: "Beth Ellen", "Segoe Script", cursive;
-  /* Body copy stays Sniglet: the museum face renders lowercase as small capitals, which is punishing in a paragraph. */
-  --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
+  /*  Body copy is the museum face too. It renders lowercase as small capitals,
+      so a paragraph in it reads more like a label than like prose — which is
+      the intended voice here: the only long text in the museum is a plaque
+      beside a painting. Sniglet stays directly behind it for the glyphs the
+      face does not carry, a hyphen and a curly apostrophe among them, so those
+      fall through rather than vanishing. */
+  --font-ui: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
   /* Fixed-width for QR tokens and numeric columns, where every character occupying the same width is the entire point. */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -45,6 +50,12 @@
 }
 
 * { box-sizing: border-box; }
+
+/*  Form controls do not inherit type from their ancestors — a bare <button>
+    falls back to the browser's own face, which is how the back arrow in the
+    enlarged view came to be set in Arial. Everything wearing a class of its own
+    still names its family; this only catches the ones that never did. */
+button, input, select, textarea { font-family: inherit; }
 
 html, body {
   margin: 0;

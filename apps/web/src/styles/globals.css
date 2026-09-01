@@ -276,10 +276,8 @@ label.card { cursor: pointer; margin: 0; }
 .follow-block { margin-top: 30px; }
 
 /* The caption under a display-page thumbnail. */
-.thumb-caption { margin: 10px 0 0; }
 
 /* Studio form submit buttons, clear of the grid above them. */
-.form-submit { margin-top: 14px; }
 
 /* The upload button's label, which animates between phases. */
 .phase-label { display: inline-block; }
@@ -571,16 +569,14 @@ code.token {
   flex-direction: column;
   align-items: center;
   gap: clamp(4px, 1.1cqh, 10px);
+  /* No bottom padding: the rope's row is the floor, and it is last in the column. */
   padding: clamp(8px, 2cqh, 18px) 4% 0;
   overflow: hidden;
-
-  /* No floor of its own below the content: the rope's row is the floor, and
-     it is the last thing in the column. */
 }
 
 /* Fixed-size rows: they take what they need and never get squeezed. */
 .wt-title,
-.wt-plaque-row,
+.wt-plaque,
 .wt-actions { flex: none; }
 
 /* The back control floats in the corner rather than spending a row on one small button. */
@@ -598,19 +594,17 @@ code.token {
   border: none; border-radius: 50%; cursor: pointer;
 }
 
-/* Two lines tall unless a title needs more, so stepping between works of ordinary title length never moves the painting. */
+/*  Two lines tall unless the title needs more, so stepping between works of
+    ordinary title length never moves the painting; a longer one grows the row
+    rather than losing its ending, here as in the hall. The inline padding and
+    the top margin both hold it clear of the floating corner buttons — narrowly,
+    because every character that does not fit on a line is a line the painting
+    below pays for. Set in a hand rather than the museum's small capitals, and
+    a little under the mockup's own 7.2% of the screen: Beth Ellen is wide, and
+    at that size an ordinary title took a third line. */
 .wt-title {
-  /* Clears the floating home/speaker buttons; the negative bottom margin keeps the painting up under the title. */
   margin: clamp(22px, 5cqh, 40px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
-  /*  Kept clear of the corner buttons by constraining the text's width — but
-      only just, because every character of a title that does not fit on a line
-      is a line the painting below pays for. */
   padding-inline: clamp(46px, 15cqi, 80px);
-  /*  A hand, not the museum's small capitals — see --font-title. Larger than
-      the face it replaced, which sat small for its size, but held below the
-      mockup's own 7.2% of the screen: Beth Ellen is a wide face, and at the
-      mockup's size an ordinary title wrapped onto a third line and took the
-      room from the work it names. */
   font-family: var(--font-title);
   font-size: clamp(16px, 3.6cqh, 25px);
   line-height: 1.2;
@@ -621,31 +615,18 @@ code.token {
   text-align: center;
 }
 
-/* No clamp: a painting's title is shown in full here as it is in the hall. Two
-   lines is the height the row reserves, and a longer one grows the row rather
-   than losing its ending. */
-.wt-title span { display: block; }
-
 .wt-loading { color: var(--ink-soft); margin: auto; }
 
-/*  The stage asks for exactly the height its frame can use and no more. A
-    frame is limited by the width of the room it hangs in, so past
-    `width / aspect` every further pixel is empty wall above and below it —
-    which is why the height is written as that quotient rather than as a share
-    of the column. It shrinks when the column cannot spare what it asked for.
-
-    This one rule is the whole difference between the two mockups of this
-    screen. A wide work asks for little, and what it leaves over goes to the
-    rope, which is mock 8. A tall work asks for far more than the screen holds,
-    takes everything the title, plaque and buttons do not need, and the rope is
-    pushed off the floor with it — which is mock 4, where a portrait painting
-    fills three fifths of the screen and there is no rope at all.
-
-    The height comes from outside rather than from the contents, so the stage
-    can carry a size container for the frame without the two defining each
-    other in a circle. 95.5cqi is the mockup's frame width — 87.9% of the
-    screen — expressed against this element's container, whose own box has the
-    column's 4% side padding already taken off it. */
+/*  The stage asks for exactly the height its frame can use — a frame is bounded
+    by the width of the room, so past `width / aspect` every further pixel is
+    empty wall — and shrinks when the column cannot spare it. That single rule is
+    the difference between the two mockups: a wide work asks for little and
+    leaves the rest to the rope (mock 8), a tall one asks for more than the
+    screen holds and takes the rope's floor with it (mock 4). The height comes
+    from outside rather than from the contents, which is what lets the stage
+    carry a size container without the two defining each other in a circle.
+    95.5cqi is the mockup's 87.9% frame width, measured against a container box
+    that has the column's 4% side padding already taken off it. */
 .wt-stage {
   position: relative;
   flex: 0 1 auto;
@@ -658,13 +639,11 @@ code.token {
   place-items: end center;
 }
 
-/*  A tall work is held to the 74% of the screen mock 4 draws it at, rather than
-    the full width of the room. On the 9:16 preview it never comes to this — a
-    portrait frame runs out of height at about 67% and the cap is slack — but on
-    a phone, which is taller, the frame is limited by width instead and would
-    otherwise grow out to the walls and take the arrows under its own ornament.
-    A wide work keeps the full width: mock 8 gives it 88%, and its frame stops
-    well above the arrows, so the two never meet. */
+/*  A tall work is held to mock 4's 74% of the screen. On the 9:16 preview the
+    cap is slack — a portrait frame runs out of height around 67% — but a phone
+    is taller, and there the frame is bounded by width and would otherwise grow
+    out to the walls and take the arrows under its own ornament. A wide work
+    keeps its full width: its frame stops well above them. */
 .wt:not([data-wide]) .wt-stage { width: 80.4%; }
 
 .wt-frame {
@@ -683,22 +662,13 @@ code.token {
   transform: scale(1.1);
 }
 
-/* Over the artwork, and never intercepting the arrows behind it. */
+/* Over the artwork, and inert, so a tap anywhere on the frame still reaches it. */
 .wt-frame-art {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-}
-
-/* The plaque and its arrows share a row that grows with the description: the whole of what the artist wrote is shown, so it is the painting above that gives up the room, never the words. */
-.wt-plaque-row {
-  flex: none;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /*  Against the side walls at a fixed height, which is where both mockups put
@@ -752,23 +722,21 @@ code.token {
 .wt-nav:active { transform: translateY(-50%) scale(0.94); }
 
 @media (prefers-reduced-motion: reduce) {
-  .wt-nav svg { animation: none; }
+  .wt-nav svg,
+  .wt-plaque-more { animation: none; }
   /* Still mirrored — the flip was only in the keyframes. */
   .wt-nav.prev svg { transform: scaleX(-1); }
 }
 
-/* The drawn plaque stretches to whatever the description needs: the art is a background painted at `100% 100%`, so a label that grew a line is a taller plaque rather than a cropped one. */
+/*  The board at the size it is drawn — 2.0267 times as wide as it is tall — and
+    held there. It used to grow with the description, which meant a talkative
+    artist quietly took the painting's wall; the words scroll inside a board of
+    fixed size instead. A little wider than the mockup's 55%, so that fewer of
+    them have to. */
 .wt-plaque {
-  flex: 0 1 auto;
   display: grid;
   place-items: center;
-  /* Wider than the mockup's 55%: the description is shown whole, and every
-     character that fits on a line is a line the plaque does not have to grow. */
   width: min(60%, 420px);
-  /*  The board at the size it is drawn — 2.0267 times as wide as it is tall —
-      and held there. It used to grow with the description, which meant a
-      talkative artist quietly took the painting's room; now the words scroll
-      inside a board of fixed size instead, and the painting keeps its wall. */
   aspect-ratio: 2.0267;
   position: relative;
   padding: 4% 7%;
@@ -776,18 +744,15 @@ code.token {
 }
 
 /*  Never trimmed: the description is what the artist chose to say about the
-    work, and this screen is where it is read. What will not fit on the board
-    is scrolled to rather than cut — and the bar is hidden, because a scrollbar
-    down the side of a hand-painted plaque is a piece of operating system in a
-    museum. The arrow below says there is more, in the same orange and the same
-    shape as the two that step between works. */
+    work, and this screen is where it is read. What will not fit on the board is
+    scrolled to rather than cut, and the bar is hidden — a scrollbar down the
+    side of a hand-painted plaque is a piece of operating system in a museum. */
 .wt-plaque p {
   margin: 0;
   max-height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  -ms-overflow-style: none;
   text-align: center;
   font-size: clamp(9px, 2cqh, 12.5px);
   line-height: 1.35;
@@ -797,13 +762,12 @@ code.token {
 
 .wt-plaque p::-webkit-scrollbar { display: none; }
 
-/*  Shown only while there is something below the fold, and only ever a hint —
-    it must not cover the last line of the description, so it sits in the
-    board's lower corner where the drawing has a painted stud and no words. */
+/*  Says there is more below, in the same orange and the same drawing as the two
+    arrows that step between works. Shown only while something is below the fold,
+    and kept inboard of the painted stud in the board's corner, which it
+    otherwise sits on top of and is mistaken for. */
 .wt-plaque-more {
   position: absolute;
-  /* Inboard of the painted stud in the board's corner, which it otherwise sits
-     directly on top of and is read as. */
   right: 9.5%;
   bottom: 5%;
   width: clamp(12px, 4.2cqi, 21px);
@@ -817,10 +781,6 @@ code.token {
 @keyframes plaque-more {
   0%, 100% { transform: translateY(0); opacity: 0.75; }
   50%      { transform: translateY(22%); opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wt-plaque-more { animation: none; }
 }
 
 

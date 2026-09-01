@@ -208,9 +208,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
         <p className="wt-loading">Fetching the rest of the wall…</p>
       ) : (
         <>
-          <h2 className="script wt-title">
-            <span>{piece.title}</span>
-          </h2>
+          <h2 className="script wt-title">{piece.title}</h2>
 
           <div className="wt-stage">
             <AnimatePresence custom={direction} initial={false}>
@@ -239,25 +237,25 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 />
               </motion.div>
             </AnimatePresence>
-
           </div>
 
-          {/* The arrows flank the plaque rather than the frame, which is where the mockup puts them and what lets the frame run the full width. */}
-          <div className="wt-plaque-row">
-            <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
-              <NavArrow />
-            </button>
-            <div className="wt-plaque">
-              <p ref={bodyRef}>{piece.description}</p>
-              {more ? (
-                <span className="wt-plaque-more" aria-hidden="true">
-                  <MoreArrow />
-                </span>
-              ) : null}
-            </div>
-            <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
-              <NavArrow />
-            </button>
+          {/* Out of the column's flow, against the side walls at the height both
+              mockups keep them at — so they are siblings of the plaque rather
+              than a row wrapped around it. */}
+          <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
+            <NavArrow />
+          </button>
+          <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
+            <NavArrow />
+          </button>
+
+          <div className="wt-plaque">
+            <p ref={bodyRef}>{piece.description}</p>
+            {more ? (
+              <span className="wt-plaque-more" aria-hidden="true">
+                <MoreArrow />
+              </span>
+            ) : null}
           </div>
 
           <div className="wt-actions">

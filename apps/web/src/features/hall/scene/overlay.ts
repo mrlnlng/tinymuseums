@@ -10,11 +10,34 @@ export interface Viewport {
   top: number
 }
 
+/*  One scratch vector for every projection on the page. Both overlays run inside
+    the one frame loop, one after the other, so nothing here is ever re-entered. */
+const projected = new THREE.Vector3()
+
+/*  Where a world point lands on screen, or null when it is far enough outside
+    the frame that positioning it would be a layout nobody sees. The cull is
+    generous rather than exact: labels are placed by their centre and can be
+    wider than the mark they sit on. */
+function toScreen(
+  x: number,
+  y: number,
+  camera: THREE.OrthographicCamera,
+  viewport: Viewport,
+): { x: number; y: number } | null {
+  projected.set(x, y, 0.03)
+  projected.project(camera)
+  if (projected.x < -1.7 || projected.x > 1.7) return null
+
+  return {
+    x: viewport.left + (projected.x * 0.5 + 0.5) * viewport.width,
+    y: viewport.top + (-projected.y * 0.5 + 0.5) * viewport.height,
+  }
+}
+
 /* One placard per painting: the title above the plane, the work's description on the plaque beneath it. The plaque is a scene sprite; the text on it is real DOM — selectable, readable, crawlable — updated in one imperative pass per frame, because routing it through a render cycle at 60fps makes overlays swim. */
 export class Placards {
   private nodes = new Map<string, HTMLElement>()
   private titles = new Map<string, HTMLElement>()
-  private projected = new THREE.Vector3()
   /*  Rendered heights, kept up to date by the observer below. A bottom-hung label has to know how tall it grew before it can be kept on screen, and asking the element that inside the frame loop would force a layout per title per frame. */
   private heights = new WeakMap<HTMLElement, number>()
 
@@ -97,21 +120,16 @@ export class Placards {
     fontSize: number,
     anchor: 'center' | 'bottom',
   ): void {
-    this.projected.set(x, y, 0.03)
-    this.projected.project(camera)
-
-    if (this.projected.x < -1.7 || this.projected.x > 1.7) {
+    const at = toScreen(x, y, camera, viewport)
+    if (!at) {
       node.style.opacity = '0'
       return
     }
 
-    const sx = viewport.left + (this.projected.x * 0.5 + 0.5) * viewport.width
-    const sy = viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height
-
     node.style.width = `${widthPx}px`
     node.style.fontSize = `${fontSize}px`
 
-    let screenY = sy
+    let screenY = at.y
     if (anchor === 'bottom') {
       // A title long enough to need several lines grows up the wall, and a very
       // long one would grow off the top of it. Pushing it back down costs a
@@ -121,7 +139,7 @@ export class Placards {
     }
 
     node.style.transform =
-      `translate3d(${sx.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, ${anchor === 'bottom' ? '-100%' : '-50%'})`
+      `translate3d(${at.x.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, ${anchor === 'bottom' ? '-100%' : '-50%'})`
     node.style.opacity = '1'
   }
 
@@ -139,7 +157,6 @@ export class LobbySigns {
   private sign = document.createElement('div')
   private direction = document.createElement('div')
   private help = document.createElement('button')
-  private projected = new THREE.Vector3()
 
   constructor(
     container: HTMLElement,
@@ -192,10 +209,8 @@ export class LobbySigns {
     viewport: Viewport,
     fontRatio: number,
   ): boolean {
-    this.projected.set(mark.x, mark.y, 0.03)
-    this.projected.project(camera)
-
-    if (this.projected.x < -1.7 || this.projected.x > 1.7) {
+    const at = toScreen(mark.x, mark.y, camera, viewport)
+    if (!at) {
       node.style.opacity = '0'
       return false
     }
@@ -204,9 +219,7 @@ export class LobbySigns {
     node.style.width = `${widthPx.toFixed(1)}px`
     node.style.fontSize = `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`
     node.style.transform =
-      `translate3d(${(viewport.left + (this.projected.x * 0.5 + 0.5) * viewport.width).toFixed(1)}px, ` +
-      `${(viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height).toFixed(1)}px, 0)` +
-      ' translate(-50%, -50%)'
+      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`
     node.style.opacity = '1'
     return true
   }

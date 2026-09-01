@@ -83,9 +83,6 @@ html, body {
   }
 
   .wt { padding-top: calc(clamp(8px, 2cqh, 18px) + env(safe-area-inset-top)); }
-  /* The home indicator's strip belongs to the floor the rope stands on, so it
-     is added to the same variable the rope bleeds through. */
-  .wt { --wt-floor: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
   .landing { padding-bottom: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
   .page { padding-bottom: calc(44px + env(safe-area-inset-bottom)); }
 
@@ -555,13 +552,11 @@ code.token {
   flex-direction: column;
   align-items: center;
   gap: clamp(4px, 1.4cqh, 14px);
-  padding: clamp(8px, 2cqh, 18px) 4% var(--wt-floor);
+  padding: clamp(8px, 2cqh, 18px) 4% 0;
   overflow: hidden;
 
-  /* The rope hangs off the bottom edge of the screen rather than floating on
-     the wall above it, so the column's own bottom padding is what it bleeds
-     through; the two are named together to stay in step. */
-  --wt-floor: clamp(10px, 2.5cqh, 22px);
+  /* No floor of its own below the content: the rope's row is the floor, and
+     it is the last thing in the column. */
 }
 
 /* Fixed-size rows: they take what they need and never get squeezed. */
@@ -648,11 +643,16 @@ code.token {
 .wt-plaque-row {
   flex: none;
   width: 100%;
-  min-height: clamp(48px, 9.8cqh, 94px);
+  /*  The plaque at the size it is drawn: it is 60% of this row, and the art
+      is 2.0267 times as wide as it is tall, so this is the height at which the
+      painted board is neither stretched nor squashed. A description longer
+      than the board holds grows it from here rather than being cut. */
+  min-height: calc(55.2cqi / 2.0267);
   display: flex;
   align-items: center;
-  justify-content: center;
-  /* Deliberately wider than the mockup, which has them almost touching. */
+  /* The arrows sit against the side walls, as they do in the mockup, rather
+     than crowding the plaque; the gap is only their guarantee of daylight. */
+  justify-content: space-between;
   gap: clamp(10px, 4.5cqi, 34px);
 }
 
@@ -1017,13 +1017,14 @@ code.token {
 
 /* ------------------------------------------------- painting screen extras */
 
-/* The no-photography mark, on the artwork's top-right corner. */
-/* The no-photography mark, off the frame's top-right corner, sized in container units. */
+/*  The no-photography mark, straddling the frame's lower-right corner where
+    the mockup puts it — down beside the plaque rather than up in the title,
+    and big enough to read as a sign rather than a speck. */
 .wt-no-photos {
   position: absolute;
-  top: calc(-1 * clamp(6px, 2.2cqi, 15px));
-  right: calc(-1 * clamp(6px, 2.2cqi, 15px));
-  width: clamp(14px, 4.6cqi, 25px);
+  bottom: calc(-1 * clamp(8px, 3cqi, 20px));
+  right: calc(-1 * clamp(2px, 0.8cqi, 6px));
+  width: clamp(22px, 7.2cqi, 40px);
   height: auto;
   pointer-events: none;
   z-index: 3;
@@ -1043,19 +1044,49 @@ code.token {
   flex: none;
 }
 
-/*  The velvet rope closes the composition along the bottom — wider than its column, and inert. Cut into three and rebuilt rather than cropped: `border-image` keeps the two posts at their drawn proportions in the side borders and stretches only the swag between them, which is what the hall does to the same sprite. Whole, so the posts stand on their feet instead of being sheared off at the shin. */
+/*  The velvet rope closes the composition along the bottom. Drawn whole and
+    at its own proportions, exactly as the mockup has it: 73.94% of the screen
+    wide, and 1.2427 times as wide as it is tall, which is the width at which
+    the swag falls in the curve it was painted with. Nothing is cut or
+    stretched to fit — the hall's copy of this sprite is rebuilt from three
+    slices because the walls there stand at varying distances, but here the
+    screen is one fixed shape and the drawing already fits it.
+
+    Taken out of the column and hung from the same line the column ends at, so
+    that the posts can carry on past the bottom of the screen; `.wt` clips
+    them. A rope standing clear of the bottom edge reads as an ornament lying
+    on the floor, where one running off it reads as a rope strung across a room
+    that continues past the frame. */
 .wt-rope {
-  flex: none;
-  width: min(84%, 540px);
-  /*  The post, foot to finial. Everything else about the rope is derived from it: 1.2427 is the sprite's aspect, and the cuts at 24% and 22% fall in the empty wall beside each post, so a border that wide is the post at its own scale. */
-  --rope-post: clamp(58px, 14.5cqh, 128px);
-  height: var(--rope-post);
-  border-style: solid;
-  border-width: 0 calc(var(--rope-post) * 1.2427 * 0.22) 0 calc(var(--rope-post) * 1.2427 * 0.24);
-  border-image-source: url('/assets/rope.png');
-  border-image-slice: 0 22% 0 24% fill;
-  border-image-repeat: stretch;
-  margin-top: clamp(2px, 1cqh, 10px);
+  position: relative;
+  width: 100%;
+  /*  The rope's own row, and the last one in the column: the mockup keeps the
+      top 22.66% of the screen's height for it, which puts its upper edge at
+      77.34%. Given as a ratio of the row's own width rather than in container
+      units, because those measure `.wt`'s content box — its padding already
+      taken off — and the arithmetic to get back to the screen would have to be
+      redone every time that padding changed. The row is 92% of the screen
+      wide, so on the 9:16 screen 22.66% of the height is a width-to-height of
+      2.284. The drawing is taller than the row and hangs out of the bottom of
+      it, which is the point, so nothing here may be given a height the posts
+      have to fit inside. */
+  aspect-ratio: 2.284;
   pointer-events: none;
   user-select: none;
+}
+
+/*  The sprite, hung from the top of that row and left to run off the bottom of
+    the screen; `.wt` clips it. 80.37% of a row that is itself 92% of the
+    screen comes to the 73.94% of the screen the mockup draws the rope at, and
+    1.2427 is the sprite's own aspect, so the swag falls in the curve it was
+    painted with instead of being stretched into an arc between the posts. */
+.wt-rope::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 80.37%;
+  aspect-ratio: 1.2427;
+  transform: translateX(-50%);
+  background: url('/assets/rope.png') no-repeat center / 100% 100%;
 }

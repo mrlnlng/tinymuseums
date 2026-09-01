@@ -63,6 +63,34 @@ export const CONFIG = {
     wheelFactor: 0.4,
   },
 
+  /*  The visitor centre, at the head of the hall. Positions were measured off
+      mockups 1 and 2 with the camera parked at x = 0, which is exactly the
+      framing mockup 1 draws: the door a little left of centre, its sign over
+      it, the way-finder to its right and the help booth running off the right
+      edge. `length` is where the exhibition starts; everything before it is
+      the visitor centre, and the gap between the booth and the first wall is
+      about the gap between two walls, so arriving at the art reads as a
+      threshold rather than as the next thing along. */
+  lobby: {
+    length: 6.6,
+    /** Where the camera parks on arrival. Also the hall's left end. */
+    startX: 0,
+    /*  The bunny still walks on from off the left edge, as it does in the
+        hall — far enough to be off a 9:16 screen (1.8 units of it) at the
+        start, so it walks in rather than appearing. */
+    introWalk: 1.9,
+    /** Standing a little below the floor line, as everything on it does. */
+    door: { x: -0.09, centerY: 1.165, height: 2.81, z: 0.2 },
+    /*  Wider than plaque.png is drawn, so the board is cut into three and only
+        its middle stretches — the same treatment the rope gets. */
+    sign: { x: 0.165, centerY: 3.007, width: 1.977, height: 0.427, z: 0.2 },
+    /** The way-finder. Drawn rather than photographed: the pack has no art for it. */
+    post: { x: 1.19, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
+    booth: { x: 2.39, centerY: 1.56, height: 3.467, z: 0.4 },
+    /** The pill on the booth's counter, measured off the drawing behind it. */
+    helpButton: { dy: -0.215, width: 1.3, height: 0.35 },
+  },
+
   statue: { minDwellMs: 700 },
   loading: { prefetchAheadUnits: 9, sliceSize: 4 },
   virtualization: { mountRadiusUnits: 14 },

@@ -8,7 +8,8 @@ import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
-import { Placards, type Viewport } from '@/features/hall/scene/overlay'
+import { createLobby } from '@/features/hall/scene/lobby'
+import { LobbySigns, Placards, type Viewport } from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
@@ -43,12 +44,23 @@ export interface HallHosts {
 interface Options {
   hosts: HallHosts
   initialSlice: HallSliceDto
-  /** True while a work is open, which holds the hall still behind it. */
+  /** True while a work or the help guide is open, holding the hall still. */
   isSuspended: boolean
   onOpenPiece: (piece: OpenPiece) => void
+  /** The visitor tapped the door at the head of the hall. */
+  onLeave: () => void
+  /** The visitor asked the help booth for the guide. */
+  onOpenHelp: () => void
 }
 
-export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: Options) {
+export function useHallScene({
+  hosts,
+  initialSlice,
+  isSuspended,
+  onOpenPiece,
+  onLeave,
+  onOpenHelp,
+}: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,6 +75,12 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
 
   const onOpenPieceRef = useRef(onOpenPiece)
   onOpenPieceRef.current = onOpenPiece
+
+  const onLeaveRef = useRef(onLeave)
+  onLeaveRef.current = onLeave
+
+  const onOpenHelpRef = useRef(onOpenHelp)
+  onOpenHelpRef.current = onOpenHelp
 
   useEffect(() => {
     let isDisposed = false
@@ -91,6 +109,7 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
 
       const scene = new THREE.Scene()
       const backdrop = createBackdrop(scene, assets, BACKDROP_LENGTH)
+      const lobby = createLobby(scene, assets)
       const hall = new HallScene(scene, assets)
       hall.ingestSlice(initialSlice)
 
@@ -98,6 +117,7 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
       // so nothing can be painted in front of it.
       const character = createCharacter(assets, characterHost)
       const placards = new Placards(overlayHost)
+      const lobbySigns = new LobbySigns(overlayHost, lobby.marks, () => onOpenHelpRef.current())
       const traversal = new Traversal()
       traversal.attach(renderer.domElement)
 
@@ -124,11 +144,12 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
       const resizeObserver = new ResizeObserver(applyViewport)
       resizeObserver.observe(canvasHost)
 
-      const firstCenter = hall.layout.centerX[0] ?? 0
-      // The bunny enters from exactly as far back as it is ever allowed to
-      // trail, so the opening and the leash are the same number.
-      const introStart = firstCenter - CONFIG.character.maxTrailDistance
-      traversal.reset(firstCenter)
+      /*  A visit starts in the visitor centre, not at the first wall: the
+          camera parks on the door and the bunny walks on from off the left,
+          the same arrival it always played, one room earlier. */
+      const entrance = CONFIG.lobby.startX
+      const introStart = entrance - CONFIG.lobby.introWalk
+      traversal.reset(entrance)
 
       let isFetching = false
       async function fetchNextSlice(): Promise<void> {
@@ -172,6 +193,16 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
         pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
         raycaster.setFromCamera(pointer, rig.camera)
+
+        /*  The door first: it stands at the head of the hall where no wall
+            does, so nothing is shadowed by testing it before them. */
+        if (lobby.hitTestDoor(raycaster)) {
+          // The click sound is delegated off real controls, and the door is a
+          // plane in the scene, so it says so itself.
+          soundRef.current.play('click')
+          onLeaveRef.current()
+          return
+        }
 
         const hit = hall.hitTest(raycaster)
         if (!hit) return
@@ -224,7 +255,7 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
           if (stats.mounted > 0 || stats.total === 0) {
             isReadyRef.current = true
             setIsReady(true)
-            traversal.playIntro(introStart, firstCenter)
+            traversal.playIntro(introStart, entrance)
           }
         } else {
           traversal.setSuspended(isSuspendedRef.current)
@@ -241,6 +272,7 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
 
         hall.update(now, dt, traversal.cameraX)
         placards.sync(hall.getMounted(), rig.camera, viewport)
+        lobbySigns.sync(rig.camera, viewport)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
         recordDisplayView(traversal.cameraX)
@@ -257,7 +289,9 @@ export function useHallScene({ hosts, initialSlice, isSuspended, onOpenPiece }: 
         renderer.domElement.removeEventListener('pointerdown', handlePointerDown)
         renderer.domElement.removeEventListener('pointerup', handlePointerUp)
         placards.clear()
+        lobbySigns.clear()
         hall.dispose()
+        lobby.dispose()
         backdrop.dispose()
         character.dispose()
         renderer.dispose()

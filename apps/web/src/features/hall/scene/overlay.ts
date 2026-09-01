@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
+import type { LobbyMarks } from './lobby'
 import type { MountedDisplay } from './scene'
 
 export interface Viewport {
@@ -130,5 +131,87 @@ export class Placards {
     for (const node of this.titles.values()) node.remove()
     this.nodes.clear()
     this.titles.clear()
+  }
+}
+
+/* The words in the visitor centre — the board over the door, the way-finder, and the button on the help booth's counter. Painted wood is a texture in the scene; the writing on it is DOM here, for the same reasons the plaques are: it is selectable, readable to a screen reader, and it stays sharp at any zoom. The button is the one node in this layer that takes a pointer, since the layer itself does not. */
+export class LobbySigns {
+  private sign = document.createElement('div')
+  private direction = document.createElement('div')
+  private help = document.createElement('button')
+  private projected = new THREE.Vector3()
+
+  constructor(
+    container: HTMLElement,
+    private marks: LobbyMarks,
+    onOpenHelp: () => void,
+  ) {
+    this.sign.className = 'lobby-sign'
+    this.sign.textContent = 'Visitor Center'
+
+    this.direction.className = 'lobby-direction'
+    // The arrow is a glyph rather than an image: it is a word here, not an
+    // icon, and it must wrap and scale with the line it belongs to.
+    this.direction.innerHTML = '<span>To Exhibition</span><span aria-hidden="true">\u2192</span>'
+
+    this.help.type = 'button'
+    this.help.className = 'lobby-help-button'
+    this.help.textContent = 'View help guide'
+    this.help.addEventListener('click', onOpenHelp)
+
+    for (const node of [this.sign, this.direction, this.help]) container.appendChild(node)
+  }
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const viewWidth = camera.right - camera.left
+    const perUnit = viewport.width / viewWidth
+
+    this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
+    this.place(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
+
+    // The button is the one node here that takes a pointer, and only while it
+    // is actually on screen — an invisible one parked off the left edge would
+    // still swallow the drag that scrolls the hall.
+    const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.089)
+    this.help.style.pointerEvents = onScreen ? 'auto' : 'none'
+    // The pill is drawn by this element rather than by the booth's art, which
+    // has only an empty counter behind it, so it needs a real height.
+    this.help.style.height = `${(this.marks.help.height * perUnit).toFixed(1)}px`
+  }
+
+  /*  Centred on its mark and sized in world units, so a sign occupies the same
+      part of the board it is written on at every screen size. Anything far
+      enough off-screen is hidden rather than positioned — the visitor centre
+      is behind you for most of a visit, and its three signs should not cost a
+      layout per frame for the whole walk. */
+  private place(
+    node: HTMLElement,
+    mark: { x: number; y: number; width: number },
+    perUnit: number,
+    camera: THREE.OrthographicCamera,
+    viewport: Viewport,
+    fontRatio: number,
+  ): boolean {
+    this.projected.set(mark.x, mark.y, 0.03)
+    this.projected.project(camera)
+
+    if (this.projected.x < -1.7 || this.projected.x > 1.7) {
+      node.style.opacity = '0'
+      return false
+    }
+
+    const widthPx = mark.width * perUnit
+    node.style.width = `${widthPx.toFixed(1)}px`
+    node.style.fontSize = `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`
+    node.style.transform =
+      `translate3d(${(viewport.left + (this.projected.x * 0.5 + 0.5) * viewport.width).toFixed(1)}px, ` +
+      `${(viewport.top + (-this.projected.y * 0.5 + 0.5) * viewport.height).toFixed(1)}px, 0)` +
+      ' translate(-50%, -50%)'
+    node.style.opacity = '1'
+    return true
+  }
+
+  clear(): void {
+    for (const node of [this.sign, this.direction, this.help]) node.remove()
   }
 }

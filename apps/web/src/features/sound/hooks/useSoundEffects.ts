@@ -14,7 +14,7 @@ export type EffectName = keyof typeof EFFECTS
 const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
 
 /*  Every control that clicks, in one list — so a new button does not need a selector buried in an effect. */
-const CLICKABLE = '.button, .chrome-button'
+const CLICKABLE = '.button, .chrome-button, .lobby-help-button'
 
 export interface SoundEffects {
   play: (name: EffectName) => void

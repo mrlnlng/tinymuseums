@@ -17,7 +17,10 @@ export function computeLayout(widths: number[]): HallLayout {
   const centerX: number[] = []
   const pedestalX: number[] = []
 
-  let cursor = 0
+  /*  The run starts past the visitor centre rather than at the origin: the
+      hall's left end is the visitor centre's door, and the first wall hangs
+      after it. */
+  let cursor = CONFIG.lobby.length
   widths.forEach((w, i) => {
     centerX.push(cursor + w / 2)
     cursor += w

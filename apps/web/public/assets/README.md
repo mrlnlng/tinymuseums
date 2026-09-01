@@ -10,6 +10,13 @@ python3 scripts/prep_assets.py apps/web/public/assets [source-dir]
 cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json packages/core/assets/
 ```
 
+> **The pack has been dropped more than once.** The newest drop carries the visitor
+> centre's art (`visitor_center.png`, `help_center.png`, `gift_shop.png`) but is missing
+> `mock_frames/imagePreview/9.png`, the empty-room mockup the script samples the wall and
+> floor palette from, so a full run against it stops at the first step. `door.png` and
+> `help-center.png` were produced with the same alpha crop the script performs, and the
+> script knows about them, so the next complete pack regenerates everything in one go.
+
 **The originals are deliberately not in this repo.** They live outside version control —
 most recently at `~/Desktop/tiny_museum_assets`. Point the script at wherever they are, or
 set `TINY_MUSEUM_ASSETS`. Without them these files cannot be rebuilt, so keep the pack

@@ -14,6 +14,10 @@ const IMAGE_FILES = {
   rope: 'rope.png',
   plaque: 'plaque.png',
   floor: 'floor.png',
+  /*  The visitor centre at the head of the hall: the door the visitor came in
+      by, and the booth that hands out the help guide. */
+  door: 'door.png',
+  helpCenter: 'help-center.png',
 } as const
 
 export type AssetName = keyof typeof IMAGE_FILES

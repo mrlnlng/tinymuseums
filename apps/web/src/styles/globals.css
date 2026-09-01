@@ -20,6 +20,9 @@
   --orange: #ffc483;
   /* The navigation triangles, sampled from the mockups. */
   --arrow: #ffa75f;
+  /* The help booth's button, sampled from mockup 2: a soft yellow on a gold rim. */
+  --pill: #ffef83;
+  --pill-edge: #d8a41c;
   --plaque: #f3ddba;
   --plaque-ink: #6d402e;
   --surround: #e3d2b6;
@@ -543,6 +546,197 @@ code.token {
   color: var(--script);
   font-weight: 700;
 }
+
+/* ------------------------------------------------- the visitor centre */
+
+/*  The writing on the visitor centre's signage, projected onto the boards the
+    scene draws. Width and size come from the frame loop in world units, so a
+    sign fills the same share of its board on every screen; everything here is
+    what it looks like, not where it sits. */
+.lobby-sign,
+.lobby-direction {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-button);
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.1;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/*  The board over the door, in the museum's own small capitals. It never wraps:
+    the board is drawn to hold one line, and a second would run off it. */
+.lobby-sign {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*  The way-finder. The arrow is on its own line under the words, as the mockup
+    draws it, and it is set larger because at sign size it is the part read
+    from across the room. */
+.lobby-direction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  white-space: nowrap;
+  color: var(--floor);
+}
+
+.lobby-direction span:last-child {
+  font-size: 1.15em;
+  line-height: 0.9;
+}
+
+/*  The pill on the booth's counter. The booth's art draws an empty counter, so
+    the button is the pill: sized in world units by the frame loop, which is why
+    it carries no padding of its own. */
+.lobby-help-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill);
+  /* The gold rim the mockup draws under it, sized in em so it scales with the pill. */
+  box-shadow: inset 0 0 0 0.07em var(--pill-edge);
+  color: var(--ink);
+  font-family: var(--font-button);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  will-change: transform, opacity;
+  transition: filter 0.15s ease;
+}
+
+.lobby-help-button:hover { filter: brightness(1.06); }
+.lobby-help-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
+
+/* ------------------------------------------------------- the help guide */
+
+.help-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The booth is drawn wider than the frame, as the mockup has it, so the
+     leaves run off both sides rather than being shrunk to fit. */
+  overflow: hidden;
+}
+
+/* Tapping away closes it; it is a scrim, so it draws nothing of its own. */
+.help-guide-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(109 64 46 / 24%);
+  cursor: pointer;
+}
+
+/*  The booth from the mockup, blown up. Cut into three bands: the awning and
+    the counter keep the proportions they were drawn at, and only the middle —
+    the two posts either side of the open counter — stretches to whatever the
+    guide needs. Stretching the whole drawing would smear the scallops. */
+.help-guide-booth {
+  position: relative;
+  /*  Wider than the frame: mockup 2.1 crops the awning at both edges, which is
+      what makes the booth read as leaning over the visitor rather than as a
+      picture of a booth. */
+  width: 123%;
+  flex: none;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0 10px 22px rgb(109 64 46 / 22%));
+  /* Inert, so a tap on the booth reaches the surface that closes the guide. */
+  pointer-events: none;
+}
+
+/*  Each band is a window onto the whole drawing, scaled so that exactly its own
+    share fills it and offset so that share is what shows. Only the middle band
+    has a height the drawing does not dictate, so it is the only one where the
+    scaling stretches anything. */
+.help-band {
+  position: relative;
+  overflow: hidden;
+  /* The drawing at the booth's width — every band's ruler. */
+  --booth-height: calc(100cqw / var(--booth-aspect));
+  /*  The open counter, in the wall's own colour, stopping at the two posts —
+      which stand at 13.9% and 88.1% across the drawing. */
+  --panel-fill: linear-gradient(
+    90deg,
+    transparent 0 13.9%,
+    var(--wall) 13.9% 88.1%,
+    transparent 88.1%
+  );
+}
+
+.help-band::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--band-top) / var(--band) * -100%);
+  height: calc(100% / var(--band));
+  background: url('/assets/help-center.png') no-repeat center / 100% 100%;
+}
+
+/*  The awning's scallops are drawn with gaps between them, and the hall would
+    show through them; the panel is carried up behind their lower reach so the
+    guide sits inside a booth rather than in front of one. */
+.help-band-awning {
+  --band: var(--awning);
+  --band-top: 0;
+  height: calc(var(--booth-height) * var(--awning));
+  background: var(--panel-fill) no-repeat bottom / 100% 26%;
+}
+
+/*  The one band with no fixed height: the guide sets it. The drawing leaves the
+    counter open, so the panel behind the guide is painted here, stopping at the
+    two posts — the wall's own colour, which is what the mockup fills it with. */
+.help-band-middle {
+  --band: calc(var(--counter) - var(--awning));
+  --band-top: var(--awning);
+  background: var(--panel-fill);
+}
+
+.help-band-counter {
+  --band: calc(1 - var(--counter));
+  --band-top: var(--counter);
+  height: calc(var(--booth-height) * (1 - var(--counter)));
+}
+
+.help-steps {
+  position: relative;
+  margin: 0;
+  /*  Inset to the posts: they stand at 14% and 88% across the drawing, and the
+      numbered list has to clear both. */
+  padding: 7% 20% 9% 26%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85em;
+  font-size: clamp(12px, 4.4cqw, 17px);
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.help-steps li { padding-left: 0.2em; }
+
+.help-steps li::marker {
+  font-family: var(--font-button);
+  color: var(--script);
+}
+
 
 /* Present for screen readers and crawlers; the canvas is the visual surface. */
 .hall-index {

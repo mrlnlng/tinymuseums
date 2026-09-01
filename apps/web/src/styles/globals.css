@@ -28,6 +28,11 @@
 
   /* One face throughout: the commissioned museum face, with Sniglet behind it for the glyphs it lacks. */
   --font-script: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
+  /* The exception, and the only one: a work's own title, which every mockup of
+     both the hall and the enlarged view writes in a hand rather than in the
+     museum's small capitals. The museum face names the museum; this names the
+     painting, and the two are not the same voice. */
+  --font-title: "Beth Ellen", "Segoe Script", cursive;
   /* Body copy stays Sniglet: the museum face renders lowercase as small capitals, which is punishing in a paragraph. */
   --font-ui: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
@@ -508,6 +513,9 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
+  /* The same hand the enlarged view writes a title in, and the one the hall
+     mockup uses: it is the painting's name in both places. */
+  font-family: var(--font-title);
   text-align: center;
   line-height: 1.15;
   color: var(--script);
@@ -551,7 +559,7 @@ code.token {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(4px, 1.4cqh, 14px);
+  gap: clamp(4px, 1.1cqh, 10px);
   padding: clamp(8px, 2cqh, 18px) 4% 0;
   overflow: hidden;
 
@@ -562,8 +570,7 @@ code.token {
 /* Fixed-size rows: they take what they need and never get squeezed. */
 .wt-title,
 .wt-plaque-row,
-.wt-actions,
-.wt-rope { flex: none; }
+.wt-actions { flex: none; }
 
 /* The back control floats in the corner rather than spending a row on one small button. */
 .wt-top {
@@ -584,10 +591,18 @@ code.token {
 .wt-title {
   /* Clears the floating home/speaker buttons; the negative bottom margin keeps the painting up under the title. */
   margin: clamp(22px, 5cqh, 40px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
-  /* Kept clear of the corner buttons by constraining the text's width. */
-  padding-inline: clamp(52px, 18cqi, 96px);
-  font-size: clamp(15px, 3.4cqh, 24px);
-  line-height: 1.15;
+  /*  Kept clear of the corner buttons by constraining the text's width — but
+      only just, because every character of a title that does not fit on a line
+      is a line the painting below pays for. */
+  padding-inline: clamp(46px, 15cqi, 80px);
+  /*  A hand, not the museum's small capitals — see --font-title. Larger than
+      the face it replaced, which sat small for its size, but held below the
+      mockup's own 7.2% of the screen: Beth Ellen is a wide face, and at the
+      mockup's size an ordinary title wrapped onto a third line and took the
+      room from the work it names. */
+  font-family: var(--font-title);
+  font-size: clamp(16px, 3.6cqh, 25px);
+  line-height: 1.2;
   min-height: 2.3em;
   display: flex;
   align-items: center;
@@ -602,11 +617,29 @@ code.token {
 
 .wt-loading { color: var(--ink-soft); margin: auto; }
 
-/* The stage takes whatever height the rows below leave it — every other row is `flex: none`, so all the column's slack collects here and the plaque, buttons and rope sit low against the floor. It is also the box the frame measures against: `flex: 1 1 0` gives it a height that comes from the column rather than from its contents, which is what lets it carry a size container without the two defining each other in a circle. */
+/*  The stage asks for exactly the height its frame can use and no more. A
+    frame is limited by the width of the room it hangs in, so past
+    `width / aspect` every further pixel is empty wall above and below it —
+    which is why the height is written as that quotient rather than as a share
+    of the column. It shrinks when the column cannot spare what it asked for.
+
+    This one rule is the whole difference between the two mockups of this
+    screen. A wide work asks for little, and what it leaves over goes to the
+    rope, which is mock 8. A tall work asks for far more than the screen holds,
+    takes everything the title, plaque and buttons do not need, and the rope is
+    pushed off the floor with it — which is mock 4, where a portrait painting
+    fills three fifths of the screen and there is no rope at all.
+
+    The height comes from outside rather than from the contents, so the stage
+    can carry a size container for the frame without the two defining each
+    other in a circle. 95.5cqi is the mockup's frame width — 87.9% of the
+    screen — expressed against this element's container, whose own box has the
+    column's 4% side padding already taken off it. */
 .wt-stage {
   position: relative;
-  flex: 1 1 0;
-  min-height: 24cqh;
+  flex: 0 1 auto;
+  height: calc(95.5cqi / var(--frame-aspect, 1));
+  min-height: 0;
   width: 100%;
   container-type: size;
   display: grid;
@@ -643,11 +676,6 @@ code.token {
 .wt-plaque-row {
   flex: none;
   width: 100%;
-  /*  The plaque at the size it is drawn: it is 60% of this row, and the art
-      is 2.0267 times as wide as it is tall, so this is the height at which the
-      painted board is neither stretched nor squashed. A description longer
-      than the board holds grows it from here rather than being cut. */
-  min-height: calc(55.2cqi / 2.0267);
   display: flex;
   align-items: center;
   /* The arrows sit against the side walls, as they do in the mockup, rather
@@ -708,19 +736,62 @@ code.token {
   /* Wider than the mockup's 55%: the description is shown whole, and every
      character that fits on a line is a line the plaque does not have to grow. */
   width: min(60%, 420px);
-  min-height: 100%;
+  /*  The board at the size it is drawn — 2.0267 times as wide as it is tall —
+      and held there. It used to grow with the description, which meant a
+      talkative artist quietly took the painting's room; now the words scroll
+      inside a board of fixed size instead, and the painting keeps its wall. */
+  aspect-ratio: 2.0267;
+  position: relative;
   padding: 4% 7%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
 }
 
-/* Neither trimmed nor scrolled: the description is what the artist chose to say about the work, and this screen is where it is read. Small, so that it fits. */
+/*  Never trimmed: the description is what the artist chose to say about the
+    work, and this screen is where it is read. What will not fit on the board
+    is scrolled to rather than cut — and the bar is hidden, because a scrollbar
+    down the side of a hand-painted plaque is a piece of operating system in a
+    museum. The arrow below says there is more, in the same orange and the same
+    shape as the two that step between works. */
 .wt-plaque p {
   margin: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   text-align: center;
   font-size: clamp(9px, 2cqh, 12.5px);
   line-height: 1.35;
   color: var(--plaque-ink);
   text-wrap: pretty;
+}
+
+.wt-plaque p::-webkit-scrollbar { display: none; }
+
+/*  Shown only while there is something below the fold, and only ever a hint —
+    it must not cover the last line of the description, so it sits in the
+    board's lower corner where the drawing has a painted stud and no words. */
+.wt-plaque-more {
+  position: absolute;
+  /* Inboard of the painted stud in the board's corner, which it otherwise sits
+     directly on top of and is read as. */
+  right: 9.5%;
+  bottom: 5%;
+  width: clamp(12px, 4.2cqi, 21px);
+  color: var(--arrow);
+  pointer-events: none;
+  animation: plaque-more 2.8s ease-in-out infinite;
+}
+
+.wt-plaque-more svg { display: block; width: 100%; height: auto; }
+
+@keyframes plaque-more {
+  0%, 100% { transform: translateY(0); opacity: 0.75; }
+  50%      { transform: translateY(22%); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-plaque-more { animation: none; }
 }
 
 
@@ -1060,20 +1131,46 @@ code.token {
 .wt-rope {
   position: relative;
   width: 100%;
-  /*  The rope's own row, and the last one in the column: the mockup keeps the
-      top 22.66% of the screen's height for it, which puts its upper edge at
-      77.34%. Given as a ratio of the row's own width rather than in container
-      units, because those measure `.wt`'s content box — its padding already
-      taken off — and the arithmetic to get back to the screen would have to be
-      redone every time that padding changed. The row is 92% of the screen
-      wide, so on the 9:16 screen 22.66% of the height is a width-to-height of
-      2.284. The drawing is taller than the row and hangs out of the bottom of
-      it, which is the point, so nothing here may be given a height the posts
-      have to fit inside. */
+  /*  The rope's own row, and the last one in the column: it takes the floor the
+      painting above it did not need, up to the 22.66% of the screen's height
+      that mock 8 gives it, which puts its upper edge at 77.34%. Below a tall
+      painting there is nothing left over and the row closes to nothing, taking
+      the rope off the bottom of the screen with it, exactly as mock 4 has it.
+      The drawing is taller than the row whatever the row's height and hangs out
+      of the bottom of it, which is the point, so nothing here may be given a
+      height the posts have to fit inside. */
+  /*  The band mock 8 keeps for it: 22.66% of the screen's height, which puts
+      the sprite's top edge at 77.34%. Written as a ratio of the row's own
+      width, because container units here measure `.wt`'s content box with its
+      padding already taken off, and the arithmetic back to the screen would
+      have to be redone every time that padding changed; the row is 92% of the
+      screen wide, so on the 9:16 screen 22.66% of its height is 2.284. It may
+      shrink under a title long enough to need the room, which slides the rope
+      further off the bottom rather than pushing the buttons off with it. */
+  flex: 0 1 auto;
   aspect-ratio: 2.284;
+  min-height: 6.14cqh;
+  /* Always on the floor: a work wide enough to leave the column slack leaves it
+     above the rope, never underneath it. */
+  margin-top: auto;
   pointer-events: none;
   user-select: none;
 }
+
+/*  Under a tall work there is no rope at all: the painting has taken the floor
+    it stood on, which is what mock 4 does — a portrait painting filling three
+    fifths of the screen with bare boards beneath the buttons and the rope
+    nowhere in the picture. The row stays, as the floor itself, so that the
+    buttons are never pressed against the bottom edge of the screen. A rope
+    cannot be part-drawn here: a hand's width of finial poking up from the
+    bottom edge reads as a mistake, not as a rope going out of frame. */
+.wt-rope[data-bare] {
+  flex: none;
+  aspect-ratio: auto;
+  height: 6.14cqh;
+}
+
+.wt-rope[data-bare]::before { content: none; }
 
 /*  The sprite, hung from the top of that row and left to run off the bottom of
     the screen; `.wt` clips it. 80.37% of a row that is itself 92% of the

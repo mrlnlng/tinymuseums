@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, type Variants } from 'motion/react'
 import type { PieceDto } from '@tiny/core'
 import { frameFor } from '@/features/artwork/lib/frame'
@@ -28,6 +28,22 @@ function NavArrow() {
     <svg viewBox="0 0 68 100" aria-hidden="true" focusable="false">
       <polygon
         points="12,16 54,50 12,84"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="22"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/* The same triangle as `NavArrow`, turned to point down the plaque: it means
+   the same thing the side arrows do — there is more this way. */
+function MoreArrow() {
+  return (
+    <svg viewBox="0 0 100 68" aria-hidden="true" focusable="false">
+      <polygon
+        points="16,12 50,54 84,12"
         fill="currentColor"
         stroke="currentColor"
         strokeWidth="22"
@@ -119,6 +135,34 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
   const frame = useMemo(() => frameFor(aspect), [aspect])
 
+  /*  Whether the description runs past the bottom of the plaque, and whether
+      the reader has already got there. The board is a fixed size, so a long
+      description scrolls inside it; without a mark saying so, text that stops
+      mid-sentence at the board's edge reads as text that was cut. Measured
+      rather than guessed from the length, because how much fits depends on the
+      screen, the font once it has loaded, and where the lines happen to break —
+      hence the observer as well as the scroll handler. */
+  const bodyRef = useRef<HTMLParagraphElement>(null)
+  const [more, setMore] = useState(false)
+
+  useEffect(() => {
+    const body = bodyRef.current
+    if (!body) return
+
+    const update = () => {
+      setMore(body.scrollTop + body.clientHeight < body.scrollHeight - 2)
+    }
+
+    update()
+    body.addEventListener('scroll', update, { passive: true })
+    const sizes = new ResizeObserver(update)
+    sizes.observe(body)
+    return () => {
+      body.removeEventListener('scroll', update)
+      sizes.disconnect()
+    }
+  }, [piece?.description])
+
   const artworkStyle = useMemo(
     () => ({
       ...frame.window,
@@ -137,6 +181,10 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
       transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+      /* On the root rather than on the frame alone: the stage sizes itself from
+         the same number, so that the height it asks for is the height its frame
+         could actually use. */
+      style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
     >
       {/* Home and sound live in the top-right chrome now, so this is the one
           control that belongs to the enlarged view: back to the hall, on the
@@ -165,10 +213,9 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 animate="center"
                 exit="exit"
                 transition={{ type: 'spring', bounce: 0, duration: 0.7 }}
+                // The ratio it is sized against is inherited from the root,
+                // where the stage reads it too; grid placement is in CSS.
                 className="wt-frame"
-                // The stylesheet needs the ratio as a number to size the frame
-                // against both axes of the stage; grid placement is in CSS.
-                style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
               >
                 <div className="wt-artwork" style={artworkStyle} />
                 <img className="wt-frame-art" src={frame.src} alt="" aria-hidden="true" />
@@ -192,7 +239,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
               <NavArrow />
             </button>
             <div className="wt-plaque">
-              <p>{piece.description}</p>
+              <p ref={bodyRef}>{piece.description}</p>
+              {more ? (
+                <span className="wt-plaque-more" aria-hidden="true">
+                  <MoreArrow />
+                </span>
+              ) : null}
             </div>
             <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
               <NavArrow />
@@ -219,13 +271,13 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             </button>
           </div>
 
-          {/* The rope closes the composition along the bottom, as in the
-              mockups. Decorative and inert — it must never take a tap meant
-              for the buttons above it. An element rather than an image because
-              the stylesheet cuts the sprite into three and stretches only the
-              middle, the way the hall does, so the posts keep their drawn
-              proportions at any width. */}
-          <div className="wt-rope" aria-hidden="true" />
+          {/* The rope closes the composition along the bottom, as in mock 8.
+              Decorative and inert — it must never take a tap meant for the
+              buttons above it. An element rather than an image because it is
+              the floor the painting left over: the stylesheet gives the row
+              whatever height remains and hangs the sprite from the top of it,
+              so below a tall work the row is bare floor and the rope is gone. */}
+          <div className="wt-rope" data-bare={frame.ratio > 1 ? undefined : ''} aria-hidden="true" />
         </>
       )}
     </motion.div>

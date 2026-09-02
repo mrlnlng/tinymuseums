@@ -158,8 +158,10 @@ export class HallScene {
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
-    // The plaque beneath the drawing: the text on it is DOM, positioned by
-    // Placards; the sprite hangs below the plane's bottom edge, above the rope.
+    /*  The plaque beneath the drawing: the text on it is DOM, positioned by
+        Placards; the sprite hangs below the plane's bottom edge and *behind*
+        the rope, which is where the mockups put it — the rope is furniture on
+        the floor and the plaque is on the wall behind it. */
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
     const plaqueY = top - height - CONFIG.plaque.gap - plaqueHeight / 2
     const plaque = new THREE.Mesh(
@@ -182,10 +184,12 @@ export class HallScene {
       (CUTS[1] - CUTS[0]) * ropeNaturalWidth,
       (CUTS[3] - CUTS[2]) * ropeNaturalWidth,
     ]
-    // The swag takes whatever the posts leave; on a painting too narrow to need
-    // stretching it keeps its own width. `ropeSpan` is deliberately wider than
-    // the frame so the rope reads as crossing the screen.
-    const ropeSpan = Math.max(width, CONFIG.piece.ropeWidth)
+    /*  The rope is strung to the painting it stands in front of: exactly the
+        width of the frame above it, so the two posts line up with the frame's
+        outer edges instead of standing out past them. It used to be given a
+        width of its own, wider than any frame, from when the walls were far
+        enough apart that a rope had to reach across the screen to read as one. */
+    const ropeSpan = width
     const middleWidth = Math.max(
       (CUTS[2] - CUTS[1]) * ropeNaturalWidth,
       ropeSpan - endWidths[0] - endWidths[1],

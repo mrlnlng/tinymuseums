@@ -36,13 +36,15 @@
      museum's small capitals. The museum face names the museum; this names the
      painting, and the two are not the same voice. */
   --font-title: "Beth Ellen", "Segoe Script", cursive;
-  /*  Body copy is the museum face too. It renders lowercase as small capitals,
-      so a paragraph in it reads more like a label than like prose — which is
-      the intended voice here: the only long text in the museum is a plaque
-      beside a painting. Sniglet stays directly behind it for the glyphs the
-      face does not carry, a hyphen and a curly apostrophe among them, so those
-      fall through rather than vanishing. */
+  /*  Three voices, and the rule for choosing between them is about length, not
+      about place. The museum face names things: headings, labels, buttons, a
+      sign over a door. Beth Ellen is for what a person wrote — the museum's own
+      name and the name of a painting. Sniglet is for anything that runs to a
+      sentence or more, because the museum face renders lowercase as small
+      capitals and a paragraph set in small capitals is read letter by letter. */
   --font-ui: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
+  /** Prose: guidelines, plaque descriptions, the help guide. */
+  --font-body: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
   /* Fixed-width for QR tokens and numeric columns, where every character occupying the same width is the entire point. */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -141,8 +143,9 @@ h1, h2, h3 { text-wrap: balance; }
 }
 
 .topbar .brand {
-  font-family: var(--font-script);
-  font-size: 19px;
+  /* The museum's own name, in the hand the museum signs itself with. */
+  font-family: var(--font-title);
+  font-size: 21px;
   line-height: 1.15;
   color: var(--script);
   text-decoration: none;
@@ -219,7 +222,8 @@ h1, h2, h3 { text-wrap: balance; }
 .page-title { font-size: 38px; }
 .page-title.lg { font-size: 42px; }
 
-.artist-name { font-size: 46px; margin-bottom: 6px; }
+/* An artist's name is a name, not a heading: the same hand a painting's title is written in. */
+.artist-name { font-family: var(--font-title); font-size: 40px; margin-bottom: 6px; }
 
 /* Paragraphs that sit directly under a heading. */
 .lead { margin-top: 0; }
@@ -496,10 +500,10 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
-  /* The museum face, as everywhere else, with Sniglet behind it for the few
-     characters it lacks — a hyphen or a curly apostrophe in an artist's own
-     words falls through rather than vanishing. */
-  font-family: var(--font-button);
+  /*  The artist's own sentence about the work: prose, so Sniglet. Set in the
+      museum's small capitals it read as a label rather than as something
+      somebody wrote. */
+  font-family: var(--font-body);
   text-align: center;
   line-height: 1.25;
   color: var(--plaque-ink);
@@ -601,11 +605,10 @@ code.token {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  /* The gold rim the mockup draws around it. */
+  border: 3px solid var(--pill-edge);
   border-radius: 999px;
   background: var(--pill);
-  /* The gold rim the mockup draws under it, sized in em so it scales with the pill. */
-  box-shadow: inset 0 0 0 0.07em var(--pill-edge);
   color: var(--ink);
   font-family: var(--font-button);
   letter-spacing: 0.04em;
@@ -614,9 +617,23 @@ code.token {
   cursor: pointer;
   will-change: transform, opacity;
   transition: filter 0.15s ease;
+  /*  A slow breath, so it reads as the one thing here you can press. On `scale`
+      rather than `transform`: the frame loop writes this element's `transform`
+      every frame to keep it on the booth's counter, and an animation on the
+      same property would replace that and send the pill across the screen. */
+  animation: pill-pulse 2.4s ease-in-out infinite;
 }
 
-.lobby-help-button:hover { filter: brightness(1.06); }
+@keyframes pill-pulse {
+  0%, 100% { scale: 1; }
+  50%      { scale: 1.045; }
+}
+
+.lobby-help-button:hover { filter: brightness(1.06); animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby-help-button { animation: none; }
+}
 .lobby-help-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
 
 /* ------------------------------------------------------- the help guide */
@@ -624,7 +641,11 @@ code.token {
 .help-guide {
   position: absolute;
   inset: 0;
-  z-index: 9;
+  /*  Above the home and speaker buttons, which is the one screen where they are
+      covered rather than floating on top: mockup 2.1 has the booth filling the
+      frame with nothing over it, and while the guide is open there is nowhere
+      else to go anyway. */
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -651,8 +672,10 @@ code.token {
   position: relative;
   /*  Wider than the frame: mockup 2.1 crops the awning at both edges, which is
       what makes the booth read as leaning over the visitor rather than as a
-      picture of a booth. */
-  width: 123%;
+      picture of a booth. Sized off mockup 2.1 by the one thing in it that is
+      not cut off: the drop from the top of the sign to the bottom of the
+      awning's scallops, which is 36.7% of the screen's height there. */
+  width: 140%;
   flex: none;
   container-type: inline-size;
   display: flex;
@@ -725,8 +748,9 @@ code.token {
   display: flex;
   flex-direction: column;
   gap: 0.85em;
-  font-size: clamp(12px, 4.4cqw, 17px);
-  line-height: 1.35;
+  font-family: var(--font-body);
+  font-size: clamp(12px, 3.4cqw, 19px);
+  line-height: 1.4;
   color: var(--ink);
 }
 
@@ -975,8 +999,10 @@ code.token {
   overscroll-behavior: contain;
   scrollbar-width: none;
   text-align: center;
+  /* However long the artist made it, it is prose. */
+  font-family: var(--font-body);
   font-size: clamp(9px, 2cqh, 12.5px);
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--plaque-ink);
   text-wrap: pretty;
 }
@@ -1044,8 +1070,11 @@ code.token {
   /* Centred so each card takes its own width; the two percentages bring the mockup's heights. */
   align-items: center;
   gap: clamp(8px, 2vh, 16px);
-  /* Clears the floating sound and home buttons, so the plaque never slides underneath them. */
-  padding: clamp(52px, 9vh, 72px) 20px 0;
+  /*  Clears the floating buttons, so the plaque never slides underneath them.
+      Only the speaker is up there on this page — home would point at the page
+      you are already on — so it needs less headroom than a screen with both,
+      and the note below wants every pixel of it. */
+  padding: clamp(44px, 7vh, 60px) 20px 0;
   overflow: hidden;
 }
 
@@ -1073,31 +1102,52 @@ code.token {
   color: var(--script);
 }
 
+/*  The museum's own name, in Beth Ellen — the hand it is signed in on the
+    ticket the visitor is holding two inches below, and the same hand every
+    painting's title is written in. Beth Ellen is a wider face than the museum's
+    small capitals, so it is set a little smaller to keep the name on two lines
+    inside the plaque it hangs on. */
 .welcome-title {
   margin: 0;
-  font-size: clamp(26px, 8vw, 38px);
+  font-family: var(--font-title);
+  font-size: clamp(21px, calc(var(--screen-width) * 0.063), 34px);
+  line-height: 1.12;
 }
 
 /* Guidelines on the post-it asset: given the paper's drawn shape, padding off the tape, text sized in cqh. */
+/*  Everything written on the note is sized against the screen frame rather than
+    against the note, because the mockups are measured that way and because a
+    container's own `cqi` does not resolve against itself — it looks for an
+    ancestor container, finds none here, and falls back to the viewport, which
+    on a desktop preview is six times the frame. That is what had opened 51px
+    of dead air between the heading and the rules. */
 .guidelines {
-  /* Sized by contents, not the paper's aspect — the copy needs eight lines and the fixed ratio clipped them. */
-  width: 79.5%;
-  container-type: inline-size;
+  /*  Sized by contents, not the paper's aspect — the copy needs eight lines and
+      the fixed ratio clipped them. Four fifths of the screen, as mockup 0 draws
+      it: at the old width the heading could not be set any larger without
+      breaking over two lines. */
+  width: 88%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2cqi;
-  padding: 8% 8% 12%;
+  gap: calc(var(--screen-width) * 0.024);
+  /*  The drawn paper starts 12.7% down its own sprite and ends at 86.4%; the
+      rest is the torn edge and the tape. These insets are the paper, not the
+      box — written as a share of the width, which is what a percentage padding
+      resolves against, at the proportions the note actually renders at. */
+  padding: 12.5% 8% 12%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
 .guidelines h2 {
   margin: 0;
-  /* Indented to the list's text column, so heading and rules share an edge. */
-  padding-left: 4.5%;
+  /* Centred on the paper, and the largest thing written on it. */
+  text-align: center;
   font-family: var(--font-button);
-  /* Sized to sit on one line — a two-line heading in this face took a third of the note. */
-  font-size: clamp(13px, 5.6cqi, 24px);
+  /*  As large as the line will go and still stay on one: the museum face plus
+      its letter-spacing puts the limit at a shade over 6% of the frame, and the
+      note keeps a fixed share of the frame at every size, so this holds. */
+  font-size: clamp(16px, calc(var(--screen-width) * 0.066), 30px);
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1109,9 +1159,11 @@ code.token {
   /* The marker sits in this indent; the text starts where the heading does. */
   padding-left: 9%;
   display: grid;
-  gap: 1.4cqi;
-  font-size: clamp(9px, 3cqi, 13px);
-  line-height: 1.36;
+  gap: calc(var(--screen-width) * 0.016);
+  /* Three sentences: prose, so Sniglet rather than the museum's small capitals. */
+  font-family: var(--font-body);
+  font-size: clamp(10px, calc(var(--screen-width) * 0.031), 14px);
+  line-height: 1.42;
   color: var(--ink);
   text-wrap: pretty;
 }
@@ -1120,12 +1172,20 @@ code.token {
 
 /* On the note now, closing the guidelines rather than floating under them. */
 .open-line {
-  margin: 0;
-  padding-left: 4.5%;
-  /* Kept off the tape in the note's bottom-right corner, which starts at 76% across and 70% down in the drawing. */
-  padding-right: 18%;
-  font-size: clamp(10px, 4.2cqi, 17px);
+  margin: 0 auto;
+  /*  The note's closing line, and it is meant to be read as one: four fifths of
+      the paper's width, centred, and large enough to carry. The tape in the
+      bottom-right corner starts at 76% across, and centring inside 80% keeps
+      the words clear of it without a one-sided indent. */
+  width: 80%;
+  text-align: center;
+  font-family: var(--font-body);
+  /*  Larger than it was and set across four fifths of the paper, which at this
+      size is two lines — a third would push the note down onto the ticket the
+      visitor is holding. */
+  font-size: clamp(13px, calc(var(--screen-width) * 0.042), 19px);
   font-weight: 700;
+  line-height: 1.25;
   color: var(--script);
   text-wrap: balance;
 }
@@ -1153,7 +1213,10 @@ code.token {
 .landing-visitor {
   position: absolute;
   left: clamp(10px, 5%, 46px);
-  bottom: calc(var(--floor-height) * 0.42);
+  /*  Low enough that the ticket in its paw stays off the note: the ticket is
+      held up and out, so the visitor's own position is what decides whether the
+      last line of the guidelines is readable. */
+  bottom: calc(var(--floor-height) * 0.32);
   width: clamp(104px, 30%, 190px);
   z-index: 5;
   pointer-events: none;
@@ -1193,11 +1256,15 @@ code.token {
 }
 
 /* The column at the right edge, measured from the mockup; behind the visitor and inert. */
+/*  The owl on its column, at the size mockup 0 draws it: about a fifth of the
+    screen showing, which is a good deal more than it had. It grows upward and
+    inward from the same anchor rather than further off the edge — there is
+    nothing to see out there. */
 .landing-column {
   position: absolute;
-  right: -9%;
+  right: -10%;
   bottom: calc(var(--floor-height) * 0.8);
-  width: 22%;
+  width: 31%;
   height: auto;
   z-index: 1;
   pointer-events: none;

@@ -8,15 +8,26 @@ export const CONFIG = {
     floorTopRatio: 0.7766,
   },
 
-  /** Walls hang from a common top edge, so their plaques line up along the hall. */
-  displayTopY: 4.49,
+  /*  Walls hang from a common top edge, so their plaques line up along the hall.
+      Lower than it was: the paintings sit down on the floor rather than up under
+      the ceiling, which puts the plaque behind the rope — where the mockups have
+      it — instead of floating in the gap above it. */
+  displayTopY: 4.32,
   /*  The drop from the wall's top edge to the title's *lower* edge: the title is hung from its baseline upward, so a long one grows into the headroom instead of being cut. Small, because the title belongs to the painting, not to the top of the screen. */
   displayTitleGap: 0.07,
 
-  /** `scale` enlarges the server's framed image on the wall without re-rendering it; the layout spaces the walls at the same scale, so the hall stays evenly spaced. */
-  piece: { gap: 4.0, ropeWidth: 3.4, scale: 1.10 },
+  /*  `scale` enlarges the server's framed image on the wall without re-rendering
+      it. `gap` is deliberately short: at four units the next wall was a screen and
+      a half away and the hall read as a corridor of empty plaster, where at this
+      distance its outer edge is just past the frame you are standing at and a
+      nudge brings it in. The rope takes the painting's own width, so there is no
+      third number here to drift out of agreement with the other two. */
+  piece: { gap: 1.2, scale: 1.28 },
 
-  /*  `gap` is the drop from the wall's lower edge; `z` puts it in front of the rope.
+  /*  `gap` is the drop from the wall's lower edge; `z` puts it *behind* the
+      rope, which is where every mockup has it — the rope is furniture standing
+      on the floor and the plaque is on the wall behind it. Small, because it is
+      a label: the artist's page carries the description in full.
 
       `titleWidth` is the band a title wraps inside, and it is narrower than the
       wall it hangs over for one reason: the home and sound buttons float in the
@@ -27,13 +38,17 @@ export const CONFIG = {
       margin. A title too long for the band wraps and grows upward into the
       empty wall, which costs nothing; running underneath a button costs the
       words. The enlarged view keeps its own title clear the same way. */
-  plaque: { width: 1.2, gap: 0.06, z: 0.6, titleWidth: 2.02 },
+  plaque: { width: 0.86, gap: 0.05, z: 0.4, titleWidth: 2.02 },
 
   /*  Height and centre are measured off the mockup rather than chosen: the posts' feet land at y = -0.16, a little past the floor line, because the floor is a receding plane and something standing on it meets the line in front of it, not on it. At this height the sprite's own width is also the width the mockup draws it at. */
   rope: { height: 1.27, centerY: 0.47, z: 0.5 },
 
-  /** `frequency` is the share of gaps holding one; the rest are open floor. */
-  pedestal: { height: 2.4, centerY: 0.955, z: 0.3, frequency: 0.55 },
+  /*  `frequency` is the share of gaps holding one; the rest are open floor.
+      Shorter and standing lower than it was, because the gap it stands in is
+      now a fraction of what it was: a pedestal drawn at its old height would
+      be wider than the space between two paintings and reach up the wall past
+      the bottom of both. */
+  pedestal: { height: 1.55, centerY: 0.6, z: 0.3, frequency: 0.55 },
 
   character: {
     /*  Smaller and standing further down the floor than it once was: the walls grew, and at its old size the visitor stood head-and-ears over the plaque of whatever it had walked up to. */
@@ -88,7 +103,7 @@ export const CONFIG = {
     post: { x: 1.19, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
     booth: { x: 2.39, centerY: 1.56, height: 3.467, z: 0.4 },
     /** The pill on the booth's counter, measured off the drawing behind it. */
-    helpButton: { dy: -0.215, width: 1.3, height: 0.35 },
+    helpButton: { dy: -0.215, width: 1.06, height: 0.35 },
   },
 
   statue: { minDwellMs: 700 },

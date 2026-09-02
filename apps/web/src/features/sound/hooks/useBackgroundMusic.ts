@@ -10,6 +10,13 @@ const TARGET_VOLUME = 0.32
 const FADE_MS = 600
 const DEFAULT_ENABLED = true
 
+interface Options {
+  /*  Whether music belongs on this screen at all. Separate from the visitor's
+      preference: the speaker still reads "on" in the studio, because the
+      preference has not changed — there is simply nothing playing there. */
+  isAllowed: boolean
+}
+
 export interface BackgroundMusic {
   isEnabled: boolean
   isAvailable: boolean
@@ -20,11 +27,17 @@ export interface BackgroundMusic {
   track: string
 }
 
-export function useBackgroundMusic(): BackgroundMusic {
+export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fadeRef = useRef<number | null>(null)
 
-  const [isEnabled, setIsEnabled] = useState(false)
+  /*  Starts at the default rather than at silence. The preference is only
+      readable once the client is running, and starting from `false` meant the
+      speaker was drawn with its slash through it on every load and then
+      corrected a frame later — the museum announcing itself as muted. Anyone
+      who has actually muted it is corrected the same way, one frame later, and
+      they at least already know what they chose. */
+  const [isEnabled, setIsEnabled] = useState(DEFAULT_ENABLED)
   const [isAvailable, setIsAvailable] = useState(false)
   const [isReady, setIsReady] = useState(false)
 
@@ -89,18 +102,21 @@ export function useBackgroundMusic(): BackgroundMusic {
     }
   }, [fadeTo])
 
+  /*  Two things have to be true to hear anything: the visitor wants music, and
+      this screen is one that has it. Leaving the museum fades out rather than
+      cutting, the same way muting does. */
   const applyPreference = useCallback(() => {
     const audio = audioRef.current
     if (!isReady || !audio) return
-    if (isEnabled) void startPlayback()
+    if (isEnabled && isAllowed) void startPlayback()
     else if (!audio.paused) fadeTo(0, () => audio.pause())
-  }, [isEnabled, isReady, startPlayback, fadeTo])
+  }, [isEnabled, isAllowed, isReady, startPlayback, fadeTo])
 
   useEffect(() => applyPreference(), [applyPreference])
 
   /* Arms playback on the first interaction. Not `{ once: true }` — the first gesture can land before the browser allows playback, and consuming the listener would stop the music ever starting. */
   const armPlaybackOnGesture = useCallback(() => {
-    if (!isReady || !isEnabled) return undefined
+    if (!isReady || !isEnabled || !isAllowed) return undefined
 
     const events = ['pointerdown', 'keydown', 'touchstart'] as const
     let done = false
@@ -115,7 +131,7 @@ export function useBackgroundMusic(): BackgroundMusic {
     return () => {
       for (const event of events) document.removeEventListener(event, unlock)
     }
-  }, [isReady, isEnabled, startPlayback])
+  }, [isReady, isEnabled, isAllowed, startPlayback])
 
   useEffect(() => armPlaybackOnGesture(), [armPlaybackOnGesture])
 

@@ -17,6 +17,9 @@ const ASSETS_DIR =
 /** Canvas resolution. 300px per world unit keeps a single display near 900x960. */
 export const PX_PER_UNIT = 300
 
+/** How much larger than its window the artwork is drawn, so no edge shows. */
+const ARTWORK_OVERSCAN = 1.1
+
 interface FrameManifest {
   frame: {
     size: [number, number]
@@ -113,12 +116,24 @@ export async function renderSinglePieceFrame({
 
   const source = pickDerivative(derivatives, windowW, 'jpg')
   if (source) {
+    /*  Laid a tenth larger than the window and centred on it, so the artwork's
+        edges run underneath the frame's painted border rather than stopping
+        just short of it and leaving a hairline of wall showing through. The
+        enlarged view does the same thing to the same picture with a transform;
+        this is the hall's copy of that decision. Clamped so a frame measured
+        with less margin around its window cannot push the overlay off the
+        canvas, which sharp refuses outright. */
+    const drawW = Math.round(windowW * ARTWORK_OVERSCAN)
+    const drawH = Math.round(windowH * ARTWORK_OVERSCAN)
+    const left = Math.max(0, Math.min(width - drawW, windowLeft - Math.round((drawW - windowW) / 2)))
+    const top = Math.max(0, Math.min(height - drawH, windowTop - Math.round((drawH - windowH) / 2)))
+
     const artwork = await storage.get(source.key)
     const fitted = await sharp(artwork)
-      .resize(windowW, windowH, { fit: 'cover', position: 'centre' })
+      .resize(drawW, drawH, { fit: 'cover', position: 'centre' })
       .png()
       .toBuffer()
-    overlays.push({ input: fitted, left: windowLeft, top: windowTop })
+    overlays.push({ input: fitted, left, top })
   }
 
   // The frame goes on last: its ornament overlaps the artwork's edges.

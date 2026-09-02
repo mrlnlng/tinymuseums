@@ -1293,6 +1293,17 @@ code.token {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Slides down after the screen it sits on has arrived, then stays put. */
+  animation: chrome-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards;
+}
+
+@keyframes chrome-enter {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-chrome { animation: none; }
 }
 
 .chrome-button {

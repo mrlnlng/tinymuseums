@@ -108,7 +108,13 @@ export const CONFIG = {
 
   statue: { minDwellMs: 700 },
   loading: { prefetchAheadUnits: 9, sliceSize: 4 },
-  virtualization: { mountRadiusUnits: 14 },
+  /*  How far either side of the camera a wall is kept in memory. This is a
+      texture budget, not a distance: the walls used to stand 6.3 units apart, so
+      fourteen units held about nine of them, and now that they stand 3.9 apart
+      the same figure would hold sixteen — twice the video memory for walls that
+      are no nearer to being looked at. Nine units is a little over two walls
+      each side of the one on screen, which is more runway than the eye gets. */
+  virtualization: { mountRadiusUnits: 9 },
 }
 
 /*  Vertical centre of the camera for a frustum height — read the height so the floor line stays put as the frustum grows on tall screens. */

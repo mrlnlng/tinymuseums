@@ -14,6 +14,28 @@ export interface Viewport {
     the one frame loop, one after the other, so nothing here is ever re-entered. */
 const projected = new THREE.Vector3()
 
+/*  Every label's styles are rewritten on every frame, and between two frames
+    almost none of them differ: a plaque's width and type size move only when the
+    window does, and its transform only while the hall is moving. Assigning an
+    identical string is not free — the CSSOM parses it and marks the element
+    dirty — so each node remembers what it was last given and only genuinely new
+    values reach the DOM. Standing still in front of a painting, this takes the
+    overlay from around thirty style writes a frame to none. */
+type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity'
+
+const written = new WeakMap<HTMLElement, Partial<Record<StyledProperty, string>>>()
+
+function writeStyle(node: HTMLElement, property: StyledProperty, value: string): void {
+  let last = written.get(node)
+  if (!last) {
+    last = {}
+    written.set(node, last)
+  }
+  if (last[property] === value) return
+  last[property] = value
+  node.style[property] = value
+}
+
 /*  Where a world point lands on screen, or null when it is far enough outside
     the frame that positioning it would be a layout nobody sees. The cull is
     generous rather than exact: labels are placed by their centre and can be
@@ -36,8 +58,12 @@ function toScreen(
 
 /* One placard per painting: the title above the plane, the work's description on the plaque beneath it. The plaque is a scene sprite; the text on it is real DOM — selectable, readable, crawlable — updated in one imperative pass per frame, because routing it through a render cycle at 60fps makes overlays swim. */
 export class Placards {
-  private nodes = new Map<string, HTMLElement>()
-  private titles = new Map<string, HTMLElement>()
+  /*  Keyed by the slot's own index rather than by a string made from it: the
+      key was being formatted afresh for every wall on every frame. */
+  private nodes = new Map<number, HTMLElement>()
+  private titles = new Map<number, HTMLElement>()
+  /* Reused rather than rebuilt: this runs sixty times a second. */
+  private seen = new Set<number>()
   /*  Rendered heights, kept up to date by the observer below. A bottom-hung label has to know how tall it grew before it can be kept on screen, and asking the element that inside the frame loop would force a layout per title per frame. */
   private heights = new WeakMap<HTMLElement, number>()
 
@@ -51,11 +77,12 @@ export class Placards {
   constructor(private container: HTMLElement) {}
 
   sync(
-    mounted: MountedDisplay[],
+    mounted: readonly MountedDisplay[],
     camera: THREE.OrthographicCamera,
     viewport: Viewport,
   ): void {
-    const seen = new Set<string>()
+    const seen = this.seen
+    seen.clear()
     const viewWidth = camera.right - camera.left
     // Locked to the plaque's painted width at any window size.
     const plaquePx = (CONFIG.plaque.width / viewWidth) * viewport.width
@@ -64,7 +91,7 @@ export class Placards {
     const titlePx = (CONFIG.plaque.titleWidth / viewWidth) * viewport.width
 
     for (const m of mounted) {
-      const key = `${m.index}`
+      const key = m.index
       seen.add(key)
       let node = this.nodes.get(key)
 
@@ -122,12 +149,12 @@ export class Placards {
   ): void {
     const at = toScreen(x, y, camera, viewport)
     if (!at) {
-      node.style.opacity = '0'
+      writeStyle(node, 'opacity', '0')
       return
     }
 
-    node.style.width = `${widthPx}px`
-    node.style.fontSize = `${fontSize}px`
+    writeStyle(node, 'width', `${widthPx}px`)
+    writeStyle(node, 'fontSize', `${fontSize}px`)
 
     let screenY = at.y
     if (anchor === 'bottom') {
@@ -138,9 +165,12 @@ export class Placards {
       screenY = Math.max(screenY, viewport.top + height + 4)
     }
 
-    node.style.transform =
-      `translate3d(${at.x.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, ${anchor === 'bottom' ? '-100%' : '-50%'})`
-    node.style.opacity = '1'
+    writeStyle(
+      node,
+      'transform',
+      `translate3d(${at.x.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, ${anchor === 'bottom' ? '-100%' : '-50%'})`,
+    )
+    writeStyle(node, 'opacity', '1')
   }
 
   clear(): void {
@@ -157,6 +187,8 @@ export class LobbySigns {
   private sign = document.createElement('div')
   private direction = document.createElement('div')
   private help = document.createElement('button')
+  private isHelpOnScreen: boolean | null = null
+  private helpHeight = ''
 
   constructor(
     container: HTMLElement,
@@ -190,10 +222,18 @@ export class LobbySigns {
     // is actually on screen — an invisible one parked off the left edge would
     // still swallow the drag that scrolls the hall.
     const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.089)
-    this.help.style.pointerEvents = onScreen ? 'auto' : 'none'
-    // The pill is drawn by this element rather than by the booth's art, which
-    // has only an empty counter behind it, so it needs a real height.
-    this.help.style.height = `${(this.marks.help.height * perUnit).toFixed(1)}px`
+    if (onScreen !== this.isHelpOnScreen) {
+      this.isHelpOnScreen = onScreen
+      this.help.style.pointerEvents = onScreen ? 'auto' : 'none'
+    }
+    /*  The pill is drawn by this element rather than by the booth's art, which
+        has only an empty counter behind it, so it needs a real height. It only
+        changes with the viewport, so it is written only when it does. */
+    const height = `${(this.marks.help.height * perUnit).toFixed(1)}px`
+    if (height !== this.helpHeight) {
+      this.helpHeight = height
+      this.help.style.height = height
+    }
   }
 
   /*  Centred on its mark and sized in world units, so a sign occupies the same
@@ -211,16 +251,19 @@ export class LobbySigns {
   ): boolean {
     const at = toScreen(mark.x, mark.y, camera, viewport)
     if (!at) {
-      node.style.opacity = '0'
+      writeStyle(node, 'opacity', '0')
       return false
     }
 
     const widthPx = mark.width * perUnit
-    node.style.width = `${widthPx.toFixed(1)}px`
-    node.style.fontSize = `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`
-    node.style.transform =
-      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`
-    node.style.opacity = '1'
+    writeStyle(node, 'width', `${widthPx.toFixed(1)}px`)
+    writeStyle(node, 'fontSize', `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`)
+    writeStyle(
+      node,
+      'transform',
+      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
+    )
+    writeStyle(node, 'opacity', '1')
     return true
   }
 

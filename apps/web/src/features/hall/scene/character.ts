@@ -36,6 +36,12 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   /** Which way the bunny last moved. It keeps facing that way once stopped. */
   let facing: 'left' | 'right' = 'right'
   let currentSrc = idle.right.src
+  /*  The last values written to the sprite. Its height changes only with the
+      window and its transform only while something is moving, but both were
+      being assigned on every frame; an identical string still costs a CSSOM
+      parse. */
+  let currentHeight = ''
+  let currentTransform = ''
 
   function setFrame(image: HTMLImageElement): void {
     if (currentSrc === image.src) return
@@ -73,11 +79,19 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       // viewport height, so the bunny scales with the hall.
       const frustumHeight = camera.top - camera.bottom
       const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
-      sprite.style.height = `${heightPx.toFixed(1)}px`
+      const height = `${heightPx.toFixed(1)}px`
+      if (height !== currentHeight) {
+        currentHeight = height
+        sprite.style.height = height
+      }
 
-      sprite.style.transform =
+      const transform =
         `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0)` +
         ' translate(-50%, -50%)'
+      if (transform !== currentTransform) {
+        currentTransform = transform
+        sprite.style.transform = transform
+      }
     },
 
     dispose() {

@@ -5,7 +5,6 @@ export { env, repoRoot } from './infra/env.ts'
 export { closePool, query, queryOne, transaction } from './infra/db.ts'
 export { getStorage, verifyUploadSignature } from './media/storage.ts'
 export { claim, complete, fail, hasPendingJob, requeueStale } from './infra/jobs.ts'
-export { pickDerivative } from './media/derivatives.ts'
 export {
   artistForSession,
   createSession,
@@ -24,7 +23,6 @@ export {
   hangPiece,
   movePiece,
   unhangPiece,
-  type GalleryPiece,
 } from './domain/gallery.ts'
 export {
   MAX_UPLOAD_BYTES,

@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import SoundToggle from '@/features/sound/components/SoundToggle'
-import { motion } from 'motion/react'
 
-/*  The icon pair in the screen's top-right corner, as the mockups have it: home, then the speaker. Rendered once in the root layout so it sits in the same place on every screen. */
+/*  The icon pair in the screen's top-right corner, as the mockups have it: home, then the speaker. Rendered once in the root layout so it sits in the same place on every screen.
+
+    Its entrance is a CSS animation rather than a Motion one, and that is a size decision rather than a taste one: this component is rendered by the root layout, so whatever it imports is loaded by every page in the museum. Motion was therefore in the first load of the landing page, the studio and every route handler's client bundle — about 35kB to slide two icons down by twenty pixels once. Motion still runs the surfaces that genuinely need it, and now only those pages pay for it. */
 export default function ScreenChrome() {
   const pathname = usePathname()
   const router = useRouter()
@@ -17,12 +18,7 @@ export default function ScreenChrome() {
   const showHome = pathname !== '/'
 
   return (
-    <motion.div
-      className="screen-chrome"
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", bounce: 0, duration: 0.6, delay: 0.5 }}
-    >
+    <div className="screen-chrome">
       {showHome ? (
         <button
           type="button"
@@ -35,6 +31,6 @@ export default function ScreenChrome() {
         </button>
       ) : null}
       <SoundToggle />
-    </motion.div>
+    </div>
   )
 }

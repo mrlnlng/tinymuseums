@@ -101,7 +101,13 @@ export function useHallScene({
       }
       if (isDisposed) return
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true })
+      /*  No multisampling. Everything in this scene is an axis-aligned quad, and
+          every edge you can actually see is drawn inside a texture's own alpha —
+          the frames, the rope, the pedestals. MSAA smooths polygon edges, of
+          which there are none on screen, and charges for it in fragments: at two
+          device pixels per CSS pixel on a phone that is the most expensive thing
+          the renderer was doing for no visible difference. */
+      const renderer = new THREE.WebGLRenderer({ antialias: false })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setClearColor(new THREE.Color(assets.manifest.room.wallColor))
       renderer.domElement.className = 'hall-canvas'
@@ -219,6 +225,12 @@ export function useHallScene({
       renderer.domElement.addEventListener('pointerup', handlePointerUp)
 
       const viewedDisplays = new Set<number>()
+      /*  Walking past a wall is not a sixty-times-a-second question. This scans
+          every mounted display to find the nearest one, and the thing it is
+          looking for takes a second of walking to become true, so it is asked
+          four times a second instead of sixty. */
+      const VIEW_CHECK_MS = 250
+      let lastViewCheck = 0
 
       /** Counts a wall as seen once, when the visitor is actually at it. */
       function recordDisplayView(cameraX: number): void {
@@ -275,7 +287,10 @@ export function useHallScene({
         lobbySigns.sync(rig.camera, viewport)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
-        recordDisplayView(traversal.cameraX)
+        if (now - lastViewCheck >= VIEW_CHECK_MS) {
+          lastViewCheck = now
+          recordDisplayView(traversal.cameraX)
+        }
 
         renderer.render(scene, rig.camera)
       }

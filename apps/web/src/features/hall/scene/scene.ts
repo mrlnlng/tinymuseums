@@ -50,6 +50,11 @@ export class HallScene {
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
   private pedestals = new Map<number, Pedestal>()
+  /*  What is hanging, as an array, rebuilt only when something is hung or taken
+      down. The frame loop asks for this every frame and used to get a fresh copy
+      of the map's values each time — an array allocated sixty times a second to
+      hold four or five items that had not changed. */
+  private mountedList: MountedDisplay[] = []
 
   constructor(
     private scene: THREE.Scene,
@@ -216,6 +221,7 @@ export class HallScene {
     }
 
     this.scene.add(group)
+    this.mountedList = []
     this.mounted.set(slot.index, {
       index: slot.index,
       display: piece,
@@ -227,6 +233,7 @@ export class HallScene {
       plaqueY,
       titleY: top + CONFIG.displayTitleGap,
     })
+    this.mountedList = [...this.mounted.values()]
   }
 
   private updatePedestals(dt: number, cameraX: number): void {
@@ -276,6 +283,7 @@ export class HallScene {
     }
 
     this.mounted.delete(index)
+    this.mountedList = [...this.mounted.values()]
   }
 
   private removePedestal(index: number): void {
@@ -299,8 +307,8 @@ export class HallScene {
     return { mounted, pieceId: mounted.display.pieceId }
   }
 
-  getMounted(): MountedDisplay[] {
-    return [...this.mounted.values()]
+  getMounted(): readonly MountedDisplay[] {
+    return this.mountedList
   }
 
   stats(): { mounted: number; loaded: number; total: number } {

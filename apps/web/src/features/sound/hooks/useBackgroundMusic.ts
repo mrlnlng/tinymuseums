@@ -6,9 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? '/audio/hall.mp3'
 const STORAGE_KEY = 'tm_sound'
-const TARGET_VOLUME = 0.32
+const VOLUME_KEY = 'tm_volume'
+const DEFAULT_VOLUME = 0.32
 const FADE_MS = 600
 const DEFAULT_ENABLED = true
+
+function clampVolume(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_VOLUME
+  return Math.min(1, Math.max(0, value))
+}
 
 interface Options {
   /*  Whether music belongs on this screen at all. Separate from the visitor's
@@ -20,6 +26,9 @@ interface Options {
 export interface BackgroundMusic {
   isEnabled: boolean
   isAvailable: boolean
+  /** How loud, 0 to 1. Remembered across a mute, so unmuting comes back at it. */
+  volume: number
+  setVolume: (value: number) => void
   toggle: () => void
   audioRef: React.RefObject<HTMLAudioElement | null>
   handleLoadedMetadata: () => void
@@ -38,8 +47,19 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       who has actually muted it is corrected the same way, one frame later, and
       they at least already know what they chose. */
   const [isEnabled, setIsEnabled] = useState(DEFAULT_ENABLED)
+  const [volume, setVolumeState] = useState(DEFAULT_VOLUME)
   const [isAvailable, setIsAvailable] = useState(false)
   const [isReady, setIsReady] = useState(false)
+
+  /*  The frame loop that ramps the volume reads the target through a ref, so
+      that changing the level does not rebuild the ramp itself. */
+  const volumeRef = useRef(volume)
+  volumeRef.current = volume
+
+  /*  A hidden tab is not a quiet tab: the track goes on playing behind whatever
+      the visitor switched to, which is the one place background music becomes
+      somebody shouting from another room. */
+  const [isVisible, setIsVisible] = useState(true)
 
   /*  `loadedmetadata` can fire before React attaches the handler; checking readyState at mount covers that race — the toggle never appeared otherwise. */
   const detectAvailability = useCallback(() => {
@@ -51,17 +71,29 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
 
   const restorePreference = useCallback(() => {
     let stored: string | null = null
+    let storedVolume: string | null = null
     try {
       stored = window.localStorage.getItem(STORAGE_KEY)
+      storedVolume = window.localStorage.getItem(VOLUME_KEY)
     } catch {
-      // Private mode, or storage disabled. Fall through to the default.
+      // Private mode, or storage disabled. Fall through to the defaults.
     }
     setIsEnabled(stored === null ? DEFAULT_ENABLED : stored === 'on')
+    if (storedVolume !== null) setVolumeState(clampVolume(Number(storedVolume)))
     setIsReady(true)
+  }, [])
+
+  /** Pauses with the tab and picks up where it left off on the way back. */
+  const watchVisibility = useCallback(() => {
+    const onChange = () => setIsVisible(document.visibilityState !== 'hidden')
+    onChange()
+    document.addEventListener('visibilitychange', onChange)
+    return () => document.removeEventListener('visibilitychange', onChange)
   }, [])
 
   useEffect(() => detectAvailability(), [detectAvailability])
   useEffect(() => restorePreference(), [restorePreference])
+  useEffect(() => watchVisibility(), [watchVisibility])
 
   /** Ramps volume rather than cutting, so toggling does not feel like a switch. */
   const fadeTo = useCallback((target: number, onDone?: () => void) => {
@@ -94,7 +126,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     audio.volume = 0
     try {
       await audio.play()
-      fadeTo(TARGET_VOLUME)
+      fadeTo(volumeRef.current)
       return true
     } catch {
       // Blocked: no gesture has happened yet.
@@ -102,21 +134,36 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     }
   }, [fadeTo])
 
-  /*  Two things have to be true to hear anything: the visitor wants music, and
-      this screen is one that has it. Leaving the museum fades out rather than
-      cutting, the same way muting does. */
+  /*  Three things have to be true to hear anything: the visitor wants music,
+      this screen is one that has it, and the tab is the one being looked at.
+      Muting and walking out of the museum fade; switching tabs does not, because
+      a hidden tab is given no animation frames — the ramp would freeze part-way
+      through and leave the track playing at half volume behind whatever the
+      visitor went to look at. Nobody can hear a fade they have already left. */
   const applyPreference = useCallback(() => {
     const audio = audioRef.current
     if (!isReady || !audio) return
-    if (isEnabled && isAllowed) void startPlayback()
-    else if (!audio.paused) fadeTo(0, () => audio.pause())
-  }, [isEnabled, isAllowed, isReady, startPlayback, fadeTo])
+
+    if (isEnabled && isAllowed && isVisible) {
+      void startPlayback()
+      return
+    }
+    if (audio.paused) return
+
+    if (!isVisible) {
+      if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+      fadeRef.current = null
+      audio.pause()
+      return
+    }
+    fadeTo(0, () => audio.pause())
+  }, [isEnabled, isAllowed, isVisible, isReady, startPlayback, fadeTo])
 
   useEffect(() => applyPreference(), [applyPreference])
 
   /* Arms playback on the first interaction. Not `{ once: true }` — the first gesture can land before the browser allows playback, and consuming the listener would stop the music ever starting. */
   const armPlaybackOnGesture = useCallback(() => {
-    if (!isReady || !isEnabled || !isAllowed) return undefined
+    if (!isReady || !isEnabled || !isAllowed || !isVisible) return undefined
 
     const events = ['pointerdown', 'keydown', 'touchstart'] as const
     let done = false
@@ -131,7 +178,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     return () => {
       for (const event of events) document.removeEventListener(event, unlock)
     }
-  }, [isReady, isEnabled, isAllowed, startPlayback])
+  }, [isReady, isEnabled, isAllowed, isVisible, startPlayback])
 
   useEffect(() => armPlaybackOnGesture(), [armPlaybackOnGesture])
 
@@ -141,21 +188,67 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     }
   }, [])
 
-  const toggle = useCallback(() => {
-    setIsEnabled((was) => {
-      const next = !was
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? 'on' : 'off')
-      } catch {
-        // The preference simply will not persist.
-      }
-      return next
-    })
+  /*  The slider writes straight to the element instead of ramping to it. A ramp
+      is for a decision — muting, leaving the museum — and a ramp underneath a
+      finger that is still moving fights the finger. */
+  const applyVolume = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio || audio.paused) return
+    if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+    fadeRef.current = null
+    audio.volume = volume
+  }, [volume])
+
+  useEffect(() => applyVolume(), [applyVolume])
+
+  const remember = useCallback((key: string, value: string) => {
+    try {
+      window.localStorage.setItem(key, value)
+    } catch {
+      // The preference simply will not persist.
+    }
   }, [])
+
+  const setEnabled = useCallback(
+    (next: boolean) => {
+      setIsEnabled(next)
+      remember(STORAGE_KEY, next ? 'on' : 'off')
+    },
+    [remember],
+  )
+
+  const toggle = useCallback(() => {
+    const next = !isEnabled
+    setEnabled(next)
+    /*  Turning the sound back on when the slider was dragged all the way down
+        would be turning on silence, and the speaker would then be lying about
+        what it had done. */
+    if (next && volume === 0) {
+      setVolumeState(DEFAULT_VOLUME)
+      remember(VOLUME_KEY, String(DEFAULT_VOLUME))
+    }
+  }, [isEnabled, volume, setEnabled, remember])
+
+  /*  The slider and the speaker are two ways of saying the same thing, so they
+      agree: dragging off zero turns the sound back on, and dragging to zero is
+      muting. The level itself is kept through a mute, so the speaker brings the
+      music back at the volume it was left at rather than at full. */
+  const setVolume = useCallback(
+    (value: number) => {
+      const next = clampVolume(value)
+      setVolumeState(next)
+      remember(VOLUME_KEY, String(next))
+      if (next > 0 && !isEnabled) setEnabled(true)
+      else if (next === 0 && isEnabled) setEnabled(false)
+    },
+    [isEnabled, remember, setEnabled],
+  )
 
   return {
     isEnabled,
     isAvailable,
+    volume,
+    setVolume,
     toggle,
     audioRef,
     track: TRACK,

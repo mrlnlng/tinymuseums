@@ -21,17 +21,26 @@ export interface SoundEffects {
   setWalking: (isWalking: boolean) => void
 }
 
-export function useSoundEffects(isEnabled: boolean): SoundEffects {
+/*  `volume` is the museum's own level, the one the speaker's slider sets: every
+    sound the place makes is scaled by it, so the control governs the footsteps
+    and the taps as well as the music rather than only the soundtrack. Each
+    effect keeps its own balance against the others. */
+export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffects {
   // Built on the client only: `new Audio()` does not exist while rendering on
   // the server, and these are useless before there is a document.
   const effectsRef = useRef<Partial<Record<EffectName, HTMLAudioElement>>>({})
   const stepsRef = useRef<HTMLAudioElement | null>(null)
   const isWalkingRef = useRef(false)
 
+  /* Read at play time, so changing the level does not rebuild the callbacks. */
+  const volumeRef = useRef(volume)
+  volumeRef.current = volume
+
   const loadEffects = useCallback(() => {
     for (const [name, spec] of Object.entries(EFFECTS)) {
       const audio = new Audio(spec.file)
       audio.preload = 'auto'
+      // The mix is stored on the element; the master level is applied per voice.
       audio.volume = spec.volume
       effectsRef.current[name as EffectName] = audio
     }
@@ -39,7 +48,7 @@ export function useSoundEffects(isEnabled: boolean): SoundEffects {
     const steps = new Audio(FOOTSTEPS.file)
     steps.preload = 'auto'
     steps.loop = true
-    steps.volume = FOOTSTEPS.volume
+    steps.volume = FOOTSTEPS.volume * volumeRef.current
     stepsRef.current = steps
 
     return () => {
@@ -52,6 +61,12 @@ export function useSoundEffects(isEnabled: boolean): SoundEffects {
 
   useEffect(() => loadEffects(), [loadEffects])
 
+  /* The footsteps are a loop, so a change of level has to reach the one running. */
+  useEffect(() => {
+    const steps = stepsRef.current
+    if (steps) steps.volume = FOOTSTEPS.volume * volume
+  }, [volume])
+
   const play = useCallback(
     (name: EffectName) => {
       const source = effectsRef.current[name]
@@ -59,7 +74,7 @@ export function useSoundEffects(isEnabled: boolean): SoundEffects {
 
       // Cloned per call so rapid taps overlap instead of cutting each other off.
       const voice = source.cloneNode() as HTMLAudioElement
-      voice.volume = source.volume
+      voice.volume = source.volume * volumeRef.current
       void voice.play().catch(() => {
         // Not yet unlocked by a gesture. Nothing to recover from.
       })

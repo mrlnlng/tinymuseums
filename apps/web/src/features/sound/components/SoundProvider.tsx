@@ -19,6 +19,8 @@ function hasMusic(pathname: string): boolean {
 interface SoundState {
   isEnabled: boolean
   isAvailable: boolean
+  volume: number
+  setVolume: (value: number) => void
   toggle: () => void
   play: (name: EffectName) => void
   setWalking: (isWalking: boolean) => void
@@ -27,6 +29,8 @@ interface SoundState {
 const SoundContext = createContext<SoundState>({
   isEnabled: false,
   isAvailable: false,
+  volume: 0,
+  setVolume: () => {},
   toggle: () => {},
   play: () => {},
   setWalking: () => {},
@@ -42,13 +46,15 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
 
   const music = useBackgroundMusic({ isAllowed: isInMuseum })
   // Footsteps and taps are the museum's too, and they follow the same rule.
-  const effects = useSoundEffects(music.isEnabled && isInMuseum)
+  const effects = useSoundEffects(music.isEnabled && isInMuseum, music.volume)
 
   return (
     <SoundContext.Provider
       value={{
         isEnabled: music.isEnabled,
         isAvailable: music.isAvailable,
+        volume: music.volume,
+        setVolume: music.setVolume,
         toggle: music.toggle,
         play: effects.play,
         setWalking: effects.setWalking,

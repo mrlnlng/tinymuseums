@@ -1,6 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  isElementVolumeLocked,
+  resumeGain,
+  routeThroughGain,
+  setGainLevel,
+} from '@/features/sound/lib/output'
 
 /* The museum's background track — more than an `<audio autoplay loop>`: browsers refuse audio before a gesture, the element must outlive navigation, and the preference has to survive the visit. */
 
@@ -79,6 +85,24 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       something else — so window focus is watched alongside it. */
   const [isVisible, setIsVisible] = useState(true)
   const [isFocused, setIsFocused] = useState(true)
+
+  /*  Where the level is written, and the one place that knows there is a
+      choice. On most platforms it is the element's own volume; on iOS, where
+      that setter does nothing, it is a gain node the element has been routed
+      through. Fades and the slider both come through here, so neither has to
+      know which — and the last value written is kept, because a fade needs to
+      know where it is starting from and the element can no longer be asked. */
+  const outputRef = useRef(1)
+
+  const setOutput = useCallback((value: number) => {
+    outputRef.current = value
+    if (isElementVolumeLocked()) {
+      setGainLevel(value)
+      return
+    }
+    const audio = audioRef.current
+    if (audio) audio.volume = value
+  }, [])
 
   /** Only a genuine load failure takes the control away. */
   const detectFailure = useCallback(() => {
@@ -172,12 +196,12 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     if (!audio) return
     if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
 
-    const from = audio.volume
+    const from = outputRef.current
     const startedAt = performance.now()
 
     const step = (now: number) => {
       const t = Math.min(1, (now - startedAt) / FADE_MS)
-      audio.volume = from + (target - from) * t
+      setOutput(from + (target - from) * t)
       if (t < 1) {
         fadeRef.current = requestAnimationFrame(step)
         return
@@ -194,7 +218,16 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     if (!audio) return false
     if (!audio.paused) return true
 
-    audio.volume = 0
+    /*  Where the element's volume is locked the sound goes through the graph
+        instead, and the graph is built and woken here: this runs from the
+        gesture that is allowed to start audio, which is also the only kind of
+        moment a browser will let an AudioContext run in. */
+    if (isElementVolumeLocked()) {
+      routeThroughGain(audio)
+      resumeGain()
+    }
+
+    setOutput(0)
     try {
       await audio.play()
       fadeTo(volumeRef.current)
@@ -203,7 +236,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       // Blocked: no gesture has happened yet.
       return false
     }
-  }, [fadeTo])
+  }, [fadeTo, setOutput])
 
   /*  Four things have to be true to hear anything: the visitor wants music,
       this screen is one that has it, the tab is the one being looked at, and
@@ -295,8 +328,8 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     if (!shouldSound) return
     if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
     fadeRef.current = null
-    audio.volume = volume
-  }, [volume, shouldSound])
+    setOutput(volume)
+  }, [volume, shouldSound, setOutput])
 
   useEffect(() => applyVolume(), [applyVolume])
 

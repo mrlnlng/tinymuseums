@@ -1445,6 +1445,11 @@ code.token {
   align-items: center;
 }
 
+/*  The panel the level sits in on a touch screen. Where there is a pointer it
+    is not a box at all, so the slider goes on hanging off the speaker by its
+    own absolute position, exactly as it did before there was a panel. */
+.sound-panel { display: contents; }
+
 /*  Under the speaker rather than beside it, and standing on end. Laid out in
     the row it opened *into* the corner — it pushed itself in between the
     speaker and the home button and shoved home along the top of the screen, so
@@ -1493,10 +1498,6 @@ code.token {
   opacity: 1;
   transform: none;
   pointer-events: auto;
-}
-
-@media (pointer: coarse) {
-  .sound-level { opacity: 1; transform: none; pointer-events: auto; }
 }
 
 /*  One rule per engine: a selector either browser does not know invalidates the
@@ -1552,6 +1553,101 @@ code.token {
   outline: 2px solid var(--script);
   outline-offset: 3px;
   border-radius: 999px;
+}
+
+/*  ---- the level on a touch screen ----------------------------------------
+
+    Three things were wrong with it here, and the first two are the same thing:
+    it was a 22px-wide upright slider that stood open for the whole visit. A
+    22px target is half the width a finger is allowed to need, an upright range
+    input is a control Safari only learned to draw in 17.4 — before that the
+    markup renders as a horizontal slider squashed into a 22px box, which is
+    why dragging it appeared to do nothing — and a control nobody opened had no
+    business sitting over the artwork on every screen of the museum.
+
+    So on a screen with no hover it lies down, grows to a finger's size, sits
+    on a panel of its own, and is closed until the speaker is tapped. `hover:
+    none` rather than `pointer: coarse` because the absence of hover is the
+    actual problem being solved: a hybrid laptop with a touchscreen still has a
+    pointer to reveal it with, and should keep the small upright one. */
+@media (hover: none) {
+  .sound-panel {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    /*  Hung under the icons and aligned with the corner's right edge, so it
+        opens into the empty wall below rather than across the two buttons. */
+    top: calc(100% + 8px);
+    right: 0;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--plaque);
+    box-shadow: 0 2px 10px rgb(109 64 46 / 26%);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  /*  Opened by the tap on the speaker, and by a keyboard reaching the slider —
+      a touch screen with a keyboard attached still has to be able to get at it,
+      and an element at zero opacity is still in the tab order.
+
+      `:focus-visible` rather than the `:focus-within` the pointer version uses,
+      because a tap leaves the speaker focused: with plain focus the panel would
+      open on the tap and then have no way of ever closing again, which is the
+      thing this whole block exists to fix. */
+  .sound[data-open='true'] .sound-panel,
+  .sound:has(:focus-visible) .sound-panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  .sound-level {
+    position: static;
+    /* Back off its side: loud to the right, which is what a lying-down slider
+       means everywhere else on a phone. */
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    width: 140px;
+    height: 44px;
+    margin: 0;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    /*  Without this the drag is a gesture the page gets first and the slider
+        never sees — the museum sets `overscroll-behavior: none` and the hall
+        takes every pointer it is given, and between them a finger moving across
+        this control was being read as an attempt to move something else. */
+    touch-action: none;
+  }
+
+  /*  Lying down, the track's thickness is its height and the fill runs left to
+      right — the opposite of both on the upright one above. */
+  .sound-level::-webkit-slider-runnable-track {
+    width: auto;
+    height: 6px;
+    background: linear-gradient(
+      90deg,
+      var(--script) 0 var(--level),
+      rgb(194 34 82 / 22%) var(--level) 100%
+    );
+  }
+
+  .sound-level::-moz-range-track { width: auto; height: 6px; }
+  .sound-level::-moz-range-progress { width: auto; height: 6px; }
+
+  /* A handle you can actually find with a thumb, centred across a 6px track. */
+  .sound-level::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    margin-left: 0;
+    margin-top: -7px;
+  }
+
+  .sound-level::-moz-range-thumb { width: 20px; height: 20px; }
 }
 
 .sound-toggle svg {

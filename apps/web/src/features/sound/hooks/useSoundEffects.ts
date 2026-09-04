@@ -1,6 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
+import {
+  applyMix,
+  isElementVolumeLocked,
+  resumeGain,
+  routeThroughGain,
+} from '@/features/sound/lib/output'
 
 /*  Short one-shot effects plus the footstep loop, gated on the same preference as the music: someone who muted the museum muted the museum, not just its soundtrack. */
 
@@ -12,6 +18,15 @@ const EFFECTS = {
 export type EffectName = keyof typeof EFFECTS
 
 const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
+
+/*  Voices per effect. Rapid taps have to overlap rather than cut each other
+    off, and the way that used to be done was to clone the element per tap —
+    simple, and fine while the level was written on the element itself. It is
+    not fine on the graph path: a clone is a new element, every one of them
+    would have to be routed afresh, and a routed element can never be given
+    back. A fixed pool overlaps just as well and is routed once. Three is what
+    it takes to tap faster than a short sound finishes. */
+const VOICES = 3
 
 /*  Every control that clicks, in one list — so a new button does not need a selector buried in an effect. */
 const CLICKABLE = '.button, .chrome-button, .lobby-help-button, .gift-shop-button'
@@ -28,7 +43,8 @@ export interface SoundEffects {
 export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffects {
   // Built on the client only: `new Audio()` does not exist while rendering on
   // the server, and these are useless before there is a document.
-  const effectsRef = useRef<Partial<Record<EffectName, HTMLAudioElement>>>({})
+  const voicesRef = useRef<Partial<Record<EffectName, HTMLAudioElement[]>>>({})
+  const nextVoiceRef = useRef<Partial<Record<EffectName, number>>>({})
   const stepsRef = useRef<HTMLAudioElement | null>(null)
   const isWalkingRef = useRef(false)
 
@@ -36,26 +52,46 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const volumeRef = useRef(volume)
   volumeRef.current = volume
 
+  /*  Built once and kept, rather than torn down and rebuilt: on the graph path
+      an element cannot be un-routed, so a pool that came and went would leave
+      its predecessors attached to the graph for the life of the page — and in
+      development React mounts every effect twice on purpose. The provider that
+      owns this lives in the root layout and is never unmounted anyway; the
+      cleanup silences the voices, it does not throw them away. */
   const loadEffects = useCallback(() => {
-    for (const [name, spec] of Object.entries(EFFECTS)) {
-      const audio = new Audio(spec.file)
+    const isGraph = isElementVolumeLocked()
+
+    const voice = (file: string, mix: number, loop = false): HTMLAudioElement => {
+      const audio = new Audio(file)
       audio.preload = 'auto'
-      // The mix is stored on the element; the master level is applied per voice.
-      audio.volume = spec.volume
-      effectsRef.current[name as EffectName] = audio
+      audio.loop = loop
+      /*  Its place against the other sounds. On the graph path it rides on a
+          gain of the element's own, set when it is routed; on the element path
+          it is written here and again with the museum's level at play time. */
+      if (isGraph) routeThroughGain(audio, mix)
+      else audio.volume = mix
+      return audio
     }
 
-    const steps = new Audio(FOOTSTEPS.file)
-    steps.preload = 'auto'
-    steps.loop = true
-    steps.volume = FOOTSTEPS.volume * volumeRef.current
-    stepsRef.current = steps
+    if (Object.keys(voicesRef.current).length === 0) {
+      for (const [name, spec] of Object.entries(EFFECTS)) {
+        voicesRef.current[name as EffectName] = Array.from({ length: VOICES }, () =>
+          voice(spec.file, spec.volume),
+        )
+      }
+    }
+
+    if (!stepsRef.current) {
+      const steps = voice(FOOTSTEPS.file, FOOTSTEPS.volume, true)
+      applyMix(steps, FOOTSTEPS.volume, volumeRef.current)
+      stepsRef.current = steps
+    }
 
     return () => {
-      steps.pause()
-      for (const audio of Object.values(effectsRef.current)) audio?.pause()
-      effectsRef.current = {}
-      stepsRef.current = null
+      stepsRef.current?.pause()
+      for (const pool of Object.values(voicesRef.current)) {
+        for (const audio of pool ?? []) audio.pause()
+      }
     }
   }, [])
 
@@ -64,17 +100,25 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   /* The footsteps are a loop, so a change of level has to reach the one running. */
   useEffect(() => {
     const steps = stepsRef.current
-    if (steps) steps.volume = FOOTSTEPS.volume * volume
+    if (steps) applyMix(steps, FOOTSTEPS.volume, volume)
   }, [volume])
 
   const play = useCallback(
     (name: EffectName) => {
-      const source = effectsRef.current[name]
-      if (!isEnabled || !source) return
+      const pool = voicesRef.current[name]
+      if (!isEnabled || !pool?.length) return
 
-      // Cloned per call so rapid taps overlap instead of cutting each other off.
-      const voice = source.cloneNode() as HTMLAudioElement
-      voice.volume = source.volume * volumeRef.current
+      // Round robin, so a tap lands on the voice that has had the longest to
+      // finish rather than cutting off the one still sounding.
+      const at = (nextVoiceRef.current[name] ?? 0) % pool.length
+      nextVoiceRef.current[name] = at + 1
+
+      const voice = pool[at]
+      applyMix(voice, EFFECTS[name].volume, volumeRef.current)
+      // Rewound rather than resumed: a voice reused mid-sound would start
+      // partway in.
+      voice.currentTime = 0
+      resumeGain()
       void voice.play().catch(() => {
         // Not yet unlocked by a gesture. Nothing to recover from.
       })
@@ -89,6 +133,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       isWalkingRef.current = isWalking
 
       if (isWalking && isEnabled) {
+        resumeGain()
         void steps.play().catch(() => {})
         return
       }

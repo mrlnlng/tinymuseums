@@ -1,5 +1,5 @@
 import { query, queryOne } from './infra/db.ts'
-import { renderSinglePieceFrame } from './media/collage.ts'
+import { FRAME_FORMAT, FRAME_VERSION, renderSinglePieceFrame } from './media/collage.ts'
 import { sealEpoch } from './domain/epoch.ts'
 import { ImageRejected, generateDerivatives } from './media/images.ts'
 import { enqueue, type Job } from './infra/jobs.ts'
@@ -49,8 +49,10 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
     height: number
     derivatives: Derivative[] | null
     flattened_key: string | null
+    flattened_version: number
   }>(
-    `select p.id as piece_id, a.width, a.height, a.derivatives, p.flattened_key
+    `select p.id as piece_id, a.width, a.height, a.derivatives,
+            p.flattened_key, p.flattened_version
        from pieces p
        join assets a on a.id = p.asset_id
       where p.artist_id = $1
@@ -64,17 +66,22 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
 
   // Each arranged work gets its own framed image for the hall, sized to the
   // work's own orientation so a landscape painting gets a landscape frame.
-  // Frames are immutable per piece, so already-framed works are skipped.
+  // A frame is immutable for a given recipe, so a piece already rendered under
+  // the current one is skipped — but a piece rendered under an older recipe is
+  // rendered again, which is how a change to the frame reaches work that was
+  // hung before it.
   for (const row of rows) {
-    if (row.flattened_key) continue
+    if (row.flattened_key && row.flattened_version === FRAME_VERSION) continue
+
     const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
     const output = await renderSinglePieceFrame({
       aspect,
       derivatives: row.derivatives ?? [],
       storage,
     })
-    const key = pieceFrameKey(row.piece_id, 1)
-    await storage.put(key, output.buffer, 'image/png')
+    const key = pieceFrameKey(row.piece_id, FRAME_VERSION, FRAME_FORMAT.extension)
+    await storage.put(key, output.buffer, FRAME_FORMAT.contentType)
+    const stale = row.flattened_key
     await query(
       `update pieces
           set flattened_key = $2,
@@ -82,8 +89,11 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
               flattened_height = $4,
               flattened_version = $5
         where id = $1`,
-      [row.piece_id, key, output.width, output.height, 1],
+      [row.piece_id, key, output.width, output.height, FRAME_VERSION],
     )
+    // Only once the row points at the new object: an orphaned file is cheap,
+    // a row pointing at a file that is gone hangs a blank wall.
+    if (stale && stale !== key) await storage.remove(stale).catch(() => {})
   }
 }
 
@@ -138,18 +148,22 @@ export async function scheduleNextSeal(intervalMinutes: number): Promise<void> {
   await enqueue('seal_epoch', { reason: 'scheduled' }, runAfter)
 }
 
-/** Requeues frame rendering for any arranged work still missing its frame —
- *  covers pieces whose image finished during a transition or a worker gap.
- *  Idempotent: the render handler skips works that already have a frame. */
+/** Requeues frame rendering for any arranged work still missing its frame, or
+ *  holding one from an older recipe — the first covers a piece whose image
+ *  finished during a transition or a worker gap, the second is how a change to
+ *  the frame itself reaches a hall that is already hanging. Deploying a new
+ *  recipe therefore needs nothing run by hand: the worker notices within the
+ *  repair interval and re-renders the museum a wall at a time.
+ *  Idempotent: the render handler skips works already on the current recipe. */
 export async function repairUnframed(): Promise<number> {
   const rows = await query<{ artist_id: string }>(
     `select distinct p.artist_id
        from pieces p
        join assets a on a.id = p.asset_id
       where p.order_index between 1 and $1
-        and p.flattened_key is null
+        and (p.flattened_key is null or p.flattened_version <> $2)
         and a.status = 'ready'`,
-    [MAX_STANDS],
+    [MAX_STANDS, FRAME_VERSION],
   )
   for (const row of rows) await enqueue('render_display', { artistId: row.artist_id })
   return rows.length

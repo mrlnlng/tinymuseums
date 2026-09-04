@@ -18,6 +18,8 @@ function hasMusic(pathname: string): boolean {
 
 interface SoundState {
   isEnabled: boolean
+  /** What the speaker draws: on only when the museum can actually be heard. */
+  isSounding: boolean
   isAvailable: boolean
   volume: number
   setVolume: (value: number) => void
@@ -28,6 +30,7 @@ interface SoundState {
 
 const SoundContext = createContext<SoundState>({
   isEnabled: false,
+  isSounding: false,
   isAvailable: false,
   volume: 0,
   setVolume: () => {},
@@ -52,6 +55,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
     <SoundContext.Provider
       value={{
         isEnabled: music.isEnabled,
+        isSounding: music.isSounding,
         isAvailable: music.isAvailable,
         volume: music.volume,
         setVolume: music.setVolume,
@@ -69,6 +73,11 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
         preload="metadata"
         onLoadedMetadata={music.handleLoadedMetadata}
         onError={music.handleError}
+        /*  React's own props as well as the listeners the hook binds: these
+            fire for the element's whole life, and the hook's are what catch a
+            pause the element decides on by itself. Either may be first. */
+        onPlaying={music.handlePlaying}
+        onPause={music.handlePaused}
       />
       {children}
     </SoundContext.Provider>

@@ -17,8 +17,30 @@ const ASSETS_DIR =
 /** Canvas resolution. 300px per world unit keeps a single display near 900x960. */
 export const PX_PER_UNIT = 300
 
-/** How much larger than its window the artwork is drawn, so no edge shows. */
-const ARTWORK_OVERSCAN = 1.1
+/*  The recipe's version. Everything below — the overscan, the output format,
+    the target size — decides what a framed image looks like, so a piece framed
+    under an older number is stale and gets rendered again. Without this a
+    change to the recipe only reached work uploaded after it, and the hall hung
+    two generations of the same frame side by side.
+
+    1 — PNG, artwork drawn a tenth larger than its window.
+    2 — WebP, artwork drawn a fifth larger. */
+export const FRAME_VERSION = 2
+
+/*  WebP rather than PNG, and this is the single biggest thing standing between
+    the visitor and the next painting: the same 616x870 frame is about 1MB as a
+    PNG and about 130KB as WebP, because a photograph of paint does not compress
+    losslessly and PNG has no other mode. Alpha survives, which is what the
+    format had to be chosen for — the ornament's outline is cut out of it.
+    Quality 90 rather than the usual 80: this is the artwork itself, seen at
+    full size in the enlarged view, and the extra 30KB is not worth arguing
+    about against the 870KB just saved. */
+export const FRAME_FORMAT = { extension: 'webp', contentType: 'image/webp' } as const
+
+/*  How much larger than its window the artwork is drawn, so no edge shows. A
+    fifth: at a tenth the artwork still stopped short of the ornament on the
+    wider frames and left a hairline of wall showing between the two. */
+const ARTWORK_OVERSCAN = 1.2
 
 interface FrameManifest {
   frame: {
@@ -147,7 +169,7 @@ export async function renderSinglePieceFrame({
     create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(overlays)
-    .png({ compressionLevel: 6 })
+    .webp({ quality: 90, alphaQuality: 100 })
     .toBuffer()
 
   return { buffer, width, height, canvas: { w: canvasW, h: canvasH } }

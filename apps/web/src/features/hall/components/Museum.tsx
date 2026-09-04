@@ -8,6 +8,7 @@ import HelpGuide from '@/features/hall/components/HelpGuide'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import Walkthrough from '@/features/artwork/components/Walkthrough'
+import { preloadFrames } from '@/features/artwork/lib/frame'
 
 /* The hall: Three.js draws the room and the plaque text is real DOM projected over it; useHallScene owns the scene, this component is the markup it draws into plus the enlarged view. */
 
@@ -41,6 +42,16 @@ export default function Museum({ initialSlice }: MuseumProps) {
   useEffect(() => {
     if (isSuspended) setWalking(false)
   }, [isSuspended, setWalking])
+
+  /*  The enlarged view's frame ornaments, fetched while the visitor is still
+      walking. They belong to a screen that does not exist yet, which is exactly
+      why they are worth fetching now: the hall has finished loading what it
+      needs, nothing is competing for the connection, and the alternative is
+      making somebody wait for half a megabyte after they have already tapped.
+      Held until the hall is up so it does not compete with the paintings. */
+  useEffect(() => {
+    if (isReady) preloadFrames()
+  }, [isReady])
 
   /* A failed load renders the message instead of the hall — it used to render inside the container that stays at opacity 0 until the hall is ready, so the only report of the failure was invisible. */
   if (error) {

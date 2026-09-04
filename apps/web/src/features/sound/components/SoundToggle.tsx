@@ -8,13 +8,19 @@ import { useSound } from './SoundProvider'
 
     It is revealed on hover or focus and stands open on a touch screen, which has no hover to reveal it with. */
 export default function SoundToggle() {
-  const { isEnabled, isAvailable, volume, setVolume, toggle } = useSound()
+  const { isSounding, isAvailable, volume, setVolume, toggle } = useSound()
 
   // No track, no control. Placement is ScreenChrome's job, not this one's.
   if (!isAvailable) return null
 
-  const label = isEnabled ? 'Turn the music off' : 'Turn the music on'
-  const shown = isEnabled ? volume : 0
+  /*  `isSounding`, not the stored preference: a browser will not play audio
+      until someone has touched the page, so on arrival the preference is "on"
+      and the room is silent — and a speaker with its waves out in that moment
+      is the museum claiming a sound that is not there. It draws muted until the
+      track is genuinely audible, and the tap that turns it on is itself the
+      gesture that lets playback start. */
+  const label = isSounding ? 'Turn the music off' : 'Turn the music on'
+  const shown = isSounding ? volume : 0
 
   return (
     <div className="sound">
@@ -37,7 +43,7 @@ export default function SoundToggle() {
         type="button"
         className="chrome-button sound-toggle"
         onClick={toggle}
-        aria-pressed={isEnabled}
+        aria-pressed={isSounding}
         aria-label={label}
         title={label}
       >
@@ -47,7 +53,7 @@ export default function SoundToggle() {
             strokeWidth="5"
             strokeLinejoin="round"
           />
-          <g className="waves" data-on={isEnabled ? 'true' : 'false'}>
+          <g className="waves" data-on={isSounding ? 'true' : 'false'}>
             <path
               d="M48,27.6a19.5,19.5 0 0 1 0,21.4M55.1,20.5a30,30 0 0 1 0,35.6M61.6,14a38.8,38.8 0 0 1 0,48.6"
               fill="none"
@@ -55,7 +61,7 @@ export default function SoundToggle() {
               strokeLinecap="round"
             />
           </g>
-          {isEnabled ? null : (
+          {isSounding ? null : (
             <path className="slash" d="M50,22 L68,53" strokeWidth="5" strokeLinecap="round" />
           )}
         </svg>

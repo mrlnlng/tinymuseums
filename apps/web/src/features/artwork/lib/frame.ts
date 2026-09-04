@@ -31,3 +31,25 @@ const LANDSCAPE = shape(
 export function frameFor(aspect: number | null): FrameShape {
   return aspect !== null && aspect > 1 ? LANDSCAPE : PORTRAIT
 }
+
+/*  Pulls both ornaments into the browser's cache ahead of anyone asking for
+    one. They are the heaviest thing the enlarged view draws and the first thing
+    it needs, and until they arrive a tapped painting is an empty rectangle —
+    but nothing in the hall itself uses them, because the hall's paintings come
+    from the server with the frame already rendered in. So they can be fetched
+    quietly the moment the hall is standing, in the seconds before anybody has
+    chosen a work, and by the time one is tapped the frame is already there.
+
+    Both orientations, not the likely one: which is needed depends on the work
+    tapped, and guessing wrong costs exactly what this is meant to avoid. Safe
+    to call repeatedly — after the first time the browser answers from cache. */
+export function preloadFrames(): void {
+  if (typeof window === 'undefined') return
+  for (const shape of [PORTRAIT, LANDSCAPE]) {
+    const image = new Image()
+    // Behind the hall's own textures: those are on screen, this is insurance.
+    image.fetchPriority = 'low'
+    image.decoding = 'async'
+    image.src = shape.src
+  }
+}

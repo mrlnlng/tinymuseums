@@ -153,7 +153,9 @@ export function derivativeKey(
   return `artists/${artistId}/derivatives/${assetId}/${variant}.${extension}`
 }
 
-/*  The key for a single hanging piece's framed image. */
-export function pieceFrameKey(pieceId: string, version: number): string {
-  return `pieces/${pieceId}/frame/v${version}.png`
+/*  The key for a single hanging piece's framed image. The version is the frame
+    recipe's, so re-rendering a piece under a new recipe writes a new object
+    rather than overwriting one that callers have been told to cache forever. */
+export function pieceFrameKey(pieceId: string, version: number, extension: string): string {
+  return `pieces/${pieceId}/frame/v${version}.${extension}`
 }

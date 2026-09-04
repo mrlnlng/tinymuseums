@@ -507,7 +507,12 @@ code.token {
   text-align: center;
   line-height: 1.25;
   color: var(--plaque-ink);
-  font-weight: 700;
+  /*  Sniglet's own regular, which is the face the enlarged view already writes
+      this same sentence in. It used to ask for 700, and Sniglet ships 400 and
+      800 with nothing between, so the request resolved up to 800 — the bubbly
+      cut — and at the size this is set on the brass the counters closed up and
+      the words read as one dark band rather than as Sniglet at all. */
+  font-weight: 400;
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
@@ -1160,9 +1165,15 @@ code.token {
   padding-left: 9%;
   display: grid;
   gap: calc(var(--screen-width) * 0.016);
-  /* Three sentences: prose, so Sniglet rather than the museum's small capitals. */
-  font-family: var(--font-body);
-  font-size: clamp(10px, calc(var(--screen-width) * 0.031), 14px);
+  /*  The museum's own face, as the heading above them is set in: the note is
+      the first thing anyone reads here and it should be in the museum's hand
+      throughout, rather than switching to a rounded face halfway down the
+      paper. Small capitals run wider than Sniglet's lowercase, so the size
+      comes down a shade to keep each rule on two lines. */
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: clamp(9px, calc(var(--screen-width) * 0.0285), 13px);
+  letter-spacing: 0.01em;
   line-height: 1.42;
   color: var(--ink);
   text-wrap: pretty;
@@ -1179,12 +1190,16 @@ code.token {
       the words clear of it without a one-sided indent. */
   width: 80%;
   text-align: center;
-  font-family: var(--font-body);
+  /*  The museum's face, like the rest of the note. The OTF ships one weight
+      and `font-synthesis-weight` is off, so this is stated at 400 rather than
+      asking for a bold that does not exist. */
+  font-family: var(--font-ui);
   /*  Larger than it was and set across four fifths of the paper, which at this
       size is two lines — a third would push the note down onto the ticket the
       visitor is holding. */
-  font-size: clamp(13px, calc(var(--screen-width) * 0.042), 19px);
-  font-weight: 700;
+  font-size: clamp(12px, calc(var(--screen-width) * 0.039), 18px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
   line-height: 1.25;
   color: var(--script);
   text-wrap: balance;
@@ -1325,57 +1340,93 @@ code.token {
 /*  The speaker and its level, as one control. The slider is closed by default —
     the mockups keep this corner to two small icons — and opens on hover or on
     keyboard focus. A touch screen has no hover to open it with, so there it
-    stands open; that is the one place the corner carries three things. */
+    stands open; that is the one place the corner carries three things.
+
+    The speaker is the size of this control; the level hangs off it. */
 .sound {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
+/*  Under the speaker rather than beside it, and standing on end. Laid out in
+    the row it opened *into* the corner — it pushed itself in between the
+    speaker and the home button and shoved home along the top of the screen, so
+    asking for the volume rearranged the furniture. Taken out of the flow it
+    belongs to the speaker alone: the two icons never move, and the level drops
+    beneath the one it is the level for, louder at the top.
+
+    Centred under the icon — 5px in from the right is half the difference
+    between a 32px button and this 22px column — so it hangs plumb from the
+    speaker and stays well inside the corner's own inset. Flush against the
+    icon's lower edge with no gap, because a strip of nothing between them would
+    close the slider as the pointer crossed it; the clear air around the track
+    is inside this box instead, which is 22px wide around a 6px track. */
 .sound-level {
-  /*  Collapsed rather than hidden: a hidden control cannot be tabbed to, and
-      the keyboard is exactly how somebody would reach it without a hover. */
-  width: 0;
+  position: absolute;
+  top: 100%;
+  right: 5px;
+  width: 22px;
+  height: 76px;
+  /*  Vertical, with the loud end at the top: `vertical-lr` turns the control on
+      its side and `rtl` puts the maximum at the top rather than the bottom,
+      which is the only arrangement anyone reads as a volume. This pair is the
+      standard way to do it and the reason the rules below size the track by its
+      width — along a vertical slider, width is the thickness. */
+  writing-mode: vertical-lr;
+  direction: rtl;
+  /*  Faded rather than hidden or collapsed: a control that is not rendered
+      cannot be tabbed to, and the keyboard is exactly how somebody would reach
+      this without a hover. Inert while closed so an invisible slider cannot
+      take a drag meant for the hall behind it. */
   opacity: 0;
+  pointer-events: none;
+  transform: translateY(-5px);
   margin: 0;
   padding: 0;
-  height: 22px;
   appearance: none;
   background: none;
   cursor: pointer;
-  transition: width 180ms ease, opacity 180ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 
+/*  `:hover` counts a descendant as the element itself, so reaching down onto
+    the slider keeps the speaker hovered and the slider open. */
 .sound:hover .sound-level,
 .sound:focus-within .sound-level {
-  width: 72px;
   opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 @media (pointer: coarse) {
-  .sound-level { width: 72px; opacity: 1; }
+  .sound-level { opacity: 1; transform: none; pointer-events: auto; }
 }
 
 /*  One rule per engine: a selector either browser does not know invalidates the
     whole block, so the track and the handle cannot be written together. */
+/*  Width, not height: on a vertical slider the track's width is its thickness
+    and its height is the distance travelled. The fill runs at 0deg — up the
+    screen from the bottom — so the coloured part of the track is the part below
+    the handle, which is what a level means. */
 .sound-level::-webkit-slider-runnable-track {
-  height: 6px;
+  width: 6px;
   border-radius: 999px;
   background: linear-gradient(
-    90deg,
+    0deg,
     var(--script) 0 var(--level),
     rgb(194 34 82 / 22%) var(--level) 100%
   );
 }
 
 .sound-level::-moz-range-track {
-  height: 6px;
+  width: 6px;
   border-radius: 999px;
   background: rgb(194 34 82 / 22%);
 }
 
 .sound-level::-moz-range-progress {
-  height: 6px;
+  width: 6px;
   border-radius: 999px;
   background: var(--script);
 }
@@ -1384,8 +1435,8 @@ code.token {
   appearance: none;
   width: 14px;
   height: 14px;
-  /* Centres the handle on a 6px track. */
-  margin-top: -4px;
+  /* Centres the handle across a 6px track — sideways, the track being upright. */
+  margin-left: -4px;
   border: none;
   border-radius: 50%;
   background: var(--script);
@@ -1544,19 +1595,23 @@ code.token {
     Without it a tall work ends on bare boards, and the rope's absence reads as
     something missing rather than as different scenery — which matters more
     than it sounds, because every work in the museum is taller than it is wide,
-    so this floor, and not mock 8's rope, is the one people actually see. Sized
-    and offset as the landing page's column is, and to the mockup's own figures:
-    a quarter of the screen wide with 9% of it past the edge leaves the 15% the
-    mockup shows, and its top lands at 73.4%.
+    so this floor, and not mock 8's rope, is the one people actually see.
+
+    Larger than it was: at a quarter of the screen it was a thin sliver against
+    the right edge and read as something that had not finished loading rather
+    than as furniture. Grown from the same anchor rather than further off the
+    edge, and stopped where it is because the sprite is as tall as it is wide
+    again half over — at a third of the screen the owl on top of it reaches up
+    into the forward arrow, and scenery must never be mistaken for a control.
 
     Behind the plaque and the buttons: a negative z-index paints it over the
     wall but under everything in the column's flow, so it can never take a tap
     or cover a word. */
 .wt-column {
   position: absolute;
-  right: -9%;
+  right: -10%;
   bottom: 0;
-  width: 24%;
+  width: 30%;
   height: auto;
   z-index: -1;
   pointer-events: none;

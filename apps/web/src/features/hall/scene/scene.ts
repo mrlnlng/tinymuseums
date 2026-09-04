@@ -12,9 +12,13 @@ interface SlotRuntime {
   piece: HallPieceDto
   status: 'idle' | 'loading' | 'ready' | 'error'
   texture?: THREE.Texture
-  /** When texture loading began; the pedestal's dwell floor runs from here. */
+  /** When the image was asked for. Diagnostic, and the load's own clock. */
   startedAt?: number
   readyAt?: number
+  /*  When the wall first came close enough to hang. The pedestal's dwell floor
+      runs from here rather than from `startedAt`, so a painting downloaded well
+      ahead of the visitor is hung the moment they arrive at it. */
+  inRangeAt?: number
 }
 
 /* How large a piece hangs on the wall: the server renders every frame to one target size, and `piece.scale` is the client's say over how much of the wall that fills — enlarging it here rather than re-rendering keeps the images cached across a change of mind. */
@@ -23,7 +27,7 @@ function wallSize(piece: HallPieceDto): { width: number; height: number } {
   return { width: piece.canvas.w * scale, height: piece.canvas.h * scale }
 }
 
-/* One painting, hung on its own wall — the plane is the framed image at the piece's own canvas proportion, hanging from a common top edge so the row stays level. */
+/* One painting, hung on its own wall — the plane is the framed image at the piece's own canvas proportion, standing on a common lower edge so every plaque in the hall is at one height. */
 export interface MountedDisplay {
   index: number
   display: HallPieceDto
@@ -102,7 +106,7 @@ export class HallScene {
   }
 
   update(now: number, dt: number, cameraX: number): void {
-    const { mountRadiusUnits } = CONFIG.virtualization
+    const { mountRadiusUnits, loadRadiusUnits } = CONFIG.virtualization
 
     for (const slot of this.slots.values()) {
       const centerX = this.layout.centerX[slot.index]
@@ -110,18 +114,38 @@ export class HallScene {
 
       const distance = Math.abs(centerX - cameraX)
 
-      if (distance > mountRadiusUnits) {
+      /*  Right out of range: give the image back. Note this is the *load*
+          radius, not the mount radius — a wall walked past is kept downloaded
+          for a good while yet, so turning round and walking back does not pay
+          for the same painting twice. */
+      if (distance > loadRadiusUnits) {
         if (this.mounted.has(slot.index)) this.unmount(slot.index)
         continue
       }
 
+      // Fetching starts far out and costs nothing on screen until it lands.
       if (slot.status === 'idle') {
         this.beginLoad(slot, now)
         continue
       }
 
+      // Hanging it — geometry, and the texture upload to the GPU — waits until
+      // the wall is close enough to be worth the video memory, and ends as soon
+      // as it is not. The painting itself stays downloaded either way.
+      if (distance > mountRadiusUnits) {
+        if (this.mounted.has(slot.index)) this.unmountMesh(slot.index)
+        continue
+      }
+      if (slot.inRangeAt === undefined) slot.inRangeAt = now
+
       if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
-        const earliest = (slot.startedAt ?? now) + CONFIG.statue.minDwellMs
+        /*  The pedestal's dwell floor runs from whenever the wall came into
+            mounting range, not from when its download began: a painting fetched
+            two screens back is already in hand by the time the visitor reaches
+            it, and should not be held behind a pedestal for a beat it spent
+            waiting. */
+        const arrivedAt = slot.inRangeAt ?? now
+        const earliest = arrivedAt + CONFIG.statue.minDwellMs
         if (now >= Math.max(slot.readyAt ?? now, earliest)) this.mount(slot)
       }
     }
@@ -152,14 +176,16 @@ export class HallScene {
     const group = new THREE.Group()
     group.position.set(centerX, 0, 0)
 
-    /* Walls hang from a common top edge rather than a common centre, so the row stays level; the plane is the server's framed image at the piece's own proportion. */
-    const top = CONFIG.displayTopY
+    /*  Walls hang from a common *lower* edge rather than a common centre or a
+        common top, so every plaque in the hall sits at one height; the plane is
+        the server's framed image at the piece's own proportion. */
+    const bottom = CONFIG.displayBottomY
     const { width, height } = wallSize(piece)
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(width, height),
       new THREE.MeshBasicMaterial({ map: slot.texture, transparent: true, opacity: 1 }),
     )
-    mesh.position.set(0, top - height / 2, 0)
+    mesh.position.set(0, bottom + height / 2, 0)
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
@@ -168,7 +194,8 @@ export class HallScene {
         the rope, which is where the mockups put it — the rope is furniture on
         the floor and the plaque is on the wall behind it. */
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
-    const plaqueY = top - height - CONFIG.plaque.gap - plaqueHeight / 2
+    // Off the common lower edge, so this is the same height on every wall.
+    const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
       new THREE.MeshBasicMaterial({
@@ -231,7 +258,8 @@ export class HallScene {
       width,
       height,
       plaqueY,
-      titleY: top + CONFIG.displayTitleGap,
+      // Just above this painting's own top edge, wherever that has come out.
+      titleY: bottom + height + CONFIG.displayTitleGap,
     })
     this.mountedList = [...this.mounted.values()]
   }
@@ -261,7 +289,11 @@ export class HallScene {
     }
   }
 
-  private unmount(index: number): void {
+  /*  Takes the wall down but keeps its image. The two are separated because
+      they cost different things: the geometry, the rope's per-wall texture
+      slices and the GPU upload go as soon as the wall is out of mounting range,
+      while the downloaded painting is worth holding on to much longer. */
+  private unmountMesh(index: number): void {
     const mount = this.mounted.get(index)
     if (!mount) return
 
@@ -270,20 +302,29 @@ export class HallScene {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
       const material = obj.material as THREE.MeshBasicMaterial
-      /* Per-wall textures are freed with their wall — the rope's slices are cloned per wall (the crop depends on the width), so without this walking the hall would leak a texture per wall passed. Scenery textures the loader owns are left alone. */
+      /* Per-wall textures are freed with their wall — the rope's slices are cloned per wall (the crop depends on the width), so without this walking the hall would leak a texture per wall passed. Scenery textures the loader owns are left alone, and so is the painting's own, which the slot still holds. */
       if (material.map?.userData.ownedByDisplay) material.map.dispose()
       material.dispose()
     })
+
+    this.mounted.delete(index)
+    this.mountedList = [...this.mounted.values()]
+    // Hung again from a standing start, so it serves its dwell beat afresh.
+    const slot = this.slots.get(index)
+    if (slot) slot.inRangeAt = undefined
+  }
+
+  /** Takes the wall down and gives the painting itself back. */
+  private unmount(index: number): void {
+    this.unmountMesh(index)
 
     const slot = this.slots.get(index)
     if (slot?.texture) {
       slot.texture.dispose()
       slot.texture = undefined
       slot.status = 'idle'
+      slot.readyAt = undefined
     }
-
-    this.mounted.delete(index)
-    this.mountedList = [...this.mounted.values()]
   }
 
   private removePedestal(index: number): void {

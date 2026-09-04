@@ -8,11 +8,18 @@ export const CONFIG = {
     floorTopRatio: 0.7766,
   },
 
-  /*  Walls hang from a common top edge, so their plaques line up along the hall.
-      Lower than it was: the paintings sit down on the floor rather than up under
-      the ceiling, which puts the plaque behind the rope — where the mockups have
-      it — instead of floating in the gap above it. */
-  displayTopY: 4.32,
+  /*  Walls hang from a common *bottom* edge, which is what makes their plaques
+      line up along the hall: the plaque hangs off the painting's lower edge, so
+      a common top edge lined up the tops and left every plaque at a different
+      height — a landscape work, being much shorter than a portrait one, ended
+      up a metre off the ground with its label floating beside the portrait
+      above it. Hung from below, a landscape work stands at the same height as
+      everything else and its plaque joins the row.
+
+      The number is where a portrait wall's lower edge already sat under the old
+      top-hung arrangement (4.32 less a 2.9 x 1.28 wall), so the hall's usual
+      case is unchanged and only the wide ones have come down to meet it. */
+  displayBottomY: 0.608,
   /*  The drop from the wall's top edge to the title's *lower* edge: the title is hung from its baseline upward, so a long one grows into the headroom instead of being cut. Small, because the title belongs to the painting, not to the top of the screen. */
   displayTitleGap: 0.07,
 
@@ -106,15 +113,30 @@ export const CONFIG = {
     helpButton: { dy: -0.215, width: 1.06, height: 0.35 },
   },
 
-  statue: { minDwellMs: 700 },
-  loading: { prefetchAheadUnits: 9, sliceSize: 4 },
-  /*  How far either side of the camera a wall is kept in memory. This is a
-      texture budget, not a distance: the walls used to stand 6.3 units apart, so
-      fourteen units held about nine of them, and now that they stand 3.9 apart
-      the same figure would hold sixteen — twice the video memory for walls that
-      are no nearer to being looked at. Nine units is a little over two walls
-      each side of the one on screen, which is more runway than the eye gets. */
-  virtualization: { mountRadiusUnits: 9 },
+  /*  A floor on how long a pedestal holds before the wall behind it appears, so
+      the loading cue is a beat rather than a flicker. Short: it is a floor on
+      the *wait*, and every millisecond of it is a millisecond the visitor spends
+      looking at a pedestal in front of a painting that has already arrived. */
+  statue: { minDwellMs: 180 },
+  /*  How far ahead the next slice of the hall is asked for, and how much of it
+      comes at a time. Both up: at a walking pace of 7 units a second, nine units
+      of runway is a second and a bit — about what one request takes on a phone —
+      so the ask now goes out two walls earlier, and brings back enough to cover
+      the walk while it does. */
+  loading: { prefetchAheadUnits: 16, sliceSize: 6 },
+  /*  Two radii, because downloading a painting and hanging it cost different
+      things. `mountRadiusUnits` is the video-memory budget: how far either side
+      of the camera a wall is kept as geometry and an uploaded texture. Nine
+      units is a little over two walls each side of the one on screen.
+
+      `loadRadiusUnits` is the network budget, and it is much larger because it
+      is free until the image arrives. At the old arrangement a painting's
+      download did not begin until it was already within two walls of the
+      camera, which at a hard scroll is under a second — so the visitor
+      overtook the download and walked up to a pedestal. Starting the fetch two
+      and a half screens further out gives it that second back, and the decoded
+      texture is only uploaded to the GPU when the wall is actually mounted. */
+  virtualization: { mountRadiusUnits: 9, loadRadiusUnits: 26 },
 }
 
 /*  Vertical centre of the camera for a frustum height — read the height so the floor line stays put as the frustum grows on tall screens. */

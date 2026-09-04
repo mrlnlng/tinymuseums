@@ -102,6 +102,33 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, step])
 
+  /*  The works either side of this one, fetched while this one is being looked
+      at. Stepping through an artist's wall is the one navigation in the museum
+      whose destination is known in advance — it is the next work in their own
+      order, and it is next whether the visitor goes on or turns back — and a
+      reader spends seconds on a description, which is time the connection is
+      otherwise doing nothing. Without this every arrow press paid for a
+      half-megabyte JPEG from cold, which is the wait that reads as lag.
+
+      Both neighbours, because the arrows go both ways, and only the neighbours:
+      prefetching a whole wall would be spending somebody's data on works they
+      have given no sign of wanting. */
+  useEffect(() => {
+    if (!pieces || pieces.length < 2) return
+
+    const around = [index + 1, index - 1].map((i) => (i + pieces.length) % pieces.length)
+    for (const i of new Set(around)) {
+      if (i === index) continue
+      const url = pieces[i]?.imageUrl
+      if (!url) continue
+      const image = new Image()
+      // Behind the work actually on screen, which is still arriving.
+      image.fetchPriority = 'low'
+      image.decoding = 'async'
+      image.src = url
+    }
+  }, [pieces, index])
+
   // Report the view once per work, so the artist's dashboard is meaningful.
   useEffect(() => {
     if (!piece) return
@@ -112,33 +139,50 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     }).catch(() => {})
   }, [piece, artistId])
 
-  /* The artwork's own proportions, measured from the loaded image rather than parsed from the free-text dimensions string. */
-  const [aspect, setAspect] = useState<number | null>(null)
+  /*  Which way up this work hangs, taken from the framed image the server
+      already rendered for it — `frameWidth`/`frameHeight` arrive in the same
+      payload as the title, so the answer is in hand before anything is drawn.
+
+      This used to be measured by loading the artwork itself into a probe image
+      and reading its natural size, and that was the lag between a wide work and
+      a tall one: nothing about the frame could change until a half-megabyte
+      JPEG had finished downloading, so the frame held the outgoing work's shape
+      for as long as the picture took to arrive and then resized underneath it —
+      one transition of the frame, chasing another of the image, seconds apart.
+      Stepping between orientations is now a single move, and it starts on the
+      same frame as the tap.
+
+      A work whose frame has not been rendered yet — uploaded seconds ago, still
+      in the worker's queue — has no dimensions to read, and falls back to the
+      probe below rather than guessing portrait at it. */
+  const framedAspect =
+    piece?.frameWidth && piece?.frameHeight ? piece.frameWidth / piece.frameHeight : null
+
+  const [probedAspect, setProbedAspect] = useState<number | null>(null)
 
   useEffect(() => {
-    /*  Deliberately not cleared first. Every work's proportions are measured
-        from its own file, which takes a moment to arrive, and clearing meant
-        the frame fell back to the default portrait in between — so stepping
-        from a wide work to a tall one snapped to portrait, then to the shape it
-        had measured. Holding the outgoing work's shape until the incoming one
-        is known makes that one move instead of two. */
+    /*  Deliberately not cleared between works: holding the outgoing work's
+        shape until the incoming one is known is one move rather than two. */
     const url = piece?.imageUrl
-    if (!url) return
+    if (!url || framedAspect !== null) return
 
     let cancelled = false
     const probe = new Image()
     probe.onload = () => {
       if (!cancelled && probe.naturalHeight > 0) {
-        setAspect(probe.naturalWidth / probe.naturalHeight)
+        setProbedAspect(probe.naturalWidth / probe.naturalHeight)
       }
     }
     probe.src = url
     return () => {
       cancelled = true
     }
-  }, [piece?.imageUrl])
+  }, [piece?.imageUrl, framedAspect])
 
-  const frame = useMemo(() => frameFor(aspect), [aspect])
+  const frame = useMemo(
+    () => frameFor(framedAspect ?? probedAspect),
+    [framedAspect, probedAspect],
+  )
 
   /*  Wide enough to leave the floor to the rope. A tall work takes that floor
       for itself — see `.wt-stage` — and the rope gives way to the column mock 4

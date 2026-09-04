@@ -10,10 +10,14 @@ export interface HallLayout {
   totalLength: number
   /** Number of pieces laid out so far. */
   known: number
+  /*  Where the camera parks in the gift shop at the far end, or null while the
+      hall is still growing: the shop stands past the last painting, so until
+      there is a last painting it has nowhere to be. */
+  giftShopX: number | null
 }
 
 /*  Slices always extend the run rather than landing ahead of it, so gaps are impossible. */
-export function computeLayout(widths: number[]): HallLayout {
+export function computeLayout(widths: number[], isComplete = false): HallLayout {
   const centerX: number[] = []
   const pedestalX: number[] = []
 
@@ -32,13 +36,19 @@ export function computeLayout(widths: number[]): HallLayout {
     }
   })
 
+  /*  Once every painting is laid out, the hall ends at the gift shop rather
+      than at the last wall, and the camera's right-hand stop moves out to
+      where it parks in front of the counter. Until then it ends a gap past the
+      last piece, so the hall does not stop abruptly at a wall while more of it
+      is still on its way. */
+  const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
+
   return {
     centerX,
     pedestalX,
-    // A gap's worth of room past the last piece, so the hall does not end
-    // abruptly at a wall while more is still loading.
-    totalLength: cursor + CONFIG.piece.gap,
+    totalLength: giftShopX ?? cursor + CONFIG.piece.gap,
     known: widths.length,
+    giftShopX,
   }
 }
 

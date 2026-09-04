@@ -84,7 +84,11 @@ export class HallScene {
     for (let i = 0; this.slots.has(i); i++) {
       widths.push(wallSize(this.slots.get(i)!.piece).width)
     }
-    this.layout = computeLayout(widths)
+    /*  Complete means the server has no more slices *and* everything it
+        promised is laid out contiguously from zero — only then does the hall
+        have a last painting for the gift shop to stand past. */
+    const isComplete = this.nextIndex === null && widths.length === this.totalSlots
+    this.layout = computeLayout(widths, isComplete)
 
     for (const mount of this.mounted.values()) {
       const x = this.layout.centerX[mount.index]

@@ -18,6 +18,8 @@ const IMAGE_FILES = {
       by, and the booth that hands out the help guide. */
   door: 'door.png',
   helpCenter: 'help-center.png',
+  /*  The gift shop at the other end, which is where the walk finishes. */
+  giftShop: 'gift-shop.png',
 } as const
 
 export type AssetName = keyof typeof IMAGE_FILES

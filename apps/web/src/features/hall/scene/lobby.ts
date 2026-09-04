@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
+import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
 import { CONFIG } from './config'
 
 /*  The visitor centre: the first thing at the head of the hall, and the only
@@ -10,13 +11,6 @@ import { CONFIG } from './config'
     It is built once and never unmounted. The hall virtualises walls because
     there is no limit to how many there are; there is exactly one visitor
     centre, and four planes are cheaper to leave standing than to manage. */
-
-/** A world-space rectangle a piece of overlay text is written inside. */
-export interface Mark {
-  x: number
-  y: number
-  width: number
-}
 
 export interface LobbyMarks {
   /** The board over the door. */
@@ -65,23 +59,8 @@ function svgTexture(svg: string): THREE.Texture {
   )
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
+  texture.userData.ownedByBoard = true
   return texture
-}
-
-function plane(
-  width: number,
-  height: number,
-  map: THREE.Texture,
-  x: number,
-  y: number,
-  z: number,
-): THREE.Mesh {
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, height),
-    new THREE.MeshBasicMaterial({ map, transparent: true }),
-  )
-  mesh.position.set(x, y, z)
-  return mesh
 }
 
 export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
@@ -99,35 +78,23 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
   )
   group.add(doorMesh)
 
-  /*  The board over it. It is drawn half as wide again as plaque.png, so it is
-      cut into three and only the middle stretches: the cuts fall inside the
-      board's plain field, which keeps the painted ends — and the pegs in their
-      corners — at the proportions they were drawn at. The rope on every wall
-      is built the same way, for the same reason. */
-  const CUTS = [0, 0.28, 0.72, 1] as const
-  const natural = sign.height * assets.aspect.plaque
-  const ends = [(CUTS[1] - CUTS[0]) * natural, (CUTS[3] - CUTS[2]) * natural]
-  const middle = Math.max((CUTS[2] - CUTS[1]) * natural, sign.width - ends[0] - ends[1])
-  const widths = [ends[0], middle, ends[1]]
-  const total = widths[0] + widths[1] + widths[2]
-
-  let cursor = sign.x - total / 2
-  for (let i = 0; i < 3; i++) {
-    const slice = assets.textures.plaque.clone()
-    slice.repeat.set(CUTS[i + 1] - CUTS[i], 1)
-    slice.offset.set(CUTS[i], 0)
-    slice.userData.ownedByLobby = true
-    slice.needsUpdate = true
-    group.add(
-      plane(widths[i], sign.height, slice, cursor + widths[i] / 2, sign.centerY, sign.z),
-    )
-    cursor += widths[i]
-  }
+  // The board over it, drawn half as wide again as plaque.png and so built
+  // from three slices of it — see `stretchedBoard`.
+  group.add(
+    stretchedBoard(
+      assets.textures.plaque,
+      assets.aspect.plaque,
+      sign.x,
+      sign.centerY,
+      sign.z,
+      sign.width,
+      sign.height,
+    ),
+  )
 
   // --- the way-finder ------------------------------------------------------
   const postHeight = post.top - post.foot
   const postTexture = svgTexture(POST_SVG)
-  postTexture.userData.ownedByLobby = true
   const postMesh = plane(
     post.width,
     postHeight,
@@ -177,16 +144,9 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
     },
 
     dispose() {
-      scene.remove(group)
-      group.traverse((obj) => {
-        if (!(obj instanceof THREE.Mesh)) return
-        obj.geometry.dispose()
-        const material = obj.material as THREE.MeshBasicMaterial
-        // The shared scenery textures belong to the loader; the sliced board
-        // and the drawn signpost belong to this.
-        if (material.map?.userData.ownedByLobby) material.map.dispose()
-        material.dispose()
-      })
+      // The shared scenery textures belong to the loader; the sliced board and
+      // the drawn signpost belong to this, and are marked as such.
+      disposeBoards(scene, group)
     },
   }
 }

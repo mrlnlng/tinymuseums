@@ -3,13 +3,19 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { HallSliceDto } from '@tiny/core'
-import { loadAssets } from '@/features/hall/scene/assets'
+import { loadAssets, type Assets } from '@/features/hall/scene/assets'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
+import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createLobby } from '@/features/hall/scene/lobby'
-import { LobbySigns, Placards, type Viewport } from '@/features/hall/scene/overlay'
+import {
+  GiftShopSigns,
+  LobbySigns,
+  Placards,
+  type Viewport,
+} from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
@@ -28,6 +34,11 @@ const VIEWED_WITHIN_UNITS = 3.0
 
 /** Above this pace the visitor is walking, and the footsteps run. */
 const WALKING_SPEED = 0.12
+
+/*  Where the gift shop at the end of the hall sends the visitor. One address
+    for the whole museum: the shop belongs to the museum, not to an artist —
+    an artist's own link is the "Shop print" button on their work. */
+const GIFT_SHOP_URL = 'https://www.inspiratiq.art/'
 
 export interface OpenPiece {
   slug: string
@@ -92,7 +103,7 @@ export function useHallScene({
       const characterHost = hosts.character.current
       if (!canvasHost || !overlayHost || !characterHost) return
 
-      let assets
+      let assets: Assets
       try {
         assets = await loadAssets()
       } catch (loadError) {
@@ -171,6 +182,24 @@ export function useHallScene({
         } finally {
           isFetching = false
         }
+      }
+
+      /*  The gift shop cannot be built with the rest of the scene: it stands
+          past the last painting, and which painting that is only becomes known
+          when the final slice lands. It is built once, the first frame after
+          the layout can say where it goes. */
+      let giftShop: GiftShop | null = null
+      let giftShopSigns: GiftShopSigns | null = null
+
+      /*  An arrow rather than a declaration, which is the style everything else
+          in here uses: a hoisted declaration could in principle run before the
+          host was checked for null, so the checked host is only in scope for a
+          function created after the check. */
+      const raiseGiftShop = (): void => {
+        const x = hall.layout.giftShopX
+        if (x === null || giftShop) return
+        giftShop = createGiftShop(scene, assets, x)
+        giftShopSigns = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
       }
 
       const raycaster = new THREE.Raycaster()
@@ -283,8 +312,10 @@ export function useHallScene({
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
 
         hall.update(now, dt, traversal.cameraX)
+        raiseGiftShop()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
+        giftShopSigns?.sync(rig.camera, viewport)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
         if (now - lastViewCheck >= VIEW_CHECK_MS) {
@@ -305,8 +336,10 @@ export function useHallScene({
         renderer.domElement.removeEventListener('pointerup', handlePointerUp)
         placards.clear()
         lobbySigns.clear()
+        giftShopSigns?.clear()
         hall.dispose()
         lobby.dispose()
+        giftShop?.dispose()
         backdrop.dispose()
         character.dispose()
         renderer.dispose()

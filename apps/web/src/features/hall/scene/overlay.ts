@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
+import type { GiftShopMarks } from './giftshop'
 import type { LobbyMarks } from './lobby'
 import type { MountedDisplay } from './scene'
 
@@ -269,5 +270,107 @@ export class LobbySigns {
 
   clear(): void {
     for (const node of [this.sign, this.direction, this.help]) node.remove()
+  }
+}
+
+
+/*  The words at the far end of the hall: the note that closes the exhibition,
+    the board over the counter, and the link out to the print shop. The same
+    arrangement as the visitor centre's signage, and for the same reasons —
+    painted wood in the scene, the writing on it real DOM projected over the
+    top, sized in world units so each sign fills the same share of its board at
+    every screen size.
+
+    The link is the one node in this layer that takes a pointer, and the reason
+    it is an anchor rather than a button is that it leaves the museum: it should
+    behave like a link, be openable in a tab of the visitor's choosing, and
+    survive having its address copied. */
+export class GiftShopSigns {
+  private note = document.createElement('p')
+  private sign = document.createElement('div')
+  private link = document.createElement('a')
+  private isLinkOnScreen: boolean | null = null
+  private linkHeight = ''
+
+  constructor(
+    container: HTMLElement,
+    private marks: GiftShopMarks,
+    href: string,
+  ) {
+    this.note.className = 'gift-shop-note'
+    this.note.textContent =
+      'You have reached the end of the exhibit! Exit through the gift shop to grab a print of your favorite piece. Thank you for coming, see you next time!'
+
+    this.sign.className = 'gift-shop-sign'
+    this.sign.textContent = 'Gift shop'
+
+    this.link.className = 'gift-shop-button'
+    this.link.href = href
+    this.link.target = '_blank'
+    /*  The shop is somebody else's site, so it is opened without a handle back
+        on to this one and without the museum in its referrer. */
+    this.link.rel = 'noreferrer noopener'
+    this.link.innerHTML =
+      '<img class="gift-shop-basket" src="/assets/icon-basket.svg" alt="" aria-hidden="true">' +
+      '<span>View gift shop</span>'
+
+    for (const node of [this.note, this.sign, this.link]) container.appendChild(node)
+  }
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const viewWidth = camera.right - camera.left
+    const perUnit = viewport.width / viewWidth
+
+    this.place(this.note, this.marks.note, perUnit, camera, viewport, 0.065)
+    this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.134)
+
+    /*  Only while it is actually on screen: an invisible link parked off the
+        right edge would still swallow the drag that scrolls the hall, and the
+        shop sits at the end of a walk the visitor spends entirely dragging. */
+    const onScreen = this.place(this.link, this.marks.button, perUnit, camera, viewport, 0.09)
+    if (onScreen !== this.isLinkOnScreen) {
+      this.isLinkOnScreen = onScreen
+      this.link.style.pointerEvents = onScreen ? 'auto' : 'none'
+    }
+
+    /*  The pill is drawn by this element rather than by the shop's art, which
+        has no button in it, so it needs a real height. It changes only with the
+        viewport, so it is written only when it does. */
+    const height = `${(this.marks.button.height * perUnit).toFixed(1)}px`
+    if (height !== this.linkHeight) {
+      this.linkHeight = height
+      this.link.style.height = height
+    }
+  }
+
+  /** Identical to the visitor centre's placement, down to the off-screen cull. */
+  private place(
+    node: HTMLElement,
+    mark: { x: number; y: number; width: number },
+    perUnit: number,
+    camera: THREE.OrthographicCamera,
+    viewport: Viewport,
+    fontRatio: number,
+  ): boolean {
+    const at = toScreen(mark.x, mark.y, camera, viewport)
+    if (!at) {
+      writeStyle(node, 'opacity', '0')
+      return false
+    }
+
+    const widthPx = mark.width * perUnit
+    writeStyle(node, 'width', `${widthPx.toFixed(1)}px`)
+    writeStyle(node, 'fontSize', `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`)
+    writeStyle(
+      node,
+      'transform',
+      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
+    )
+    writeStyle(node, 'opacity', '1')
+    return true
+  }
+
+  clear(): void {
+    for (const node of [this.note, this.sign, this.link]) node.remove()
   }
 }

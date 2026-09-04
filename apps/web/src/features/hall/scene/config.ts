@@ -113,6 +113,41 @@ export const CONFIG = {
     helpButton: { dy: -0.215, width: 1.06, height: 0.35 },
   },
 
+  /*  The gift shop, at the far end of the hall: the visitor centre's opposite
+      number, and the last thing on the walk. Positions were measured off
+      mockup 10 with the camera parked at the hall's right-hand end, which is
+      exactly the framing that mockup draws — the counter centred on the screen
+      with the note, the board and the pill stacked up the wall above it.
+
+      `length` is the distance from the last painting's outer edge to where the
+      camera parks, and it is the counter's own half-width plus the same
+      stretch of empty wall that separates the help booth from the first
+      painting at the other end. Leaving the exhibition should read as a
+      threshold, the way arriving at it does, rather than as one more thing
+      hung along the hall. */
+  giftShop: {
+    length: 4.7,
+    /*  The counter and its shelves. Its sprite has a good deal of clear space
+        above the shelves, so the plane reaches most of the way up the screen
+        while the drawing inside it stands on the floor. */
+    counter: { dx: 0, centerY: 1.16, height: 2.8, z: 0.4 },
+    /*  The note that closes the exhibition. plaque.png at very nearly the
+        proportions it was drawn at, so unlike the board below it this one is a
+        single plane rather than three slices. */
+    note: { dx: 0.042, centerY: 3.654, width: 2.617, height: 1.28, z: 0.2 },
+    /*  The shop's own board. The same size as the one over the visitor
+        centre's door, and built the same way. */
+    sign: { dx: -0.048, centerY: 2.664, width: 1.993, height: 0.43, z: 0.2 },
+    /** The pill under the board — the one control at this end of the hall. */
+    button: { dx: -0.05, centerY: 2.152, width: 1.327, height: 0.31 },
+    /*  The writing sits on the paper, and the paper is up and to the left of
+        each sprite's own middle, because both drawings carry their shadow down
+        and to the right. Both marks are measured off the words in the mockup
+        rather than off the boards they are written on. */
+    noteText: { dx: -0.002, centerY: 3.662, width: 2.0 },
+    signText: { dx: -0.075, centerY: 2.684, width: 1.515 },
+  },
+
   /*  A floor on how long a pedestal holds before the wall behind it appears, so
       the loading cue is a beat rather than a flicker. Short: it is a floor on
       the *wait*, and every millisecond of it is a millisecond the visitor spends

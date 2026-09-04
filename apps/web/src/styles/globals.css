@@ -641,6 +641,102 @@ code.token {
 }
 .lobby-help-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
 
+/* ---------------------------------------------------------- the gift shop */
+
+/*  The writing at the far end of the hall, projected onto the note and the
+    board the scene draws, exactly as the visitor centre's signage is. Width and
+    type size come from the frame loop in world units; everything here is what
+    it looks like, not where it sits. */
+
+/*  The note that closes the exhibition. Prose, and therefore Sniglet: the
+    museum face sets lowercase as small capitals, and four sentences of small
+    capitals are read letter by letter. */
+.gift-shop-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--plaque-ink);
+  text-align: center;
+  line-height: 1.4;
+  /*  No balancing, unlike the plaques. The paper is drawn to hold this exact
+      paragraph and the note is written to fill it, so the lines want to run to
+      the edge of the band the way the mockup sets them; evening them out pulls
+      the block in and leaves the paper looking half used. */
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/*  The board over the counter, in the museum's own small capitals — the same
+    voice as the board over the door at the other end of the hall, because both
+    are a sign naming a room. It never wraps: the board is drawn to hold one
+    line. */
+.gift-shop-sign {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-button);
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/*  The pill under the board. Built like the help booth's button — sized in
+    world units by the frame loop, so it carries no padding of its own — but in
+    the shop's own yellow, and with the basket the mockup draws inside it.
+
+    An anchor rather than a button: it is the one control in the hall that
+    leaves the museum, so it should look like a link to the browser as well as
+    to the visitor. */
+.gift-shop-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42em;
+  border: 3px solid var(--pill-edge);
+  border-radius: 999px;
+  background: var(--pill);
+  color: var(--ink);
+  font-family: var(--font-button);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  will-change: transform, opacity;
+  transition: filter 0.15s ease;
+  /*  The same slow breath the help booth's pill has, and on `scale` for the
+      same reason: the frame loop owns this element's `transform`, and an
+      animation on that property would send the pill across the screen. */
+  animation: pill-pulse 2.4s ease-in-out infinite;
+}
+
+/*  Bigger than the cap height, as the mockup draws it, and nudged down because
+    the caps beside it sit above the baseline. */
+.gift-shop-basket {
+  width: 1.45em;
+  height: 1.45em;
+  margin-block: -0.2em;
+  flex: none;
+}
+
+.gift-shop-button:hover { filter: brightness(1.06); animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gift-shop-button { animation: none; }
+}
+.gift-shop-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
+
 /* ------------------------------------------------------- the help guide */
 
 .help-guide {

@@ -20,9 +20,27 @@ const IMAGE_FILES = {
   helpCenter: 'help-center.png',
   /*  The gift shop at the other end, which is where the walk finishes. */
   giftShop: 'gift-shop.png',
+  /*  The museum cafe, a rest stop after the tenth painting — the counter, its
+      sign and menu, and the poster that links out to the artist's coffee fund.
+      The sign is the artist's background-removed cut-out, so it floats on the
+      wall without the white rectangle it was painted on. */
+  cafeFront: 'cafe/front.png',
+  cafeSign: 'cafe/sign-removebg.png',
+  cafeMenu: 'cafe/menu.png',
+  cafePoster: 'cafe/buy-matcha.png',
 } as const
 
 export type AssetName = keyof typeof IMAGE_FILES
+
+/*  The waving cat on the cafe counter. A GIF cannot animate as a WebGL texture
+    (the artist shipped the same drawing both ways), so these are the four frames
+    the GIF was built from, played at 200ms a frame — the GIF's own pace. */
+const CAFE_CAT_FRAMES = [
+  'cafe/cat-1.png',
+  'cafe/cat-2.png',
+  'cafe/cat-3.png',
+  'cafe/cat-4.png',
+] as const
 
 export interface Sprite {
   texture: THREE.Texture
@@ -39,6 +57,8 @@ export interface Assets {
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   /** Pedestal variants, so a long hall is not one object repeated. */
   pedestals: Sprite[]
+  /** The cafe cat's animation frames, newest loaded last for the loop. */
+  cafeCat: Sprite[]
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -76,6 +96,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     pedestalImages,
     idleLeft,
     idleRight,
+    catImages,
   ] = await Promise.all([
     Promise.all(names.map((n) => loadImage(`${base}/${IMAGE_FILES[n]}`))),
     Promise.all(leftFiles.map((f) => loadImage(`${base}/${f}`))),
@@ -83,6 +104,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     Promise.all(manifest.pedestals.map((p) => loadImage(`${base}/${p.file}`))),
     loadImage(`${base}/bunny-left.png`).catch(() => loadImage(`${base}/bunny.png`)),
     loadImage(`${base}/bunny-right.png`).catch(() => loadImage(`${base}/bunny.png`)),
+    Promise.all(CAFE_CAT_FRAMES.map((f) => loadImage(`${base}/${f}`))),
   ])
 
   const images = {} as Record<AssetName, HTMLImageElement>
@@ -112,6 +134,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     walk: { left: walkLeft, right: walkRight },
     bunnyIdle: { left: idleLeft, right: idleRight },
     pedestals: pedestalImages.map(toSprite),
+    cafeCat: catImages.map(toSprite),
   }
 }
 

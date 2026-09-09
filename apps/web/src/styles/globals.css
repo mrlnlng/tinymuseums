@@ -737,6 +737,22 @@ code.token {
 }
 .gift-shop-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
 
+/*  The cafe's poster link. The painted "buy matcha" poster in the scene is the
+    control's whole drawing, so this element draws nothing of its own — it is
+    the poster's invisible tap surface, sized and placed by the frame loop. */
+.cafe-poster-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+  will-change: transform, opacity;
+}
+.cafe-poster-link:focus-visible {
+  outline: 3px solid var(--script);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 /* ------------------------------------------------------- the help guide */
 
 .help-guide {

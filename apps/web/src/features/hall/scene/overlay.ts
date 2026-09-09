@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
+import type { CafeMarks } from './cafe'
 import type { GiftShopMarks } from './giftshop'
 import type { LobbyMarks } from './lobby'
 import type { MountedDisplay } from './scene'
@@ -372,5 +373,72 @@ export class GiftShopSigns {
 
   clear(): void {
     for (const node of [this.note, this.sign, this.link]) node.remove()
+  }
+}
+
+/*  The cafe's one control, at the rest stop past the tenth painting: an
+    invisible link laid over the artist's painted "buy matcha" poster, which
+    is the control's own drawing — unlike the gift shop's pill there is nothing
+    for this element to draw, so it draws nothing, and the poster underneath
+    is the whole affordance. An anchor for the same reason the shop's is: it
+    leaves the museum, so it should behave like a link to the browser. */
+export class CafeLink {
+  private poster = document.createElement('a')
+  private isOnScreen: boolean | null = null
+  private posterHeight = ''
+
+  constructor(container: HTMLElement, private marks: CafeMarks, href: string) {
+    this.poster.className = 'cafe-poster-link'
+    this.poster.href = href
+    this.poster.target = '_blank'
+    /*  Somebody else's site, so no handle back on to this one and no museum in
+        its referrer — the same terms the gift shop's link opens under. */
+    this.poster.rel = 'noreferrer noopener'
+    this.poster.setAttribute(
+      'aria-label',
+      'Buy matcha — opens Buy Me a Coffee in a new tab',
+    )
+    container.appendChild(this.poster)
+  }
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const viewWidth = camera.right - camera.left
+    const perUnit = viewport.width / viewWidth
+
+    const at = toScreen(this.marks.poster.x, this.marks.poster.y, camera, viewport)
+    if (!at) {
+      writeStyle(this.poster, 'opacity', '0')
+      if (this.isOnScreen !== false) {
+        this.isOnScreen = false
+        this.poster.style.pointerEvents = 'none'
+      }
+      return
+    }
+
+    const widthPx = this.marks.poster.width * perUnit
+    writeStyle(this.poster, 'width', `${widthPx.toFixed(1)}px`)
+    writeStyle(
+      this.poster,
+      'transform',
+      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
+    )
+    writeStyle(this.poster, 'opacity', '1')
+
+    /*  Only while it is actually on screen: an invisible link parked off the
+        hall would still swallow the drag that scrolls it. */
+    if (this.isOnScreen !== true) {
+      this.isOnScreen = true
+      this.poster.style.pointerEvents = 'auto'
+    }
+
+    const height = `${(this.marks.poster.height * perUnit).toFixed(1)}px`
+    if (height !== this.posterHeight) {
+      this.posterHeight = height
+      this.poster.style.height = height
+    }
+  }
+
+  clear(): void {
+    this.poster.remove()
   }
 }

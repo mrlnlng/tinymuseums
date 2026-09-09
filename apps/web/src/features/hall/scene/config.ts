@@ -148,6 +148,41 @@ export const CONFIG = {
     signText: { dx: -0.075, centerY: 2.684, width: 1.515 },
   },
 
+  /*  The museum cafe — a rest stop along the walk, not a terminus: it sits
+      between the tenth painting and the eleventh when the hall has more than
+      ten works, and after the last painting (with the gift shop past it) when
+      it has ten or fewer. `length` is the corridor the cafe occupies between
+      two walls, and the composition is centred in it the way the visitor
+      centre and gift shop anchor their own rooms. Positions below are v1,
+      measured off Marlene's art rather than a mockup, and want an eyeball pass
+      in a browser. */
+  cafe: {
+    length: 6.8,
+    /*  The counter front, floor-anchored like the gift shop's counter. Its
+        lower edge sits below the floor line — the sprite's bottom corners are
+        transparent, so the drawing's own base is what meets the floor. */
+    counter: { dx: 0, centerY: 0.77, height: 2.3, z: 0.4 },
+    /*  The hanging sign, its own art (painted lettering, no alpha) — the
+        shop's board, hung above the counter in the empty wall above the
+        drawing, wide enough to cover the two boards beneath it. */
+    sign: { dx: 0, centerY: 2.75, width: 2.6, z: 0.3 },
+    /*  The two boards hang as a matching pair directly beneath the sign, one
+        either side of the register. The "buy matcha" poster leads: it is a
+        touch larger than the menu, and hangs a fraction lower so its top edge
+        lines up with the menu's, sitting pulled toward the middle so the pair
+        is closer together while still keeping a clear gap. */
+    poster: { dx: -0.75, centerY: 1.9, height: 1.1, z: 0.3 },
+    menu: { dx: 0.95, centerY: 1.95, height: 1.0, z: 0.3 },
+    /*  The waving cat behind the counter — the cafe's cashier, standing to the
+        *right* of the register (its plane sits behind the counter's, so the
+        counter drawing hides everything below the desk line and only the head
+        and shoulders show). Raised a touch so the waving hand clears the
+        desk. Slightly larger than the visitor — the character stands 1.36
+        tall; this is 1.7. */
+    cat: { dx: 0.55, feetY: 0.4, height: 1.7, z: 0.3 },
+    catFrameMs: 200,
+  },
+
   /*  A floor on how long a pedestal holds before the wall behind it appears, so
       the loading cue is a beat rather than a flicker. Short: it is a floor on
       the *wait*, and every millisecond of it is a millisecond the visitor spends

@@ -6,11 +6,13 @@ import type { HallSliceDto } from '@tiny/core'
 import { loadAssets, type Assets } from '@/features/hall/scene/assets'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
+import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createLobby } from '@/features/hall/scene/lobby'
 import {
+  CafeLink,
   GiftShopSigns,
   LobbySigns,
   Placards,
@@ -39,6 +41,10 @@ const WALKING_SPEED = 0.12
     for the whole museum: the shop belongs to the museum, not to an artist —
     an artist's own link is the "Shop print" button on their work. */
 const GIFT_SHOP_URL = 'https://www.inspiratiq.art/'
+
+/*  Where the cafe's "buy matcha" poster sends the visitor — the artist's own
+    coffee fund, one address for the museum like the shop's. */
+const CAFE_URL = 'https://buymeacoffee.com/inspiratiq'
 
 export interface OpenPiece {
   slug: string
@@ -191,6 +197,14 @@ export function useHallScene({
       let giftShop: GiftShop | null = null
       let giftShopSigns: GiftShopSigns | null = null
 
+      /*  The cafe builds on exactly the same condition, one room earlier: it
+          needs either the eleventh painting (it sits between the tenth and the
+          eleventh) or a completed short hall (it sits after the last painting,
+          past which the gift shop then stands) — either way, a layout that can
+          say where it goes. */
+      let cafe: Cafe | null = null
+      let cafeLink: CafeLink | null = null
+
       /*  An arrow rather than a declaration, which is the style everything else
           in here uses: a hoisted declaration could in principle run before the
           host was checked for null, so the checked host is only in scope for a
@@ -200,6 +214,13 @@ export function useHallScene({
         if (x === null || giftShop) return
         giftShop = createGiftShop(scene, assets, x)
         giftShopSigns = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
+      }
+
+      const raiseCafe = (): void => {
+        const x = hall.layout.cafeX
+        if (x === null || cafe) return
+        cafe = createCafe(scene, assets, x)
+        cafeLink = new CafeLink(overlayHost, cafe.marks, CAFE_URL)
       }
 
       const raycaster = new THREE.Raycaster()
@@ -313,9 +334,14 @@ export function useHallScene({
 
         hall.update(now, dt, traversal.cameraX)
         raiseGiftShop()
+        raiseCafe()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
         giftShopSigns?.sync(rig.camera, viewport)
+        cafeLink?.sync(rig.camera, viewport)
+
+        // The cat waves on its own clock, wherever the visitor is in the room.
+        cafe?.update(dt, traversal.cameraX)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
         if (now - lastViewCheck >= VIEW_CHECK_MS) {
@@ -337,9 +363,11 @@ export function useHallScene({
         placards.clear()
         lobbySigns.clear()
         giftShopSigns?.clear()
+        cafeLink?.clear()
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()
+        cafe?.dispose()
         backdrop.dispose()
         character.dispose()
         renderer.dispose()

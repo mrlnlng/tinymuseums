@@ -90,11 +90,19 @@ export const CONFIG = {
       framing mockup 1 draws: the door a little left of centre, its sign over
       it, the way-finder to its right and the help booth running off the right
       edge. `length` is where the exhibition starts; everything before it is
-      the visitor centre, and the gap between the booth and the first wall is
-      about the gap between two walls, so arriving at the art reads as a
-      threshold rather than as the next thing along. */
+      the visitor centre.
+
+      It is the booth's own right-hand edge (centred at 2.39, and 3.695 out to
+      the edge of what its sprite actually draws) plus `piece.gap`, so the
+      first painting follows the visitor centre at the spacing one painting
+      follows another. It used to stand a further screen and a half out, on the
+      argument that arriving at the art should read as a threshold — but a
+      threshold you cross in silence is just a wait, and the visitor who has
+      pressed on past the help booth has already decided to go and look at the
+      paintings. The far end of the hall gave up the same stretch of empty
+      plaster for the same reason; see `giftShop`. */
   lobby: {
-    length: 6.6,
+    length: 4.9,
     /** Where the camera parks on arrival. Also the hall's left end. */
     startX: 0,
     /*  The bunny still walks on from off the left edge, as it does in the
@@ -119,14 +127,21 @@ export const CONFIG = {
       exactly the framing that mockup draws — the counter centred on the screen
       with the note, the board and the pill stacked up the wall above it.
 
-      `length` is the distance from the last painting's outer edge to where the
-      camera parks, and it is the counter's own half-width plus the same
-      stretch of empty wall that separates the help booth from the first
-      painting at the other end. Leaving the exhibition should read as a
-      threshold, the way arriving at it does, rather than as one more thing
-      hung along the hall. */
+      `length` is the distance from whatever the shop stands behind — the last
+      painting, or the cafe when the cafe is the last room before it — to where
+      the camera parks. Almost all of it is the counter's own half-width: the
+      drawing is 3.59 wide at this height, so 1.79 of the number below is spent
+      before the counter's left edge is reached, and only the remainder is
+      empty wall.
+
+      That remainder is now under half of `piece.gap`, tighter than the spacing
+      between two paintings, which is deliberate. This end of the hall is not a
+      corridor: the shop is the thing the walk has been leading to, and the last
+      painting handing straight over to it is what makes it read as the end
+      rather than as one more room along. The visitor centre gave up its own
+      stretch of empty plaster for a related reason; see `lobby`. */
   giftShop: {
-    length: 4.7,
+    length: 2.25,
     /*  The counter and its shelves. Its sprite has a good deal of clear space
         above the shelves, so the plane reaches most of the way up the screen
         while the drawing inside it stands on the floor. */

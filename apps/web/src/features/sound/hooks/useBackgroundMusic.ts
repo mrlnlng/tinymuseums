@@ -85,6 +85,15 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       something else — so window focus is watched alongside it. */
   const [isVisible, setIsVisible] = useState(true)
   const [isFocused, setIsFocused] = useState(true)
+  /*  And whether the page is still the one being shown at all. Leaving the site
+      — following a link out, or the browser's own back — does not always tear
+      the page down: it is frozen into the back/forward cache instead, and a
+      frozen page is one that has stopped being told anything. On the platform
+      where that matters most it can keep its audio element playing while the
+      visitor reads somebody else's website, with no tab left on screen to
+      explain where the music is coming from and nothing running that could
+      stop it. See `watchPageHide`. */
+  const [isPageShown, setIsPageShown] = useState(true)
 
   /*  Where the level is written, and the one place that knows there is a
       choice. On most platforms it is the element's own volume; on iOS, where
@@ -167,6 +176,39 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     }
   }, [])
 
+  /*  Leaving the site, which is the one departure the two watchers above cannot
+      see. A tab that is closed or navigated away takes its audio with it, but a
+      page frozen into the back/forward cache keeps everything it had —
+      `visibilitychange` may never fire, `blur` may never fire, and nothing else
+      is going to run until the visitor comes back.
+
+      So the element is paused here, in the handler, rather than by letting a
+      state change reach the effect below: after `pagehide` this page may be
+      given no further work at all, and a pause scheduled for the next render is
+      a pause that never happens. There is no fade for the same reason, and it
+      would be a fade nobody is left to hear.
+
+      `pageshow` is the other half: a restored page has been playing nothing
+      since it left, and without something changing back, `applyPreference` has
+      no reason to run and the museum would stay silent for the rest of the
+      visit. */
+  const watchPageHide = useCallback(() => {
+    const onHide = () => {
+      setIsPageShown(false)
+      if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+      fadeRef.current = null
+      audioRef.current?.pause()
+    }
+    const onShow = () => setIsPageShown(true)
+
+    window.addEventListener('pagehide', onHide)
+    window.addEventListener('pageshow', onShow)
+    return () => {
+      window.removeEventListener('pagehide', onHide)
+      window.removeEventListener('pageshow', onShow)
+    }
+  }, [])
+
   /*  What the element is actually doing, taken from the element. React state
       set optimistically alongside a `play()` call would be a guess: the promise
       resolves before the first sample is audible, and the browser may pause the
@@ -194,6 +236,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
   useEffect(() => restorePreference(), [restorePreference])
   useEffect(() => watchVisibility(), [watchVisibility])
   useEffect(() => watchFocus(), [watchFocus])
+  useEffect(() => watchPageHide(), [watchPageHide])
   useEffect(() => watchPlayback(), [watchPlayback])
 
   /** Ramps volume rather than cutting, so toggling does not feel like a switch. */
@@ -244,14 +287,15 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     }
   }, [fadeTo, setOutput])
 
-  /*  Four things have to be true to hear anything: the visitor wants music,
-      this screen is one that has it, the tab is the one being looked at, and
-      the window is the one being used. Muting and walking out of the museum
-      fade; switching tabs does not, because a hidden tab is given no animation
-      frames — the ramp would freeze part-way through and leave the track
-      playing at half volume behind whatever the visitor went to look at.
-      Nobody can hear a fade they have already left. */
-  const shouldSound = isEnabled && isAllowed && isVisible && isFocused
+  /*  Five things have to be true to hear anything: the visitor wants music,
+      this screen is one that has it, the tab is the one being looked at, the
+      window is the one being used, and the page has not been left behind
+      altogether. Muting and walking out of the museum fade; switching tabs does
+      not, because a hidden tab is given no animation frames — the ramp would
+      freeze part-way through and leave the track playing at half volume behind
+      whatever the visitor went to look at. Nobody can hear a fade they have
+      already left. */
+  const shouldSound = isEnabled && isAllowed && isVisible && isFocused && isPageShown
 
   const applyPreference = useCallback(() => {
     const audio = audioRef.current

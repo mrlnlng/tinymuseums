@@ -117,10 +117,17 @@ export class Placards {
         this.titles.set(key, title)
       }
 
-      // Teeny tiny against the brass, so a whole description fits on it; what
-      // still will not fit is ellipsed, because the plaque is a label and the
-      // artist's page is where the long version lives.
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.86, Math.max(7, plaquePx * 0.058), 'center')
+      /*  Teeny tiny against the brass, so a whole description fits on it; what
+          still will not fit is ellipsed, because the plaque is a label and the
+          artist's page is where the long version lives.
+
+          The band is a little under four fifths of the board rather than the
+          six sevenths it was: the pegs in the plaque's corners stand about a
+          twelfth in from its edges, and at the old width a full line ran level
+          with them and the words read as though they had been squeezed on.
+          Eleven per cent either side leaves the painted margin visible all the
+          way round the writing. */
+      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.78, Math.max(7, plaquePx * 0.058), 'center')
 
       /* Its own width: wide enough for a title, and unaffected by the plaque. Hung by its lower edge — the title is never trimmed, so it must grow upward into the empty wall rather than down onto the painting. */
       this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
@@ -220,10 +227,19 @@ export class LobbySigns {
     this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
     this.place(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
 
-    // The button is the one node here that takes a pointer, and only while it
-    // is actually on screen — an invisible one parked off the left edge would
-    // still swallow the drag that scrolls the hall.
-    const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.089)
+    /*  The button is the one node here that takes a pointer, and only while it
+        is actually on screen — an invisible one parked off the left edge would
+        still swallow the drag that scrolls the hall.
+
+        Set larger against the pill than the two signs are against their boards.
+        At the old ratio the words filled under two thirds of the pill's width
+        and read as a caption inside a button rather than as its label, which is
+        the wrong emphasis for the one thing at this end of the hall a visitor
+        is meant to press. At this size they take about four fifths of it and
+        still clear the gold rim on both sides — the pill is a fixed 1.06 world
+        units wide, so the fit holds at every screen size rather than depending
+        on this one. */
+    const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.11)
     if (onScreen !== this.isHelpOnScreen) {
       this.isHelpOnScreen = onScreen
       this.help.style.pointerEvents = onScreen ? 'auto' : 'none'

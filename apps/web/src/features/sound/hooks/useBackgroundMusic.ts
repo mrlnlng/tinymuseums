@@ -95,13 +95,19 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
   const outputRef = useRef(1)
 
   const setOutput = useCallback((value: number) => {
-    outputRef.current = value
+    /*  A ramp can step a hair past its ends (an interrupted fade resumes from a
+        value that has already crossed zero), and a volume outside [0, 1] makes
+        the element's setter throw. Clamping here keeps the audio element, the
+        gain node and the recorded output all inside the range the platform
+        accepts. */
+    const clamped = value < 0 ? 0 : value > 1 ? 1 : value
+    outputRef.current = clamped
     if (isElementVolumeLocked()) {
-      setGainLevel(value)
+      setGainLevel(clamped)
       return
     }
     const audio = audioRef.current
-    if (audio) audio.volume = value
+    if (audio) audio.volume = clamped
   }, [])
 
   /** Only a genuine load failure takes the control away. */

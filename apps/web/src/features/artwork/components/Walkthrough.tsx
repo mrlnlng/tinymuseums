@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, type Variants } from 'motion/react'
 import type { PieceDto } from '@tiny/core'
-import { frameFor } from '@/features/artwork/lib/frame'
+import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
 
 /* The enlarged view: one work at a time in the artist's order, with the description they wrote. The hall is for discovery; inquiry replaces checkout — the message goes to the artist. */
@@ -225,6 +225,32 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     [piece, frame],
   )
 
+  /*  Whether this work's ornament is on hand. The artwork is held back until it
+      is, so that the two arrive together: they are separate elements fetched in
+      parallel and the ornament is several times the heavier of the two, so left
+      to themselves the painting lands first and hangs unframed for a few frames.
+
+      Read from the module rather than starting at false, so a frame that has
+      already been seen — which after the hall's preload is nearly always the
+      case — is ready on the first render and the artwork is never held back at
+      all. Only a genuinely cold ornament costs anything, and what it costs is
+      the wait it was already going to cost, spent on empty wall instead of on a
+      painting in the wrong place. */
+  const [isOrnamentReady, setIsOrnamentReady] = useState(() => isFrameReady(frame.src))
+
+  useEffect(() => {
+    setIsOrnamentReady(isFrameReady(frame.src))
+  }, [frame.src])
+
+  /*  `onLoad` fires for a cached image too, so this is the whole answer for a
+      second visit as well as a first. `onError` reveals the artwork rather than
+      leaving it hidden: an ornament that will not load is a worse reason to
+      show nobody the painting than no reason at all. */
+  const revealArtwork = useCallback(() => {
+    markFrameReady(frame.src)
+    setIsOrnamentReady(true)
+  }, [frame.src])
+
   return (
     <motion.div
       className="wt"
@@ -277,8 +303,19 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                     root's copy is what the stage sizes itself from. */
                 style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
               >
-                <div className="wt-artwork" style={artworkStyle} />
-                <img className="wt-frame-art" src={frame.src} alt="" aria-hidden="true" />
+                <div
+                  className="wt-artwork"
+                  style={artworkStyle}
+                  data-waiting={isOrnamentReady ? undefined : ''}
+                />
+                <img
+                  className="wt-frame-art"
+                  src={frame.src}
+                  alt=""
+                  aria-hidden="true"
+                  onLoad={revealArtwork}
+                  onError={revealArtwork}
+                />
                 {/* Inside the frame element so it tracks the artwork's real
                     corner — anchored to the stage it would drift away whenever
                     the aspect changed. */}

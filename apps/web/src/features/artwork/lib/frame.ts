@@ -50,6 +50,30 @@ export function preloadFrames(): void {
     // Behind the hall's own textures: those are on screen, this is insurance.
     image.fetchPriority = 'low'
     image.decoding = 'async'
+    image.onload = () => markFrameReady(shape.src)
     image.src = shape.src
   }
+}
+
+/*  Which ornaments the browser has actually finished with. The enlarged view
+    hangs the artwork and the frame as two separate elements, and they are not
+    the same weight: the ornament is a 420KB PNG and a work's own image is
+    nearer a hundred, so on a first visit the painting arrives first and hangs
+    on the wall unframed for a few frames before the frame catches up. Waiting
+    for the ornament is what stops that, and this is where the answer lives
+    because it belongs to the two shapes rather than to any one work.
+
+    A Set of two strings rather than anything cleverer, because there are two
+    ornaments in the museum and both are permanently cached the moment either
+    has been seen. Seeded by the preload above, so by the time anybody taps a
+    painting the answer is usually already yes and nothing is held back at
+    all. */
+const decodedFrames = new Set<string>()
+
+export function isFrameReady(src: string): boolean {
+  return decodedFrames.has(src)
+}
+
+export function markFrameReady(src: string): void {
+  decodedFrames.add(src)
 }

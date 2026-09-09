@@ -1017,6 +1017,14 @@ code.token {
   transform: scale(1.1);
 }
 
+/*  Held back until the ornament that goes round it has loaded, so the two
+    arrive together rather than the painting hanging unframed for a few frames
+    while the heavier ornament catches up. Opacity rather than `display`, so the
+    browser still fetches and decodes the artwork while it waits — the point is
+    to change what is shown, not to make anybody wait longer than they already
+    were. */
+.wt-artwork[data-waiting] { opacity: 0; }
+
 /* Over the artwork, and inert, so a tap anywhere on the frame still reaches it. */
 .wt-frame-art {
   position: absolute;

@@ -59,6 +59,7 @@ function ensureMaster(): GainNode | null {
     master = context.createGain()
     master.gain.value = level
     master.connect(context.destination)
+    wakeOnGesture()
   } catch {
     context = null
     master = null
@@ -121,9 +122,42 @@ export function setGainLevel(value: number): void {
 
 /*  A browser starts an AudioContext suspended and will not run it until the
     page has been touched — the same rule that keeps the track itself from
-    playing — so this is called from the same gestures that try to start it. */
+    playing — so this is called from the same gestures that try to start it.
+
+    Anything that is not running is woken, rather than only what calls itself
+    `suspended`. WebKit has a third state the specification does not: a context
+    that was playing when the page went to the background comes back
+    `interrupted`, and a check for `suspended` alone walks straight past it.
+    That is the museum coming back from another application silent — the track
+    resumes, the element reports itself playing, and every sample it produces
+    goes into a graph that is not running. */
 export function resumeGain(): void {
-  if (context?.state === 'suspended') void context.resume()
+  const state = context?.state as string | undefined
+  if (!context || state === 'running' || state === 'closed') return
+  void context.resume().catch(() => {
+    // Refused because there has been no gesture yet. `wakeOnGesture` is
+    // waiting for one.
+  })
+}
+
+/*  The gesture that gets it going again.
+
+    Resuming is not something a page may simply decide to do: on iOS it takes
+    a real touch, and coming back from another application is not one. The
+    museum asks anyway on the way in, because on every other platform that is
+    enough — and where it is refused, the visitor's next touch is what carries
+    it. Bound once, for the life of the page, and cheap: it does nothing at all
+    unless the context has stopped running.
+
+    It cannot be `{ once: true }`. A visitor may leave and come back many times
+    in a visit, and a listener spent on the first return is not there for the
+    second. */
+function wakeOnGesture(): void {
+  if (typeof document === 'undefined') return
+  const wake = () => resumeGain()
+  for (const event of ['pointerdown', 'touchend', 'keydown'] as const) {
+    document.addEventListener(event, wake, { passive: true })
+  }
 }
 
 /*  Stops the graph outright, for the moment the visitor leaves the page.

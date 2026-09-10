@@ -28,6 +28,11 @@ const IMAGE_FILES = {
   cafeSign: 'cafe/sign-removebg.png',
   cafeMenu: 'cafe/menu.png',
   cafePoster: 'cafe/buy-coffee.png',
+  /*  The puff of notes a sounding pedestal gives off. Vector art, unlike
+      everything else here: it is drawn at one size and never scaled up on
+      screen, so the browser rasterises it once at its intrinsic size and the
+      texture is an ordinary bitmap from there on. */
+  musicNotes: 'music-notes.svg',
 } as const
 
 export type AssetName = keyof typeof IMAGE_FILES
@@ -47,6 +52,15 @@ export interface Sprite {
   aspect: number
 }
 
+/*  A pedestal sprite carries the name of the drawing it came from, because
+    what is standing on a pedestal is the thing the visitor taps: the owl
+    hoots and the lyre plays, and the only way to tell one plinth from another
+    is which picture was hung on it. Keyed by file rather than by position in
+    the list, so reordering the manifest cannot silently give the owl a harp. */
+export interface PedestalSprite extends Sprite {
+  file: string
+}
+
 export interface Assets {
   manifest: AssetManifest
   images: Record<AssetName, HTMLImageElement>
@@ -56,7 +70,7 @@ export interface Assets {
   walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   /** Pedestal variants, so a long hall is not one object repeated. */
-  pedestals: Sprite[]
+  pedestals: PedestalSprite[]
   /** The cafe cat's animation frames, newest loaded last for the loop. */
   cafeCat: Sprite[]
 }
@@ -133,7 +147,10 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     aspect,
     walk: { left: walkLeft, right: walkRight },
     bunnyIdle: { left: idleLeft, right: idleRight },
-    pedestals: pedestalImages.map(toSprite),
+    pedestals: pedestalImages.map((img, i) => ({
+      ...toSprite(img),
+      file: manifest.pedestals[i].file,
+    })),
     cafeCat: catImages.map(toSprite),
   }
 }

@@ -10,12 +10,35 @@ import {
 
 /*  Short one-shot effects plus the footstep loop, gated on the same preference as the music: someone who muted the museum muted the museum, not just its soundtrack. */
 
+/*  `start` and `end` are where the sound actually is inside its file, in
+    seconds, for the recordings that arrived with silence around them: the harp
+    does not begin until a second and a half in, and the cat's hello is over
+    after a second of an eleven-second file. Played from the top, a tap on the
+    harp would answer with a second and a half of nothing, and one voice of the
+    cat's pool would sit occupied on ten seconds of silence. So each voice is
+    started at `start` and stopped at `end`, and the files are left as the
+    artist exported them. Omit both for a recording that fills its file. */
 const EFFECTS = {
   click: { file: '/audio/sfx-click.mp3', volume: 0.45 },
   'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 0.55 },
+  /*  The lyre on the third pedestal drawing, and the owl on the first. The owl
+      was recorded much hotter than the harp — it peaks about twice as high —
+      so it is mixed lower to land at the same loudness in the room. */
+  harp: { file: '/audio/sfx-harp.mp3', volume: 0.6, start: 1.55, end: 5.3 },
+  owl: { file: '/audio/sfx-owl.mp3', volume: 0.34, start: 0.7, end: 3.7 },
+  /** The cafe cat, greeting whoever taps her at the counter. */
+  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.6, start: 0.48, end: 1.3 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS
+
+/** One effect's entry, with the trim that only some of them carry. */
+interface EffectSpec {
+  file: string
+  volume: number
+  start?: number
+  end?: number
+}
 
 const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
 
@@ -46,6 +69,9 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const voicesRef = useRef<Partial<Record<EffectName, HTMLAudioElement[]>>>({})
   const nextVoiceRef = useRef<Partial<Record<EffectName, number>>>({})
   const stepsRef = useRef<HTMLAudioElement | null>(null)
+  /*  The pending out point for each voice that has one, so a stop can be
+      called off when the voice is taken over by a fresh tap. */
+  const stopTimersRef = useRef(new Map<HTMLAudioElement, number>())
   const isWalkingRef = useRef(false)
 
   /* Read at play time, so changing the level does not rebuild the callbacks. */
@@ -113,11 +139,36 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       const at = (nextVoiceRef.current[name] ?? 0) % pool.length
       nextVoiceRef.current[name] = at + 1
 
+      const spec = EFFECTS[name] as EffectSpec
       const voice = pool[at]
-      applyMix(voice, EFFECTS[name].volume, volumeRef.current)
-      // Rewound rather than resumed: a voice reused mid-sound would start
-      // partway in.
-      voice.currentTime = 0
+      applyMix(voice, spec.volume, volumeRef.current)
+
+      /*  Rewound rather than resumed: a voice reused mid-sound would start
+          partway in. For a trimmed recording that means back to where the
+          sound is, not to the top of the file. */
+      const from = spec.start ?? 0
+      voice.currentTime = from
+
+      /*  A stop of its own, because a media element has no out point. Cleared
+          first: this voice may still be counting down from an earlier tap, and
+          that timer would cut the new sound off at the old sound's end. */
+      const timers = stopTimersRef.current
+      window.clearTimeout(timers.get(voice))
+      timers.delete(voice)
+      if (spec.end !== undefined) {
+        timers.set(
+          voice,
+          window.setTimeout(
+            () => {
+              voice.pause()
+              voice.currentTime = from
+              timers.delete(voice)
+            },
+            Math.max(0, (spec.end - from) * 1000),
+          ),
+        )
+      }
+
       resumeGain()
       void voice.play().catch(() => {
         // Not yet unlocked by a gesture. Nothing to recover from.

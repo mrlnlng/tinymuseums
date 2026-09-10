@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
 import { disposeBoards, plane, type Mark } from './board'
+import { pickPainted } from './hit'
 import { CONFIG } from './config'
 
 /*  The museum cafe — a rest stop along the walk, where the visitor can pause
@@ -27,6 +28,8 @@ export interface Cafe {
   /** Where the room is centred; everything in it is measured against this. */
   x: number
   marks: CafeMarks
+  /** Whether a tap landed on the cat herself, who says hello when it does. */
+  hitTestCat(raycaster: THREE.Raycaster): boolean
   /** Advances the waving cat, at the pace its frames were drawn at. */
   update(dt: number, cameraX: number): void
   dispose(): void
@@ -37,16 +40,15 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
   const group = new THREE.Group()
 
   // --- the counter front ----------------------------------------------------
-  group.add(
-    plane(
-      counter.height * assets.aspect.cafeFront,
-      counter.height,
-      assets.textures.cafeFront,
-      x + counter.dx,
-      counter.centerY,
-      counter.z,
-    ),
+  const counterMesh = plane(
+    counter.height * assets.aspect.cafeFront,
+    counter.height,
+    assets.textures.cafeFront,
+    x + counter.dx,
+    counter.centerY,
+    counter.z,
   )
+  group.add(counterMesh)
 
   // --- the hanging sign -----------------------------------------------------
   /*  The sign is the artist's own painted board (no alpha), so unlike the
@@ -111,6 +113,15 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
 
   return {
     x,
+
+    /*  The counter is offered to the pick alongside the cat, and it stands in
+        front of her: everything below the desk line is drawn on the cat's
+        sprite but covered by the counter's, so a tap down there picks the
+        counter and the cat stays quiet. Only her head and the waving paw,
+        which is all the visitor can actually see, say hello. */
+    hitTestCat(raycaster: THREE.Raycaster): boolean {
+      return pickPainted(raycaster, [counterMesh, catMesh])?.object === catMesh
+    },
 
     marks: {
       poster: {

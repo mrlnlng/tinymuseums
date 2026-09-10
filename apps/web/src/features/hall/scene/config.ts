@@ -55,7 +55,20 @@ export const CONFIG = {
       now a fraction of what it was: a pedestal drawn at its old height would
       be wider than the space between two paintings and reach up the wall past
       the bottom of both. */
-  pedestal: { height: 1.55, centerY: 0.6, z: 0.3, frequency: 0.55 },
+  pedestal: {
+    height: 1.55,
+    centerY: 0.6,
+    z: 0.3,
+    frequency: 0.55,
+    /*  The puff of notes a tapped pedestal gives off. Offsets are measured
+        from the pedestal's centre: `offsetY` puts the notes level with the
+        object standing on top (the sprite's own top edge is at +0.775) and
+        `offsetX` sets them off to one side of it, so the owl is not hidden
+        behind the sound it is making. `seconds` is the length of the whole
+        fade, chosen against the sound effects it accompanies — the harp runs
+        about three and a half seconds and the owl about three. */
+    notes: { width: 0.92, offsetX: 0.46, offsetY: 0.74, rise: 0.42, z: 0.06, seconds: 3.2 },
+  },
 
   character: {
     /*  Smaller and standing further down the floor than it once was: the walls grew, and at its old size the visitor stood head-and-ears over the plaque of whatever it had walked up to. */

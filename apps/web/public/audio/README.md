@@ -38,3 +38,29 @@ properly needs a real audio tool; there is no ffmpeg on this machine.
 - Starts on the first user gesture; browsers refuse audio before one.
 - On by default (`DEFAULT_ENABLED`), remembered per visitor in localStorage.
 - In production, serve it from the CDN instead: `NEXT_PUBLIC_MUSIC_URL=https://.../hall.mp3`.
+
+# Sound effects
+
+`sfx-click.mp3`, `sfx-footsteps.mp3` and `sfx-painting-open.mp3` are the museum's own,
+and fill their files. The three that answer a tap on the scenery do not:
+
+| file | length | where the sound actually is |
+| --- | --- | --- |
+| `sfx-harp.mp3` | 5.46s | 1.59 – 5.23 |
+| `sfx-owl.mp3` | 4.78s | 0.74 – 3.63 |
+| `sfx-cafe-hello.mp3` | 11.01s | 0.52 – 1.22 |
+
+All three arrived from the artist padded with silence, and the harp's lead-in is long
+enough to matter: played from the top, tapping the lyre answers with a second and a half
+of nothing. The cat's hello is worse in the other direction — three quarters of a second
+of greeting inside an eleven-second file.
+
+Rather than re-cut the artist's exports, each effect carries `start` and `end` in the
+`EFFECTS` table in `src/features/sound/hooks/useSoundEffects.ts`: the voice is seeked to
+`start` before it plays and stopped at `end`, which also hands the voice back to the pool
+instead of leaving it occupied on silence. If these files are ever re-exported trimmed,
+delete the two numbers — an effect with neither plays whole.
+
+The bounds above were measured by decoding each file and walking its peak envelope in
+10ms windows; they hold at every threshold between 0.002 and 0.01, so they are the real
+edges of the recording rather than an artefact of where the cut was made.

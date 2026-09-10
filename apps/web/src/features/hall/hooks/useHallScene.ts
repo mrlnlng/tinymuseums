@@ -261,14 +261,28 @@ export function useHallScene({
         }
 
         const hit = hall.hitTest(raycaster)
-        if (!hit) return
+        if (hit) {
+          soundRef.current.play('painting-open')
+          onOpenPieceRef.current({
+            slug: hit.mounted.display.slug,
+            artistId: hit.mounted.display.artistId,
+            pieceId: hit.pieceId,
+          })
+          return
+        }
 
-        soundRef.current.play('painting-open')
-        onOpenPieceRef.current({
-          slug: hit.mounted.display.slug,
-          artistId: hit.mounted.display.artistId,
-          pieceId: hit.pieceId,
-        })
+        /*  The scenery that answers back, tested after the paintings so that
+            nothing standing near a wall can shadow the work hanging on it.
+            Neither of these opens anything: they are the two places in the
+            hall where a tap is its own reward. */
+        const pedestal = hall.hitTestPedestal(raycaster)
+        if (pedestal?.voice) {
+          soundRef.current.play(pedestal.voice)
+          pedestal.chime()
+          return
+        }
+
+        if (cafe?.hitTestCat(raycaster)) soundRef.current.play('cafe-hello')
       }
 
       renderer.domElement.addEventListener('pointerdown', handlePointerDown)

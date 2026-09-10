@@ -4,6 +4,7 @@ import { loadDisplayTexture, type Assets } from './assets'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal } from './pedestal'
+import { pickPainted } from './hit'
 
 /* Owns what exists in the hall: each slot is one framed work the server rendered to its own image; the client loads it, hangs it, and frees it when the visitor walks away. */
 
@@ -350,6 +351,18 @@ export class HallScene {
     if (!mounted) return null
 
     return { mounted, pieceId: mounted.display.pieceId }
+  }
+
+  /*  The pedestal the visitor tapped, if they tapped one. Only the mounted
+      ones can be hit, which is the same set that is on screen — a pedestal
+      unmounted behind the camera has no mesh to strike. Tested against the
+      drawing rather than its rectangle, so the bare wall either side of a
+      column is bare wall. */
+  hitTestPedestal(raycaster: THREE.Raycaster): Pedestal | null {
+    const sprites = [...this.pedestals.values()].map((p) => p.sprite)
+    const hit = pickPainted(raycaster, sprites)
+    if (!hit) return null
+    return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
   }
 
   getMounted(): readonly MountedDisplay[] {

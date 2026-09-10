@@ -2,22 +2,32 @@
 
 /*  Where a sound's level is actually written.
 
-    Almost everywhere that is the media element's own `volume`, and this file
-    is barely involved. iOS is the exception: there the setter is a no-op —
-    the level belongs to the hardware buttons alone — so the museum's slider
-    had nothing to write to and moved it without changing anything. That is
-    not a slider that needs a better shape; it is a slider wired to nothing.
+    Every sound the museum makes goes through one Web Audio graph: a gain of
+    its own for its balance against the others, and a master carrying the
+    level the visitor chose. The element's own `volume` is the fallback, used
+    only for a sound the graph would not take.
 
-    A gain node is something a page *is* allowed to turn down, so where the
-    element's volume is locked every sound is routed through one Web Audio
-    graph and the level is applied there instead.
+    It is the other way round from how this started, and iOS is why. There the
+    volume setter is a no-op — the level belongs to the hardware buttons alone
+    — so a slider writing to it moves nothing. That was known, and the graph
+    was built for it, but it was reached through a probe: set a throwaway
+    element to half volume, read it back, and route through the graph only if
+    the answer disagreed. On an iPhone that probe came back saying the volume
+    was writable. It is not, and two things followed. The museum's slider
+    governed nothing, and the music would not stop when the phone went to its
+    home screen, because what was playing was an ordinary media element and
+    iOS keeps those going in the background by design, script frozen, nothing
+    left running that could pause it.
 
-    Only where it is locked. The graph is not free: it costs an AudioContext
-    that has to be resumed on a gesture, it takes the element's output out of
-    the browser's hands, and a cross-origin track routed through it comes out
-    silent. It is worth that on the platform that needs it and nowhere else,
-    which is why every function here is a no-op when the element's own volume
-    works. */
+    A graph answers both, and the second one without this page having to be
+    awake for it: iOS suspends an AudioContext when the page is backgrounded.
+    So the graph is no longer a special case for a platform a probe has to
+    recognise. It is simply where the sound goes.
+
+    What it costs is an AudioContext that has to be resumed on a gesture,
+    which the callers already do, and it will not take a cross-origin track —
+    that comes out of a graph silent, so a track from somewhere else is left
+    on the element, where it plays as it always did. */
 
 type AudioContextCtor = new () => AudioContext
 
@@ -31,8 +41,6 @@ let level = 1
     hangs off it as a gain of its own. */
 const routed = new WeakSet<HTMLMediaElement>()
 
-let locked: boolean | null = null
-
 function audioContextCtor(): AudioContextCtor | null {
   if (typeof window === 'undefined') return null
   const w = window as unknown as {
@@ -40,26 +48,6 @@ function audioContextCtor(): AudioContextCtor | null {
     webkitAudioContext?: AudioContextCtor
   }
   return w.AudioContext ?? w.webkitAudioContext ?? null
-}
-
-/*  Whether `element.volume = x` does anything on this device, asked of the
-    device rather than of its user agent string: a throwaway element is told to
-    be half as loud and then asked how loud it is. Answered once and kept. */
-export function isElementVolumeLocked(): boolean {
-  if (locked !== null) return locked
-  if (typeof window === 'undefined' || !audioContextCtor()) {
-    locked = false
-    return locked
-  }
-  try {
-    const probe = new Audio()
-    probe.volume = 0.5
-    locked = probe.volume !== 0.5
-  } catch {
-    // No Audio constructor to ask. Assume the ordinary path.
-    locked = false
-  }
-  return locked
 }
 
 function ensureMaster(): GainNode | null {
@@ -116,6 +104,15 @@ export function routeThroughGain(element: HTMLMediaElement, mix = 1): boolean {
   }
 }
 
+/*  Whether this element's sound is coming out of the graph rather than out of
+    the element itself. That, and not what the volume probe once decided, is
+    what says where its level has to be written: routing can fail — a track
+    from another origin is deliberately left alone — and a caller that guessed
+    wrong writes the level somewhere nobody is listening. */
+export function isRouted(element: HTMLMediaElement | null | undefined): boolean {
+  return !!element && routed.has(element)
+}
+
 /** The museum's level, on the graph path. Ignored on the element path. */
 export function setGainLevel(value: number): void {
   level = value
@@ -145,6 +142,6 @@ export function suspendGain(): void {
     master and the balance was set when the element was routed, so there is
     nothing to write and writing it would do nothing anyway. */
 export function applyMix(element: HTMLMediaElement, mix: number, museumLevel: number): void {
-  if (isElementVolumeLocked()) return
+  if (isRouted(element)) return
   element.volume = Math.min(1, Math.max(0, mix * museumLevel))
 }

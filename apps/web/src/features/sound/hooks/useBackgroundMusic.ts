@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  isElementVolumeLocked,
+  isRouted,
   resumeGain,
   routeThroughGain,
   setGainLevel,
@@ -145,7 +145,8 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
         what a fade ramps between: fades and the slider both speak in the
         museum's level, and only the write at the end of it is the music's. */
     outputRef.current = clamped
-    if (isElementVolumeLocked()) {
+    const audio = audioRef.current
+    if (isRouted(audio)) {
       /*  The master carries the museum's level unscaled — it is the level the
           effects ride on too, and turning the music down must not turn them
           down with it. On this path the track's balance is a gain of its own,
@@ -153,7 +154,6 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       setGainLevel(clamped)
       return
     }
-    const audio = audioRef.current
     if (audio) audio.volume = clamped * MUSIC_MIX
   }, [])
 
@@ -364,16 +364,42 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
   const startPlayback = useCallback(async (): Promise<boolean> => {
     const audio = audioRef.current
     if (!audio) return false
+
+    /*  Before anything else, including the shortcut below: coming back from
+        the background leaves the context interrupted, and an interrupted
+        context with an element still playing through it is a track that is
+        running and inaudible. The one case that must not take the shortcut is
+        exactly the case the shortcut is for. */
+    resumeGain()
+
     if (!audio.paused) return true
 
-    /*  Where the element's volume is locked the sound goes through the graph
-        instead, and the graph is built and woken here: this runs from the
-        gesture that is allowed to start audio, which is also the only kind of
-        moment a browser will let an AudioContext run in. */
-    if (isElementVolumeLocked()) {
-      routeThroughGain(audio, MUSIC_MIX)
-      resumeGain()
-    }
+    /*  The track goes through the graph wherever it can, and the graph is
+        built and woken here: this runs from the gesture that is allowed to
+        start audio, which is also the only kind of moment a browser will let
+        an AudioContext run in.
+
+        Wherever it can, rather than only where the element's volume was found
+        to be locked. That test decides a real question — whether writing
+        `volume` does anything — but it was being used to answer a different
+        one, and on an iPhone it answered it wrongly: the probe reported the
+        volume writable, so the track stayed an ordinary media element, and two
+        things followed from that. The museum's slider moved nothing, because
+        iOS ignores the volume it was writing. And pressing the home button did
+        not stop the music, because iOS keeps a media element playing in the
+        background on purpose while it freezes the page's script — so no
+        handler of ours was ever going to get the chance to pause it.
+
+        A graph is the answer to both, and not by trying harder: an
+        AudioContext is suspended by iOS the moment the page goes to the
+        background, which stops the sound without this page having to still be
+        running to do it. The level lands somewhere that works on the way in,
+        and the platform silences it on the way out.
+
+        Routing still refuses a track from another origin, which would come out
+        of a graph silent, and a refusal simply leaves it on the element path
+        where it plays as it always did. */
+    routeThroughGain(audio, MUSIC_MIX)
 
     setOutput(0)
     try {

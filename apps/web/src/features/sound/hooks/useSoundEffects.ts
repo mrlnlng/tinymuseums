@@ -1,12 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
-import {
-  applyMix,
-  isElementVolumeLocked,
-  resumeGain,
-  routeThroughGain,
-} from '@/features/sound/lib/output'
+import { applyMix, resumeGain, routeThroughGain } from '@/features/sound/lib/output'
 
 /*  Short one-shot effects plus the footstep loop, gated on the same preference as the music: someone who muted the museum muted the museum, not just its soundtrack. */
 
@@ -121,23 +116,29 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       owns this lives in the root layout and is never unmounted anyway; the
       cleanup silences the voices, it does not throw them away. */
   const loadEffects = useCallback(() => {
-    const isGraph = isElementVolumeLocked()
-
     const voice = (file: string, mix: number, loop = false): HTMLAudioElement => {
       const audio = new Audio(file)
       audio.preload = 'auto'
       audio.loop = loop
-      /*  Its place against the other sounds. On the graph path it rides on a
-          gain of the element's own, set when it is routed — a gain is allowed
-          to be a boost, so a balance above 1 goes through as it is. On the
-          element path the volume is a fraction and nothing else: handed
-          anything outside [0, 1] the setter throws rather than clamping, so
-          the boosted balances have to be brought inside it here. Nothing is
-          lost by that — this is only the level the element idles at, and
-          `applyMix` writes the real one, balance and museum level together,
-          before every play. */
-      if (isGraph) routeThroughGain(audio, mix)
-      else audio.volume = Math.min(1, mix)
+      /*  Its place against the other sounds, written wherever this voice's
+          sound is going to come out of.
+
+          Through the graph if it can be, which is now the first choice rather
+          than a fallback for one platform. The museum's level reaches a routed
+          voice through the master, and on an iPhone that is the only way it
+          reaches it at all: `volume` on a media element there is a setter that
+          does nothing, so an unrouted effect plays at whatever the recording
+          was mixed at and the museum's slider governs none of it. A gain is
+          also allowed to be a boost, so the balances above 1 go through as
+          they are.
+
+          Only if it cannot be routed does the level go on the element, and
+          there it is a fraction and nothing else: handed anything outside
+          [0, 1] the setter throws rather than clamping, so a boosted balance
+          has to be brought inside it. Nothing is lost — this is only the level
+          the element idles at, and `applyMix` writes the real one, balance and
+          museum level together, before every play. */
+      if (!routeThroughGain(audio, mix)) audio.volume = Math.min(1, mix)
       return audio
     }
 

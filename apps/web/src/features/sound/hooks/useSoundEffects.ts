@@ -27,36 +27,43 @@ import {
     twice as quiet as it sounded.
 
         recording        loudness   balance   in the room
-        sfx-click          0.240      0.45       0.108
-        sfx-painting-open  0.066      1.00       0.066
-        sfx-harp           0.105      1.00       0.105
-        sfx-owl            0.267      0.42       0.112
-        sfx-cafe-hello     0.178      0.62       0.110
+        sfx-click          0.240      0.63       0.151
+        sfx-painting-open  0.066      1.40       0.093
+        sfx-harp           0.105      1.40       0.147
+        sfx-owl            0.267      0.59       0.158
+        sfx-cafe-hello     0.178      0.87       0.155
 
     The music sits at 0.057 in that same column (see `MUSIC_MIX`), so all of
-    these land above the soundtrack rather than under it — the four the
-    visitor causes by about six decibels, which is a comfortable margin.
+    these land well above the soundtrack — the four the visitor causes by
+    between eight and nine decibels.
 
-    Two of the balances are at 1 because their recordings are simply quiet and
-    there is nowhere left to go: a balance is an attenuation, and pushing one
-    above 1 would clamp against the element's own ceiling once the visitor
-    raises the museum's level. That is why `sfx-painting-open` sits only just
-    over the music — at a third the loudness of the owl it cannot be lifted
-    further without being re-exported hotter. Anything louder than this has to
-    come out of `MUSIC_MIX` rather than out of the effects.
+    Two balances are above 1, which is a boost rather than the attenuation the
+    others are, because those two recordings are quiet: the harp is a third of
+    the owl and the painting is a quarter of it, and left at 1 they were the
+    two that failed to keep up. A boost is safe here only because it was
+    checked against the peaks rather than assumed — every one of these
+    recordings crests well below full scale, so even at the loudest the museum
+    can be set the hottest sample any of them reaches is about 0.69, with no
+    clipping anywhere.
+
+    What a boost does cost is the top of the slider. An element's volume stops
+    at 1, so above a museum level of about 0.71 those two stop getting louder
+    while the rest carry on. That is a ceiling on the loudest setting rather
+    than a change in how it sounds at ordinary ones, and it degrades by simply
+    holding still.
 
     The footsteps are deliberately not in this company: they are a loop that
     runs the whole time the visitor is walking, and they stay under the music
     at about 0.025. A continuous sound mixed to answer a tap would be
     exhausting. */
 const EFFECTS = {
-  click: { file: '/audio/sfx-click.mp3', volume: 0.45 },
-  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 1 },
+  click: { file: '/audio/sfx-click.mp3', volume: 0.63 },
+  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 1.4 },
   /** The lyre on the third pedestal drawing, and the owl on the first. */
-  harp: { file: '/audio/sfx-harp.mp3', volume: 1, start: 1.55, end: 5.3 },
-  owl: { file: '/audio/sfx-owl.mp3', volume: 0.42, start: 0.7, end: 3.7 },
+  harp: { file: '/audio/sfx-harp.mp3', volume: 1.4, start: 1.55, end: 5.3 },
+  owl: { file: '/audio/sfx-owl.mp3', volume: 0.59, start: 0.7, end: 3.7 },
   /** The cafe cat, greeting whoever taps her at the counter. */
-  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.62, start: 0.48, end: 1.3 },
+  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.87, start: 0.48, end: 1.3 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS
@@ -121,10 +128,16 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       audio.preload = 'auto'
       audio.loop = loop
       /*  Its place against the other sounds. On the graph path it rides on a
-          gain of the element's own, set when it is routed; on the element path
-          it is written here and again with the museum's level at play time. */
+          gain of the element's own, set when it is routed — a gain is allowed
+          to be a boost, so a balance above 1 goes through as it is. On the
+          element path the volume is a fraction and nothing else: handed
+          anything outside [0, 1] the setter throws rather than clamping, so
+          the boosted balances have to be brought inside it here. Nothing is
+          lost by that — this is only the level the element idles at, and
+          `applyMix` writes the real one, balance and museum level together,
+          before every play. */
       if (isGraph) routeThroughGain(audio, mix)
-      else audio.volume = mix
+      else audio.volume = Math.min(1, mix)
       return audio
     }
 

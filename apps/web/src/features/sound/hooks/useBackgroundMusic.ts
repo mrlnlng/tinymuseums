@@ -6,6 +6,7 @@ import {
   resumeGain,
   routeThroughGain,
   setGainLevel,
+  suspendGain,
 } from '@/features/sound/lib/output'
 
 /* The museum's background track — more than an `<audio autoplay loop>`: browsers refuse audio before a gesture, the element must outlive navigation, and the preference has to survive the visit. */
@@ -32,6 +33,20 @@ const DEFAULT_VOLUME = 0.32
 const MUSIC_MIX = 0.38
 const FADE_MS = 600
 const DEFAULT_ENABLED = true
+
+/*  Safari carried the Page Visibility API under a prefix for a long time, and
+    the versions that did fire only the prefixed event are exactly the ones
+    this bug was reported against: a phone that leaves for another application
+    while the museum listens for the unprefixed name alone is a phone that is
+    never told. Both names are bound and both spellings of the answer are
+    read, which costs nothing where only the standard one exists. */
+const VISIBILITY_EVENTS = ['visibilitychange', 'webkitvisibilitychange'] as const
+
+function isDocumentHidden(): boolean {
+  if (typeof document === 'undefined') return false
+  const prefixed = (document as Document & { webkitHidden?: boolean }).webkitHidden
+  return document.hidden === true || prefixed === true
+}
 
 function clampVolume(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_VOLUME
@@ -162,6 +177,31 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     setIsReady(true)
   }, [])
 
+  /*  Stopping the sound this instant, in the handler that heard the visitor
+      go. Everything that means they have left calls this and nothing else,
+      because every departure has the same two properties: it is the last
+      moment this page is certainly running, and there is nobody left to hear
+      anything gradual.
+
+      Nothing here is scheduled. No state to be read by an effect, because a
+      backgrounded page may never commit one; no fade, because a fade is driven
+      by animation frames and those stop on the way out, which is how the track
+      came to be left running at half volume behind whatever the visitor had
+      switched to. The one thing a departing page can still do reliably is the
+      thing it does synchronously, before it returns.
+
+      The context is suspended as well as the element paused. On the platform
+      that routes everything through the graph, that is the difference between
+      stopping the source and stopping the output: pausing each element is a
+      list that can be wrong, while a suspended context cannot be what anyone
+      is still hearing. */
+  const silence = useCallback(() => {
+    if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+    fadeRef.current = null
+    audioRef.current?.pause()
+    suspendGain()
+  }, [])
+
   /*  Pauses with the tab and picks up where it left off on the way back.
 
       The pause happens here, in the handler, and not by letting the state
@@ -183,17 +223,16 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       left. */
   const watchVisibility = useCallback(() => {
     const onChange = () => {
-      const isShowing = document.visibilityState !== 'hidden'
+      const isShowing = !isDocumentHidden()
       setIsVisible(isShowing)
-      if (isShowing) return
-      if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
-      fadeRef.current = null
-      audioRef.current?.pause()
+      if (!isShowing) silence()
     }
     onChange()
-    document.addEventListener('visibilitychange', onChange)
-    return () => document.removeEventListener('visibilitychange', onChange)
-  }, [])
+    for (const event of VISIBILITY_EVENTS) document.addEventListener(event, onChange)
+    return () => {
+      for (const event of VISIBILITY_EVENTS) document.removeEventListener(event, onChange)
+    }
+  }, [silence])
 
   /*  And with the window: leaving for another application is leaving the
       museum as far as anyone in earshot is concerned.
@@ -206,7 +245,16 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       around it. Nobody types into a window they are not looking at. */
   const watchFocus = useCallback(() => {
     const onFocus = () => setIsFocused(true)
-    const onBlur = () => setIsFocused(false)
+    /*  This is the one that matters on a phone. Switching applications does
+        not reliably hide the document — a browser showing a tab in the task
+        switcher can consider itself perfectly visible, and iOS in particular
+        will not always report `visibilitychange` on the way to another app —
+        but the window does lose focus, every time. Left to fade, that was the
+        departure the museum kept playing through. */
+    const onBlur = () => {
+      setIsFocused(false)
+      silence()
+    }
     setIsFocused(document.hasFocus())
 
     window.addEventListener('focus', onFocus)
@@ -222,7 +270,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
         document.removeEventListener(event, onFocus)
       }
     }
-  }, [])
+  }, [silence])
 
   /*  Leaving the site, which is the one departure the two watchers above cannot
       see. A tab that is closed or navigated away takes its audio with it, but a
@@ -243,19 +291,22 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
   const watchPageHide = useCallback(() => {
     const onHide = () => {
       setIsPageShown(false)
-      if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
-      fadeRef.current = null
-      audioRef.current?.pause()
+      silence()
     }
     const onShow = () => setIsPageShown(true)
 
     window.addEventListener('pagehide', onHide)
     window.addEventListener('pageshow', onShow)
+    /*  `freeze` is the browser saying outright that it is about to stop giving
+        this page any work at all. Nothing after it runs until `resume`, so it
+        is the last call anyone gets. */
+    document.addEventListener('freeze', silence)
     return () => {
       window.removeEventListener('pagehide', onHide)
       window.removeEventListener('pageshow', onShow)
+      document.removeEventListener('freeze', silence)
     }
-  }, [])
+  }, [silence])
 
   /*  What the element is actually doing, taken from the element. React state
       set optimistically alongside a `play()` call would be a guess: the promise

@@ -129,6 +129,17 @@ export function resumeGain(): void {
   if (context?.state === 'suspended') void context.resume()
 }
 
+/*  Stops the graph outright, for the moment the visitor leaves the page.
+
+    On the platform that uses the graph, every sound in the museum is flowing
+    through this context, so suspending it is a guarantee that pausing each
+    element one by one is not: a context that is not running cannot be the
+    thing anybody is still hearing. Harmless where the graph was never built,
+    which is everywhere the element's own volume works. */
+export function suspendGain(): void {
+  if (context?.state === 'running') void context.suspend()
+}
+
 /*  A voice's own place in the mix. On the element path that is its balance
     scaled by the museum's level; on the graph path the level is already on the
     master and the balance was set when the element was routed, so there is

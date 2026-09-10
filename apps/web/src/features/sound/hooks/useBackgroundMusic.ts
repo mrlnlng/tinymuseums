@@ -162,9 +162,34 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     setIsReady(true)
   }, [])
 
-  /** Pauses with the tab and picks up where it left off on the way back. */
+  /*  Pauses with the tab and picks up where it left off on the way back.
+
+      The pause happens here, in the handler, and not by letting the state
+      change reach `applyPreference` — the same reason `pagehide` does it by
+      hand. A phone that has just been sent to its home screen, or a tab that
+      has just gone to the background, is a page the browser is entitled to
+      stop giving work to: React may not commit, effects may not run, and
+      animation frames stop altogether. Every one of those is a way for a pause
+      that was going to happen next render to simply never happen, and what the
+      visitor hears then is a museum playing on behind whatever they went to
+      look at.
+
+      Straight to `pause` rather than through a fade, for the same reason and
+      one more: a fade is driven by animation frames, and on the way out of a
+      page those stop mid-ramp. That left the track running at whatever volume
+      the ramp had reached when the lights went out — quieter, which is worse
+      than either alternative, because it is still playing and now sounds like
+      it is doing it on purpose. Nobody can hear a fade they have already
+      left. */
   const watchVisibility = useCallback(() => {
-    const onChange = () => setIsVisible(document.visibilityState !== 'hidden')
+    const onChange = () => {
+      const isShowing = document.visibilityState !== 'hidden'
+      setIsVisible(isShowing)
+      if (isShowing) return
+      if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+      fadeRef.current = null
+      audioRef.current?.pause()
+    }
     onChange()
     document.addEventListener('visibilitychange', onChange)
     return () => document.removeEventListener('visibilitychange', onChange)

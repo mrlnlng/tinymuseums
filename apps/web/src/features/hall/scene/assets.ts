@@ -27,7 +27,7 @@ const IMAGE_FILES = {
   cafeFront: 'cafe/front.png',
   cafeSign: 'cafe/sign-removebg.png',
   cafeMenu: 'cafe/menu.png',
-  cafePoster: 'cafe/buy-matcha.png',
+  cafePoster: 'cafe/buy-coffee.png',
 } as const
 
 export type AssetName = keyof typeof IMAGE_FILES

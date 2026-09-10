@@ -18,7 +18,8 @@ import { CONFIG } from './config'
     painting (or no last painting) for the cafe to stand past. */
 
 export interface CafeMarks {
-  /** The rectangle the "buy matcha" poster occupies — the room's one control. */
+  /*  The rectangle the "buy us a coffee" poster occupies — the room's one
+      control. */
   poster: Mark & { height: number }
 }
 
@@ -74,7 +75,7 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
     ),
   )
 
-  // --- the "buy matcha" poster ----------------------------------------------
+  // --- the "buy us a coffee" poster -----------------------------------------
   group.add(
     plane(
       poster.height * assets.aspect.cafePoster,

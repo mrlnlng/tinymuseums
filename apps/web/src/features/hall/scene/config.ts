@@ -182,7 +182,7 @@ export const CONFIG = {
         drawing, wide enough to cover the two boards beneath it. */
     sign: { dx: 0, centerY: 2.75, width: 2.6, z: 0.3 },
     /*  The two boards hang as a matching pair directly beneath the sign, one
-        either side of the register. The "buy matcha" poster leads: it is a
+        either side of the register. The "buy us a coffee" poster leads: it is a
         touch larger than the menu, and hangs a fraction lower so its top edge
         lines up with the menu's, sitting pulled toward the middle so the pair
         is closer together while still keeping a clear gap. */

@@ -393,7 +393,7 @@ export class GiftShopSigns {
 }
 
 /*  The cafe's one control, at the rest stop past the tenth painting: an
-    invisible link laid over the artist's painted "buy matcha" poster, which
+    invisible link laid over the artist's painted "buy us a coffee" poster, which
     is the control's own drawing — unlike the gift shop's pill there is nothing
     for this element to draw, so it draws nothing, and the poster underneath
     is the whole affordance. An anchor for the same reason the shop's is: it
@@ -412,7 +412,7 @@ export class CafeLink {
     this.poster.rel = 'noreferrer noopener'
     this.poster.setAttribute(
       'aria-label',
-      'Buy matcha — opens Buy Me a Coffee in a new tab',
+      'Buy us a coffee — opens Buy Me a Coffee in a new tab',
     )
     container.appendChild(this.poster)
   }

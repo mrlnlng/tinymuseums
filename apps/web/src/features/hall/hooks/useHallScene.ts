@@ -42,7 +42,7 @@ const WALKING_SPEED = 0.12
     an artist's own link is the "Shop print" button on their work. */
 const GIFT_SHOP_URL = 'https://www.inspiratiq.art/'
 
-/*  Where the cafe's "buy matcha" poster sends the visitor — the artist's own
+/*  Where the cafe's "buy us a coffee" poster sends the visitor — the artist's own
     coffee fund, one address for the museum like the shop's. */
 const CAFE_URL = 'https://buymeacoffee.com/inspiratiq'
 

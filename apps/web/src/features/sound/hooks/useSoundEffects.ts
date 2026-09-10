@@ -18,16 +18,45 @@ import {
     cat's pool would sit occupied on ten seconds of silence. So each voice is
     started at `start` and stopped at `end`, and the files are left as the
     artist exported them. Omit both for a recording that fills its file. */
+/*  `volume` is each effect's balance against the others, and the numbers are
+    not guesses: the recordings differ in level by more than a factor of four,
+    so they were measured and the balances set to land them all at about the
+    same loudness in the room. Mean square over the audible span, which tracks
+    what a listener calls loud far better than the peak does — the owl peaks
+    near full scale but so briefly that judging it by its peak had it mixed
+    twice as quiet as it sounded.
+
+        recording        loudness   balance   in the room
+        sfx-click          0.240      0.45       0.108
+        sfx-painting-open  0.066      1.00       0.066
+        sfx-harp           0.105      1.00       0.105
+        sfx-owl            0.267      0.42       0.112
+        sfx-cafe-hello     0.178      0.62       0.110
+
+    The music sits at 0.057 in that same column (see `MUSIC_MIX`), so all of
+    these land above the soundtrack rather than under it — the four the
+    visitor causes by about six decibels, which is a comfortable margin.
+
+    Two of the balances are at 1 because their recordings are simply quiet and
+    there is nowhere left to go: a balance is an attenuation, and pushing one
+    above 1 would clamp against the element's own ceiling once the visitor
+    raises the museum's level. That is why `sfx-painting-open` sits only just
+    over the music — at a third the loudness of the owl it cannot be lifted
+    further without being re-exported hotter. Anything louder than this has to
+    come out of `MUSIC_MIX` rather than out of the effects.
+
+    The footsteps are deliberately not in this company: they are a loop that
+    runs the whole time the visitor is walking, and they stay under the music
+    at about 0.025. A continuous sound mixed to answer a tap would be
+    exhausting. */
 const EFFECTS = {
   click: { file: '/audio/sfx-click.mp3', volume: 0.45 },
-  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 0.55 },
-  /*  The lyre on the third pedestal drawing, and the owl on the first. The owl
-      was recorded much hotter than the harp — it peaks about twice as high —
-      so it is mixed lower to land at the same loudness in the room. */
-  harp: { file: '/audio/sfx-harp.mp3', volume: 0.6, start: 1.55, end: 5.3 },
-  owl: { file: '/audio/sfx-owl.mp3', volume: 0.34, start: 0.7, end: 3.7 },
+  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 1 },
+  /** The lyre on the third pedestal drawing, and the owl on the first. */
+  harp: { file: '/audio/sfx-harp.mp3', volume: 1, start: 1.55, end: 5.3 },
+  owl: { file: '/audio/sfx-owl.mp3', volume: 0.42, start: 0.7, end: 3.7 },
   /** The cafe cat, greeting whoever taps her at the counter. */
-  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.6, start: 0.48, end: 1.3 },
+  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.62, start: 0.48, end: 1.3 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS

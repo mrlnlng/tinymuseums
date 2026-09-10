@@ -14,6 +14,22 @@ const TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? '/audio/hall.mp3'
 const STORAGE_KEY = 'tm_sound'
 const VOLUME_KEY = 'tm_volume'
 const DEFAULT_VOLUME = 0.32
+
+/*  The track's own place in the mix, below everything the museum does on
+    purpose.
+
+    Until now it had none: the speaker's level was written straight onto the
+    track, while every effect was that same level scaled by a balance of its
+    own. That makes the music the loudest thing in the building by
+    construction — nothing with a balance under 1 can ever reach it — and the
+    harp, the quietest recording of the set, came out a full seven decibels
+    under the soundtrack it was supposed to be heard over.
+
+    So the track takes a balance like everything else, and the speaker's level
+    goes back to being the master it reads as. At this figure the music sits
+    about five decibels under the sounds the visitor causes, which leaves it
+    audible as a room tone without competing with a tapped harp. */
+const MUSIC_MIX = 0.38
 const FADE_MS = 600
 const DEFAULT_ENABLED = true
 
@@ -110,13 +126,20 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
         gain node and the recorded output all inside the range the platform
         accepts. */
     const clamped = value < 0 ? 0 : value > 1 ? 1 : value
+    /*  Recorded before the track's own balance is applied, because this is
+        what a fade ramps between: fades and the slider both speak in the
+        museum's level, and only the write at the end of it is the music's. */
     outputRef.current = clamped
     if (isElementVolumeLocked()) {
+      /*  The master carries the museum's level unscaled — it is the level the
+          effects ride on too, and turning the music down must not turn them
+          down with it. On this path the track's balance is a gain of its own,
+          set when it was routed. */
       setGainLevel(clamped)
       return
     }
     const audio = audioRef.current
-    if (audio) audio.volume = clamped
+    if (audio) audio.volume = clamped * MUSIC_MIX
   }, [])
 
   /** Only a genuine load failure takes the control away. */
@@ -272,7 +295,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
         gesture that is allowed to start audio, which is also the only kind of
         moment a browser will let an AudioContext run in. */
     if (isElementVolumeLocked()) {
-      routeThroughGain(audio)
+      routeThroughGain(audio, MUSIC_MIX)
       resumeGain()
     }
 

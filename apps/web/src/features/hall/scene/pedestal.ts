@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Assets } from './assets'
+import { HELM_PEDESTAL_FILE, type Assets } from './assets'
 import { CONFIG } from './config'
 
 /* The pedestal between two displays: scenery first, loading cue second — a faint breath, nothing more. Variants are picked by index so a stretch of hall looks the same every time. */
@@ -19,11 +19,17 @@ const VOICES: Readonly<Record<string, PedestalVoice>> = {
 }
 
 export interface Pedestal {
+  /** Its place along the hall, which is how the hall remembers a stand left bare. */
+  index: number
   group: THREE.Group
   /** The sprite itself, which is what a tap is tested against. */
   sprite: THREE.Mesh
   /** The sound this one makes when tapped, or null if it is only scenery. */
   voice: PedestalVoice | null
+  /** Whether this is the helmet pedestal, whose helm the bunny can take. */
+  holdsHelm: boolean
+  /** Shows the stand without its helm, or with it back on. Helmet pedestals only. */
+  setBare(bare: boolean): void
   setPending(pending: boolean): void
   /** Sounds it: sends up the puff of notes that goes with the sound effect. */
   chime(): void
@@ -31,7 +37,12 @@ export interface Pedestal {
   dispose(): void
 }
 
-export function createPedestal(assets: Assets, x: number, variant: number): Pedestal {
+export function createPedestal(
+  assets: Assets,
+  x: number,
+  variant: number,
+  bare = false,
+): Pedestal {
   const options = assets.pedestals.length > 0 ? assets.pedestals : null
   const chosen = options
     ? options[((variant % options.length) + options.length) % options.length]
@@ -50,6 +61,14 @@ export function createPedestal(assets: Assets, x: number, variant: number): Pede
 
   const voice = VOICES[chosen.file] ?? null
 
+  // The bare stand shares the helmeted drawing's canvas, so swapping moves nothing.
+  const holdsHelm = chosen.file === HELM_PEDESTAL_FILE
+  const setBare = (next: boolean): void => {
+    if (!holdsHelm) return
+    material.map = next ? assets.textures.helmStand : chosen.texture
+  }
+  setBare(bare)
+
   /*  The notes, built only for the two pedestals that can sound: an urn has
       nothing to say, and a mesh per pedestal in a long hall is worth not
       making. Parked at zero opacity rather than hidden, because that is the
@@ -61,9 +80,12 @@ export function createPedestal(assets: Assets, x: number, variant: number): Pede
   let elapsed = 0
 
   return {
+    index: variant,
     group,
     sprite,
     voice,
+    holdsHelm,
+    setBare,
 
     setPending(next: boolean) {
       pending = next

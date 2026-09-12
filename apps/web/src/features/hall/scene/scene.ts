@@ -60,6 +60,9 @@ export class HallScene {
       of the map's values each time — an array allocated sixty times a second to
       hold four or five items that had not changed. */
   private mountedList: MountedDisplay[] = []
+  /*  The helmet pedestal whose helm the bunny is wearing. Kept here because
+      pedestals are rebuilt as the visitor walks, and the stand should stay bare. */
+  private bareHelmStand: number | null = null
 
   constructor(
     private scene: THREE.Scene,
@@ -282,7 +285,12 @@ export class HallScene {
 
       let pedestal = this.pedestals.get(i)
       if (!pedestal) {
-        pedestal = createPedestal(this.assets, this.layout.pedestalX[i], i)
+        pedestal = createPedestal(
+          this.assets,
+          this.layout.pedestalX[i],
+          i,
+          this.bareHelmStand === i,
+        )
         this.scene.add(pedestal.group)
         this.pedestals.set(i, pedestal)
       }
@@ -363,6 +371,29 @@ export class HallScene {
     const hit = pickPainted(raycaster, sprites)
     if (!hit) return null
     return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
+  }
+
+  /** Takes the helm off the stand at `index`, or with null puts it back on whichever stand is bare. */
+  setBareHelmStand(index: number | null): void {
+    const previous = this.bareHelmStand
+    this.bareHelmStand = index
+    if (previous !== null) this.pedestals.get(previous)?.setBare(false)
+    if (index !== null) this.pedestals.get(index)?.setBare(true)
+  }
+
+  /*  Where the helm is drawn on the pedestal at `index`, in world units. From
+      the layout, not the mesh, so a flight can land on an unmounted stand. */
+  helmStandPoint(index: number, out: THREE.Vector3): THREE.Vector3 | null {
+    const x = this.layout.pedestalX[index]
+    if (x === undefined) return null
+    const { stand } = CONFIG.helm
+    const height = CONFIG.pedestal.height
+    const width = height * (stand.drawing[0] / stand.drawing[1])
+    return out.set(
+      x + (stand.x / stand.drawing[0] - 0.5) * width,
+      CONFIG.pedestal.centerY + (0.5 - stand.y / stand.drawing[1]) * height,
+      CONFIG.pedestal.z,
+    )
   }
 
   getMounted(): readonly MountedDisplay[] {

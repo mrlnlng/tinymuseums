@@ -211,6 +211,27 @@ export const CONFIG = {
     catFrameMs: 200,
   },
 
+  /*  The helmet easter egg. `worn` is the helm's centre and width in the
+      bunny's source pixels (left-facing frames, from the top-left; mirrored for
+      right), measured from the artist's `left_walk_hat.gif`: that bunny is the
+      hall's at the same scale, offset (+98, +266), wearing the helm drawing
+      unrotated at 446px, centred at (360, 372). Walk frames share one head;
+      the standing head is tilted 9.2 degrees further back, so the helm turns
+      with it. `stand` is the helm's centre in the pedestal drawing's pixels. */
+  helm: {
+    worn: {
+      width: 446,
+      walk: { x: 262, y: 106, rotation: 0 },
+      idle: { x: 243.8, y: 79.8, rotation: -9.2 },
+    },
+    stand: { x: 370, y: 357, width: 400, drawing: [821, 1299] },
+    flightSeconds: 0.75,
+    /** Arc height above the higher end, as a fraction of the viewport height. */
+    arcLift: 0.16,
+    /** Full turns in the air. */
+    spin: 1,
+  },
+
   /*  A floor on how long a pedestal holds before the wall behind it appears, so
       the loading cue is a beat rather than a flicker. Short: it is a floor on
       the *wait*, and every millisecond of it is a millisecond the visitor spends

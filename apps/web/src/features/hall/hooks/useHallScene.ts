@@ -10,6 +10,7 @@ import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
+import { createHelm } from '@/features/hall/scene/helm'
 import { createLobby } from '@/features/hall/scene/lobby'
 import {
   CafeLink,
@@ -139,6 +140,8 @@ export function useHallScene({
       // Not in the scene: the bunny is a DOM sprite above the plaque overlay,
       // so nothing can be painted in front of it.
       const character = createCharacter(assets, characterHost)
+      // After the bunny, so the helm is drawn over the head it sits on.
+      const helm = createHelm(assets, characterHost, hall)
       const placards = new Placards(overlayHost)
       const lobbySigns = new LobbySigns(overlayHost, lobby.marks, () => onOpenHelpRef.current())
       const traversal = new Traversal()
@@ -276,6 +279,7 @@ export function useHallScene({
             Neither of these opens anything: they are the two places in the
             hall where a tap is its own reward. */
         const pedestal = hall.hitTestPedestal(raycaster)
+        if (pedestal && helm.tap(pedestal)) return
         if (pedestal?.voice) {
           soundRef.current.play(pedestal.voice)
           pedestal.chime()
@@ -342,6 +346,7 @@ export function useHallScene({
         // After rig.sync: the sprite is placed by projecting through the
         // camera, so the camera must already be where it is going this frame.
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+        helm.update(dt, character.head, rig.camera, viewport)
         // The bunny's own pace, never the hall's scroll speed, so what you
         // hear matches the feet you can see.
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
@@ -383,6 +388,7 @@ export function useHallScene({
         giftShop?.dispose()
         cafe?.dispose()
         backdrop.dispose()
+        helm.dispose()
         character.dispose()
         renderer.dispose()
         renderer.domElement.remove()

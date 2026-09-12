@@ -33,7 +33,12 @@ const IMAGE_FILES = {
       screen, so the browser rasterises it once at its intrinsic size and the
       texture is an ordinary bitmap from there on. */
   musicNotes: 'music-notes.svg',
+  /** The helmet pedestal with its helm taken, on the same canvas. */
+  helmStand: 'pedestal-4-bare.png',
 } as const
+
+/** The pedestal drawing whose helm the bunny can wear. */
+export const HELM_PEDESTAL_FILE = 'pedestal-4.png'
 
 export type AssetName = keyof typeof IMAGE_FILES
 
@@ -69,6 +74,8 @@ export interface Assets {
   /*  The visitor's frames, as plain images rather than textures: the bunny is DOM above the plaque overlay, because anything in the WebGL scene is painted *under* that overlay. */
   walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
+  /** The helm the bunny wears, DOM like the bunny it sits on. Faces left as drawn. */
+  helm: HTMLImageElement
   /** Pedestal variants, so a long hall is not one object repeated. */
   pedestals: PedestalSprite[]
   /** The cafe cat's animation frames, newest loaded last for the loop. */
@@ -111,6 +118,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     idleLeft,
     idleRight,
     catImages,
+    helm,
   ] = await Promise.all([
     Promise.all(names.map((n) => loadImage(`${base}/${IMAGE_FILES[n]}`))),
     Promise.all(leftFiles.map((f) => loadImage(`${base}/${f}`))),
@@ -119,6 +127,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     loadImage(`${base}/bunny-left.png`).catch(() => loadImage(`${base}/bunny.png`)),
     loadImage(`${base}/bunny-right.png`).catch(() => loadImage(`${base}/bunny.png`)),
     Promise.all(CAFE_CAT_FRAMES.map((f) => loadImage(`${base}/${f}`))),
+    loadImage(`${base}/helm.png`),
   ])
 
   const images = {} as Record<AssetName, HTMLImageElement>
@@ -147,6 +156,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     aspect,
     walk: { left: walkLeft, right: walkRight },
     bunnyIdle: { left: idleLeft, right: idleRight },
+    helm,
     pedestals: pedestalImages.map((img, i) => ({
       ...toSprite(img),
       file: manifest.pedestals[i].file,

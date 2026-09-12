@@ -32,5 +32,19 @@ somewhere durable and backed up.
   would re-centre the bunny per frame and it would jitter as it walks.
 - **Downsizes artworks** to a 2400px long edge.
 
+## Not from the script: the helmet easter egg
+
+Two files here were made by hand for the helmet easter egg, and the script neither makes
+nor overwrites them:
+
+- **`helm.png`** — the artist's `gladiator_hat.png` (from the `guestboard_mocks` drop),
+  trimmed to its alpha bounds and resized to 480px wide.
+- **`pedestal-4-bare.png`** — `pedestal-4.png` with the helm and crest painted out and the
+  stand left behind, on the same 821x1299 canvas so it swaps in without moving the column.
+  If `pedestal-4.png` is ever regenerated differently, redo this one from it.
+
+How the helm sits on the bunny was measured from the artist's `left_walk_hat.gif`; the
+numbers and the reasoning are in `CONFIG.helm` in `src/features/hall/scene/config.ts`.
+
 `packages/core/assets/` holds only `frame.png` and `manifest.json` — the two files the
 server-side collage compositor reads. Nothing else belongs there.

@@ -496,8 +496,8 @@ code.token {
   will-change: transform;
 }
 
-/* The helm the bunny can wear. Its transform centres it, so it works from its own corner. */
-.hall-helm {
+/* What the bunny is handed: the helm, the matcha. Its transform centres it, so it works from its own corner. */
+.hall-carried {
   position: absolute;
   top: 0;
   left: 0;

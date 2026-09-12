@@ -220,11 +220,36 @@ export const CONFIG = {
       with it. `stand` is the helm's centre in the pedestal drawing's pixels. */
   helm: {
     worn: {
+      facing: 'left' as const,
       width: 446,
       walk: { x: 262, y: 106, rotation: 0 },
       idle: { x: 243.8, y: 79.8, rotation: -9.2 },
     },
     stand: { x: 370, y: 357, width: 400, drawing: [821, 1299] },
+  },
+
+  /*  The matcha easter egg: tap the matcha column of the cafe menu and a cup
+      flies into the bunny's hand; tap it again and it goes back. `held` is in
+      the right-facing frames' source pixels, measured from the artist's
+      `right_walk_hat.gif`: that bunny is the hall's at the same scale, offset
+      (+141, +231), holding matcha.png 136px wide, turned 14 degrees clockwise,
+      centred at (540, 522) — over the tip of the walk frames' arm. Standing,
+      the arm is raised in a wave, so the cup goes up into that hand.
+      `menuColumn` is the tappable part of menu.png, as UV (x across, y up). */
+  matcha: {
+    held: {
+      facing: 'right' as const,
+      width: 136,
+      walk: { x: 399, y: 291, rotation: 14 },
+      idle: { x: 360, y: 215, rotation: 14 },
+    },
+    menuColumn: { u: [0.08, 0.5], v: [0.12, 0.86] },
+    /** The cup's width while it sits on the menu, in world units. */
+    menuWidth: 0.22,
+  },
+
+  /** How the helm and the matcha fly between the scenery and the bunny. */
+  carry: {
     flightSeconds: 0.75,
     /** Arc height above the higher end, as a fraction of the viewport height. */
     arcLift: 0.16,

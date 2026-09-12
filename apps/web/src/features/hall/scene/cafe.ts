@@ -30,6 +30,10 @@ export interface Cafe {
   marks: CafeMarks
   /** Whether a tap landed on the cat herself, who says hello when it does. */
   hitTestCat(raycaster: THREE.Raycaster): boolean
+  /** Whether a tap landed on the menu's matcha column. */
+  hitTestMatcha(raycaster: THREE.Raycaster): boolean
+  /** The middle of the menu's matcha column, in world units. */
+  matchaPoint(out: THREE.Vector3): THREE.Vector3
   /** Advances the waving cat, at the pace its frames were drawn at. */
   update(dt: number, cameraX: number): void
   dispose(): void
@@ -66,16 +70,17 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
   )
 
   // --- the menu board -------------------------------------------------------
-  group.add(
-    plane(
-      menu.height * assets.aspect.cafeMenu,
-      menu.height,
-      assets.textures.cafeMenu,
-      x + menu.dx,
-      menu.centerY,
-      menu.z,
-    ),
+  const menuWidth = menu.height * assets.aspect.cafeMenu
+  const menuMesh = plane(
+    menuWidth,
+    menu.height,
+    assets.textures.cafeMenu,
+    x + menu.dx,
+    menu.centerY,
+    menu.z,
   )
+  group.add(menuMesh)
+  const { u, v } = CONFIG.matcha.menuColumn
 
   // --- the "buy us a coffee" poster -----------------------------------------
   group.add(
@@ -121,6 +126,21 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
         which is all the visitor can actually see, say hello. */
     hitTestCat(raycaster: THREE.Raycaster): boolean {
       return pickPainted(raycaster, [counterMesh, catMesh])?.object === catMesh
+    },
+
+    // The cat's head covers the bottom of the column; where she is drawn, she answers.
+    hitTestMatcha(raycaster: THREE.Raycaster): boolean {
+      if (pickPainted(raycaster, [catMesh])) return false
+      const uv = raycaster.intersectObject(menuMesh, false)[0]?.uv
+      return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= v[1]
+    },
+
+    matchaPoint(out) {
+      return out.set(
+        x + menu.dx + ((u[0] + u[1]) / 2 - 0.5) * menuWidth,
+        menu.centerY + ((v[0] + v[1]) / 2 - 0.5) * menu.height,
+        menu.z,
+      )
     },
 
     marks: {

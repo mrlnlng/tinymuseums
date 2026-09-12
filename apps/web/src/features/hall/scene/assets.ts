@@ -78,6 +78,8 @@ export interface Assets {
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   /** The helm the bunny wears, DOM like the bunny it sits on. Faces left as drawn. */
   helm: HTMLImageElement
+  /** The matcha the bunny can be handed at the cafe. */
+  matcha: HTMLImageElement
   /** Pedestal variants, so a long hall is not one object repeated. */
   pedestals: PedestalSprite[]
   /** The cafe cat's animation frames, newest loaded last for the loop. */
@@ -121,6 +123,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     idleRight,
     catImages,
     helm,
+    matcha,
   ] = await Promise.all([
     Promise.all(names.map((n) => loadImage(`${base}/${IMAGE_FILES[n]}`))),
     Promise.all(leftFiles.map((f) => loadImage(`${base}/${f}`))),
@@ -130,6 +133,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     loadImage(`${base}/bunny-right.png`).catch(() => loadImage(`${base}/bunny.png`)),
     Promise.all(CAFE_CAT_FRAMES.map((f) => loadImage(`${base}/${f}`))),
     loadImage(`${base}/helm.png`),
+    loadImage(`${base}/matcha.png`),
   ])
 
   const images = {} as Record<AssetName, HTMLImageElement>
@@ -159,6 +163,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
     walk: { left: walkLeft, right: walkRight },
     bunnyIdle: { left: idleLeft, right: idleRight },
     helm,
+    matcha,
     pedestals: pedestalImages.map((img, i) => ({
       ...toSprite(img),
       file: manifest.pedestals[i].file,

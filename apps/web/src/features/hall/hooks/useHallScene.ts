@@ -12,6 +12,7 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createHelm } from '@/features/hall/scene/helm'
 import { createLobby } from '@/features/hall/scene/lobby'
+import { createMatcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
   GiftShopSigns,
@@ -146,8 +147,9 @@ export function useHallScene({
       // Not in the scene: the bunny is a DOM sprite above the plaque overlay,
       // so nothing can be painted in front of it.
       const character = createCharacter(assets, characterHost)
-      // After the bunny, so the helm is drawn over the head it sits on.
+      // After the bunny, so what it is handed is drawn over it.
       const helm = createHelm(assets, characterHost, hall)
+      const matcha = createMatcha(assets, characterHost, () => cafe)
       const placards = new Placards(overlayHost)
       const lobbySigns = new LobbySigns(overlayHost, lobby.marks, () => onOpenHelpRef.current())
       const traversal = new Traversal()
@@ -299,6 +301,11 @@ export function useHallScene({
           return
         }
 
+        if (matcha.tap(raycaster)) {
+          soundRef.current.play('click')
+          return
+        }
+
         if (cafe?.hitTestCat(raycaster)) soundRef.current.play('cafe-hello')
       }
 
@@ -359,7 +366,8 @@ export function useHallScene({
         // After rig.sync: the sprite is placed by projecting through the
         // camera, so the camera must already be where it is going this frame.
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
-        helm.update(dt, character.head, rig.camera, viewport)
+        helm.update(dt, character, rig.camera, viewport)
+        matcha.update(dt, character, rig.camera, viewport)
         // The bunny's own pace, never the hall's scroll speed, so what you
         // hear matches the feet you can see.
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
@@ -404,6 +412,7 @@ export function useHallScene({
         cafe?.dispose()
         backdrop.dispose()
         helm.dispose()
+        matcha.dispose()
         character.dispose()
         renderer.dispose()
         renderer.domElement.remove()

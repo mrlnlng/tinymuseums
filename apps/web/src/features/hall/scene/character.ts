@@ -1,23 +1,23 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
+import type { Attachment } from './carried'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 
 /* The visitor: the Tiny Museum bunny with its drawn walk cycle, in the DOM rather than the WebGL scene — plaque text is real DOM above the canvas, so anything in the scene is painted underneath it. Positioned each frame by projecting its world position; the cycle advances on distance, not time. */
 
-/*  Where the helm sits on the head this frame: its centre in CSS pixels, CSS
-    pixels per source pixel of the current frame, and the head's tilt. */
-export interface HeadPose {
+/** A drawing placed on screen: its centre in CSS pixels, its width, its CSS rotation, and 1 as drawn or -1 mirrored. */
+export interface Pose {
   x: number
   y: number
-  scale: number
+  width: number
   rotation: number
-  facing: 'left' | 'right'
+  flip: number
 }
 
 export interface Character {
-  /** Rewritten in place every frame, after `update`. */
-  readonly head: HeadPose
+  /** Where an attachment sits on the bunny this frame, after `update`. */
+  attach(attachment: Attachment, out: Pose): Pose
   update(
     dt: number,
     x: number,
@@ -49,7 +49,10 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   let facing: 'left' | 'right' = 'right'
   let currentSrc = idle.right.src
   let currentImage = idle.right
-  const head: HeadPose = { x: 0, y: 0, scale: 1, rotation: 0, facing: 'right' }
+  let moving = false
+  let screenX = 0
+  let screenY = 0
+  let scale = 1
   /*  The last values written to the sprite. Its height changes only with the
       window and its transform only while something is moving, but both were
       being assigned on every frame; an identical string still costs a CSSOM
@@ -65,11 +68,26 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   }
 
   return {
-    head,
+    /*  The sprite is centred on (screenX, screenY), so a point in its drawing
+        is that far from the drawing's middle, scaled. Placements are in the
+        source pixels of the frames facing `attachment.facing`, and mirror for
+        the other direction. */
+    attach(attachment, out) {
+      const place = moving ? attachment.walk : attachment.idle
+      const { naturalWidth, naturalHeight } = currentImage
+      const asDrawn = facing === attachment.facing
+      const drawnX = asDrawn ? place.x : naturalWidth - place.x
+      out.x = screenX + (drawnX - naturalWidth / 2) * scale
+      out.y = screenY + (place.y - naturalHeight / 2) * scale
+      out.width = attachment.width * scale
+      out.rotation = place.rotation
+      out.flip = asDrawn ? 1 : -1
+      return out
+    },
 
     update(dt, x, velocity, camera, viewport) {
       const speed = Math.abs(velocity)
-      const moving = speed > 0.12
+      moving = speed > 0.12
 
       distance += speed * dt
 
@@ -89,8 +107,8 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       projected.set(x, CONFIG.character.centerY + float, 0)
       projected.project(camera)
 
-      const screenX = (projected.x * 0.5 + 0.5) * viewport.width
-      const screenY = (-projected.y * 0.5 + 0.5) * viewport.height
+      screenX = (projected.x * 0.5 + 0.5) * viewport.width
+      screenY = (-projected.y * 0.5 + 0.5) * viewport.height
 
       // World height converted to pixels: the ortho frustum maps to the
       // viewport height, so the bunny scales with the hall.
@@ -109,17 +127,7 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
         currentTransform = transform
         sprite.style.transform = transform
       }
-
-      // The sprite is centred on (screenX, screenY); placements mirror for the right.
-      const place = moving ? CONFIG.helm.worn.walk : CONFIG.helm.worn.idle
-      const { naturalWidth, naturalHeight } = currentImage
-      const scale = heightPx / naturalHeight
-      const drawnX = facing === 'left' ? place.x : naturalWidth - place.x
-      head.x = screenX + (drawnX - naturalWidth / 2) * scale
-      head.y = screenY + (place.y - naturalHeight / 2) * scale
-      head.scale = scale
-      head.rotation = place.rotation
-      head.facing = facing
+      scale = heightPx / currentImage.naturalHeight
     },
 
     dispose() {

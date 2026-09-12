@@ -47,8 +47,11 @@ overwrites them:
   resized to 256px (the coin hidden in the hall) and 900px (the "you found a coin" screen),
   palette-quantised to keep them small.
 
-How the helm sits on the bunny was measured from the artist's `left_walk_hat.gif`; the
-numbers and the reasoning are in `CONFIG.helm` in `src/features/hall/scene/config.ts`.
+- **`matcha.png`** — the artist's `matcha.png` (same drop), trimmed, resized to 280px wide
+  and palette-quantised; the cup the bunny is handed at the cafe.
+
+How the helm and the matcha sit on the bunny were measured from the artist's
+`left_walk_hat.gif` and `right_walk_hat.gif`; see `CONFIG.helm` and `CONFIG.matcha`.
 
 `packages/core/assets/` holds only `frame.png` and `manifest.json` — the two files the
 server-side collage compositor reads. Nothing else belongs there.

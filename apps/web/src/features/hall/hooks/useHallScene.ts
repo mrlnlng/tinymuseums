@@ -69,6 +69,8 @@ interface Options {
   onLeave: () => void
   /** The visitor asked the help booth for the guide. */
   onOpenHelp: () => void
+  /** The visitor tapped the hidden coin. */
+  onFindCoin: () => void
 }
 
 export function useHallScene({
@@ -78,6 +80,7 @@ export function useHallScene({
   onOpenPiece,
   onLeave,
   onOpenHelp,
+  onFindCoin,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -99,6 +102,9 @@ export function useHallScene({
 
   const onOpenHelpRef = useRef(onOpenHelp)
   onOpenHelpRef.current = onOpenHelp
+
+  const onFindCoinRef = useRef(onFindCoin)
+  onFindCoinRef.current = onFindCoin
 
   useEffect(() => {
     let isDisposed = false
@@ -263,6 +269,13 @@ export function useHallScene({
           return
         }
 
+        // Before the paintings: the coin can be tucked behind one.
+        if (hall.hitTestCoin(raycaster)) {
+          soundRef.current.play('coin')
+          onFindCoinRef.current()
+          return
+        }
+
         const hit = hall.hitTest(raycaster)
         if (hit) {
           soundRef.current.play('painting-open')
@@ -352,6 +365,8 @@ export function useHallScene({
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
 
         hall.update(now, dt, traversal.cameraX)
+        // The found screen has closed, so the coin can go.
+        if (!isSuspendedRef.current) hall.releaseCoin()
         raiseGiftShop()
         raiseCafe()
         placards.sync(hall.getMounted(), rig.camera, viewport)

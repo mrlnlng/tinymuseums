@@ -5,6 +5,7 @@ import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal } from './pedestal'
 import { pickPainted } from './hit'
+import { createHiddenCoin, type HiddenCoin } from './coin'
 
 /* Owns what exists in the hall: each slot is one framed work the server rendered to its own image; the client loads it, hangs it, and frees it when the visitor walks away. */
 
@@ -63,17 +64,21 @@ export class HallScene {
   /*  The helmet pedestal whose helm the bunny is wearing. Kept here because
       pedestals are rebuilt as the visitor walks, and the stand should stay bare. */
   private bareHelmStand: number | null = null
+  private coin: HiddenCoin
 
   constructor(
     private scene: THREE.Scene,
     private assets: Assets,
-  ) {}
+  ) {
+    this.coin = createHiddenCoin(assets)
+  }
 
   /** Adds paintings from an API slice and extends the hall's geometry. */
   ingestSlice(slice: HallSliceDto): void {
     this.epochId = slice.epochId
     this.nextIndex = slice.nextIndex
     this.totalSlots = slice.totalSlots
+    this.coin.choose(slice.totalSlots)
 
     for (const slot of slice.slots) {
       if (this.slots.has(slot.index)) continue
@@ -159,6 +164,7 @@ export class HallScene {
     }
 
     this.updatePedestals(dt, cameraX)
+    this.coin.update(dt)
   }
 
   private beginLoad(slot: SlotRuntime, now: number): void {
@@ -255,6 +261,15 @@ export class HallScene {
       cursorX += sliceWidths[i]
     }
 
+    this.coin.attach({
+      index: slot.index,
+      group,
+      width,
+      height,
+      bottom,
+      pedestalDx: this.pedestalAfter(centerX, width),
+    })
+
     this.scene.add(group)
     this.mountedList = []
     this.mounted.set(slot.index, {
@@ -311,6 +326,7 @@ export class HallScene {
     if (!mount) return
 
     this.scene.remove(mount.group)
+    this.coin.detach(index)
     mount.group.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
@@ -394,6 +410,25 @@ export class HallScene {
       CONFIG.pedestal.centerY + (0.5 - stand.y / stand.drawing[1]) * height,
       CONFIG.pedestal.z,
     )
+  }
+
+  /** The pedestal after the wall at `centerX`, relative to it, or null if that gap is bare. */
+  private pedestalAfter(centerX: number, width: number): number | null {
+    const gapCentre = centerX + width / 2 + CONFIG.piece.gap / 2
+    const x = this.layout.pedestalX.find((px) => Math.abs(px - gapCentre) < 1e-3)
+    return x === undefined ? null : x - centerX
+  }
+
+  /** Whether the tap found the coin, behind its wall's painting and the pedestals. */
+  hitTestCoin(raycaster: THREE.Raycaster): boolean {
+    const wall = this.coin.index === null ? undefined : this.mounted.get(this.coin.index)
+    if (!wall) return false
+    return this.coin.tap(raycaster, [wall.mesh, ...[...this.pedestals.values()].map((p) => p.sprite)])
+  }
+
+  /** The found screen has closed: let the coin go. */
+  releaseCoin(): void {
+    this.coin.release()
   }
 
   getMounted(): readonly MountedDisplay[] {

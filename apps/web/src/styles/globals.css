@@ -781,6 +781,72 @@ code.token {
   overflow: hidden;
 }
 
+/* The hidden coin's screen, from the coin_click mock. Positions are the mock's, as percentages of a stage at its proportions (1668x2388). */
+.coin-found {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: #f8deba;
+  cursor: pointer;
+}
+
+.coin-found-stage {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1668 / 2388;
+  transform: translateY(-50%);
+  container-type: inline-size;
+  text-align: center;
+}
+
+.coin-found-urn {
+  position: absolute;
+  left: 16.5%;
+  top: 25.2%;
+  width: 115.7%;
+  max-width: none;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.coin-found-title {
+  position: absolute;
+  top: 8.4%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 9.7cqw;
+  font-weight: 400;
+  line-height: 1;
+  color: #763719;
+}
+
+.coin-found-code {
+  position: absolute;
+  top: 17.6%;
+  left: 17%;
+  right: 17%;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 6.4cqw;
+  line-height: 1.1;
+  color: #8c593c;
+  cursor: text;
+  user-select: text;
+}
+
+.coin-found-coin {
+  position: absolute;
+  left: 19.7%;
+  top: 30.5%;
+  width: 62.6%;
+  pointer-events: none;
+}
+
 /* Tapping away closes it; it is a scrim, so it draws nothing of its own. */
 .help-guide-scrim {
   position: absolute;

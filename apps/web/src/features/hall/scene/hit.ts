@@ -41,7 +41,10 @@ const REACH = 3
 interface AlphaMap {
   width: number
   height: number
+  /** Spread by `REACH`, for aiming at a shape. */
   data: Uint8Array
+  /** As drawn, for asking whether something behind it shows through. */
+  exact: Uint8Array
 }
 
 const alphaMaps = new WeakMap<TexImageSource, AlphaMap | null>()
@@ -81,7 +84,7 @@ function buildAlphaMap(image: TexImageSource): AlphaMap | null {
     const { data: rgba } = ctx.getImageData(0, 0, width, height)
     const data = new Uint8Array(width * height)
     for (let i = 0; i < data.length; i++) data[i] = rgba[i * 4 + 3]
-    return { width, height, data: spread(data, width, height) }
+    return { width, height, data: spread(data, width, height), exact: data }
   } catch {
     // A drawing from another origin taints the canvas and cannot be read
     // back. Nothing in the hall is, but a caller should not be told a lie.
@@ -120,8 +123,9 @@ function spread(source: Uint8Array, width: number, height: number): Uint8Array {
 
 /*  Whether the drawing on this mesh is painted at the point the ray struck.
     A mesh with no readable drawing answers yes, so picking degrades to the
-    plain rectangle rather than becoming untappable. */
-function isPaintedAt(hit: THREE.Intersection): boolean {
+    plain rectangle rather than becoming untappable. `exact` skips the reach,
+    for a drawing that covers something the visitor is aiming at behind it. */
+export function isPaintedAt(hit: THREE.Intersection, exact = false): boolean {
   if (!hit.uv) return true
 
   const material = (hit.object as THREE.Mesh).material as THREE.MeshBasicMaterial
@@ -135,7 +139,7 @@ function isPaintedAt(hit: THREE.Intersection): boolean {
       its top, so one is the other flipped. */
   const x = Math.min(map.width - 1, Math.max(0, Math.floor(hit.uv.x * map.width)))
   const y = Math.min(map.height - 1, Math.max(0, Math.floor((1 - hit.uv.y) * map.height)))
-  return map.data[y * map.width + x] >= OPAQUE_ALPHA
+  return (exact ? map.exact : map.data)[y * map.width + x] >= OPAQUE_ALPHA
 }
 
 /*  The nearest mesh the ray strikes where its drawing is actually painted.

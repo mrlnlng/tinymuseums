@@ -232,6 +232,21 @@ export const CONFIG = {
     spin: 1,
   },
 
+  /*  The hidden coin. `frame` tucks it behind a painting's side with `peek` of
+      its width showing past the drawn frame, which stands `margin` (of the
+      image's width; left, right) in from the image's edges at that height.
+      `rope` puts it behind a rope post's foot; `pedestal` behind the column
+      after the wall. `z` places it behind whatever hides it. */
+  coin: {
+    width: 0.3,
+    frame: { peek: 0.55, heightRatio: 0.35, margin: [0.063, 0.093], z: -0.05 },
+    rope: { inset: 0.05, y: -0.04, z: 0.45, width: 0.26 },
+    pedestal: { dx: 0.2, y: 0.02, z: 0.25 },
+    /** A little rock every few seconds, so a sharp eye can catch it. */
+    wiggleEverySeconds: 3.2,
+    vanishSeconds: 0.35,
+  },
+
   /*  A floor on how long a pedestal holds before the wall behind it appears, so
       the loading cue is a beat rather than a flicker. Short: it is a floor on
       the *wait*, and every millisecond of it is a millisecond the visitor spends

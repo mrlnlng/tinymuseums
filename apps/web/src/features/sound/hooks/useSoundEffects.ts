@@ -27,6 +27,7 @@ import { applyMix, resumeGain, routeThroughGain } from '@/features/sound/lib/out
         sfx-harp           0.105      1.40       0.147
         sfx-owl            0.267      0.59       0.158
         sfx-cafe-hello     0.178      0.87       0.155
+        sfx-coin           0.160      0.72       0.115
 
     The music sits at 0.057 in that same column (see `MUSIC_MIX`), so all of
     these land well above the soundtrack — the four the visitor causes by
@@ -47,6 +48,10 @@ import { applyMix, resumeGain, routeThroughGain } from '@/features/sound/lib/out
     than a change in how it sounds at ordinary ones, and it degrades by simply
     holding still.
 
+    The coin sits under the rest on purpose: two seconds of pouring coins read
+    louder than a tap at the same mean square, and its recording crests at
+    0.97, so 0.72 keeps its hottest sample near the others' ~0.7.
+
     The footsteps are deliberately not in this company: they are a loop that
     runs the whole time the visitor is walking, and they stay under the music
     at about 0.025. A continuous sound mixed to answer a tap would be
@@ -59,6 +64,10 @@ const EFFECTS = {
   owl: { file: '/audio/sfx-owl.mp3', volume: 0.59, start: 0.7, end: 3.7 },
   /** The cafe cat, greeting whoever taps her at the counter. */
   'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.87, start: 0.48, end: 1.3 },
+  /*  The hidden coin, found. The file is cut to the first 2.2s of the artist's
+      4.6s pour, ending in its quietest gap just before a clink at 2.25s; a stop
+      timer firing late would catch that clink. */
+  coin: { file: '/audio/sfx-coin.mp3', volume: 0.72, start: 0.06 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS

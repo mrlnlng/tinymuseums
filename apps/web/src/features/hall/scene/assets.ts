@@ -35,6 +35,8 @@ const IMAGE_FILES = {
   musicNotes: 'music-notes.svg',
   /** The helmet pedestal with its helm taken, on the same canvas. */
   helmStand: 'pedestal-4-bare.png',
+  /** The coin hidden somewhere in the hall. */
+  coin: 'coin.png',
 } as const
 
 /** The pedestal drawing whose helm the bunny can wear. */

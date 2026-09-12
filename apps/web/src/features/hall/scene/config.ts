@@ -201,6 +201,8 @@ export const CONFIG = {
         is closer together while still keeping a clear gap. */
     poster: { dx: -0.75, centerY: 1.9, height: 1.1, z: 0.3 },
     menu: { dx: 0.95, centerY: 1.95, height: 1.0, z: 0.3 },
+    /** The credits board, on the bare wall past the menu. */
+    thanks: { dx: 2.45, centerY: 2.4, height: 1.1, z: 0.3 },
     /*  The waving cat behind the counter — the cafe's cashier, standing to the
         *right* of the register (its plane sits behind the counter's, so the
         counter drawing hides everything below the desk line and only the head

@@ -40,7 +40,7 @@ export interface Cafe {
 }
 
 export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe {
-  const { counter, sign, menu, poster, cat, catFrameMs } = CONFIG.cafe
+  const { counter, sign, menu, poster, thanks, cat, catFrameMs } = CONFIG.cafe
   const group = new THREE.Group()
 
   // --- the counter front ----------------------------------------------------
@@ -91,6 +91,18 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
       x + poster.dx,
       poster.centerY,
       poster.z,
+    ),
+  )
+
+  // --- the credits board ----------------------------------------------------
+  group.add(
+    plane(
+      thanks.height * assets.aspect.cafeThanks,
+      thanks.height,
+      assets.textures.cafeThanks,
+      x + thanks.dx,
+      thanks.centerY,
+      thanks.z,
     ),
   )
 

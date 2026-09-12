@@ -50,6 +50,9 @@ overwrites them:
 - **`matcha.png`** — the artist's `matcha.png` (same drop), trimmed, resized to 280px wide
   and palette-quantised; the cup the bunny is handed at the cafe.
 
+- **`cafe/thanks-board.png`** — the artist's `thanksBoard.png` (same drop), trimmed, resized
+  to 600px wide and palette-quantised; the credits board on the cafe wall.
+
 How the helm and the matcha sit on the bunny were measured from the artist's
 `left_walk_hat.gif` and `right_walk_hat.gif`; see `CONFIG.helm` and `CONFIG.matcha`.
 

@@ -28,6 +28,7 @@ const IMAGE_FILES = {
   cafeSign: 'cafe/sign-removebg.png',
   cafeMenu: 'cafe/menu.png',
   cafePoster: 'cafe/buy-coffee.png',
+  cafeThanks: 'cafe/thanks-board.png',
   /*  The puff of notes a sounding pedestal gives off. Vector art, unlike
       everything else here: it is drawn at one size and never scaled up on
       screen, so the browser rasterises it once at its intrinsic size and the

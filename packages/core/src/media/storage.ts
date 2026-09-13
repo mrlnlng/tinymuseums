@@ -4,9 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { env } from '../infra/env.ts'
 import { S3Storage } from './s3-storage.ts'
 
-/*  Object storage — the single swap point between local development and S3; nothing above it knows which implementation is in use. */
 export interface PresignedUpload {
-  /** The browser PUTs the file body straight here. */
   url: string
   key: string
   headers: Record<string, string>
@@ -17,23 +15,19 @@ export interface Storage {
   put(key: string, body: Buffer, contentType: string): Promise<void>
   get(key: string): Promise<Buffer>
   exists(key: string): Promise<boolean>
-  /** Size in bytes, or null when the object is not there. */
   sizeOf(key: string): Promise<number | null>
   remove(key: string): Promise<void>
-  /** Public URL for a stored object. Locally the media route; later CloudFront. */
   urlFor(key: string): string
-  /* A short-lived URL the browser can PUT to directly — uploads never pass through the application, since serverless payload limits kill anything large. S3 issues these natively; locally they are HMAC-signed URLs to a route that writes to disk. */
   presignPut(key: string, contentType: string, expiresInSeconds?: number): Promise<PresignedUpload>
 }
 
-export class FilesystemStorage implements Storage {
+class FilesystemStorage implements Storage {
   private root: string
 
   constructor(root: string) {
     this.root = resolve(root)
   }
 
-  /** Refuses keys that would escape the storage root. */
   private pathFor(key: string): string {
     const target = resolve(join(this.root, key))
     if (target !== this.root && !target.startsWith(this.root + '/')) {
@@ -96,7 +90,6 @@ export class FilesystemStorage implements Storage {
   }
 }
 
-/* Signs a local upload URL — without it the local PUT route would be an open write endpoint; S3 presigning does the equivalent. */
 function signUpload(key: string, contentType: string, expires: number): string {
   return createHmac('sha256', env.sessionSecret)
     .update(`${key}\n${contentType}\n${expires}`)
@@ -119,8 +112,6 @@ export function verifyUploadSignature(
 
 let storage: Storage | null = null
 
-/** The only way to get a Storage — switching drivers is an environment
- * variable, not a code change. */
 export function getStorage(): Storage {
   if (!storage) {
     storage =
@@ -139,7 +130,6 @@ export function digestOf(body: Buffer): string {
   return createHash('sha256').update(body).digest('hex').slice(0, 32)
 }
 
-/* Keys are content-addressed under the owning artist, so a re-upload of the same bytes is idempotent. The browser computes the digest, so this buys deduplication, not integrity. */
 export function originalKey(artistId: string, digest: string, extension: string): string {
   return `artists/${artistId}/originals/${digest}.${extension}`
 }
@@ -153,9 +143,6 @@ export function derivativeKey(
   return `artists/${artistId}/derivatives/${assetId}/${variant}.${extension}`
 }
 
-/*  The key for a single hanging piece's framed image. The version is the frame
-    recipe's, so re-rendering a piece under a new recipe writes a new object
-    rather than overwriting one that callers have been told to cache forever. */
 export function pieceFrameKey(pieceId: string, version: number, extension: string): string {
   return `pieces/${pieceId}/frame/v${version}.${extension}`
 }

@@ -1,8 +1,6 @@
 import Link from 'next/link'
 import { BRAND, ensureEpoch, getHallSlice } from '@tiny/core'
 
-/* The front door, laid out against mockup 1: welcome plaque, guidelines, and the two buttons on the floor — walk in, or claim a wall. The artists at the bottom are crawlable content, not on screen. */
-
 export const dynamic = 'force-dynamic'
 
 const GUIDELINES = [
@@ -31,7 +29,6 @@ export default async function LandingPage() {
               <li key={line}>{line}</li>
             ))}
           </ol>
-          {/* On the note rather than below it, where the mockup has it. */}
           <p className="open-line">The gallery floor is officially open. Enjoy!</p>
         </section>
 
@@ -43,15 +40,10 @@ export default async function LandingPage() {
         </Link>
       </div>
 
-      {/* The visitor stands in front of the floor rather than above it, so it reads as standing on the boards. */}
-      {/* The column at the right edge, as in the mockup: standing on the
-          boards, running off the side of the screen. Behind the visitor and
-          inert. */}
       <img className="landing-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
 
       <div className="landing-visitor">
         <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" aria-hidden="true" />
-        {/* The ticket is a way in, not decoration: a real link so it works by keyboard and reads as a control, with its own label. */}
         <Link className="visitor-ticket" href="/museum" aria-label="Start visit">
           <img src="/assets/ticket.png" alt="" aria-hidden="true" />
         </Link>

@@ -2,8 +2,6 @@ import { newToken } from './auth.ts'
 import { query, queryOne } from '../infra/db.ts'
 import { followConfirmation, getMailer, inquiryNotice } from '../infra/mail.ts'
 
-/* Everything a visitor can do: arrive by QR code, follow an artist, and ask about a work. Visitors have no accounts. */
-
 export type EventKind = 'display_view' | 'piece_view' | 'scan' | 'inquiry'
 
 export async function recordEvent(
@@ -15,8 +13,6 @@ export async function recordEvent(
     [kind, input.artistId ?? null, input.pieceId ?? null, input.placement ?? null],
   )
 }
-
-// ---------------------------------------------------------------- qr codes
 
 export interface ResolvedToken {
   artistId: string
@@ -48,7 +44,6 @@ export async function listQrTokens(artistId: string) {
   )
 }
 
-/*  A code per placement, so "the café poster outperforms the business card" is answerable. Reusing an existing token keeps already-printed codes valid. */
 export async function ensureQrToken(artistId: string, placement: string): Promise<string> {
   const existing = await queryOne<{ token: string }>(
     `select token from qr_tokens
@@ -66,8 +61,6 @@ export async function ensureQrToken(artistId: string, placement: string): Promis
   return token
 }
 
-/** Removes a code by revoking it: printed copies stop resolving (the /q/ route
- *  only honours un-revoked tokens) while the scans history stays in events. */
 export async function revokeQrToken(artistId: string, token: string): Promise<void> {
   await query(
     `update qr_tokens set revoked_at = now()
@@ -75,8 +68,6 @@ export async function revokeQrToken(artistId: string, token: string): Promise<vo
     [token, artistId],
   )
 }
-
-// ---------------------------------------------------------------- following
 
 export async function follow(artistSlug: string, email: string): Promise<'sent' | 'unknown'> {
   const artist = await queryOne<{ id: string; display_name: string }>(
@@ -88,8 +79,6 @@ export async function follow(artistSlug: string, email: string): Promise<'sent' 
   const confirmToken = newToken(24)
   const unsubscribeToken = newToken(24)
 
-  // Re-following reissues the confirmation rather than erroring, so a visitor
-  // who lost the email can simply ask again.
   const row = await queryOne<{ confirm_token: string; confirmed_at: Date | null }>(
     `insert into follows (artist_id, email, confirm_token, unsubscribe_token)
      values ($1, $2, $3, $4)
@@ -130,8 +119,6 @@ export async function confirmedFollowers(artistId: string): Promise<
   )
 }
 
-// ---------------------------------------------------------------- inquiries
-
 export async function createInquiry(
   pieceId: string,
   fromEmail: string,
@@ -158,8 +145,6 @@ export async function createInquiry(
   return true
 }
 
-// ---------------------------------------------------------------- analytics
-
 export interface AnalyticsSummary {
   displayViews: number
   pieceViews: number
@@ -170,8 +155,6 @@ export interface AnalyticsSummary {
 }
 
 export async function analyticsFor(artistId: string): Promise<AnalyticsSummary> {
-  // Four independent queries, run concurrently so the dashboard pays one
-  // round-trip of latency, not four in series.
   const [totals, followers, scansByPlacement, topPieces] = await Promise.all([
     queryOne<{
       display_views: number

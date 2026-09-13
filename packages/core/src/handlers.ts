@@ -9,8 +9,6 @@ import { confirmedFollowers } from './domain/audience.ts'
 import { MAX_STANDS } from './domain/gallery.ts'
 import type { Derivative } from './types.ts'
 
-/* Job handlers live in core so the seed script runs the same pipeline inline, and an SQS consumer changes only how a handler is invoked. */
-
 export async function handleDerivatives(assetId: string): Promise<void> {
   const asset = await queryOne<{ id: string; artist_id: string; storage_key: string }>(
     `select id, artist_id, storage_key from assets where id = $1`,
@@ -29,12 +27,9 @@ export async function handleDerivatives(assetId: string): Promise<void> {
         where id = $1`,
       [asset.id, result.width, result.height, JSON.stringify(result.derivatives)],
     )
-    // The work may already be arranged (auto-hang on upload): frame it now
-    // that the image is ready. The handler no-ops for pieces without a stand.
     await enqueue('render_display', { artistId: asset.artist_id })
   } catch (error) {
     if (!(error instanceof ImageRejected)) throw error
-    // A rejected image is the artist's problem to fix, not a job to retry.
     await query(`update assets set status = 'failed', error = $2 where id = $1`, [
       asset.id,
       error.message,
@@ -64,12 +59,6 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
 
   const storage = getStorage()
 
-  // Each arranged work gets its own framed image for the hall, sized to the
-  // work's own orientation so a landscape painting gets a landscape frame.
-  // A frame is immutable for a given recipe, so a piece already rendered under
-  // the current one is skipped — but a piece rendered under an older recipe is
-  // rendered again, which is how a change to the frame reaches work that was
-  // hung before it.
   for (const row of rows) {
     if (row.flattened_key && row.flattened_version === FRAME_VERSION) continue
 
@@ -81,6 +70,7 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
     })
     const key = pieceFrameKey(row.piece_id, FRAME_VERSION, FRAME_FORMAT.extension)
     await storage.put(key, output.buffer, FRAME_FORMAT.contentType)
+    // Point the row at the new object before removing the old one: an orphaned file is harmless, a dangling key is not.
     const stale = row.flattened_key
     await query(
       `update pieces
@@ -91,8 +81,6 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
         where id = $1`,
       [row.piece_id, key, output.width, output.height, FRAME_VERSION],
     )
-    // Only once the row points at the new object: an orphaned file is cheap,
-    // a row pointing at a file that is gone hangs a blank wall.
     if (stale && stale !== key) await storage.remove(stale).catch(() => {})
   }
 }
@@ -120,7 +108,6 @@ export async function handleNotifyFollowers(artistId: string): Promise<void> {
   }
 }
 
-/** Dispatches a claimed job to its handler. */
 export async function runJob(job: Job): Promise<void> {
   const payload = job.payload as { assetId?: string; artistId?: string }
 
@@ -142,19 +129,11 @@ export async function runJob(job: Job): Promise<void> {
   }
 }
 
-/** Schedules the next epoch seal, so ordering keeps rotating on its own. */
 export async function scheduleNextSeal(intervalMinutes: number): Promise<void> {
   const runAfter = new Date(Date.now() + intervalMinutes * 60 * 1000)
   await enqueue('seal_epoch', { reason: 'scheduled' }, runAfter)
 }
 
-/** Requeues frame rendering for any arranged work still missing its frame, or
- *  holding one from an older recipe — the first covers a piece whose image
- *  finished during a transition or a worker gap, the second is how a change to
- *  the frame itself reaches a hall that is already hanging. Deploying a new
- *  recipe therefore needs nothing run by hand: the worker notices within the
- *  repair interval and re-renders the museum a wall at a time.
- *  Idempotent: the render handler skips works already on the current recipe. */
 export async function repairUnframed(): Promise<number> {
   const rows = await query<{ artist_id: string }>(
     `select distinct p.artist_id

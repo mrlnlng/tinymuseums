@@ -1,7 +1,6 @@
 import { UploadRejected, presignUpload } from '@tiny/core'
 import { currentArtist } from '@/shared/lib/session'
 
-/* Step one of an upload: hand the browser somewhere to PUT the file. The key derives from the session, never the request, so a signed URL writes only inside the caller's namespace. */
 export async function POST(request: Request) {
   const artist = await currentArtist()
   if (!artist) return Response.json({ error: 'Sign in first' }, { status: 401 })

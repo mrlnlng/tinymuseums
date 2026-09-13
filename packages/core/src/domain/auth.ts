@@ -2,8 +2,6 @@ import { randomBytes } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { query, queryOne } from '../infra/db.ts'
 
-/* Artist authentication: email and password with server-side sessions, because artists need a durable identity; visitors deliberately have none. Cognito replaces this later. */
-
 const SESSION_DAYS = 30
 
 export interface AuthedArtist {
@@ -52,7 +50,6 @@ export async function destroySession(token: string): Promise<void> {
   await query(`delete from sessions where token = $1`, [token])
 }
 
-/** URL-safe, collision-checked slug derived from the artist's name. */
 export async function uniqueSlug(displayName: string): Promise<string> {
   const base =
     displayName

@@ -2,15 +2,6 @@ import * as THREE from 'three'
 import { HELM_PEDESTAL_FILE, type Assets } from './assets'
 import { CONFIG } from './config'
 
-/* The pedestal between two displays: scenery first, loading cue second — a faint breath, nothing more. Variants are picked by index so a stretch of hall looks the same every time. */
-
-/*  Two of the five things standing on the pedestals make a sound, and the
-    visitor finds that out by tapping one: the owl hoots, and the lyre is
-    played. The other three — Totoro under his ginkgo leaves, the helmet and
-    the urn — are quiet, and stay scenery.
-
-    Keyed by drawing rather than by position in the manifest, so that adding a
-    sixth pedestal or reordering the five cannot hand the owl the harp. */
 export type PedestalVoice = 'harp' | 'owl'
 
 const VOICES: Readonly<Record<string, PedestalVoice>> = {
@@ -19,19 +10,13 @@ const VOICES: Readonly<Record<string, PedestalVoice>> = {
 }
 
 export interface Pedestal {
-  /** Its place along the hall, which is how the hall remembers a stand left bare. */
   index: number
   group: THREE.Group
-  /** The sprite itself, which is what a tap is tested against. */
   sprite: THREE.Mesh
-  /** The sound this one makes when tapped, or null if it is only scenery. */
   voice: PedestalVoice | null
-  /** Whether this is the helmet pedestal, whose helm the bunny can take. */
   holdsHelm: boolean
-  /** Shows the stand without its helm, or with it back on. Helmet pedestals only. */
   setBare(bare: boolean): void
   setPending(pending: boolean): void
-  /** Sounds it: sends up the puff of notes that goes with the sound effect. */
   chime(): void
   update(dt: number): void
   dispose(): void
@@ -61,7 +46,6 @@ export function createPedestal(
 
   const voice = VOICES[chosen.file] ?? null
 
-  // The bare stand shares the helmeted drawing's canvas, so swapping moves nothing.
   const holdsHelm = chosen.file === HELM_PEDESTAL_FILE
   const setBare = (next: boolean): void => {
     if (!holdsHelm) return
@@ -69,10 +53,6 @@ export function createPedestal(
   }
   setBare(bare)
 
-  /*  The notes, built only for the two pedestals that can sound: an urn has
-      nothing to say, and a mesh per pedestal in a long hall is worth not
-      making. Parked at zero opacity rather than hidden, because that is the
-      state the fade begins and ends at anyway. */
   const notes = voice ? createNotes(assets) : null
   if (notes) group.add(notes.mesh)
 
@@ -122,11 +102,6 @@ interface Notes {
   dispose(): void
 }
 
-/*  The puff of notes: it appears beside whatever is standing on the pedestal,
-    drifts up the wall, and is gone — the length of the sound that sent it, so
-    the last note fades about when the last note is heard. Fading in quickly
-    and out slowly is what makes it read as a sound leaving rather than a
-    picture being shown. */
 function createNotes(assets: Assets): Notes {
   const { notes: spec } = CONFIG.pedestal
   const width = spec.width
@@ -137,17 +112,11 @@ function createNotes(assets: Assets): Notes {
     map: assets.textures.musicNotes,
     transparent: true,
     opacity: 0,
-    /*  Never mind what is in front: the notes are the answer to a tap and
-        have to be visible even where they drift over the pedestal's own
-        drawing. */
     depthTest: false,
   })
   const mesh = new THREE.Mesh(geometry, material)
   mesh.visible = false
 
-  /*  Measured from the pedestal's own centre, which is where the group sits:
-      up beside the object on top rather than over it, so the owl is not
-      covered by the noise it is making. */
   const restY = spec.offsetY
 
   let elapsed = 0
@@ -183,7 +152,6 @@ function createNotes(assets: Assets): Notes {
       }
 
       place(progress)
-      /*  In over the first fifth, out over the last half, full in between. */
       const rising = Math.min(1, progress / 0.2)
       const falling = Math.min(1, (1 - progress) / 0.5)
       material.opacity = Math.min(rising, falling)

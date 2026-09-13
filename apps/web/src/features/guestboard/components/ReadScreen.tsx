@@ -3,16 +3,6 @@ import useEmblaCarousel from 'embla-carousel-react'
 import type { GuestNoteDto } from '@tiny/core'
 import StickyNote from '@/features/guestboard/components/StickyNote'
 
-/*  Mock 3: one note held up to read, with arrows to the notes either side of it
-    and a way back to the board.
-
-    The notes are an Embla carousel, which gives the arrows a swipe to go with
-    them — momentum, snapping and the edge resistance a phone user expects —
-    without this owning any drag code. Every note is a slide, not just those
-    pinned to the board, so stepping along reaches all of them; the next page
-    is fetched as the visitor nears the end of what has loaded. */
-
-/** How close to the last loaded note to ask for the next page. */
 const LOAD_AHEAD = 3
 
 interface ReadScreenProps {
@@ -49,7 +39,6 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
     if (hasMore && selected >= notes.length - LOAD_AHEAD) onNeedMore()
   }, [selected, notes.length, hasMore, onNeedMore])
 
-  // The arrow keys step through the notes, as they walk the hall.
   useEffect(() => {
     if (!embla) return
     const onKey = (e: KeyboardEvent) => {

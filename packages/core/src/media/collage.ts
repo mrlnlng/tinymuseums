@@ -6,49 +6,24 @@ import { pickDerivative } from './derivatives.ts'
 import type { Storage } from './storage.ts'
 import type { Derivative } from '../types.ts'
 
-/* The frame compositor (worker-only): renders each arranged work into its own
-   framed image for the hall — one painting per stand, portrait or landscape to
-   match the work. There is no per-artist collage any more. */
-
-/* Where frame.png and manifest.json live, anchored to the repo root — a bundler flattens the module graph, so import.meta.url points nowhere near packages/core. CORE_ASSETS_DIR overrides it in deployments. */
+// Not import.meta.url: bundling the worker moves this module away from packages/core.
 const ASSETS_DIR =
   process.env.CORE_ASSETS_DIR || join(repoRoot, 'packages', 'core', 'assets')
 
-/** Canvas resolution. 300px per world unit keeps a single display near 900x960. */
 export const PX_PER_UNIT = 300
 
-/*  The recipe's version. Everything below — the overscan, the output format,
-    the target size — decides what a framed image looks like, so a piece framed
-    under an older number is stale and gets rendered again. Without this a
-    change to the recipe only reached work uploaded after it, and the hall hung
-    two generations of the same frame side by side.
-
-    1 — PNG, artwork drawn a tenth larger than its window.
-    2 — WebP, artwork drawn a fifth larger. */
+// Bump whenever the rendered frame changes; frames from older versions are re-rendered by the worker.
 export const FRAME_VERSION = 2
 
-/*  WebP rather than PNG, and this is the single biggest thing standing between
-    the visitor and the next painting: the same 616x870 frame is about 1MB as a
-    PNG and about 130KB as WebP, because a photograph of paint does not compress
-    losslessly and PNG has no other mode. Alpha survives, which is what the
-    format had to be chosen for — the ornament's outline is cut out of it.
-    Quality 90 rather than the usual 80: this is the artwork itself, seen at
-    full size in the enlarged view, and the extra 30KB is not worth arguing
-    about against the 870KB just saved. */
 export const FRAME_FORMAT = { extension: 'webp', contentType: 'image/webp' } as const
 
-/*  How much larger than its window the artwork is drawn, so no edge shows. A
-    fifth: at a tenth the artwork still stopped short of the ornament on the
-    wider frames and left a hairline of wall showing between the two. */
 const ARTWORK_OVERSCAN = 1.2
 
 interface FrameManifest {
   frame: {
     size: [number, number]
-    /** [x, y, w, h] normalised: where artwork sits inside the frame. */
     window: [number, number, number, number]
   }
-  /** The same frame turned a quarter-turn, for work wider than it is tall. */
   frameLandscape: {
     size: [number, number]
     window: [number, number, number, number]
@@ -58,7 +33,6 @@ interface FrameManifest {
 interface FrameSpec {
   buffer: Buffer
   window: [number, number, number, number]
-  /** Frame width / height, so the frame is rendered without distorting it. */
   aspect: number
 }
 
@@ -76,7 +50,6 @@ async function loadFrameAssets(): Promise<{ manifest: FrameManifest; frame: Buff
   return { manifest: manifestCache, frame: frameCache }
 }
 
-/** The portrait and landscape frame drawings together, for a single piece. */
 async function loadPieceFrames(): Promise<{ portrait: FrameSpec; landscape: FrameSpec }> {
   const { manifest, frame } = await loadFrameAssets()
   if (!landscapeFrameCache) {
@@ -95,7 +68,6 @@ async function loadPieceFrames(): Promise<{ portrait: FrameSpec; landscape: Fram
 }
 
 export interface SinglePieceInput {
-  /** The artwork's own width/height, to choose the frame orientation. */
   aspect: number
   derivatives: Derivative[]
   storage: Storage
@@ -105,11 +77,9 @@ export interface SinglePieceOutput {
   buffer: Buffer
   width: number
   height: number
-  /** The framed painting's size in world units, so the client can size it. */
   canvas: { w: number; h: number }
 }
 
-/*  Renders one painting into its own framed image, portrait or landscape to match the work rather than letterboxing it; the canvas is sized to the frame's own proportion at a target dimension. */
 export async function renderSinglePieceFrame({
   aspect,
   derivatives,
@@ -120,9 +90,6 @@ export async function renderSinglePieceFrame({
   const spec = isLandscape ? landscape : portrait
   const [winX, winY, winW, winH] = spec.window
 
-  // Target the frame so its long edge is a consistent on-screen size: a
-  // portrait work is sized by height, a landscape one by width, so neither is
-  // forced into the other's shape and both read about the same size.
   const TARGET = 2.9
   const canvasW = isLandscape ? TARGET : TARGET * spec.aspect
   const canvasH = isLandscape ? TARGET / spec.aspect : TARGET
@@ -138,13 +105,6 @@ export async function renderSinglePieceFrame({
 
   const source = pickDerivative(derivatives, windowW, 'jpg')
   if (source) {
-    /*  Laid a tenth larger than the window and centred on it, so the artwork's
-        edges run underneath the frame's painted border rather than stopping
-        just short of it and leaving a hairline of wall showing through. The
-        enlarged view does the same thing to the same picture with a transform;
-        this is the hall's copy of that decision. Clamped so a frame measured
-        with less margin around its window cannot push the overlay off the
-        canvas, which sharp refuses outright. */
     const drawW = Math.round(windowW * ARTWORK_OVERSCAN)
     const drawH = Math.round(windowH * ARTWORK_OVERSCAN)
     const left = Math.max(0, Math.min(width - drawW, windowLeft - Math.round((drawW - windowW) / 2)))
@@ -158,7 +118,6 @@ export async function renderSinglePieceFrame({
     overlays.push({ input: fitted, left, top })
   }
 
-  // The frame goes on last: its ornament overlaps the artwork's edges.
   const framed = await sharp(spec.buffer)
     .resize(width, height, { fit: 'fill' })
     .png()

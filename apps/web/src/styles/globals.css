@@ -1,4 +1,3 @@
-/* The museum's own face, used everywhere small caps text appears. `swap` so a webfont never blocks paint on a slow connection. */
 @font-face {
   font-family: "Inspiratiq Tiny Museum";
   src: url("/fonts/Inspiratiq_tiny_museum-Regular.otf") format("opentype");
@@ -7,7 +6,6 @@
   font-display: swap;
 }
 
-/* Palette and type from the asset pack's specs.md, not sampled or guessed. */
 :root {
   --wall: #fff1d2;
   --wall-deep: #fbebc0;
@@ -18,9 +16,7 @@
   --pink: #ffa1bd;
   --pink-deep: #f98aab;
   --orange: #ffc483;
-  /* The navigation triangles, sampled from the mockups. */
   --arrow: #ffa75f;
-  /* The help booth's button, sampled from mockup 2: a soft yellow on a gold rim. */
   --pill: #ffef83;
   --pill-edge: #d8a41c;
   --plaque: #f3ddba;
@@ -29,37 +25,19 @@
   --ok: #4f8a63;
   --bad: #c0533a;
 
-  /* One face throughout: the commissioned museum face, with Sniglet behind it for the glyphs it lacks. */
   --font-script: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
-  /* The exception, and the only one: a work's own title, which every mockup of
-     both the hall and the enlarged view writes in a hand rather than in the
-     museum's small capitals. The museum face names the museum; this names the
-     painting, and the two are not the same voice. */
   --font-title: "Beth Ellen", "Segoe Script", cursive;
-  /*  Three voices, and the rule for choosing between them is about length, not
-      about place. The museum face names things: headings, labels, buttons, a
-      sign over a door. Beth Ellen is for what a person wrote — the museum's own
-      name and the name of a painting. Sniglet is for anything that runs to a
-      sentence or more, because the museum face renders lowercase as small
-      capitals and a paragraph set in small capitals is read letter by letter. */
   --font-ui: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
-  /** Prose: guidelines, plaque descriptions, the help guide. */
   --font-body: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
-  /* Fixed-width for QR tokens and numeric columns, where every character occupying the same width is the entire point. */
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* The one screen size, used by every page: portrait 9:16 to match the 1080x1920 mockups, capped to the window. */
   --screen-width: min(430px, calc(100dvw - 24px), calc((100dvh - 24px) * 9 / 16));
   --screen-height: min(calc(100dvh - 24px), calc(var(--screen-width) * 16 / 9));
 }
 
 * { box-sizing: border-box; }
 
-/*  Form controls do not inherit type from their ancestors — a bare <button>
-    falls back to the browser's own face, which is how the back arrow in the
-    enlarged view came to be set in Arial. Everything wearing a class of its own
-    still names its family; this only catches the ones that never did. */
 button, input, select, textarea { font-family: inherit; }
 
 html, body {
@@ -68,9 +46,7 @@ html, body {
   background: var(--surround);
   color: var(--ink);
   font-family: var(--font-ui);
-  /* One weight exists in this family, so 700 would smear; synthesis off renders the real weight instead. */
   font-synthesis-weight: none;
-  /* No pull-to-refresh or rubber-banding stealing a horizontal swipe. */
   overscroll-behavior: none;
 }
 
@@ -87,7 +63,6 @@ html, body {
   overscroll-behavior: contain;
 }
 
-/* On a phone the frame is the phone; the letterbox exists only to preview at mockup proportions. */
 @media (max-width: 460px), (pointer: coarse) and (max-width: 900px) {
   .screen {
     width: 100dvw;
@@ -97,7 +72,6 @@ html, body {
     box-shadow: none;
   }
 
-  /* Clear of the notch, the status bar and the home indicator. */
   .screen-chrome {
     top: calc(12px + env(safe-area-inset-top));
     right: calc(12px + env(safe-area-inset-right));
@@ -107,7 +81,6 @@ html, body {
   .landing { padding-bottom: calc(clamp(10px, 2.5cqh, 22px) + env(safe-area-inset-bottom)); }
   .page { padding-bottom: calc(44px + env(safe-area-inset-bottom)); }
 
-  /* Comfortable finger targets: 44px is the accepted floor. */
   .wt-nav { width: 44px; height: 44px; }
   .wt-icon,
   .chrome-button { width: 40px; height: 40px; }
@@ -124,9 +97,6 @@ h1, h2, h3 { text-wrap: balance; }
   line-height: 1.05;
 }
 
-/* ---------------------------------------------------------------- shell */
-
-/* Content pages fill the screen; the frame owns the width. */
 .page {
   padding: 20px 18px 44px;
 }
@@ -143,7 +113,6 @@ h1, h2, h3 { text-wrap: balance; }
 }
 
 .topbar .brand {
-  /* The museum's own name, in the hand the museum signs itself with. */
   font-family: var(--font-title);
   font-size: 21px;
   line-height: 1.15;
@@ -155,17 +124,13 @@ h1, h2, h3 { text-wrap: balance; }
 .topbar nav a { color: var(--ink); text-decoration: none; }
 .topbar nav a:hover { color: var(--script); }
 
-/* ---------------------------------------------------------------- bits */
-
 .button {
   display: inline-block;
   padding: 12px 24px;
   font-family: var(--font-button);
-  /* The face ships one weight, so bold is a synthetic smear; a hairline stroke thickens the strokes evenly instead. */
   font-weight: 400;
   -webkit-text-stroke: 0.6px currentColor;
   font-size: 17px;
-  /* Explicit, because dropping `font: inherit` also drops the inherited line-height, and form controls default to `normal`. */
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -216,28 +181,19 @@ h1, h2, h3 { text-wrap: balance; }
 .muted { color: var(--ink-soft); }
 .small { font-size: 12.5px; }
 
-/* ---------------------------------------------------------------- studio */
-
-/* Headings on the studio pages and follow screens, harmonised sizes. */
 .page-title { font-size: 38px; }
 .page-title.lg { font-size: 42px; }
 
-/* An artist's name is a name, not a heading: the same hand a painting's title is written in. */
 .artist-name { font-family: var(--font-title); font-size: 40px; margin-bottom: 6px; }
 
-/* Paragraphs that sit directly under a heading. */
 .lead { margin-top: 0; }
 
-/* Last line of a card, flush with the card's bottom edge. */
 .flush { margin-bottom: 0; }
 
-/* Card headings: small, flush with the card's top edge. */
 .card-title { font-size: 17px; margin-top: 0; }
 
-/* Mid-form headings: card-sized, keeping the default top margin. */
 .subhead { font-size: 17px; }
 
-/* The Sign out button, styled to match the topbar's links. */
 .nav-button {
   background: none;
   border: none;
@@ -248,7 +204,6 @@ h1, h2, h3 { text-wrap: balance; }
   padding: 0;
 }
 
-/* A work's row in the studio list: thumbnail beside the editable fields. */
 .piece-row { display: flex; gap: 16px; align-items: flex-start; }
 .thumb-sm { width: 90px; flex: none; }
 .piece-fields { flex: 1; min-width: 0; }
@@ -257,13 +212,9 @@ h1, h2, h3 { text-wrap: balance; }
 .stat-value { font-size: 30px; font-weight: 800; }
 .stat-section { font-size: 18px; margin-top: 28px; }
 
-/* Radio and checkbox cards in the arrange page are whole-row targets. */
 label.plaque-card,
 label.card { cursor: pointer; margin: 0; }
 
-/* The artist page: their wall, and the pieces under it. */
-
-/* The artist's wall: each arranged work's framed image, in gallery order. */
 .wall-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -282,14 +233,8 @@ label.card { cursor: pointer; margin: 0; }
 .piece-desc { margin: 0; }
 .follow-block { margin-top: 30px; }
 
-/* The caption under a display-page thumbnail. */
-
-/* Studio form submit buttons, clear of the grid above them. */
-
-/* The upload button's label, which animates between phases. */
 .phase-label { display: inline-block; }
 
-/* Wraps the follow form so the message swap does not reflow the page. */
 .follow-wrap { overflow: hidden; }
 
 .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
@@ -322,9 +267,6 @@ code.token {
   word-break: break-all;
 }
 
-/* ---------------------------------------------------------------- gallery */
-
-/* The stand list: numbered 1..30, one row per work, in museum order. */
 .stands {
   list-style: none;
   margin: 0 0 18px;
@@ -343,14 +285,12 @@ code.token {
   border-radius: 12px;
 }
 
-/* The ▲▼/Unhang cluster, one flex row so the grid stays four columns. */
 .stand-controls {
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
-/* Fixed-width, so the column never jumps as the count climbs. */
 .stand-number {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -362,7 +302,6 @@ code.token {
 
 .stand .thumb { width: 44px; }
 
-/* One line per row: long titles truncate rather than wrap the grid. */
 .stand-title {
   font-size: 14px;
   font-weight: 700;
@@ -371,7 +310,6 @@ code.token {
   white-space: nowrap;
 }
 
-/* Arrow buttons: plaque-toned squares that read as controls but sit quietly. */
 .stand-move {
   width: 32px;
   height: 32px;
@@ -406,7 +344,6 @@ code.token {
 }
 .stand-unhang:hover { color: var(--bad); background: #f7e0d9; }
 
-/* Stored works, awaiting a stand. */
 .storage-list {
   list-style: none;
   margin: 0;
@@ -431,14 +368,12 @@ code.token {
 .storage-controls .notice { margin: 0; }
 .storage-list .button { padding: 8px 16px; font-size: 13px; }
 
-/* The codes form: input and button share one row on wide enough screens. */
 .codes-form { display: grid; gap: 12px; margin-bottom: 14px; }
 .codes-form .field { margin: 0; }
 @media (min-width: 400px) {
   .codes-form { grid-template-columns: 1fr auto; align-items: end; }
 }
 
-/* Remove in the codes table: quiet text button, red on hover like Unhang. */
 .code-remove {
   border: none;
   background: none;
@@ -461,9 +396,6 @@ code.token {
   * { animation: none !important; transition: none !important; }
 }
 
-/* ---------------------------------------------------------------- museum */
-
-/* The hall fills the screen exactly, so it never scrolls and the canvas needs no rounding or shadow of its own — the frame provides both. */
 .museum { position: absolute; inset: 0; overflow: hidden; background: var(--wall); }
 .hall-host { position: absolute; inset: 0; }
 
@@ -480,9 +412,6 @@ code.token {
 
 .hall-overlay { position: absolute; inset: 0; pointer-events: none; }
 
-/*  The guest board's notes in the hall: a layer the size of the board drawing's
-    canvas, placed over the board each frame (GuestBoardNotes in overlay.ts).
-    Hidden until it is first placed. */
 .hall-guestboard-notes {
   position: absolute;
   top: 0;
@@ -492,7 +421,6 @@ code.token {
   pointer-events: none;
 }
 
-/* The visitor's own layer, above the plaque overlay. Anything drawn in the WebGL scene sits under that overlay, which is why the bunny is not in it. */
 .hall-character {
   position: absolute;
   inset: 0;
@@ -508,7 +436,6 @@ code.token {
   will-change: transform;
 }
 
-/* What the bunny is handed: the helm, the matcha. Its transform centres it, so it works from its own corner. */
 .hall-carried {
   position: absolute;
   top: 0;
@@ -522,27 +449,14 @@ code.token {
   position: absolute;
   top: 0;
   left: 0;
-  /*  The artist's own sentence about the work: prose, so Sniglet. Set in the
-      museum's small capitals it read as a label rather than as something
-      somebody wrote. */
   font-family: var(--font-body);
   text-align: center;
   line-height: 1.25;
   color: var(--plaque-ink);
-  /*  Sniglet's own regular, which is the face the enlarged view already writes
-      this same sentence in. It used to ask for 700, and Sniglet ships 400 and
-      800 with nothing between, so the request resolved up to 800 — the bubbly
-      cut — and at the size this is set on the brass the counters closed up and
-      the words read as one dark band rather than as Sniglet at all. */
   font-weight: 400;
   will-change: transform, opacity;
   user-select: text;
   text-wrap: balance;
-  /* Five lines of very small type. The museum face sets lowercase as small
-     capitals, which are wider than Sniglet's lowercase, so the same sentence
-     needs another line. Past five it ellipses rather than spilling off the
-     brass onto the wall — the plaque is a label, and the artist's own page
-     carries the description in full. */
   display: -webkit-box;
   -webkit-line-clamp: 5;
   line-clamp: 5;
@@ -550,14 +464,10 @@ code.token {
   overflow: hidden;
 }
 
-/* The artist's name, hung above the wall by the same projection pass as the plaque. Inert, so taps pass through to the wall. */
-/* The name above the wall stays in the script face, as the mockups draw it. */
 .placard-title {
   position: absolute;
   top: 0;
   left: 0;
-  /* The same hand the enlarged view writes a title in, and the one the hall
-     mockup uses: it is the painting's name in both places. */
   font-family: var(--font-title);
   text-align: center;
   line-height: 1.15;
@@ -565,9 +475,6 @@ code.token {
   will-change: transform, opacity;
   pointer-events: none;
   text-wrap: balance;
-  /* No clamp: a painting's title is never abbreviated. It is hung by its lower
-     edge just above the frame, so the lines a long one needs grow up into the
-     empty wall rather than down over the painting. */
 }
 
 .hall-error {
@@ -578,12 +485,6 @@ code.token {
   font-weight: 700;
 }
 
-/* ------------------------------------------------- the visitor centre */
-
-/*  The writing on the visitor centre's signage, projected onto the boards the
-    scene draws. Width and size come from the frame loop in world units, so a
-    sign fills the same share of its board on every screen; everything here is
-    what it looks like, not where it sits. */
 .lobby-sign,
 .lobby-direction {
   position: absolute;
@@ -597,17 +498,12 @@ code.token {
   pointer-events: none;
 }
 
-/*  The board over the door, in the museum's own small capitals. It never wraps:
-    the board is drawn to hold one line, and a second would run off it. */
 .lobby-sign {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-/*  The way-finder. The arrow is on its own line under the words, as the mockup
-    draws it, and it is set larger because at sign size it is the part read
-    from across the room. */
 .lobby-direction {
   display: flex;
   flex-direction: column;
@@ -622,9 +518,6 @@ code.token {
   line-height: 0.9;
 }
 
-/*  The pill on the booth's counter. The booth's art draws an empty counter, so
-    the button is the pill: sized in world units by the frame loop, which is why
-    it carries no padding of its own. */
 .lobby-help-button {
   position: absolute;
   top: 0;
@@ -632,7 +525,6 @@ code.token {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* The gold rim the mockup draws around it. */
   border: 3px solid var(--pill-edge);
   border-radius: 999px;
   background: var(--pill);
@@ -644,10 +536,6 @@ code.token {
   cursor: pointer;
   will-change: transform, opacity;
   transition: filter 0.15s ease;
-  /*  A slow breath, so it reads as the one thing here you can press. On `scale`
-      rather than `transform`: the frame loop writes this element's `transform`
-      every frame to keep it on the booth's counter, and an animation on the
-      same property would replace that and send the pill across the screen. */
   animation: pill-pulse 2.4s ease-in-out infinite;
 }
 
@@ -663,16 +551,6 @@ code.token {
 }
 .lobby-help-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
 
-/* ---------------------------------------------------------- the gift shop */
-
-/*  The writing at the far end of the hall, projected onto the note and the
-    board the scene draws, exactly as the visitor centre's signage is. Width and
-    type size come from the frame loop in world units; everything here is what
-    it looks like, not where it sits. */
-
-/*  The note that closes the exhibition. Prose, and therefore Sniglet: the
-    museum face sets lowercase as small capitals, and four sentences of small
-    capitals are read letter by letter. */
 .gift-shop-note {
   position: absolute;
   top: 0;
@@ -683,18 +561,10 @@ code.token {
   color: var(--plaque-ink);
   text-align: center;
   line-height: 1.4;
-  /*  No balancing, unlike the plaques. The paper is drawn to hold this exact
-      paragraph and the note is written to fill it, so the lines want to run to
-      the edge of the band the way the mockup sets them; evening them out pulls
-      the block in and leaves the paper looking half used. */
   will-change: transform, opacity;
   pointer-events: none;
 }
 
-/*  The board over the counter, in the museum's own small capitals — the same
-    voice as the board over the door at the other end of the hall, because both
-    are a sign naming a room. It never wraps: the board is drawn to hold one
-    line. */
 .gift-shop-sign {
   position: absolute;
   top: 0;
@@ -710,13 +580,6 @@ code.token {
   pointer-events: none;
 }
 
-/*  The pill under the board. Built like the help booth's button — sized in
-    world units by the frame loop, so it carries no padding of its own — but in
-    the shop's own yellow, and with the basket the mockup draws inside it.
-
-    An anchor rather than a button: it is the one control in the hall that
-    leaves the museum, so it should look like a link to the browser as well as
-    to the visitor. */
 .gift-shop-button {
   position: absolute;
   top: 0;
@@ -737,14 +600,9 @@ code.token {
   cursor: pointer;
   will-change: transform, opacity;
   transition: filter 0.15s ease;
-  /*  The same slow breath the help booth's pill has, and on `scale` for the
-      same reason: the frame loop owns this element's `transform`, and an
-      animation on that property would send the pill across the screen. */
   animation: pill-pulse 2.4s ease-in-out infinite;
 }
 
-/*  Bigger than the cap height, as the mockup draws it, and nudged down because
-    the caps beside it sit above the baseline. */
 .gift-shop-basket {
   width: 1.45em;
   height: 1.45em;
@@ -759,9 +617,6 @@ code.token {
 }
 .gift-shop-button:focus-visible { outline: 3px solid var(--script); outline-offset: 3px; }
 
-/*  The cafe's poster link. The painted "buy matcha" poster in the scene is the
-    control's whole drawing, so this element draws nothing of its own — it is
-    the poster's invisible tap surface, sized and placed by the frame loop. */
 .cafe-poster-link {
   position: absolute;
   top: 0;
@@ -775,25 +630,16 @@ code.token {
   border-radius: 6px;
 }
 
-/* ------------------------------------------------------- the help guide */
-
 .help-guide {
   position: absolute;
   inset: 0;
-  /*  Above the home and speaker buttons, which is the one screen where they are
-      covered rather than floating on top: mockup 2.1 has the booth filling the
-      frame with nothing over it, and while the guide is open there is nowhere
-      else to go anyway. */
   z-index: 40;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* The booth is drawn wider than the frame, as the mockup has it, so the
-     leaves run off both sides rather than being shrunk to fit. */
   overflow: hidden;
 }
 
-/* The hidden coin's screen, from the coin_click mock. Positions are the mock's, as percentages of a stage at its proportions (1668x2388). */
 .coin-found {
   position: absolute;
   inset: 0;
@@ -859,7 +705,6 @@ code.token {
   pointer-events: none;
 }
 
-/* Tapping away closes it; it is a scrim, so it draws nothing of its own. */
 .help-guide-scrim {
   position: absolute;
   inset: 0;
@@ -869,38 +714,21 @@ code.token {
   cursor: pointer;
 }
 
-/*  The booth from the mockup, blown up. Cut into three bands: the awning and
-    the counter keep the proportions they were drawn at, and only the middle —
-    the two posts either side of the open counter — stretches to whatever the
-    guide needs. Stretching the whole drawing would smear the scallops. */
 .help-guide-booth {
   position: relative;
-  /*  Wider than the frame: mockup 2.1 crops the awning at both edges, which is
-      what makes the booth read as leaning over the visitor rather than as a
-      picture of a booth. Sized off mockup 2.1 by the one thing in it that is
-      not cut off: the drop from the top of the sign to the bottom of the
-      awning's scallops, which is 36.7% of the screen's height there. */
   width: 140%;
   flex: none;
   container-type: inline-size;
   display: flex;
   flex-direction: column;
   filter: drop-shadow(0 10px 22px rgb(109 64 46 / 22%));
-  /* Inert, so a tap on the booth reaches the surface that closes the guide. */
   pointer-events: none;
 }
 
-/*  Each band is a window onto the whole drawing, scaled so that exactly its own
-    share fills it and offset so that share is what shows. Only the middle band
-    has a height the drawing does not dictate, so it is the only one where the
-    scaling stretches anything. */
 .help-band {
   position: relative;
   overflow: hidden;
-  /* The drawing at the booth's width — every band's ruler. */
   --booth-height: calc(100cqw / var(--booth-aspect));
-  /*  The open counter, in the wall's own colour, stopping at the two posts —
-      which stand at 13.9% and 88.1% across the drawing. */
   --panel-fill: linear-gradient(
     90deg,
     transparent 0 13.9%,
@@ -919,9 +747,6 @@ code.token {
   background: url('/assets/help-center.png') no-repeat center / 100% 100%;
 }
 
-/*  The awning's scallops are drawn with gaps between them, and the hall would
-    show through them; the panel is carried up behind their lower reach so the
-    guide sits inside a booth rather than in front of one. */
 .help-band-awning {
   --band: var(--awning);
   --band-top: 0;
@@ -929,9 +754,6 @@ code.token {
   background: var(--panel-fill) no-repeat bottom / 100% 26%;
 }
 
-/*  The one band with no fixed height: the guide sets it. The drawing leaves the
-    counter open, so the panel behind the guide is painted here, stopping at the
-    two posts — the wall's own colour, which is what the mockup fills it with. */
 .help-band-middle {
   --band: calc(var(--counter) - var(--awning));
   --band-top: var(--awning);
@@ -947,8 +769,6 @@ code.token {
 .help-steps {
   position: relative;
   margin: 0;
-  /*  Inset to the posts: they stand at 14% and 88% across the drawing, and the
-      numbered list has to clear both. */
   padding: 7% 20% 9% 26%;
   display: flex;
   flex-direction: column;
@@ -966,8 +786,6 @@ code.token {
   color: var(--script);
 }
 
-
-/* Present for screen readers and crawlers; the canvas is the visual surface. */
 .hall-index {
   position: absolute;
   width: 1px;
@@ -977,32 +795,26 @@ code.token {
   white-space: nowrap;
 }
 
-/* ------------------------------------------------------------ enlarged */
-
 .wt {
   position: absolute;
   inset: 0;
   z-index: 10;
   background: var(--wall);
 
-  /* Measure children against this box, not the viewport: the frame is often much shorter than 100dvh. */
   container-type: size;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: clamp(4px, 1.1cqh, 10px);
-  /* No bottom padding: the rope's row is the floor, and it is last in the column. */
   padding: clamp(8px, 2cqh, 18px) 4% 0;
   overflow: hidden;
 }
 
-/* Fixed-size rows: they take what they need and never get squeezed. */
 .wt-title,
 .wt-plaque,
 .wt-actions { flex: none; }
 
-/* The back control floats in the corner rather than spending a row on one small button. */
 .wt-top {
   position: absolute;
   top: 12px;
@@ -1017,14 +829,6 @@ code.token {
   border: none; border-radius: 50%; cursor: pointer;
 }
 
-/*  Two lines tall unless the title needs more, so stepping between works of
-    ordinary title length never moves the painting; a longer one grows the row
-    rather than losing its ending, here as in the hall. The inline padding and
-    the top margin both hold it clear of the floating corner buttons — narrowly,
-    because every character that does not fit on a line is a line the painting
-    below pays for. Set in a hand rather than the museum's small capitals, and
-    a little under the mockup's own 7.2% of the screen: Beth Ellen is wide, and
-    at that size an ordinary title took a third line. */
 .wt-title {
   margin: clamp(22px, 5cqh, 40px) 0 calc(-1 * clamp(2px, 0.8cqh, 8px));
   padding-inline: clamp(46px, 15cqi, 80px);
@@ -1040,16 +844,6 @@ code.token {
 
 .wt-loading { color: var(--ink-soft); margin: auto; }
 
-/*  The stage asks for exactly the height its frame can use — a frame is bounded
-    by the width of the room, so past `width / aspect` every further pixel is
-    empty wall — and shrinks when the column cannot spare it. That single rule is
-    the difference between the two mockups: a wide work asks for little and
-    leaves the rest to the rope (mock 8), a tall one asks for more than the
-    screen holds and takes the rope's floor with it (mock 4). The height comes
-    from outside rather than from the contents, which is what lets the stage
-    carry a size container without the two defining each other in a circle.
-    95.5cqi is the mockup's 87.9% frame width, measured against a container box
-    that has the column's 4% side padding already taken off it. */
 .wt-stage {
   position: relative;
   flex: 0 1 auto;
@@ -1058,18 +852,9 @@ code.token {
   width: 100%;
   container-type: size;
   display: grid;
-  /* Hung low: the slack, when the frame is limited by width rather than height, collects above the painting rather than under it. */
   place-items: end center;
 }
 
-/*  Stepping from a wide work to a tall one is a change of composition, not of
-    picture: the frame grows, the floor gives up the rope, and the column comes
-    in to stand on it. Done instantly all three read as a glitch, so each is
-    given the same 420ms as the slide between works and the same easing, and
-    they travel together. Only the properties that actually move are listed —
-    the stage's two axes, the rope's depth, and the opacity of the two pieces of
-    scenery that trade places — so nothing else is dragged into a transition it
-    has no business in. */
 .wt-stage { transition: height 420ms ease, width 420ms ease; }
 .wt-rope { transition: height 420ms ease; }
 .wt-rope::before,
@@ -1082,22 +867,15 @@ code.token {
   .wt-column { transition: none; }
 }
 
-/*  A tall work is held to mock 4's 74% of the screen. On the 9:16 preview the
-    cap is slack — a portrait frame runs out of height around 67% — but a phone
-    is taller, and there the frame is bounded by width and would otherwise grow
-    out to the walls and take the arrows under its own ornament. A wide work
-    keeps its full width: its frame stops well above them. */
 .wt:not([data-wide]) .wt-stage { width: 80.4%; }
 
 .wt-frame {
   position: relative;
   grid-area: 1 / 1;
   aspect-ratio: var(--frame-aspect);
-  /*  The largest frame that fits the stage on both axes. Measured against the stage and not the screen: sized against the screen, a wide frame came out wider than the room it had, and `max-width` then squeezed it out of its own proportions. */
   height: min(100cqh, calc(100cqi / var(--frame-aspect)));
 }
 
-/* Under the frame, scaled out a tenth so the artwork's edges sit beneath the ornament. */
 .wt-artwork {
   position: absolute;
   background-position: center;
@@ -1105,15 +883,8 @@ code.token {
   transform: scale(1.1);
 }
 
-/*  Held back until the ornament that goes round it has loaded, so the two
-    arrive together rather than the painting hanging unframed for a few frames
-    while the heavier ornament catches up. Opacity rather than `display`, so the
-    browser still fetches and decodes the artwork while it waits — the point is
-    to change what is shown, not to make anybody wait longer than they already
-    were. */
 .wt-artwork[data-waiting] { opacity: 0; }
 
-/* Over the artwork, and inert, so a tap anywhere on the frame still reaches it. */
 .wt-frame-art {
   position: absolute;
   inset: 0;
@@ -1122,17 +893,10 @@ code.token {
   pointer-events: none;
 }
 
-/*  Against the side walls at a fixed height, which is where both mockups put
-    them and, it turns out, the only placement that works for both. Tied to the
-    plaque they followed it down the screen under a tall painting and ended up
-    standing on the column; pinned here they sit beside the frame under a tall
-    work and beside the plaque under a wide one, exactly as mock 4 and mock 8
-    respectively have them. 61.33% is the centre line both mockups share. */
 .wt-nav {
   position: absolute;
   top: 61.33%;
   transform: translateY(-50%);
-  /* 7.6% of the screen wide in the mockup, at a 0.68 width-to-height ratio. */
   width: clamp(26px, 8cqi, 56px);
   height: clamp(38px, 11.8cqi, 82px);
   padding: 0;
@@ -1140,7 +904,6 @@ code.token {
   background: none;
   color: var(--arrow);
   cursor: pointer;
-  /* The accessible name is the aria-label; the SVG carries no text. */
   font-size: 0;
 }
 
@@ -1148,11 +911,9 @@ code.token {
   display: block;
   width: 100%;
   height: 100%;
-  /* A slow drift outward, opposed left and right, so the pair breathes; on the SVG, leaving the button's transform free. */
   animation: arrow-float 2.8s ease-in-out infinite;
 }
 
-/* The left arrow is the same drawing mirrored — the flip lives in the keyframes, because an animated transform replaces a static one. */
 .wt-nav.prev svg { animation-name: arrow-float-left; }
 
 @keyframes arrow-float {
@@ -1169,42 +930,25 @@ code.token {
 .wt-nav.next { right: 4.63%; }
 
 .wt-nav:hover { filter: brightness(1.04); }
-/* The centring translate has to be repeated: a transform replaces, not adds. */
 .wt-nav:active { transform: translateY(-50%) scale(0.94); }
 
 @media (prefers-reduced-motion: reduce) {
   .wt-nav svg,
   .wt-plaque-more { animation: none; }
-  /* Still mirrored — the flip was only in the keyframes. */
   .wt-nav.prev svg { transform: scaleX(-1); }
 }
 
-/*  The board at the size it is drawn — 2.0267 times as wide as it is tall — and
-    held there. It used to grow with the description, which meant a talkative
-    artist quietly took the painting's wall; the words scroll inside a board of
-    fixed size instead. A little wider than the mockup's 55%, so that fewer of
-    them have to. */
 .wt-plaque {
   display: grid;
   place-items: center;
   width: min(60%, 420px);
   aspect-ratio: 2.0267;
-  /*  Not negotiable, and it has to be said out loud. A flex item's automatic
-      minimum size is its content, and this board is now a child of the column
-      itself rather than of a row of its own — so along the column's main axis
-      that minimum applies, and a long description pushed the board taller than
-      the size it is drawn at, taking the painting's wall with it. Zero here is
-      what lets the ratio above hold and the words scroll inside it instead. */
   min-height: 0;
   position: relative;
   padding: 4% 7%;
   background: url('/assets/plaque.png') no-repeat center / 100% 100%;
 }
 
-/*  Never trimmed: the description is what the artist chose to say about the
-    work, and this screen is where it is read. What will not fit on the board is
-    scrolled to rather than cut, and the bar is hidden — a scrollbar down the
-    side of a hand-painted plaque is a piece of operating system in a museum. */
 .wt-plaque p {
   margin: 0;
   max-height: 100%;
@@ -1212,7 +956,6 @@ code.token {
   overscroll-behavior: contain;
   scrollbar-width: none;
   text-align: center;
-  /* However long the artist made it, it is prose. */
   font-family: var(--font-body);
   font-size: clamp(9px, 2cqh, 12.5px);
   line-height: 1.4;
@@ -1222,19 +965,11 @@ code.token {
 
 .wt-plaque p::-webkit-scrollbar { display: none; }
 
-/*  Says there is more below, in the same orange and the same drawing as the two
-    arrows that step between works. Shown only while something is below the fold,
-    and kept inboard of the painted stud in the board's corner, which it
-    otherwise sits on top of and is mistaken for. */
 .wt-plaque-more {
   position: absolute;
   right: 9.5%;
   bottom: 5%;
   width: clamp(16px, 5.4cqi, 27px);
-  /*  The deep pink the museum uses for its own marks, not the orange of the
-      two arrows that step between works: those are controls the reader may
-      ignore, this is the plaque saying it has not finished talking. On a cream
-      board the orange sat too close to the ground to be noticed. */
   color: var(--script);
   filter: drop-shadow(0 1px 1px rgba(109, 64, 46, 0.25));
   pointer-events: none;
@@ -1248,14 +983,9 @@ code.token {
   50%      { transform: translateY(26%); }
 }
 
-
 .wt-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .wt-actions .button { padding: clamp(8px, 1.8cqh, 12px) 20px; font-size: clamp(12px, 2.1cqh, 16px); }
 
-
-/* ---------------------------------------------------------------- landing */
-
-/* Fills the screen exactly. Nothing here scrolls: both choices are buttons that lead to a screen of their own. */
 .landing {
   position: absolute;
   inset: 0;
@@ -1265,7 +995,6 @@ code.token {
   overflow: hidden;
 }
 
-/* In the document for crawlers and screen readers, off the screen visually. */
 .offscreen {
   position: absolute;
   width: 1px;
@@ -1280,21 +1009,14 @@ code.token {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Centred so each card takes its own width; the two percentages bring the mockup's heights. */
   align-items: center;
   gap: clamp(8px, 2vh, 16px);
-  /*  Clears the floating buttons, so the plaque never slides underneath them.
-      Only the speaker is up there on this page — home would point at the page
-      you are already on — so it needs less headroom than a screen with both,
-      and the note below wants every pixel of it. */
   padding: clamp(44px, 7vh, 60px) 20px 0;
   overflow: hidden;
 }
 
-/* The welcome plaque, on the plaque asset. */
 .welcome-plaque {
   width: 67%;
-  /* The asset's own ratio. Anything else stretches the drawn plaque, and this is also what puts its height at the mockup's 18.7% of the screen. */
   aspect-ratio: 1002 / 497;
   display: flex;
   flex-direction: column;
@@ -1315,11 +1037,6 @@ code.token {
   color: var(--script);
 }
 
-/*  The museum's own name, in Beth Ellen — the hand it is signed in on the
-    ticket the visitor is holding two inches below, and the same hand every
-    painting's title is written in. Beth Ellen is a wider face than the museum's
-    small capitals, so it is set a little smaller to keep the name on two lines
-    inside the plaque it hangs on. */
 .welcome-title {
   margin: 0;
   font-family: var(--font-title);
@@ -1327,39 +1044,20 @@ code.token {
   line-height: 1.12;
 }
 
-/* Guidelines on the post-it asset: given the paper's drawn shape, padding off the tape, text sized in cqh. */
-/*  Everything written on the note is sized against the screen frame rather than
-    against the note, because the mockups are measured that way and because a
-    container's own `cqi` does not resolve against itself — it looks for an
-    ancestor container, finds none here, and falls back to the viewport, which
-    on a desktop preview is six times the frame. That is what had opened 51px
-    of dead air between the heading and the rules. */
 .guidelines {
-  /*  Sized by contents, not the paper's aspect — the copy needs eight lines and
-      the fixed ratio clipped them. Four fifths of the screen, as mockup 0 draws
-      it: at the old width the heading could not be set any larger without
-      breaking over two lines. */
   width: 88%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: calc(var(--screen-width) * 0.024);
-  /*  The drawn paper starts 12.7% down its own sprite and ends at 86.4%; the
-      rest is the torn edge and the tape. These insets are the paper, not the
-      box — written as a share of the width, which is what a percentage padding
-      resolves against, at the proportions the note actually renders at. */
   padding: 12.5% 8% 12%;
   background: url('/assets/sticky.png') no-repeat center / 100% 100%;
 }
 
 .guidelines h2 {
   margin: 0;
-  /* Centred on the paper, and the largest thing written on it. */
   text-align: center;
   font-family: var(--font-button);
-  /*  As large as the line will go and still stay on one: the museum face plus
-      its letter-spacing puts the limit at a shade over 6% of the frame, and the
-      note keeps a fixed share of the frame at every size, so this holds. */
   font-size: clamp(16px, calc(var(--screen-width) * 0.066), 30px);
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -1369,15 +1067,9 @@ code.token {
 
 .guidelines ol {
   margin: 0;
-  /* The marker sits in this indent; the text starts where the heading does. */
   padding-left: 9%;
   display: grid;
   gap: calc(var(--screen-width) * 0.016);
-  /*  The museum's own face, as the heading above them is set in: the note is
-      the first thing anyone reads here and it should be in the museum's hand
-      throughout, rather than switching to a rounded face halfway down the
-      paper. Small capitals run wider than Sniglet's lowercase, so the size
-      comes down a shade to keep each rule on two lines. */
   font-family: var(--font-ui);
   font-weight: 400;
   font-size: clamp(9px, calc(var(--screen-width) * 0.0285), 13px);
@@ -1389,22 +1081,11 @@ code.token {
 
 .guidelines ol li { padding-left: 1.5%; }
 
-/* On the note now, closing the guidelines rather than floating under them. */
 .open-line {
   margin: 0 auto;
-  /*  The note's closing line, and it is meant to be read as one: four fifths of
-      the paper's width, centred, and large enough to carry. The tape in the
-      bottom-right corner starts at 76% across, and centring inside 80% keeps
-      the words clear of it without a one-sided indent. */
   width: 80%;
   text-align: center;
-  /*  The museum's face, like the rest of the note. The OTF ships one weight
-      and `font-synthesis-weight` is off, so this is stated at 400 rather than
-      asking for a bold that does not exist. */
   font-family: var(--font-ui);
-  /*  Larger than it was and set across four fifths of the paper, which at this
-      size is two lines — a third would push the note down onto the ticket the
-      visitor is holding. */
   font-size: clamp(12px, calc(var(--screen-width) * 0.039), 18px);
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -1413,7 +1094,6 @@ code.token {
   text-wrap: balance;
 }
 
-/* The floor band: a known height, so the visitor can be stood on it. */
 .landing {
   --floor-height: clamp(84px, 18%, 140px);
 }
@@ -1424,7 +1104,6 @@ code.token {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  /* Right inset keeps the button clear of the column at the screen's edge. */
   padding: 0 clamp(40px, 17%, 90px) 0 0;
   background: url('/assets/floor.png') repeat-x center top / auto 100%;
   background-color: var(--floor);
@@ -1432,13 +1111,9 @@ code.token {
 
 .landing-floor .button { padding: 15px 32px; font-size: 20px; }
 
-/* The visitor, standing on the floor: feet on the boards, body crossing the wall line. Inert, so taps reach the button. */
 .landing-visitor {
   position: absolute;
   left: clamp(10px, 5%, 46px);
-  /*  Low enough that the ticket in its paw stays off the note: the ticket is
-      held up and out, so the visitor's own position is what decides whether the
-      last line of the guidelines is readable. */
   bottom: calc(var(--floor-height) * 0.32);
   width: clamp(104px, 30%, 190px);
   z-index: 5;
@@ -1451,16 +1126,13 @@ code.token {
   height: auto;
 }
 
-/* Held at arm's length, clear of the fingers; raised so it never reaches into the floor band. */
 .visitor-ticket {
   position: absolute;
   left: 90%;
-  /* Raised: lower down, its corner reached into the floor band and sat on top of the Start visit button. */
   top: 4%;
   width: 132%;
   transform-origin: 4% 52%;
   animation: ticket-wave 3.6s ease-in-out infinite;
-  /* The container is inert so it cannot swallow taps; this one child is not. */
   pointer-events: auto;
   display: block;
   cursor: pointer;
@@ -1478,11 +1150,6 @@ code.token {
   border-radius: 6px;
 }
 
-/* The column at the right edge, measured from the mockup; behind the visitor and inert. */
-/*  The owl on its column, at the size mockup 0 draws it: about a fifth of the
-    screen showing, which is a good deal more than it had. It grows upward and
-    inward from the same anchor rather than further off the edge — there is
-    nothing to see out there. */
 .landing-column {
   position: absolute;
   right: -10%;
@@ -1503,11 +1170,6 @@ code.token {
   .visitor-ticket { animation: none; transform: rotate(-4deg); }
 }
 
-/* ---------------------------------------------------------------- sound */
-
-/* Home and speaker, paired in the top-right corner as the mockups have them.
-   Above the hall canvas and the enlarged view, so they are reachable wherever
-   the visitor is. */
 .screen-chrome {
   position: absolute;
   top: 12px;
@@ -1516,7 +1178,6 @@ code.token {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Slides down after the screen it sits on has arrived, then stays put. */
   animation: chrome-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards;
 }
 
@@ -1545,53 +1206,22 @@ code.token {
 
 .chrome-button:hover { opacity: 0.82; }
 
-/*  The speaker and its level, as one control. The slider is closed by default —
-    the mockups keep this corner to two small icons — and opens on hover or on
-    keyboard focus. A touch screen has no hover to open it with, so there it
-    stands open; that is the one place the corner carries three things.
-
-    The speaker is the size of this control; the level hangs off it. */
 .sound {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-/*  The panel the level sits in on a touch screen. Where there is a pointer it
-    is not a box at all, so the slider goes on hanging off the speaker by its
-    own absolute position, exactly as it did before there was a panel. */
 .sound-panel { display: contents; }
 
-/*  Under the speaker rather than beside it, and standing on end. Laid out in
-    the row it opened *into* the corner — it pushed itself in between the
-    speaker and the home button and shoved home along the top of the screen, so
-    asking for the volume rearranged the furniture. Taken out of the flow it
-    belongs to the speaker alone: the two icons never move, and the level drops
-    beneath the one it is the level for, louder at the top.
-
-    Centred under the icon — 5px in from the right is half the difference
-    between a 32px button and this 22px column — so it hangs plumb from the
-    speaker and stays well inside the corner's own inset. Flush against the
-    icon's lower edge with no gap, because a strip of nothing between them would
-    close the slider as the pointer crossed it; the clear air around the track
-    is inside this box instead, which is 22px wide around a 6px track. */
 .sound-level {
   position: absolute;
   top: 100%;
   right: 5px;
   width: 22px;
   height: 76px;
-  /*  Vertical, with the loud end at the top: `vertical-lr` turns the control on
-      its side and `rtl` puts the maximum at the top rather than the bottom,
-      which is the only arrangement anyone reads as a volume. This pair is the
-      standard way to do it and the reason the rules below size the track by its
-      width — along a vertical slider, width is the thickness. */
   writing-mode: vertical-lr;
   direction: rtl;
-  /*  Faded rather than hidden or collapsed: a control that is not rendered
-      cannot be tabbed to, and the keyboard is exactly how somebody would reach
-      this without a hover. Inert while closed so an invisible slider cannot
-      take a drag meant for the hall behind it. */
   opacity: 0;
   pointer-events: none;
   transform: translateY(-5px);
@@ -1603,8 +1233,6 @@ code.token {
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
-/*  `:hover` counts a descendant as the element itself, so reaching down onto
-    the slider keeps the speaker hovered and the slider open. */
 .sound:hover .sound-level,
 .sound:focus-within .sound-level {
   opacity: 1;
@@ -1612,12 +1240,6 @@ code.token {
   pointer-events: auto;
 }
 
-/*  One rule per engine: a selector either browser does not know invalidates the
-    whole block, so the track and the handle cannot be written together. */
-/*  Width, not height: on a vertical slider the track's width is its thickness
-    and its height is the distance travelled. The fill runs at 0deg — up the
-    screen from the bottom — so the coloured part of the track is the part below
-    the handle, which is what a level means. */
 .sound-level::-webkit-slider-runnable-track {
   width: 6px;
   border-radius: 999px;
@@ -1644,7 +1266,6 @@ code.token {
   appearance: none;
   width: 14px;
   height: 14px;
-  /* Centres the handle across a 6px track — sideways, the track being upright. */
   margin-left: -4px;
   border: none;
   border-radius: 50%;
@@ -1667,28 +1288,11 @@ code.token {
   border-radius: 999px;
 }
 
-/*  ---- the level on a touch screen ----------------------------------------
-
-    Three things were wrong with it here, and the first two are the same thing:
-    it was a 22px-wide upright slider that stood open for the whole visit. A
-    22px target is half the width a finger is allowed to need, an upright range
-    input is a control Safari only learned to draw in 17.4 — before that the
-    markup renders as a horizontal slider squashed into a 22px box, which is
-    why dragging it appeared to do nothing — and a control nobody opened had no
-    business sitting over the artwork on every screen of the museum.
-
-    So on a screen with no hover it lies down, grows to a finger's size, sits
-    on a panel of its own, and is closed until the speaker is tapped. `hover:
-    none` rather than `pointer: coarse` because the absence of hover is the
-    actual problem being solved: a hybrid laptop with a touchscreen still has a
-    pointer to reveal it with, and should keep the small upright one. */
 @media (hover: none) {
   .sound-panel {
     display: flex;
     align-items: center;
     position: absolute;
-    /*  Hung under the icons and aligned with the corner's right edge, so it
-        opens into the empty wall below rather than across the two buttons. */
     top: calc(100% + 8px);
     right: 0;
     height: 44px;
@@ -1702,14 +1306,6 @@ code.token {
     transition: opacity 180ms ease, transform 180ms ease;
   }
 
-  /*  Opened by the tap on the speaker, and by a keyboard reaching the slider —
-      a touch screen with a keyboard attached still has to be able to get at it,
-      and an element at zero opacity is still in the tab order.
-
-      `:focus-visible` rather than the `:focus-within` the pointer version uses,
-      because a tap leaves the speaker focused: with plain focus the panel would
-      open on the tap and then have no way of ever closing again, which is the
-      thing this whole block exists to fix. */
   .sound[data-open='true'] .sound-panel,
   .sound:has(:focus-visible) .sound-panel {
     opacity: 1;
@@ -1719,8 +1315,6 @@ code.token {
 
   .sound-level {
     position: static;
-    /* Back off its side: loud to the right, which is what a lying-down slider
-       means everywhere else on a phone. */
     writing-mode: horizontal-tb;
     direction: ltr;
     width: 140px;
@@ -1729,15 +1323,9 @@ code.token {
     opacity: 1;
     pointer-events: auto;
     transform: none;
-    /*  Without this the drag is a gesture the page gets first and the slider
-        never sees — the museum sets `overscroll-behavior: none` and the hall
-        takes every pointer it is given, and between them a finger moving across
-        this control was being read as an attempt to move something else. */
     touch-action: none;
   }
 
-  /*  Lying down, the track's thickness is its height and the fill runs left to
-      right — the opposite of both on the upright one above. */
   .sound-level::-webkit-slider-runnable-track {
     width: auto;
     height: 6px;
@@ -1751,7 +1339,6 @@ code.token {
   .sound-level::-moz-range-track { width: auto; height: 6px; }
   .sound-level::-moz-range-progress { width: auto; height: 6px; }
 
-  /* A handle you can actually find with a thumb, centred across a 6px track. */
   .sound-level::-webkit-slider-thumb {
     width: 20px;
     height: 20px;
@@ -1786,7 +1373,6 @@ code.token {
   .sound-toggle .waves { transition: none; }
 }
 
-/* Clickable things breathe: a slow scale pulse marks a control as live; transform-only, off for reduced motion. */
 @keyframes button-pulse {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.035); }
@@ -1795,7 +1381,6 @@ code.token {
 .button,
 .chrome-button {
   animation: button-pulse 2.4s ease-in-out infinite;
-  /* Pausing on hover stops the target moving under a cursor already on it. */
 }
 
 .button:hover,
@@ -1819,11 +1404,6 @@ code.token {
   }
 }
 
-/* ------------------------------------------------- painting screen extras */
-
-/*  The no-photography mark, straddling the frame's lower-right corner where
-    the mockup puts it — down beside the plaque rather than up in the title,
-    and big enough to read as a sign rather than a speck. */
 .wt-no-photos {
   position: absolute;
   bottom: calc(-1 * clamp(8px, 3cqi, 20px));
@@ -1843,74 +1423,21 @@ code.token {
 .wt-shop-icon {
   width: 1.25em;
   height: 1.25em;
-  /* The cap height sits above the baseline; this centres the basket on it. */
   margin-block: -0.15em;
   flex: none;
 }
 
-/*  The velvet rope closes the composition along the bottom. Drawn whole and
-    at its own proportions, exactly as the mockup has it: 73.94% of the screen
-    wide, and 1.2427 times as wide as it is tall, which is the width at which
-    the swag falls in the curve it was painted with. Nothing is cut or
-    stretched to fit — the hall's copy of this sprite is rebuilt from three
-    slices because the walls there stand at varying distances, but here the
-    screen is one fixed shape and the drawing already fits it.
-
-    Taken out of the column and hung from the same line the column ends at, so
-    that the posts can carry on past the bottom of the screen; `.wt` clips
-    them. A rope standing clear of the bottom edge reads as an ornament lying
-    on the floor, where one running off it reads as a rope strung across a room
-    that continues past the frame. */
 .wt-rope {
   position: relative;
   width: 100%;
-  /*  The rope's own row, and the last one in the column: it takes the floor the
-      painting above it did not need, up to the 22.66% of the screen's height
-      that mock 8 gives it, which puts its upper edge at 77.34%. Below a tall
-      painting there is nothing left over and the row closes to nothing, taking
-      the rope off the bottom of the screen with it, exactly as mock 4 has it.
-      The drawing is taller than the row whatever the row's height and hangs out
-      of the bottom of it, which is the point, so nothing here may be given a
-      height the posts have to fit inside. */
-  /*  The band mock 8 keeps for it: 22.66% of the screen's height, which puts
-      the sprite's top edge at 77.34%. Written as a ratio of the row's own
-      width, because container units here measure `.wt`'s content box with its
-      padding already taken off, and the arithmetic back to the screen would
-      have to be redone every time that padding changed; the row is 92% of the
-      screen wide, so on the 9:16 screen 22.66% of its height is 2.284. It may
-      shrink under a title long enough to need the room, which slides the rope
-      further off the bottom rather than pushing the buttons off with it. */
   flex: 0 1 auto;
-  /*  The 22.66% of the screen's height mock 8 keeps for the rope, written the
-      long way — 100cqi is the row's own width and 2.284 its width-to-height on
-      the 9:16 screen — rather than as an `aspect-ratio`, because a height the
-      browser derives from a ratio computes to `auto` and cannot be animated,
-      and this height is the one that has to travel when the work changes shape. */
   height: calc(100cqi / 2.284);
   min-height: 6.14cqh;
-  /* Always on the floor: a work wide enough to leave the column slack leaves it
-     above the rope, never underneath it. */
   margin-top: auto;
   pointer-events: none;
   user-select: none;
 }
 
-/*  The column mock 4 stands on that floor, at the right edge and half off it.
-    Without it a tall work ends on bare boards, and the rope's absence reads as
-    something missing rather than as different scenery — which matters more
-    than it sounds, because every work in the museum is taller than it is wide,
-    so this floor, and not mock 8's rope, is the one people actually see.
-
-    Larger than it was: at a quarter of the screen it was a thin sliver against
-    the right edge and read as something that had not finished loading rather
-    than as furniture. Grown from the same anchor rather than further off the
-    edge, and stopped where it is because the sprite is as tall as it is wide
-    again half over — at a third of the screen the owl on top of it reaches up
-    into the forward arrow, and scenery must never be mistaken for a control.
-
-    Behind the plaque and the buttons: a negative z-index paints it over the
-    wall but under everything in the column's flow, so it can never take a tap
-    or cover a word. */
 .wt-column {
   position: absolute;
   right: -10%;
@@ -1922,22 +1449,10 @@ code.token {
   user-select: none;
 }
 
-/*  Under a tall work there is no rope: the painting has taken the floor it stood
-    on, which is what mock 4 does — bare boards beneath the buttons and the rope
-    nowhere in the picture. The row stays, as the floor itself, so the buttons
-    are never pressed against the bottom edge of the screen. The sprite is faded
-    out rather than removed, because the row shrinks to the floor's depth and a
-    hand's width of finial left poking up from the bottom edge reads as a
-    mistake rather than as a rope going out of frame. */
 .wt:not([data-wide]) .wt-rope { height: 6.14cqh; }
 .wt:not([data-wide]) .wt-rope::before { opacity: 0; }
 .wt[data-wide] .wt-column { opacity: 0; }
 
-/*  The sprite, hung from the top of that row and left to run off the bottom of
-    the screen; `.wt` clips it. 80.37% of a row that is itself 92% of the
-    screen comes to the 73.94% of the screen the mockup draws the rope at, and
-    1.2427 is the sprite's own aspect, so the swag falls in the curve it was
-    painted with instead of being stretched into an arc between the posts. */
 .wt-rope::before {
   content: '';
   position: absolute;
@@ -1949,15 +1464,6 @@ code.token {
   background: url('/assets/rope.png') no-repeat center / 100% 100%;
 }
 
-/* ------------------------------------------------------------ guest board */
-
-/*  The guest board screens, from the guestboard mocks (1080x1920). Each screen
-    is a stage at the mock's own proportions, fitted inside the frame and
-    centred, so every position below is the mock's, as a share of that stage:
-    `left`/`width` against its 1080 width (cqw for type and anything square),
-    `top` against its 1920 height. The wall around a stage is the mock's
-    background run on. The mock's text column is centred a little left of the
-    frame's middle (at 527 of 1080), and the text here follows it. */
 .guestboard {
   position: absolute;
   inset: 0;
@@ -1969,7 +1475,6 @@ code.token {
 
 .guestboard-screen { position: absolute; inset: 0; }
 
-/* Tapping the bare wall steps back; it is a scrim, so it draws nothing. */
 .guestboard-scrim {
   position: absolute;
   inset: 0;
@@ -1979,8 +1484,6 @@ code.token {
   cursor: pointer;
 }
 
-/*  Only what the visitor can act on takes a pointer; the rest of the stage lets
-    a tap through to the scrim behind it. */
 .guestboard-stage {
   position: absolute;
   top: 50%;
@@ -1996,9 +1499,6 @@ code.token {
   pointer-events: auto;
 }
 
-/*  The board is board.png at its full canvas, placed by the canvas so that
-    measurements off the artist's file land where the mock draws them. Mock 1
-    shows it whole; mocks 2 and 3 hold it up close and let the frame crop it. */
 .guestboard-board {
   position: absolute;
   aspect-ratio: 2010 / 1550;
@@ -2041,8 +1541,6 @@ code.token {
 .guestboard-intro { top: 61.02%; left: 8.84%; right: 11.16%; font-size: 5.2cqw; line-height: 1.395; }
 .guestboard-reminder { top: 35.29%; left: 10.84%; right: 13.16%; font-size: 2.95cqw; line-height: 1.38; }
 
-/*  The pill, drawn by this element: the mock's own colour and size, with the
-    label set in the museum face at the size the mock's lettering measures. */
 .guestboard-button {
   position: absolute;
   width: 39.81cqw;
@@ -2065,9 +1563,6 @@ code.token {
 .guestboard-button--add { left: 28.89%; top: 80.73%; }
 .guestboard-button--foot { left: 32.96%; top: 86.46%; }
 
-/*  Not in the mock, which only draws a note that went up: why one did not,
-    under the note, on a scrap of the board's own paper so it reads over the
-    scalloped edge it lands on. */
 .guestboard-error {
   position: absolute;
   top: 82.4%;
@@ -2086,9 +1581,6 @@ code.token {
   color: #a3243f;
 }
 
-/* --- notes pinned to the board ------------------------------------------ */
-
-/* Positioned over the board's canvas, in its percentages; see lib/placement.ts. */
 .guestboard-pins {
   position: absolute;
   inset: 0;
@@ -2110,9 +1602,6 @@ code.token {
 .guestboard-pin-button:hover { transform: translateY(-2%) rotate(-1.5deg); }
 .guestboard-pin-button:focus-visible { outline: 2px solid #662f14; outline-offset: 2px; }
 
-/* --- a note held up close -------------------------------------------------- */
-
-/* Mock 2 holds the note lower, under the reminder; mock 3 higher, between the arrows. */
 .guestboard-held { position: absolute; left: 16.76%; width: 66.48%; }
 .guestboard-held--compose { top: 44.48%; }
 
@@ -2121,7 +1610,6 @@ code.token {
   top: 38.75%;
   left: 0;
   width: 100%;
-  /* The note's height and its shadow, so a swipe anywhere across that band moves it. */
   height: 38.6%;
   overflow: hidden;
 }
@@ -2145,11 +1633,6 @@ code.token {
 .guestboard-arrow:disabled { opacity: 0.3; cursor: default; }
 .guestboard-arrow:focus-visible { outline: 2px solid #662f14; outline-offset: 4px; }
 
-/* --- the note itself --------------------------------------------------------- */
-
-/*  One drawing at every size: everything inside is measured against the note's
-    own width, from the mock's held note (718 wide). The paper, a hairline edge,
-    and under it the curl of shadow the mock draws, deepest near the corners. */
 .sticky-note {
   position: relative;
   aspect-ratio: 718 / 695;
@@ -2183,7 +1666,6 @@ code.token {
   line-height: 1.355;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  /* The tiers fit any 280 characters; a note of mostly line breaks can still scroll. */
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -2204,8 +1686,6 @@ code.token {
   text-overflow: ellipsis;
 }
 
-/*  The fields draw nothing of their own: what is typed is set in the note's own
-    type, in the place it will be read. */
 .sticky-note-field {
   display: block;
   width: 100%;

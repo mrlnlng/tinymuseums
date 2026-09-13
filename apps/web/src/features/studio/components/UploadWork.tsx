@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
-/* Uploads a work without the file ever touching the application: hash in the browser (content-addressed key), presign, PUT straight to storage, then record the key — serverless payload limits would reject a 25MB file through a route handler. */
-
 async function sha256Hex(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
   const digest = await crypto.subtle.digest('SHA-256', buffer)

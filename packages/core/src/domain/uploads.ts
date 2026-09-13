@@ -1,8 +1,6 @@
 import { queryOne } from '../infra/db.ts'
 import { enqueue } from '../infra/jobs.ts'
-import { getStorage, originalKey, type PresignedUpload } from '../media/storage.ts'
-
-/* Accepting an upload in two steps, without the file ever passing through the application: presign, browser PUTs to storage, then record the key — validation and derivatives stay in the worker. */
+import { digestOf, getStorage, originalKey, type PresignedUpload } from '../media/storage.ts'
 
 const ACCEPTED = new Map([
   ['image/jpeg', 'jpg'],
@@ -18,7 +16,6 @@ export class UploadRejected extends Error {}
 
 const DIGEST = /^[0-9a-f]{32,64}$/
 
-/** Step one: hand the browser somewhere to PUT the file. */
 export async function presignUpload(
   artistId: string,
   mime: string,
@@ -39,7 +36,6 @@ export async function presignUpload(
   return getStorage().presignPut(key, mime)
 }
 
-/*  Step two: record the object the browser uploaded. The key is re-derived from the session's artist id rather than trusted from the request, so a client cannot register an object it does not own. */
 export async function registerUpload(
   artistId: string,
   mime: string,
@@ -55,7 +51,6 @@ export async function registerUpload(
   if (bytes === null) throw new UploadRejected('The upload did not arrive; try again')
   if (bytes > MAX_UPLOAD_BYTES) throw new UploadRejected('That file is larger than the limit')
 
-  // The same bytes uploaded twice land on the same key; reuse the asset row.
   const existing = await queryOne<{ id: string }>(
     `select id from assets where artist_id = $1 and storage_key = $2`,
     [artistId, key],
@@ -74,7 +69,6 @@ export async function registerUpload(
   return row.id
 }
 
-/*  Server-side upload, kept for the seed script only — real uploads go through presignUpload + registerUpload, but seeding generates its images in-process and has no browser to presign for. */
 export async function createAssetFromUpload(
   artistId: string,
   mime: string,
@@ -83,7 +77,6 @@ export async function createAssetFromUpload(
   const extension = ACCEPTED.get(mime)
   if (!extension) throw new UploadRejected(`Unsupported image type: ${mime || 'unknown'}`)
 
-  const { digestOf } = await import('../media/storage.ts')
   const digest = digestOf(body)
   const key = originalKey(artistId, digest, extension)
   await getStorage().put(key, body, mime)

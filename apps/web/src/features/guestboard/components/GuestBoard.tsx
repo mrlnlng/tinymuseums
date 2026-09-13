@@ -8,14 +8,6 @@ import ComposeScreen from '@/features/guestboard/components/ComposeScreen'
 import ReadScreen from '@/features/guestboard/components/ReadScreen'
 import { useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 
-/*  The guest board, opened from the board at the end of the hall: the board
-    with everyone's notes (mock 1), a note being written (mock 2), and a note
-    held up to read, one after another (mock 3).
-
-    One dialog with three screens rather than three dialogs, so the notes are
-    fetched once and the draft outlives stepping away from it: going back to
-    the board and returning finds the note as it was left. */
-
 type View = { screen: 'board' } | { screen: 'compose' } | { screen: 'read'; index: number }
 
 interface GuestBoardProps {
@@ -23,7 +15,6 @@ interface GuestBoardProps {
 }
 
 function blankDraft(): NoteDraft {
-  // The colour is chosen as the note is started, so what is written on is what gets pinned up.
   const color = GUEST_NOTE_COLORS[Math.floor(Math.random() * GUEST_NOTE_COLORS.length)]!
   return { name: '', message: '', color }
 }
@@ -35,7 +26,6 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
 
   const toBoard = useCallback(() => setView({ screen: 'board' }), [])
 
-  // Escape steps back one screen, and closes from the board.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return

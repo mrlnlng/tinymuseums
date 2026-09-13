@@ -1,5 +1,3 @@
-/* Entry point for the worker only — these modules pull in sharp, and keeping them behind a separate export keeps the image codec out of the web bundle. */
-
 export {
   DERIVATIVE_WIDTHS,
   ImageRejected,

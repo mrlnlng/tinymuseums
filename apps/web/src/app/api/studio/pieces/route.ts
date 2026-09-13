@@ -1,7 +1,7 @@
 import { UploadRejected, queryOne, registerUpload } from '@tiny/core'
 import { currentArtist } from '@/shared/lib/session'
+import { isHttpUrl } from '@/shared/lib/validate'
 
-/*  Step two of an upload: record the object the browser PUT, and hang metadata on it. The worker takes it from here — validation, EXIF stripping, the derivative ladder and the framed render all happen out of band. */
 export async function POST(request: Request) {
   const artist = await currentArtist()
   if (!artist) return Response.json({ error: 'Sign in first' }, { status: 401 })
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if (!title) return Response.json({ error: 'Give the work a title' }, { status: 400 })
 
   const shopUrl = String(body.shopUrl ?? '').trim() || null
-  if (shopUrl && !/^https?:\/\//i.test(shopUrl)) {
+  if (shopUrl && !isHttpUrl(shopUrl)) {
     return Response.json({ error: 'The shop link must start with http:// or https://' }, { status: 400 })
   }
 
@@ -41,8 +41,6 @@ export async function POST(request: Request) {
     throw error
   }
 
-  // Auto-hang: the work takes the next free stand (1..30). When the floor is
-  // full the work lands in storage (order_index 0) until the artist rearranges.
   const next = await queryOne<{ next: number }>(
     `select case
               when coalesce(max(order_index), 0) >= 30 then 0

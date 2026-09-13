@@ -13,17 +13,8 @@ export interface Viewport {
   top: number
 }
 
-/*  One scratch vector for every projection on the page. Both overlays run inside
-    the one frame loop, one after the other, so nothing here is ever re-entered. */
 const projected = new THREE.Vector3()
 
-/*  Every label's styles are rewritten on every frame, and between two frames
-    almost none of them differ: a plaque's width and type size move only when the
-    window does, and its transform only while the hall is moving. Assigning an
-    identical string is not free — the CSSOM parses it and marks the element
-    dirty — so each node remembers what it was last given and only genuinely new
-    values reach the DOM. Standing still in front of a painting, this takes the
-    overlay from around thirty style writes a frame to none. */
 type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity'
 
 const written = new WeakMap<HTMLElement, Partial<Record<StyledProperty, string>>>()
@@ -39,10 +30,6 @@ function writeStyle(node: HTMLElement, property: StyledProperty, value: string):
   node.style[property] = value
 }
 
-/*  Where a world point lands on screen, or null when it is far enough outside
-    the frame that positioning it would be a layout nobody sees. The cull is
-    generous rather than exact: labels are placed by their centre and can be
-    wider than the mark they sit on. */
 function toScreen(
   x: number,
   y: number,
@@ -59,18 +46,12 @@ function toScreen(
   }
 }
 
-/* One placard per painting: the title above the plane, the work's description on the plaque beneath it. The plaque is a scene sprite; the text on it is real DOM — selectable, readable, crawlable — updated in one imperative pass per frame, because routing it through a render cycle at 60fps makes overlays swim. */
 export class Placards {
-  /*  Keyed by the slot's own index rather than by a string made from it: the
-      key was being formatted afresh for every wall on every frame. */
   private nodes = new Map<number, HTMLElement>()
   private titles = new Map<number, HTMLElement>()
-  /* Reused rather than rebuilt: this runs sixty times a second. */
   private seen = new Set<number>()
-  /*  Rendered heights, kept up to date by the observer below. A bottom-hung label has to know how tall it grew before it can be kept on screen, and asking the element that inside the frame loop would force a layout per title per frame. */
   private heights = new WeakMap<HTMLElement, number>()
 
-  /*  Watches the titles instead of measuring them: the height changes on a resize and again when the museum face arrives and the text rewraps, and both reach us here without the loop ever touching layout. */
   private sizes = new ResizeObserver((entries) => {
     for (const entry of entries) {
       this.heights.set(entry.target as HTMLElement, entry.contentRect.height)
@@ -87,10 +68,7 @@ export class Placards {
     const seen = this.seen
     seen.clear()
     const viewWidth = camera.right - camera.left
-    // Locked to the plaque's painted width at any window size.
     const plaquePx = (CONFIG.plaque.width / viewWidth) * viewport.width
-    // Sized from its own width, so the plaque can grow without dragging the
-    // painting's title along with it.
     const titlePx = (CONFIG.plaque.titleWidth / viewWidth) * viewport.width
 
     for (const m of mounted) {
@@ -118,27 +96,14 @@ export class Placards {
         this.titles.set(key, title)
       }
 
-      /*  Teeny tiny against the brass, so a whole description fits on it; what
-          still will not fit is ellipsed, because the plaque is a label and the
-          artist's page is where the long version lives.
-
-          The band is a little under four fifths of the board rather than the
-          six sevenths it was: the pegs in the plaque's corners stand about a
-          twelfth in from its edges, and at the old width a full line ran level
-          with them and the words read as though they had been squeezed on.
-          Eleven per cent either side leaves the painted margin visible all the
-          way round the writing. */
       this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.78, Math.max(7, plaquePx * 0.058), 'center')
 
-      /* Its own width: wide enough for a title, and unaffected by the plaque. Hung by its lower edge — the title is never trimmed, so it must grow upward into the empty wall rather than down onto the painting. */
       this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
     }
 
     for (const map of [this.nodes, this.titles]) {
       for (const [key, el] of map) {
         if (seen.has(key)) continue
-        // The observer holds its targets, so walking the hall would accumulate
-        // one dead title per wall passed without this.
         this.sizes.unobserve(el)
         el.remove()
         map.delete(key)
@@ -146,7 +111,6 @@ export class Placards {
     }
   }
 
-  /*  Projects a world point and writes the result straight onto the element. Anything far enough off-screen is hidden rather than positioned, so the browser never lays out labels nobody can see. `anchor` picks which edge of the element the world point pins: 'center' for a label that sits on its mark, 'bottom' for one that hangs from it and grows upward. */
   private place(
     node: HTMLElement,
     x: number,
@@ -168,9 +132,6 @@ export class Placards {
 
     let screenY = at.y
     if (anchor === 'bottom') {
-      // A title long enough to need several lines grows up the wall, and a very
-      // long one would grow off the top of it. Pushing it back down costs a
-      // little of the painting's top edge, which is cheaper than losing words.
       const height = this.heights.get(node) ?? node.offsetHeight
       screenY = Math.max(screenY, viewport.top + height + 4)
     }
@@ -192,7 +153,6 @@ export class Placards {
   }
 }
 
-/* The words in the visitor centre — the board over the door, the way-finder, and the button on the help booth's counter. Painted wood is a texture in the scene; the writing on it is DOM here, for the same reasons the plaques are: it is selectable, readable to a screen reader, and it stays sharp at any zoom. The button is the one node in this layer that takes a pointer, since the layer itself does not. */
 export class LobbySigns {
   private sign = document.createElement('div')
   private direction = document.createElement('div')
@@ -209,8 +169,6 @@ export class LobbySigns {
     this.sign.textContent = 'Visitor Center'
 
     this.direction.className = 'lobby-direction'
-    // The arrow is a glyph rather than an image: it is a word here, not an
-    // icon, and it must wrap and scale with the line it belongs to.
     this.direction.innerHTML = '<span>To Exhibition</span><span aria-hidden="true">\u2192</span>'
 
     this.help.type = 'button'
@@ -228,26 +186,11 @@ export class LobbySigns {
     this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
     this.place(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
 
-    /*  The button is the one node here that takes a pointer, and only while it
-        is actually on screen — an invisible one parked off the left edge would
-        still swallow the drag that scrolls the hall.
-
-        Set larger against the pill than the two signs are against their boards.
-        At the old ratio the words filled under two thirds of the pill's width
-        and read as a caption inside a button rather than as its label, which is
-        the wrong emphasis for the one thing at this end of the hall a visitor
-        is meant to press. At this size they take about four fifths of it and
-        still clear the gold rim on both sides — the pill is a fixed 1.06 world
-        units wide, so the fit holds at every screen size rather than depending
-        on this one. */
     const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.11)
     if (onScreen !== this.isHelpOnScreen) {
       this.isHelpOnScreen = onScreen
       this.help.style.pointerEvents = onScreen ? 'auto' : 'none'
     }
-    /*  The pill is drawn by this element rather than by the booth's art, which
-        has only an empty counter behind it, so it needs a real height. It only
-        changes with the viewport, so it is written only when it does. */
     const height = `${(this.marks.help.height * perUnit).toFixed(1)}px`
     if (height !== this.helpHeight) {
       this.helpHeight = height
@@ -255,11 +198,6 @@ export class LobbySigns {
     }
   }
 
-  /*  Centred on its mark and sized in world units, so a sign occupies the same
-      part of the board it is written on at every screen size. Anything far
-      enough off-screen is hidden rather than positioned — the visitor centre
-      is behind you for most of a visit, and its three signs should not cost a
-      layout per frame for the whole walk. */
   private place(
     node: HTMLElement,
     mark: { x: number; y: number; width: number },
@@ -291,18 +229,6 @@ export class LobbySigns {
   }
 }
 
-
-/*  The words at the far end of the hall: the note that closes the exhibition,
-    the board over the counter, and the link out to the print shop. The same
-    arrangement as the visitor centre's signage, and for the same reasons —
-    painted wood in the scene, the writing on it real DOM projected over the
-    top, sized in world units so each sign fills the same share of its board at
-    every screen size.
-
-    The link is the one node in this layer that takes a pointer, and the reason
-    it is an anchor rather than a button is that it leaves the museum: it should
-    behave like a link, be openable in a tab of the visitor's choosing, and
-    survive having its address copied. */
 export class GiftShopSigns {
   private note = document.createElement('p')
   private sign = document.createElement('div')
@@ -325,8 +251,6 @@ export class GiftShopSigns {
     this.link.className = 'gift-shop-button'
     this.link.href = href
     this.link.target = '_blank'
-    /*  The shop is somebody else's site, so it is opened without a handle back
-        on to this one and without the museum in its referrer. */
     this.link.rel = 'noreferrer noopener'
     this.link.innerHTML =
       '<img class="gift-shop-basket" src="/assets/icon-basket.svg" alt="" aria-hidden="true">' +
@@ -342,18 +266,12 @@ export class GiftShopSigns {
     this.place(this.note, this.marks.note, perUnit, camera, viewport, 0.065)
     this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.134)
 
-    /*  Only while it is actually on screen: an invisible link parked off the
-        right edge would still swallow the drag that scrolls the hall, and the
-        shop sits at the end of a walk the visitor spends entirely dragging. */
     const onScreen = this.place(this.link, this.marks.button, perUnit, camera, viewport, 0.09)
     if (onScreen !== this.isLinkOnScreen) {
       this.isLinkOnScreen = onScreen
       this.link.style.pointerEvents = onScreen ? 'auto' : 'none'
     }
 
-    /*  The pill is drawn by this element rather than by the shop's art, which
-        has no button in it, so it needs a real height. It changes only with the
-        viewport, so it is written only when it does. */
     const height = `${(this.marks.button.height * perUnit).toFixed(1)}px`
     if (height !== this.linkHeight) {
       this.linkHeight = height
@@ -361,7 +279,6 @@ export class GiftShopSigns {
     }
   }
 
-  /** Identical to the visitor centre's placement, down to the off-screen cull. */
   private place(
     node: HTMLElement,
     mark: { x: number; y: number; width: number },
@@ -393,12 +310,6 @@ export class GiftShopSigns {
   }
 }
 
-/*  The cafe's one control, at the rest stop past the tenth painting: an
-    invisible link laid over the artist's painted "buy us a coffee" poster, which
-    is the control's own drawing — unlike the gift shop's pill there is nothing
-    for this element to draw, so it draws nothing, and the poster underneath
-    is the whole affordance. An anchor for the same reason the shop's is: it
-    leaves the museum, so it should behave like a link to the browser. */
 export class CafeLink {
   private poster = document.createElement('a')
   private isOnScreen: boolean | null = null
@@ -408,8 +319,6 @@ export class CafeLink {
     this.poster.className = 'cafe-poster-link'
     this.poster.href = href
     this.poster.target = '_blank'
-    /*  Somebody else's site, so no handle back on to this one and no museum in
-        its referrer — the same terms the gift shop's link opens under. */
     this.poster.rel = 'noreferrer noopener'
     this.poster.setAttribute(
       'aria-label',
@@ -441,8 +350,6 @@ export class CafeLink {
     )
     writeStyle(this.poster, 'opacity', '1')
 
-    /*  Only while it is actually on screen: an invisible link parked off the
-        hall would still swallow the drag that scrolls it. */
     if (this.isOnScreen !== true) {
       this.isOnScreen = true
       this.poster.style.pointerEvents = 'auto'
@@ -460,13 +367,6 @@ export class CafeLink {
   }
 }
 
-/*  The notes pinned to the guest board at the end of the hall. The notes
-    themselves are React's — the same pinned-notes layout the guest board screen
-    draws, rendered into this layer — and this only keeps the layer lying over
-    the board: one element sized to the drawing's canvas and moved with the
-    hall, rather than a node per note, so a full board costs the frame loop the
-    same as an empty one. It takes no pointer: a tap on the board is the scene's,
-    and opens the guest board. */
 export class GuestBoardNotes {
   constructor(
     private layer: HTMLElement,
@@ -490,7 +390,6 @@ export class GuestBoardNotes {
     writeStyle(this.layer, 'opacity', '1')
   }
 
-  /** The layer belongs to React, so it is hidden rather than removed. */
   clear(): void {
     writeStyle(this.layer, 'opacity', '0')
   }

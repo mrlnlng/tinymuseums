@@ -1,7 +1,5 @@
 import { ensureEpoch, epochById, getHallSlice } from '@tiny/core'
 
-/* A slice of the hall: stable for a given (epoch, after, limit), but not immutable — takedown is checked at read time, so a short TTL is the honest header. */
-
 const MAX_LIMIT = 12
 
 export async function GET(request: Request) {
@@ -11,10 +9,13 @@ export async function GET(request: Request) {
   const after = Math.max(0, Number(url.searchParams.get('after') ?? 0) || 0)
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(url.searchParams.get('limit') ?? 4) || 4))
 
-  const epoch = epochParam ? await epochById(Number(epochParam)) : await ensureEpoch()
+  const epochId = Number(epochParam)
+  if (epochParam && !(Number.isSafeInteger(epochId) && epochId > 0)) {
+    return Response.json({ error: 'Invalid epoch' }, { status: 400 })
+  }
 
-  // No epoch means nothing has been published yet, or the requested one aged
-  // out of its grace window. Either way the client should start over.
+  const epoch = epochParam ? await epochById(epochId) : await ensureEpoch()
+
   if (!epoch) {
     return Response.json(
       { epochId: 0, slots: [], nextIndex: null, totalSlots: 0 },

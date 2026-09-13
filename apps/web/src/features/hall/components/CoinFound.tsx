@@ -3,14 +3,6 @@
 import { useEffect } from 'react'
 import { motion } from 'motion/react'
 
-/*  The screen the hidden coin opens, from the coin_click mock: the title, the
-    discount code, the coin, and the urn pedestal faded behind it.
-
-    The mock is 1668x2388, squatter than the phone frame, so its composition is
-    laid out as one stage at the mock's own proportions, centred, and the urn's
-    column simply runs on past the stage's lower edge to fill the extra height.
-    Every position below is the mock's, as a percentage of that stage. */
-
 interface CoinFoundProps {
   onClose: () => void
 }
@@ -39,7 +31,6 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
       <div className="coin-found-stage">
         <img className="coin-found-urn" src="/assets/pedestal-5.png" alt="" />
         <h2 className="coin-found-title">You found a coin!</h2>
-        {/* Selectable, so the code can be copied without closing the screen. */}
         <p className="coin-found-code" onClick={(e) => e.stopPropagation()}>
           Use &quot;tinymuseum&quot;
           <br />

@@ -3,20 +3,8 @@
 import { useEffect } from 'react'
 import { motion } from 'motion/react'
 
-/*  What the help booth hands out, from mockup 2.1: the booth itself, blown up
-    to fill the screen, with the guide written on its counter.
-
-    The booth is one drawing, and the guide is however many lines it is, so the
-    art is cut into three horizontal bands and only the middle one stretches —
-    the awning and the counter keep the proportions they were drawn at, and the
-    two yellow posts either side of the text grow with it. The same trick the
-    rope on every wall uses, turned on its side. */
-
-/*  Where the bands fall in help-center.png, measured off the art: the scallops
-    of the awning end at 46.2%, and the counter's rail begins at 74%. */
 const AWNING = 0.462
 const COUNTER = 0.74
-/** The drawing's own proportions, so the two fixed bands cannot be stretched. */
 const BOOTH_ASPECT = 811 / 1039
 
 const STEPS = [
@@ -29,7 +17,6 @@ interface HelpGuideProps {
 }
 
 export default function HelpGuide({ onClose }: HelpGuideProps) {
-  // Escape closes it, as it closes the enlarged view.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -49,9 +36,6 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
       aria-modal="true"
       aria-label="Help guide"
     >
-      {/*  The whole surface closes it. The booth is drawn wider than the frame,
-           so there is barely any backdrop left to tap beside it — the booth is
-           made inert instead and every tap lands here. */}
       <button
         type="button"
         className="help-guide-scrim"

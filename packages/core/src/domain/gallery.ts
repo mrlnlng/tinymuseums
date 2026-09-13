@@ -4,11 +4,6 @@ import { pickDerivative } from '../media/derivatives.ts'
 import { getStorage } from '../media/storage.ts'
 import type { Derivative } from '../types.ts'
 
-/* The gallery: every work is its own stand in the hall, arranged 1..30 by
-   the artist. order_index is the single source of truth — 1..30 hangs, 0
-   means the work is in storage (uploaded but not on the floor). No layouts,
-   no compositions: a work is a stand. */
-
 export const MAX_STANDS = 30
 
 export interface GalleryPiece {
@@ -17,12 +12,9 @@ export interface GalleryPiece {
   description: string
   orderIndex: number
   shopUrl: string | null
-  /** Asset pipeline state: pending / ready / failed / null when no asset. */
   status: string | null
   error: string | null
-  /** Thumbnail URL from the derivative ladder, or null while processing. */
   imageUrl: string | null
-  /** Has its own framed image, so it can hang in the hall. */
   framed: boolean
 }
 
@@ -38,7 +30,6 @@ interface GalleryRow {
   framed: boolean
 }
 
-/** Everything an artist has uploaded, split into floor (1..30) and storage. */
 export async function getGallery(
   artistId: string,
 ): Promise<{ arranged: GalleryPiece[]; storage: GalleryPiece[] }> {
@@ -78,7 +69,6 @@ export async function getGallery(
   return { arranged, storage }
 }
 
-/** Moves a work one stand up (toward 1) or down, swapping with its neighbour. */
 export async function movePiece(
   artistId: string,
   pieceId: string,
@@ -96,22 +86,14 @@ export async function movePiece(
     const target = direction === 'up' ? at - 1 : at + 1
     if (target < 0 || target >= rows.length) return
     const other = rows[target]
-    // Three steps rather than one CASE update: Postgres checks the partial
-    // unique index per row as the statement runs, so a single swap statement
-    // can transiently collide. Stepping the moving piece through 0 (outside
-    // the indexed range) keeps every intermediate state legal.
     await client.query(`update pieces set order_index = 0 where id = $1`, [pieceId])
     await client.query(`update pieces set order_index = $2 where id = $1`, [other.id, rows[at].order_index])
     await client.query(`update pieces set order_index = $2 where id = $1`, [pieceId, other.order_index])
   })
 
-  // The museum walks this order, so a reorder refreshes it promptly instead
-  // of waiting for the next scheduled seal.
   await enqueue('seal_epoch', { reason: 'rearranged' })
 }
 
-/** Hangs a stored work at the end of the floor (next free stand).
- *  Returns false when the floor is full (30/30). */
 export async function hangPiece(artistId: string, pieceId: string): Promise<boolean> {
   return transaction(async (client) => {
     const piece = await client.query<{ order_index: number }>(
@@ -140,7 +122,6 @@ export async function hangPiece(artistId: string, pieceId: string): Promise<bool
   })
 }
 
-/** Unhangs a work and compacts the floor back to a contiguous 1..N. */
 export async function unhangPiece(artistId: string, pieceId: string): Promise<void> {
   await transaction(async (client) => {
     const piece = await client.query<{ order_index: number }>(
@@ -151,7 +132,6 @@ export async function unhangPiece(artistId: string, pieceId: string): Promise<vo
     if (!removed || removed < 1 || removed > MAX_STANDS) return
 
     await client.query(`update pieces set order_index = 0 where id = $1`, [pieceId])
-    // Everything above the gap shifts down one, keeping the floor 1..N.
     await client.query(
       `update pieces set order_index = order_index - 1
         where artist_id = $1 and id <> $2 and order_index > $3`,
@@ -161,8 +141,6 @@ export async function unhangPiece(artistId: string, pieceId: string): Promise<vo
   })
 }
 
-/** Deletes a work: the piece row (epoch slots cascade), then the asset and all
- *  its files if no other piece still references it, and the piece's frame. */
 export async function deletePiece(artistId: string, pieceId: string): Promise<void> {
   const piece = await queryOne<{ asset_id: string | null; flattened_key: string | null }>(
     `select asset_id, flattened_key from pieces where id = $1 and artist_id = $2`,

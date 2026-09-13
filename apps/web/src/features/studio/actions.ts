@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import {
   createSession,
@@ -9,6 +10,7 @@ import {
   ensureQrToken,
   hashPassword,
   hangPiece,
+  hitForVisitor,
   movePiece,
   publishArtist,
   query,
@@ -20,16 +22,18 @@ import {
   unpublishArtist,
   verifyPassword,
 } from '@tiny/core'
+import { clientIp } from '@/shared/lib/client-ip'
 import { clearSessionCookie, requireArtist, setSessionCookie, SESSION_COOKIE } from '@/shared/lib/session'
-import { cookies } from 'next/headers'
-
-/*  Studio mutations — plain server actions that redirect with a message, rather than client state: the studio is a handful of forms, and every one of them is a navigation. */
+import { isEmail, isHttpUrl } from '@/shared/lib/validate'
 
 function back(path: string, message: string, kind: 'ok' | 'bad' = 'ok'): never {
   redirect(`${path}?m=${encodeURIComponent(message)}&k=${kind}`)
 }
 
-// ---------------------------------------------------------------- identity
+async function isThrottled(scope: string, limit: number, windowSeconds: number): Promise<boolean> {
+  const result = await hitForVisitor(scope, clientIp(await headers()), { limit, windowSeconds })
+  return !result.allowed
+}
 
 export async function registerAction(formData: FormData): Promise<void> {
   const name = String(formData.get('name') ?? '').trim()
@@ -37,8 +41,11 @@ export async function registerAction(formData: FormData): Promise<void> {
   const password = String(formData.get('password') ?? '')
 
   if (name.length < 2) back('/studio/register', 'Tell us what to call you', 'bad')
-  if (!email.includes('@')) back('/studio/register', 'That email does not look right', 'bad')
+  if (!isEmail(email)) back('/studio/register', 'That email does not look right', 'bad')
   if (password.length < 8) back('/studio/register', 'Use at least 8 characters', 'bad')
+  if (await isThrottled('register', 5, 60 * 60)) {
+    back('/studio/register', 'Too many attempts. Try again later.', 'bad')
+  }
 
   const taken = await queryOne(`select 1 from artists where email = $1`, [email])
   if (taken) back('/studio/register', 'That email already has a wall', 'bad')
@@ -62,12 +69,15 @@ export async function signInAction(formData: FormData): Promise<void> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const password = String(formData.get('password') ?? '')
 
+  if (await isThrottled('sign-in', 10, 15 * 60)) {
+    back('/studio/sign-in', 'Too many attempts. Try again in a few minutes.', 'bad')
+  }
+
   const artist = await queryOne<{ id: string; password_hash: string }>(
     `select id, password_hash from artists where email = $1`,
     [email],
   )
 
-  // Same message either way: this must not reveal which emails exist.
   if (!artist || !(await verifyPassword(password, artist.password_hash))) {
     back('/studio/sign-in', 'That email and password do not match', 'bad')
   }
@@ -84,16 +94,14 @@ export async function signOutAction(): Promise<void> {
   redirect('/studio/sign-in')
 }
 
-// ---------------------------------------------------------------- works
-
-const SHOP_URL = /^https?:\/\//i
-
 export async function updatePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   const id = String(formData.get('id') ?? '')
+  const title = String(formData.get('title') ?? '').trim()
+  if (!title) back('/studio/gallery', 'Give the work a title', 'bad')
 
   const shopUrl = String(formData.get('shopUrl') ?? '').trim() || null
-  if (shopUrl && !SHOP_URL.test(shopUrl)) {
+  if (shopUrl && !isHttpUrl(shopUrl)) {
     back('/studio/gallery', 'The shop link must start with http:// or https://', 'bad')
   }
 
@@ -104,7 +112,7 @@ export async function updatePieceAction(formData: FormData): Promise<void> {
     [
       id,
       artist.id,
-      String(formData.get('title') ?? '').trim(),
+      title,
       String(formData.get('description') ?? '').trim(),
       shopUrl,
     ],
@@ -120,11 +128,6 @@ export async function deletePieceAction(formData: FormData): Promise<void> {
   revalidatePath('/studio/gallery')
   back('/studio/gallery', 'Removed')
 }
-
-// ---------------------------------------------------------------- arrange
-
-/* These are called from the client controls (ArrangeControls) so a reorder
-   keeps the visitor's scroll position — no redirect, no navigation. */
 
 export async function movePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
@@ -147,8 +150,6 @@ export async function hangAction(formData: FormData): Promise<{ error?: string }
   return {}
 }
 
-// ---------------------------------------------------------------- publish
-
 export async function publishAction(): Promise<void> {
   const artist = await requireArtist()
   const report = await publishArtist(artist.id)
@@ -166,11 +167,6 @@ export async function unpublishAction(): Promise<void> {
   revalidatePath('/studio')
   back('/studio', 'Taken down. Your wall is hidden immediately.')
 }
-
-// ---------------------------------------------------------------- qr codes
-
-/* Called from the gallery's client CodesSection (scroll-preserving), so these
-   return errors instead of redirecting with a banner. */
 
 export async function createCodeAction(formData: FormData): Promise<{ error?: string }> {
   const artist = await requireArtist()

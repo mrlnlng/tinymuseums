@@ -1,8 +1,7 @@
-import { follow } from '@tiny/core'
+import { follow, hitForVisitor } from '@tiny/core'
+import { clientIp } from '@/shared/lib/client-ip'
+import { isEmail } from '@/shared/lib/validate'
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-/*  Following an artist — an email row rather than an account. The response is deliberately identical whether the artist exists or not, so this cannot be used to enumerate slugs. */
 export async function POST(request: Request) {
   let body: { slug?: string; email?: string }
   try {
@@ -14,10 +13,19 @@ export async function POST(request: Request) {
   const slug = (body.slug ?? '').trim()
   const email = (body.email ?? '').trim().toLowerCase()
 
-  if (!slug || !EMAIL.test(email)) {
+  if (!slug || !isEmail(email)) {
     return Response.json({ error: 'A valid email address is required' }, { status: 400 })
   }
 
+  const limited = await hitForVisitor('follow', clientIp(request.headers), { limit: 10, windowSeconds: 60 * 60 })
+  if (!limited.allowed) {
+    return Response.json(
+      { error: 'Too many requests. Try again later.' },
+      { status: 429, headers: { 'retry-after': String(limited.retryAfterSeconds) } },
+    )
+  }
+
+  // Same response whether or not the artist exists, so slugs cannot be probed.
   await follow(slug, email)
 
   return Response.json({

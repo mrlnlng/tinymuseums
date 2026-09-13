@@ -4,9 +4,6 @@ import type { Attachment } from './carried'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 
-/* The visitor: the Tiny Museum bunny with its drawn walk cycle, in the DOM rather than the WebGL scene — plaque text is real DOM above the canvas, so anything in the scene is painted underneath it. Positioned each frame by projecting its world position; the cycle advances on distance, not time. */
-
-/** A drawing placed on screen: its centre in CSS pixels, its width, its CSS rotation, and 1 as drawn or -1 mirrored. */
 export interface Pose {
   x: number
   y: number
@@ -16,7 +13,6 @@ export interface Pose {
 }
 
 export interface Character {
-  /** Where an attachment sits on the bunny this frame, after `update`. */
   attach(attachment: Attachment, out: Pose): Pose
   update(
     dt: number,
@@ -45,7 +41,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   const projected = new THREE.Vector3()
 
   let distance = 0
-  /** Which way the bunny last moved. It keeps facing that way once stopped. */
   let facing: 'left' | 'right' = 'right'
   let currentSrc = idle.right.src
   let currentImage = idle.right
@@ -53,10 +48,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   let screenX = 0
   let screenY = 0
   let scale = 1
-  /*  The last values written to the sprite. Its height changes only with the
-      window and its transform only while something is moving, but both were
-      being assigned on every frame; an identical string still costs a CSSOM
-      parse. */
   let currentHeight = ''
   let currentTransform = ''
 
@@ -68,10 +59,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   }
 
   return {
-    /*  The sprite is centred on (screenX, screenY), so a point in its drawing
-        is that far from the drawing's middle, scaled. Placements are in the
-        source pixels of the frames facing `attachment.facing`, and mirror for
-        the other direction. */
     attach(attachment, out) {
       const place = moving ? attachment.walk : attachment.idle
       const { naturalWidth, naturalHeight } = currentImage
@@ -110,8 +97,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       screenX = (projected.x * 0.5 + 0.5) * viewport.width
       screenY = (-projected.y * 0.5 + 0.5) * viewport.height
 
-      // World height converted to pixels: the ortho frustum maps to the
-      // viewport height, so the bunny scales with the hall.
       const frustumHeight = camera.top - camera.bottom
       const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
       const height = `${heightPx.toFixed(1)}px`

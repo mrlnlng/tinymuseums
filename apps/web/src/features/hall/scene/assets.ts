@@ -1,55 +1,33 @@
 import * as THREE from 'three'
 
-/*  Scenery assets for the hall: the visitor and their walk cycle, the pedestals, the ropes, the plaques, and the floor. Displays themselves arrive from the API as flattened images, so they are not here. */
-
 export interface AssetManifest {
   room: { wallColor: string }
-  /** A drawn cycle per direction; the bunny is not a mirrored sprite. */
   bunnyWalk: { byFacing: { left: string[]; right: string[] } }
   pedestals: Array<{ file: string }>
 }
 
-/** Scenery drawn in the WebGL scene. The visitor is not among them — see below. */
 const IMAGE_FILES = {
   rope: 'rope.png',
   plaque: 'plaque.png',
   floor: 'floor.png',
-  /*  The visitor centre at the head of the hall: the door the visitor came in
-      by, and the booth that hands out the help guide. */
   door: 'door.png',
   helpCenter: 'help-center.png',
-  /*  The gift shop at the other end, which is where the walk finishes. */
   giftShop: 'gift-shop.png',
-  /*  The museum cafe, a rest stop after the tenth painting — the counter, its
-      sign and menu, and the poster that links out to the artist's coffee fund.
-      The sign is the artist's background-removed cut-out, so it floats on the
-      wall without the white rectangle it was painted on. */
   cafeFront: 'cafe/front.png',
   cafeSign: 'cafe/sign-removebg.png',
   cafeMenu: 'cafe/menu.png',
   cafePoster: 'cafe/buy-coffee.png',
   cafeThanks: 'cafe/thanks-board.png',
-  /** The guest board past the gift shop, where the walk ends. */
   guestBoard: 'guestboard/board-hall.png',
-  /*  The puff of notes a sounding pedestal gives off. Vector art, unlike
-      everything else here: it is drawn at one size and never scaled up on
-      screen, so the browser rasterises it once at its intrinsic size and the
-      texture is an ordinary bitmap from there on. */
   musicNotes: 'music-notes.svg',
-  /** The helmet pedestal with its helm taken, on the same canvas. */
   helmStand: 'pedestal-4-bare.png',
-  /** The coin hidden somewhere in the hall. */
   coin: 'coin.png',
 } as const
 
-/** The pedestal drawing whose helm the bunny can wear. */
 export const HELM_PEDESTAL_FILE = 'pedestal-4.png'
 
 export type AssetName = keyof typeof IMAGE_FILES
 
-/*  The waving cat on the cafe counter. A GIF cannot animate as a WebGL texture
-    (the artist shipped the same drawing both ways), so these are the four frames
-    the GIF was built from, played at 200ms a frame — the GIF's own pace. */
 const CAFE_CAT_FRAMES = [
   'cafe/cat-1.png',
   'cafe/cat-2.png',
@@ -62,11 +40,6 @@ export interface Sprite {
   aspect: number
 }
 
-/*  A pedestal sprite carries the name of the drawing it came from, because
-    what is standing on a pedestal is the thing the visitor taps: the owl
-    hoots and the lyre plays, and the only way to tell one plinth from another
-    is which picture was hung on it. Keyed by file rather than by position in
-    the list, so reordering the manifest cannot silently give the owl a harp. */
 export interface PedestalSprite extends Sprite {
   file: string
 }
@@ -76,16 +49,11 @@ export interface Assets {
   images: Record<AssetName, HTMLImageElement>
   textures: Record<AssetName, THREE.Texture>
   aspect: Record<AssetName, number>
-  /*  The visitor's frames, as plain images rather than textures: the bunny is DOM above the plaque overlay, because anything in the WebGL scene is painted *under* that overlay. */
   walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
-  /** The helm the bunny wears, DOM like the bunny it sits on. Faces left as drawn. */
   helm: HTMLImageElement
-  /** The matcha the bunny can be handed at the cafe. */
   matcha: HTMLImageElement
-  /** Pedestal variants, so a long hall is not one object repeated. */
   pedestals: PedestalSprite[]
-  /** The cafe cat's animation frames, newest loaded last for the loop. */
   cafeCat: Sprite[]
 }
 
@@ -175,7 +143,6 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
   }
 }
 
-/** Loads a composited display image produced by the server. */
 export function loadDisplayTexture(url: string): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
     const loader = new THREE.TextureLoader()

@@ -1,7 +1,5 @@
 import { getStorage } from '@tiny/core'
 
-/*  Local stand-in for the CloudFront distribution. Objects are content-addressed or version-keyed, so they are immutable and can be cached forever — the same header CloudFront will serve. */
-
 const CONTENT_TYPES: Record<string, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
@@ -18,8 +16,6 @@ export async function GET(
   const { key } = await params
   const storageKey = key.join('/')
 
-  // The storage layer refuses keys that escape the root, but reject the
-  // obvious traversal here too rather than relying on one check.
   if (storageKey.includes('..')) {
     return new Response('Not found', { status: 404 })
   }

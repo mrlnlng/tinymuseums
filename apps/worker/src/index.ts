@@ -1,8 +1,6 @@
 import { claim, complete, closePool, env, fail, requeueStale } from '@tiny/core'
 import { repairUnframed, runJob, scheduleNextSeal } from '@tiny/core/worker'
 
-/* The worker loop: polls the jobs table, claims one at a time, dispatches. Replacing it with an SQS consumer is a change to this file only. */
-
 const IDLE_DELAY_MS = 750
 const STALE_SWEEP_MS = 60_000
 const FRAME_REPAIR_MS = 30_000
@@ -63,12 +61,9 @@ process.on('SIGTERM', shutdown)
 
 console.log('[worker] started')
 
-// Keep the museum's ordering rotating without anything having to ask.
 await scheduleNextSeal(env.epochIntervalMinutes)
 setInterval(() => void scheduleNextSeal(env.epochIntervalMinutes), env.epochIntervalMinutes * 60_000)
 setInterval(() => void sweepStale(), STALE_SWEEP_MS)
-// Self-heal: any arranged work whose frame never rendered (worker gap,
-// transition, crash) gets one requeued. Idempotent.
 await repairUnframed().then((n) => {
   if (n > 0) console.log(`[worker] requeued frame rendering for ${n} artist(s)`)
 })

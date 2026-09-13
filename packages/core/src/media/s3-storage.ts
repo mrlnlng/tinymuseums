@@ -8,11 +8,9 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type { PresignedUpload, Storage } from './storage.ts'
 
-/* The production half of the Storage interface — the same methods backed by a bucket. Not exercised locally, so treat it as unverified until it runs against real AWS. */
 export interface S3StorageOptions {
   bucket: string
   region?: string
-  /** CloudFront domain. Falls back to the bucket's own URL when absent. */
   publicBaseUrl?: string
 }
 
@@ -36,8 +34,6 @@ export class S3Storage implements Storage {
         Key: key,
         Body: body,
         ContentType: contentType,
-        // Keys are content-addressed or version-stamped, so an object at a
-        // given key never changes and can be cached forever.
         CacheControl: 'public, max-age=31536000, immutable',
       }),
     )
@@ -92,8 +88,6 @@ export class S3Storage implements Storage {
     return {
       url,
       key,
-      // The signature covers Content-Type, so the browser must send exactly
-      // this or S3 rejects the PUT.
       headers: { 'content-type': contentType },
       expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString(),
     }

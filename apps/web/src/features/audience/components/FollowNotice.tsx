@@ -1,6 +1,5 @@
 import Link from 'next/link'
 
-/** A follow outcome page: a title, a body, and the way back into the museum. */
 export default function FollowNotice({ title, body }: { title: string; body: string }) {
   return (
     <main className="page">

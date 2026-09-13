@@ -1,13 +1,6 @@
 import type { GuestNoteDto } from '@tiny/core'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 
-/*  Mock 1: the board with the latest notes pinned to it, and the way to add one.
-
-    Laid out as one stage at the mock's own 1080x1920 proportions, like the coin
-    screen, with every position below the mock's as a share of that stage. The
-    mock draws no way out, so the bare wall around the stage is the way out: a
-    tap there closes the board, as a tap closes the coin screen. */
-
 interface BoardScreenProps {
   notes: GuestNoteDto[]
   onClose: () => void

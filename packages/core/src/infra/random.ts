@@ -1,5 +1,3 @@
-/* mulberry32 — the one place the museum needs replayable randomness: an epoch's permutation re-derives from its seed. */
-
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0
   return () => {

@@ -36,13 +36,6 @@ export default async function SignIn({
 
       <p className="small muted">
         No wall yet? <Link href="/studio/register">Claim one</Link>.
-        {/* Dev-only: the seed password has no business on a production page. */}
-        {process.env.NODE_ENV === 'production' ? null : (
-          <>
-            {' '}
-            Seeded accounts use the password <code className="token">tinymuseum</code>.
-          </>
-        )}
       </p>
     </>
   )

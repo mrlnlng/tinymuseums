@@ -2,10 +2,8 @@ import { query, queryOne } from '../infra/db.ts'
 import { enqueue } from '../infra/jobs.ts'
 import { MAX_STANDS } from './gallery.ts'
 
-/* The publish bar: objective gates — enough works, a description on each, images large enough — that filter empty and careless displays without anyone exercising taste. */
-
-export const MIN_PIECES = 3
-export const MIN_DESCRIPTION_CHARS = 20
+const MIN_PIECES = 3
+const MIN_DESCRIPTION_CHARS = 20
 
 export interface PublishCheck {
   code: string
@@ -20,8 +18,6 @@ export interface PublishReport {
 }
 
 export async function evaluatePublishBar(artistId: string): Promise<PublishReport> {
-  // The two lookups are independent; run them together so the studio home pays
-  // one round-trip of latency rather than two.
   const [counts, floor] = await Promise.all([
     queryOne<{
       total: number
@@ -88,7 +84,6 @@ export async function evaluatePublishBar(artistId: string): Promise<PublishRepor
   return { passed: checks.every((c) => c.ok), checks }
 }
 
-/* Takes a display live — visible at the next epoch, the cost of snapshot ordering; sealing is enqueued immediately so the wait is seconds. */
 export async function publishArtist(artistId: string): Promise<PublishReport> {
   const report = await evaluatePublishBar(artistId)
   if (!report.passed) return report
@@ -107,8 +102,6 @@ export async function publishArtist(artistId: string): Promise<PublishReport> {
 
 export async function unpublishArtist(artistId: string): Promise<void> {
   await query(`update artists set status = 'draft' where id = $1`, [artistId])
-  // Suppression is what makes this immediate; the epoch snapshot alone would
-  // keep the display visible until the next boundary.
   await query(
     `insert into suppressions (subject_type, subject_id, reason)
      values ('artist', $1, 'unpublished by artist')

@@ -4,8 +4,6 @@ import { notFound } from 'next/navigation'
 import { BRAND, getArtistPage, recordEvent } from '@tiny/core'
 import FollowForm from '@/features/audience/components/FollowForm'
 
-/* An artist's own page: the QR destination. Server-rendered so it is fast on cellular, previewable when shared, and findable. */
-
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({
@@ -17,7 +15,6 @@ export async function generateMetadata({
   const page = await getArtistPage(slug)
   if (!page) return { title: 'Not in the museum' }
 
-  // Social preview: the first arranged work's framed image.
   const first = page.pieces[0]
 
   return {
@@ -46,8 +43,6 @@ export default async function ArtistPage({
 
   await recordEvent('display_view', { artistId: page.artistId })
 
-  // The wall: each arranged work's framed image, in gallery order. Works still
-  // processing (no frame yet) wait for their frame to appear here.
   const framed = page.pieces.filter((piece) => piece.frameUrl)
 
   return (

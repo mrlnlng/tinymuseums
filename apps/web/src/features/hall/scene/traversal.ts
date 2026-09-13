@@ -1,16 +1,11 @@
 import { CONFIG } from './config'
 
-/* The camera is what input drives; the bunny follows it on foot. The obvious arrangement — drag the visitor, let the camera trail — looks wrong because a walk cycle cannot match a finger; inverting it fixes the cause. */
 export class Traversal {
-  /** Where the camera is looking. This is what input moves. */
   cameraX = 0
-  /** Where the bunny is standing. Derived: it walks toward the camera. */
   x = 0
 
-  /** Scroll momentum, in world units per second. Belongs to the camera. */
   velocity = 0
 
-  /*  The bunny's own walking speed, measured from how far it actually moved. This drives the walk cycle and which way it faces. */
   walkVelocity = 0
 
   private keys = new Set<string>()
@@ -20,13 +15,10 @@ export class Traversal {
   private suspended = false
   private lastFootX = 0
 
-  /** True from the opening walk-in until the bunny reaches the first display. */
   private introducing = false
 
-  /** Hysteresis: once walking, keep walking until properly arrived. */
   private walking = false
 
-  /** World units per screen pixel, set from the live camera and viewport. */
   private worldPerPixel = 0.0084
 
   attach(element: HTMLElement): void {
@@ -42,7 +34,6 @@ export class Traversal {
       this.dragging = true
       this.lastPointerX = e.clientX
       this.dragVelocity = 0
-      // Grabbing the hall stops it dead, the way grabbing a scrolling list does.
       this.velocity = 0
       element.setPointerCapture(e.pointerId)
     })
@@ -51,7 +42,6 @@ export class Traversal {
       if (!this.dragging) return
       const dx = e.clientX - this.lastPointerX
       this.lastPointerX = e.clientX
-      // Dragging right pulls the hall right, so the view moves left.
       const delta = -dx * this.worldPerPixel
       this.cameraX += delta
       this.dragVelocity = delta * 60
@@ -72,7 +62,6 @@ export class Traversal {
         if (this.locked) return
         e.preventDefault()
         const amount = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
-        // Wheel deltas run large, so this is deliberately below 1:1.
         const step = amount * this.worldPerPixel * CONFIG.move.wheelFactor
         this.cameraX += step
         this.velocity = clamp(
@@ -89,7 +78,6 @@ export class Traversal {
     return this.suspended || this.introducing
   }
 
-  /** Held while the walk-through is open, so the hall does not drift behind it. */
   setSuspended(suspended: boolean): void {
     this.suspended = suspended
     if (suspended) {
@@ -103,12 +91,10 @@ export class Traversal {
     return this.introducing
   }
 
-  /** Keeps drag 1:1 with the wall at whatever size the screen currently is. */
   setWorldPerPixel(value: number): void {
     if (Number.isFinite(value) && value > 0) this.worldPerPixel = value
   }
 
-  /** Places camera and visitor together, with no walking and no momentum. */
   reset(x: number): void {
     this.cameraX = x
     this.x = x
@@ -119,7 +105,6 @@ export class Traversal {
     this.introducing = false
   }
 
-  /*  The opening walk-in: the camera sits on the first display and the bunny walks in from off the left — ordinary follow behaviour with input held off. */
   playIntro(startX: number, targetX: number): void {
     this.cameraX = targetX
     this.x = startX
@@ -141,7 +126,6 @@ export class Traversal {
     if (this.introducing && !this.walking) this.introducing = false
   }
 
-  /** Keys, momentum and bounds — all acting on the camera. */
   private moveCamera(dt: number, totalLength: number): void {
     const left = this.keys.has('arrowleft') || this.keys.has('a')
     const right = this.keys.has('arrowright') || this.keys.has('d')
@@ -156,7 +140,6 @@ export class Traversal {
     this.velocity = clamp(this.velocity, -CONFIG.move.maxScrollSpeed, CONFIG.move.maxScrollSpeed)
     if (!this.dragging) this.cameraX += this.velocity * dt
 
-    // The hall has ends. Walking into one should stop, not wrap.
     if (this.cameraX < 0) {
       this.cameraX = 0
       this.velocity = 0
@@ -166,7 +149,6 @@ export class Traversal {
     }
   }
 
-  /* Walks to wherever the camera is looking. Hysteresis rather than a bare deadzone — starts only when meaningfully behind, stops only once arrived — so it does not twitch in and out of its cycle. */
   private walkToward(dt: number): void {
     if (this.suspended) {
       this.walking = false
@@ -185,20 +167,17 @@ export class Traversal {
     }
     if (!this.walking) return
 
-    // Ease into the destination, never exceeding a walking pace.
     const speed = Math.min(CONFIG.move.maxSpeed, distance / arriveSeconds)
     const step = Math.sign(gap) * speed * dt
     this.x = Math.abs(step) >= distance ? this.cameraX : this.x + step
   }
 
-  /* Keeps the bunny within reach of the view: a hard flick scrolls faster than anything can walk, so without a limit the character is left behind indefinitely; dragging it forward is invisible at that distance. */
   private enforceLeash(): void {
     const max = CONFIG.character.maxTrailDistance
     const gap = this.cameraX - this.x
     if (Math.abs(gap) <= max) return
 
     this.x = this.cameraX - Math.sign(gap) * max
-    // It is behind by definition, so it should be on its feet.
     this.walking = true
   }
 }

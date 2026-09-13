@@ -1,7 +1,5 @@
 import type { Derivative } from '../types.ts'
 
-/* Picks a derivative from the ladder: `minWidth` 0 is the smallest, any other value is "smallest at or above, else largest". */
-
 export function pickDerivative(
   derivatives: Derivative[],
   minWidth: number,

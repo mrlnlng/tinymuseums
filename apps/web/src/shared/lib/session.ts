@@ -2,8 +2,6 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { artistForSession, type AuthedArtist } from '@tiny/core'
 
-/*  Studio sessions: one httpOnly cookie holding an opaque token; the session row in Postgres is the source of truth. Cognito replaces artistForSession later and nothing else here changes. */
-
 export const SESSION_COOKIE = 'tm_session'
 
 export async function currentArtist(): Promise<AuthedArtist | null> {
@@ -11,7 +9,6 @@ export async function currentArtist(): Promise<AuthedArtist | null> {
   return artistForSession(store.get(SESSION_COOKIE)?.value)
 }
 
-/** For studio pages: redirects to sign-in rather than returning null. */
 export async function requireArtist(): Promise<AuthedArtist> {
   const artist = await currentArtist()
   if (!artist) redirect('/studio/sign-in')

@@ -3,36 +3,23 @@ import type { Character, Pose } from './character'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 
-/*  Something the bunny can be handed from the scenery: the helm off its stand,
-    the matcha off the cafe menu. It is DOM, like the bunny, so it is never
-    painted under the plaque overlay. `take` flies it from where it was drawn in
-    the scene onto the bunny, where it follows every frame; `giveBack` flies it
-    home again. Both ends are re-read every frame, so it lands on a bunny that
-    walks off mid-flight. */
-
 export type CarriedState = 'away' | 'to-bunny' | 'held' | 'back'
 
 export interface Carried {
   readonly state: CarriedState
   take(): void
   giveBack(): void
-  /** Advances it. True the frame it lands back home. */
   update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): boolean
   dispose(): void
 }
 
-/** Where the item sits on the bunny: see `Character.attach`. */
 export interface Attachment {
-  /** The frames the placements were measured on; the other direction mirrors them. */
   facing: 'left' | 'right'
-  /** The drawing's width, in the bunny's source pixels. */
   width: number
   walk: { x: number; y: number; rotation: number }
   idle: { x: number; y: number; rotation: number }
 }
 
-/*  `home` writes where the item is drawn in the scene, in world units, and
-    returns its width there. */
 export function createCarried(
   host: HTMLElement,
   image: HTMLImageElement,
@@ -75,9 +62,6 @@ export function createCarried(
     }
   }
 
-  /*  Eased along a quadratic arc with a spin. The mirror changes over at the
-      top, mid-spin, where it is hidden; easing it through zero left the item a
-      sliver at the moment it was most in view. */
   function between(from: Pose, to: Pose, progress: number, viewport: Viewport): Pose {
     const t = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2
     const u = 1 - t

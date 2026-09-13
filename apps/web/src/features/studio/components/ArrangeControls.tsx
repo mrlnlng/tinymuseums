@@ -4,10 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useTransition, useState } from 'react'
 import { hangAction, movePieceAction, unhangAction } from '@/features/studio/actions'
 
-/* The arrange controls run through a transition + router.refresh() instead of
-   a form redirect, so pressing ▲/▼ keeps the visitor exactly where they are on
-   the page — a redirect would throw them back to the top of the studio. */
-
 function formFor(entries: Record<string, string>): FormData {
   const form = new FormData()
   for (const [key, value] of Object.entries(entries)) form.set(key, value)

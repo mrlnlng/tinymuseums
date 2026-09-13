@@ -3,14 +3,6 @@ import { MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '@tiny/core/guestboard'
 import StickyNote from '@/features/guestboard/components/StickyNote'
 import { PostRejected, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 
-/*  Mock 2: the board up close, and a blank note to write on — the message on
-    the paper, the name signed at its foot, exactly where they will be read.
-
-    The fields draw nothing of their own, so what is typed is set in the note's
-    own type. The mock draws no way back, so as on the board, a tap on the bare
-    board beside the note steps back; the draft is kept for when the visitor
-    returns. */
-
 interface ComposeScreenProps {
   draft: NoteDraft
   onChange: (draft: NoteDraft) => void

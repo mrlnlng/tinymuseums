@@ -4,10 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useTransition, useState } from 'react'
 import { createCodeAction, deleteCodeAction } from '@/features/studio/actions'
 
-/* The codes section lives on the gallery page and runs through a transition +
-   router.refresh() like the arrange controls, so adding or removing a code
-   never throws the visitor back to the top of the studio. */
-
 export interface CodeRow {
   token: string
   placement: string

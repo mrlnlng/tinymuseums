@@ -5,8 +5,6 @@ import { getStorage } from '../media/storage.ts'
 import { MAX_STANDS } from './gallery.ts'
 import type { HallPieceDto, HallSliceDto } from '../types.ts'
 
-/* The museum's ordering: an epoch is a sealed, deterministic permutation of every publishable display, so slices cache indefinitely. Suppression is checked at read time, outside that immutability — a takedown must not wait for the next boundary. */
-
 export interface EpochRow {
   id: number
   seed: number
@@ -15,13 +13,7 @@ export interface EpochRow {
   expires_at: Date
 }
 
-/** Retention is longer than the interval, so visitors mid-walk on the
- * previous epoch keep resolving rather than hitting a dead end. */
 export async function sealEpoch(): Promise<EpochRow | null> {
-  // A slot is a piece now: every arranged work (stands 1..30) of the hall's
-  // owner is its own wall, hung in gallery order — order_index is the walk.
-  // The hall is hard-coded to one artist per environment (HALL_OWNER_EMAIL);
-  // a per-artist /{slug}/museum replaces that later.
   const candidates = await query<{ id: string }>(
     `select p.id
        from pieces p
@@ -37,7 +29,6 @@ export async function sealEpoch(): Promise<EpochRow | null> {
   if (candidates.length === 0) return null
 
   const seed = Math.floor(Math.random() * 0x7fffffff)
-  // Kept for the epoch's history; ordering no longer shuffles.
   const order = candidates.map((row) => row.id)
 
   const graceMinutes = Math.max(env.epochIntervalMinutes * 3, 30)
@@ -51,8 +42,6 @@ export async function sealEpoch(): Promise<EpochRow | null> {
     )
     const epoch = rows[0]
 
-    // One statement rather than N inserts: unnest turns the ordered array into
-    // rows with their index already attached.
     await client.query(
       `insert into epoch_slots (epoch_id, index, piece_id)
        select $1, ordinality - 1, piece_id
@@ -64,7 +53,7 @@ export async function sealEpoch(): Promise<EpochRow | null> {
   })
 }
 
-export async function currentEpoch(): Promise<EpochRow | null> {
+async function currentEpoch(): Promise<EpochRow | null> {
   return queryOne<EpochRow>(
     `select id, seed, display_count, sealed_at, expires_at
        from museum_epochs
@@ -83,7 +72,6 @@ export async function epochById(id: number): Promise<EpochRow | null> {
   )
 }
 
-/** Ensures an epoch exists, sealing one if the museum has never been ordered. */
 export async function ensureEpoch(): Promise<EpochRow | null> {
   return (await currentEpoch()) ?? (await sealEpoch())
 }
@@ -139,8 +127,6 @@ export async function getHallSlice(
     [epoch.id, fromIndex, limit],
   )
 
-  // The slot count is the epoch's own display_count — one per sealed piece —
-  // so the pagination end is already known without a second round trip.
   const totalSlots = epoch.display_count
 
   const slots = rows.map((row) => {

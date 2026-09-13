@@ -1,30 +1,4 @@
-/**
- * Amazon RDS certificate authorities for us-east-2.
- *
- * RDS signs its server certificates with Amazon's own CA, which is not in
- * Node's trust store. Without this, a verified connection fails with
- * "self-signed certificate in certificate chain", and the only way onward is
- * to turn verification off — a poor trade for a database that answers on the
- * public internet.
- *
- * REGION-SPECIFIC. This is the us-east-2 bundle, not the global one, because
- * the global bundle is 108 certificates and the instance chains to exactly one
- * of them: "Amazon RDS us-east-2 Root CA RSA2048 G1". Verified against the
- * live endpoint — openssl reports "Verify return code: 0 (ok)" using only
- * these certificates.
- *
- * The cost of that trade is that moving the database to another region breaks
- * TLS at runtime, with a certificate error rather than a build failure. If the
- * database moves, or AWS rotates the regional root, refresh this file:
- *
- *   curl https://truststore.pki.rds.amazonaws.com/<region>/<region>-bundle.pem
- *
- * Embedded as a string rather than shipped as a .pem because it has to survive
- * two bundlers — Next.js for the web tier, esbuild for the worker Lambda — and
- * neither copies data files without being told.
- *
- * 3 certificates.
- */
+// Only the us-east-2 root; a database in another region needs that region's bundle.
 export const RDS_CA_BUNDLE = `-----BEGIN CERTIFICATE-----
 MIID/zCCAuegAwIBAgIRAJYlnmkGRj4ju/2jBQsnXJYwDQYJKoZIhvcNAQELBQAw
 gZcxCzAJBgNVBAYTAlVTMSIwIAYDVQQKDBlBbWF6b24gV2ViIFNlcnZpY2VzLCBJ

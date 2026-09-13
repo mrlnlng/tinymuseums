@@ -8,10 +8,6 @@ import { deletePieceAction, updatePieceAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
 
-/* The single pane: upload a work, and every work you upload hangs on its own
-   stand in the museum (up to 30), in the order set below. Codes join on this
-   page. */
-
 export default async function GalleryPage({
   searchParams,
 }: {

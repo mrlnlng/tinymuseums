@@ -1,14 +1,15 @@
-import { createInquiry } from '@tiny/core'
+import { createInquiry, hitForVisitor } from '@tiny/core'
+import { clientIp } from '@/shared/lib/client-ip'
+import { isEmail, isUuid } from '@/shared/lib/validate'
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_MESSAGE = 2000
 
-/* Asking an artist about a work: the message goes straight to the artist and the platform steps out of the way — no checkout, no commission, no order record. */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
+  if (!isUuid(id)) return Response.json({ error: 'That work is not available' }, { status: 404 })
 
   let body: { email?: string; message?: string }
   try {
@@ -20,11 +21,19 @@ export async function POST(
   const email = (body.email ?? '').trim().toLowerCase()
   const message = (body.message ?? '').trim()
 
-  if (!EMAIL.test(email)) {
+  if (!isEmail(email)) {
     return Response.json({ error: 'A valid email address is required' }, { status: 400 })
   }
   if (message.length < 2) {
     return Response.json({ error: 'Say something to the artist' }, { status: 400 })
+  }
+
+  const limited = await hitForVisitor('inquire', clientIp(request.headers), { limit: 5, windowSeconds: 60 * 60 })
+  if (!limited.allowed) {
+    return Response.json(
+      { error: 'Too many messages. Try again later.' },
+      { status: 429, headers: { 'retry-after': String(limited.retryAfterSeconds) } },
+    )
   }
 
   const sent = await createInquiry(id, email, message.slice(0, MAX_MESSAGE))

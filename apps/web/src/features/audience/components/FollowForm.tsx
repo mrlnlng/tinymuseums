@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 
-/*  Following an artist — the only thing a visitor does that needs an identity, and deliberately not an account. An email, a confirmation, and nothing else. */
 export default function FollowForm({ slug, artistName }: { slug: string; artistName: string }) {
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

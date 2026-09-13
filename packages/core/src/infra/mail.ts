@@ -3,8 +3,6 @@ import { dirname, resolve } from 'node:path'
 import { BRAND } from '../brand.ts'
 import { env } from './env.ts'
 
-/* Outbound email: console or file locally, SES later. Following is the only reason this exists, so it is a real interface rather than a console.log at the call site. */
-
 export interface Message {
   to: string
   subject: string

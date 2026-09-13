@@ -1,8 +1,6 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
 
-/*  The room: a flat cream wall and a tiled wood floor from the Tiny Museum art. Flat 2D and unlit — the sprites are already shaded by hand, and faking depth or lighting them again would fight the art. */
-
 export interface Backdrop {
   dispose(): void
 }
@@ -23,7 +21,6 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, hallLength: n
   floorTexture.wrapS = THREE.RepeatWrapping
   floorTexture.needsUpdate = true
 
-  // Keep the planks at their painted proportions rather than stretching them.
   const tileWidth = floorHeight * assets.aspect.floor
   floorTexture.repeat.set(span / tileWidth, 1)
 

@@ -1,6 +1,5 @@
 import { getArtistPage } from '@tiny/core'
 
-/** The artist's full body of work — what the enlarged view walks through. */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },

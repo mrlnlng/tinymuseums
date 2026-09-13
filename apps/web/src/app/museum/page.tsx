@@ -2,8 +2,6 @@ import Link from 'next/link'
 import { BRAND, ensureEpoch, getHallSlice, type HallSliceDto } from '@tiny/core'
 import Museum from '@/features/hall/components/Museum'
 
-/* The museum entrance. The first slice is rendered on the server so the hall has something to hang immediately, and so there is a real crawlable document underneath the WebGL. */
-
 export const dynamic = 'force-dynamic'
 
 const FIRST_SLICE = 4

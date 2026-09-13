@@ -3,18 +3,14 @@ import pg from 'pg'
 import { env } from './env.ts'
 import { RDS_CA_BUNDLE } from './rds-ca.ts'
 
-/* Postgres access, one pool per process. Plain SQL rather than an ORM: keyset cursors, array columns and SKIP LOCKED read better as SQL. */
-
-// bigint comes back as a string by default; these are ids and counts, nowhere
-// near 2^53, so parse them as numbers and keep epoch ids from arriving as
-// strings.
+// int8 arrives as a string by default; ids and counts here stay far below 2^53.
 pg.types.setTypeParser(20, (value) => Number(value))
 
 let pool: pg.Pool | null = null
 
-/* Connection settings, with TLS decided here rather than by the URL: RDS certs are signed by a CA not in Node's trust store, and pg lets the connection string silently override explicit ssl options. Verification stays on unless explicitly waived — this database answers on the public internet. */
 function poolConfig(): pg.PoolConfig {
   const url = new URL(env.databaseUrl)
+  // pg lets sslmode in the URL override the ssl option, so TLS is decided here instead.
   const mode = url.searchParams.get('sslmode')
   url.searchParams.delete('sslmode')
 
@@ -26,18 +22,15 @@ function poolConfig(): pg.PoolConfig {
 }
 
 function sslFor(mode: string | null): pg.PoolConfig['ssl'] {
-  // No mode at all is the local cluster over loopback, where TLS buys nothing.
   if (mode === null || mode === 'disable') return false
 
-  // Encrypted but unverified. Available deliberately, never the default.
   if (mode === 'no-verify') return { rejectUnauthorized: false }
 
-  // Amazon's CAs in addition to the public roots, so a provider with an
-  // ordinary publicly trusted certificate still validates.
+  // RDS certificates chain to an Amazon CA that is not in Node's trust store.
   return { ca: [...rootCertificates, RDS_CA_BUNDLE] }
 }
 
-export function getPool(): pg.Pool {
+function getPool(): pg.Pool {
   if (!pool) {
     pool = new pg.Pool(poolConfig())
     pool.on('error', (error) => {
@@ -63,7 +56,6 @@ export async function queryOne<T extends pg.QueryResultRow = pg.QueryResultRow>(
   return rows[0] ?? null
 }
 
-/** Runs fn inside a transaction, rolling back on any throw. */
 export async function transaction<T>(fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
   const client = await getPool().connect()
   try {

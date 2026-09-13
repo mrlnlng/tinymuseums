@@ -7,29 +7,21 @@ import { createPedestal, type Pedestal } from './pedestal'
 import { pickPainted } from './hit'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 
-/* Owns what exists in the hall: each slot is one framed work the server rendered to its own image; the client loads it, hangs it, and frees it when the visitor walks away. */
-
 interface SlotRuntime {
   index: number
   piece: HallPieceDto
   status: 'idle' | 'loading' | 'ready' | 'error'
   texture?: THREE.Texture
-  /** When the image was asked for. Diagnostic, and the load's own clock. */
   startedAt?: number
   readyAt?: number
-  /*  When the wall first came close enough to hang. The pedestal's dwell floor
-      runs from here rather than from `startedAt`, so a painting downloaded well
-      ahead of the visitor is hung the moment they arrive at it. */
   inRangeAt?: number
 }
 
-/* How large a piece hangs on the wall: the server renders every frame to one target size, and `piece.scale` is the client's say over how much of the wall that fills — enlarging it here rather than re-rendering keeps the images cached across a change of mind. */
 function wallSize(piece: HallPieceDto): { width: number; height: number } {
   const scale = CONFIG.piece.scale
   return { width: piece.canvas.w * scale, height: piece.canvas.h * scale }
 }
 
-/* One painting, hung on its own wall — the plane is the framed image at the piece's own canvas proportion, standing on a common lower edge so every plaque in the hall is at one height. */
 export interface MountedDisplay {
   index: number
   display: HallPieceDto
@@ -56,13 +48,7 @@ export class HallScene {
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
   private pedestals = new Map<number, Pedestal>()
-  /*  What is hanging, as an array, rebuilt only when something is hung or taken
-      down. The frame loop asks for this every frame and used to get a fresh copy
-      of the map's values each time — an array allocated sixty times a second to
-      hold four or five items that had not changed. */
   private mountedList: MountedDisplay[] = []
-  /*  The helmet pedestal whose helm the bunny is wearing. Kept here because
-      pedestals are rebuilt as the visitor walks, and the stand should stay bare. */
   private bareHelmStand: number | null = null
   private coin: HiddenCoin
 
@@ -73,7 +59,6 @@ export class HallScene {
     this.coin = createHiddenCoin(assets)
   }
 
-  /** Adds paintings from an API slice and extends the hall's geometry. */
   ingestSlice(slice: HallSliceDto): void {
     this.epochId = slice.epochId
     this.nextIndex = slice.nextIndex
@@ -93,9 +78,6 @@ export class HallScene {
     for (let i = 0; this.slots.has(i); i++) {
       widths.push(wallSize(this.slots.get(i)!.piece).width)
     }
-    /*  Complete means the server has no more slices *and* everything it
-        promised is laid out contiguously from zero — only then does the hall
-        have a last painting for the gift shop to stand past. */
     const isComplete = this.nextIndex === null && widths.length === this.totalSlots
     this.layout = computeLayout(widths, isComplete)
 
@@ -109,7 +91,6 @@ export class HallScene {
     }
   }
 
-  /** True when the visitor is close enough to the end to need another slice. */
   needsMore(visitorX: number): boolean {
     if (this.nextIndex === null) return false
     const laid = this.layout.known
@@ -127,24 +108,16 @@ export class HallScene {
 
       const distance = Math.abs(centerX - cameraX)
 
-      /*  Right out of range: give the image back. Note this is the *load*
-          radius, not the mount radius — a wall walked past is kept downloaded
-          for a good while yet, so turning round and walking back does not pay
-          for the same painting twice. */
       if (distance > loadRadiusUnits) {
         if (this.mounted.has(slot.index)) this.unmount(slot.index)
         continue
       }
 
-      // Fetching starts far out and costs nothing on screen until it lands.
       if (slot.status === 'idle') {
         this.beginLoad(slot, now)
         continue
       }
 
-      // Hanging it — geometry, and the texture upload to the GPU — waits until
-      // the wall is close enough to be worth the video memory, and ends as soon
-      // as it is not. The painting itself stays downloaded either way.
       if (distance > mountRadiusUnits) {
         if (this.mounted.has(slot.index)) this.unmountMesh(slot.index)
         continue
@@ -152,11 +125,6 @@ export class HallScene {
       if (slot.inRangeAt === undefined) slot.inRangeAt = now
 
       if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
-        /*  The pedestal's dwell floor runs from whenever the wall came into
-            mounting range, not from when its download began: a painting fetched
-            two screens back is already in hand by the time the visitor reaches
-            it, and should not be held behind a pedestal for a beat it spent
-            waiting. */
         const arrivedAt = slot.inRangeAt ?? now
         const earliest = arrivedAt + CONFIG.statue.minDwellMs
         if (now >= Math.max(slot.readyAt ?? now, earliest)) this.mount(slot)
@@ -190,9 +158,6 @@ export class HallScene {
     const group = new THREE.Group()
     group.position.set(centerX, 0, 0)
 
-    /*  Walls hang from a common *lower* edge rather than a common centre or a
-        common top, so every plaque in the hall sits at one height; the plane is
-        the server's framed image at the piece's own proportion. */
     const bottom = CONFIG.displayBottomY
     const { width, height } = wallSize(piece)
     const mesh = new THREE.Mesh(
@@ -203,12 +168,7 @@ export class HallScene {
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
-    /*  The plaque beneath the drawing: the text on it is DOM, positioned by
-        Placards; the sprite hangs below the plane's bottom edge and *behind*
-        the rope, which is where the mockups put it — the rope is furniture on
-        the floor and the plaque is on the wall behind it. */
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
-    // Off the common lower edge, so this is the same height on every wall.
     const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
@@ -221,7 +181,6 @@ export class HallScene {
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
-    /* The rope, stretched across this painting without stretching its posts: cut into three vertical slices and rebuilt, so the posts keep their drawn proportions and only the swag stretches. The cuts at 0.24 and 0.78 fall in empty space beside each post. */
     const ropeHeight = CONFIG.rope.height
     const ropeNaturalWidth = ropeHeight * this.assets.aspect.rope
 
@@ -230,11 +189,6 @@ export class HallScene {
       (CUTS[1] - CUTS[0]) * ropeNaturalWidth,
       (CUTS[3] - CUTS[2]) * ropeNaturalWidth,
     ]
-    /*  The rope is strung to the painting it stands in front of: exactly the
-        width of the frame above it, so the two posts line up with the frame's
-        outer edges instead of standing out past them. It used to be given a
-        width of its own, wider than any frame, from when the walls were far
-        enough apart that a rope had to reach across the screen to read as one. */
     const ropeSpan = width
     const middleWidth = Math.max(
       (CUTS[2] - CUTS[1]) * ropeNaturalWidth,
@@ -281,7 +235,6 @@ export class HallScene {
       width,
       height,
       plaqueY,
-      // Just above this painting's own top edge, wherever that has come out.
       titleY: bottom + height + CONFIG.displayTitleGap,
     })
     this.mountedList = [...this.mounted.values()]
@@ -310,17 +263,11 @@ export class HallScene {
         this.pedestals.set(i, pedestal)
       }
 
-      // Pending while the painting on its far side is not yet hanging. The only
-      // loading affordance in the whole product.
       pedestal.setPending(!this.mounted.has(i + 1))
       pedestal.update(dt)
     }
   }
 
-  /*  Takes the wall down but keeps its image. The two are separated because
-      they cost different things: the geometry, the rope's per-wall texture
-      slices and the GPU upload go as soon as the wall is out of mounting range,
-      while the downloaded painting is worth holding on to much longer. */
   private unmountMesh(index: number): void {
     const mount = this.mounted.get(index)
     if (!mount) return
@@ -331,19 +278,16 @@ export class HallScene {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
       const material = obj.material as THREE.MeshBasicMaterial
-      /* Per-wall textures are freed with their wall — the rope's slices are cloned per wall (the crop depends on the width), so without this walking the hall would leak a texture per wall passed. Scenery textures the loader owns are left alone, and so is the painting's own, which the slot still holds. */
       if (material.map?.userData.ownedByDisplay) material.map.dispose()
       material.dispose()
     })
 
     this.mounted.delete(index)
     this.mountedList = [...this.mounted.values()]
-    // Hung again from a standing start, so it serves its dwell beat afresh.
     const slot = this.slots.get(index)
     if (slot) slot.inRangeAt = undefined
   }
 
-  /** Takes the wall down and gives the painting itself back. */
   private unmount(index: number): void {
     this.unmountMesh(index)
 
@@ -377,11 +321,6 @@ export class HallScene {
     return { mounted, pieceId: mounted.display.pieceId }
   }
 
-  /*  The pedestal the visitor tapped, if they tapped one. Only the mounted
-      ones can be hit, which is the same set that is on screen — a pedestal
-      unmounted behind the camera has no mesh to strike. Tested against the
-      drawing rather than its rectangle, so the bare wall either side of a
-      column is bare wall. */
   hitTestPedestal(raycaster: THREE.Raycaster): Pedestal | null {
     const sprites = [...this.pedestals.values()].map((p) => p.sprite)
     const hit = pickPainted(raycaster, sprites)
@@ -389,7 +328,6 @@ export class HallScene {
     return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
   }
 
-  /** Takes the helm off the stand at `index`, or with null puts it back on whichever stand is bare. */
   setBareHelmStand(index: number | null): void {
     const previous = this.bareHelmStand
     this.bareHelmStand = index
@@ -397,8 +335,6 @@ export class HallScene {
     if (index !== null) this.pedestals.get(index)?.setBare(true)
   }
 
-  /*  Where the helm is drawn on the pedestal at `index`, in world units. From
-      the layout, not the mesh, so a flight can land on an unmounted stand. */
   helmStandPoint(index: number, out: THREE.Vector3): THREE.Vector3 | null {
     const x = this.layout.pedestalX[index]
     if (x === undefined) return null
@@ -412,21 +348,18 @@ export class HallScene {
     )
   }
 
-  /** The pedestal after the wall at `centerX`, relative to it, or null if that gap is bare. */
   private pedestalAfter(centerX: number, width: number): number | null {
     const gapCentre = centerX + width / 2 + CONFIG.piece.gap / 2
     const x = this.layout.pedestalX.find((px) => Math.abs(px - gapCentre) < 1e-3)
     return x === undefined ? null : x - centerX
   }
 
-  /** Whether the tap found the coin, behind its wall's painting and the pedestals. */
   hitTestCoin(raycaster: THREE.Raycaster): boolean {
     const wall = this.coin.index === null ? undefined : this.mounted.get(this.coin.index)
     if (!wall) return false
     return this.coin.tap(raycaster, [wall.mesh, ...[...this.pedestals.values()].map((p) => p.sprite)])
   }
 
-  /** The found screen has closed: let the coin go. */
   releaseCoin(): void {
     this.coin.release()
   }

@@ -1,6 +1,5 @@
 import { MAX_UPLOAD_BYTES, getStorage, verifyUploadSignature } from '@tiny/core'
 
-/* The local stand-in for an S3 presigned PUT, so the browser uploads directly in development exactly as it will in production. The signature is not decoration: without it this is an open write endpoint. */
 export async function PUT(request: Request) {
   const url = new URL(request.url)
   const key = url.searchParams.get('key') ?? ''

@@ -10,7 +10,6 @@ export const metadata: Metadata = {
     'A tiny museum you can walk through. Every artist gets a wall; every wall is worth stopping at.',
 }
 
-/* `viewportFit: 'cover'` is what makes `env(safe-area-inset-*)` report real values on a phone. */
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -30,10 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/* The audio element lives here, above the screen, so walking from the
-            landing page into the hall does not restart the track. */}
         <SoundProvider>
-          {/* One frame for every route, so no screen sets its own size. */}
           <div className="screen">
             {children}
             <ScreenChrome />

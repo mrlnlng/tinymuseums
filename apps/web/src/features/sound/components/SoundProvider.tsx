@@ -5,20 +5,12 @@ import { usePathname } from 'next/navigation'
 import { useBackgroundMusic } from '@/features/sound/hooks/useBackgroundMusic'
 import { useSoundEffects, type EffectName } from '@/features/sound/hooks/useSoundEffects'
 
-/* Sound for the whole museum. Lives in the root layout so walking from the landing page into the hall does not restart the track. */
-
-/*  Where the music belongs: the visitor's side of the product. The studio is an
-    artist's workspace and the rest is paperwork — a confirmation page, an
-    unsubscribe — and a soundtrack under either is somebody else's mood in your
-    ears. Walking out of the museum fades it out; walking back in starts it
-    again from wherever the track had got to. */
 function hasMusic(pathname: string): boolean {
   return pathname === '/' || pathname === '/museum' || pathname.startsWith('/a/')
 }
 
 interface SoundState {
   isEnabled: boolean
-  /** What the speaker draws: on only when the museum can actually be heard. */
   isSounding: boolean
   isAvailable: boolean
   volume: number
@@ -48,7 +40,6 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
   const isInMuseum = hasMusic(pathname)
 
   const music = useBackgroundMusic({ isAllowed: isInMuseum })
-  // Footsteps and taps are the museum's too, and they follow the same rule.
   const effects = useSoundEffects(music.isEnabled && isInMuseum, music.volume)
 
   return (
@@ -68,14 +59,9 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
         ref={music.audioRef}
         src={music.track}
         loop
-        // Never "auto": the track is long, and auto pulls megabytes before
-        // anyone has asked to hear anything. Playback streams once it starts.
         preload="metadata"
         onLoadedMetadata={music.handleLoadedMetadata}
         onError={music.handleError}
-        /*  React's own props as well as the listeners the hook binds: these
-            fire for the element's whole life, and the hook's are what catch a
-            pause the element decides on by itself. Either may be first. */
         onPlaying={music.handlePlaying}
         onPause={music.handlePaused}
       />

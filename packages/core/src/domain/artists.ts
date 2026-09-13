@@ -3,8 +3,6 @@ import { pickDerivative } from '../media/derivatives.ts'
 import { getStorage } from '../media/storage.ts'
 import type { ArtistPageDto, Derivative, PieceDto } from '../types.ts'
 
-/*  Reads and writes for an artist's own work: their pieces, and the page a QR code lands on. */
-
 interface PieceRow {
   id: string
   title: string
@@ -24,7 +22,6 @@ interface PieceRow {
   derivatives: Derivative[] | null
 }
 
-/** Widest sensible size for the enlarged view; the ladder tops out below this. */
 const ENLARGED_WIDTH = 1600
 
 function pieceImageUrl(derivatives: Derivative[] | null): string | null {
@@ -52,9 +49,7 @@ function toPieceDto(row: PieceRow): PieceDto {
   }
 }
 
-/** The public body of work: arranged works (stands 1..30) in order. Works in
- *  storage (order_index 0) are private and never listed. */
-export async function listPieces(artistId: string): Promise<PieceDto[]> {
+async function listPieces(artistId: string): Promise<PieceDto[]> {
   const rows = await query<PieceRow>(
     `select p.id, p.title, p.description, p.medium, p.year, p.dimensions,
             p.order_index, p.shop_url, p.availability, p.price_cents, p.currency,

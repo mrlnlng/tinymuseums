@@ -1,12 +1,4 @@
-# Amplify Hosting build for an npm-workspaces monorepo.
-#
-# appRoot is apps/web, but the install has to happen at the repo root or the
-# workspace links (@tiny/core) will not exist — hence the cd in every phase.
-#
-# Each cd is wrapped in a subshell on purpose. Amplify runs every phase in one
-# long-lived shell, so a bare `cd ../..` leaks into the next phase and the
-# second one lands two levels above the repo. Subshells keep every command
-# starting from appRoot.
+# Every cd runs in a subshell: Amplify reuses one shell across phases, so a bare cd leaks.
 version: 1
 applications:
   - appRoot: apps/web
@@ -14,36 +6,18 @@ applications:
       phases:
         build:
           commands:
-            # The backend deploys the scheduled worker (amplify/backend.ts).
-            # It runs before the frontend, so it does its own install.
             - (cd ../.. && npm ci)
-            # The backend deploy needs a service role with
-            # AmplifyBackendDeployFullAccess and a bootstrapped region. Until
-            # both are in place it fails, and a failed backend phase blocks the
-            # frontend with it — so there is an explicit escape hatch. Set the
-            # branch variable SKIP_BACKEND_DEPLOY=true to ship the web app on
-            # its own; unset it to resume deploying the worker.
+            # Set SKIP_BACKEND_DEPLOY=true on the branch to ship the web app without the worker.
             - |
               (
                 if [ "$SKIP_BACKEND_DEPLOY" = "true" ]; then
                   echo "SKIP_BACKEND_DEPLOY=true - not deploying amplify/backend.ts."
                   exit 0
                 fi
-                # amplify/ is not a workspace member and installs on its own.
-                # It must be `npm install`, not `npm ci`:
-                # @aws-amplify/data-construct ships bundled dependencies that
-                # npm cannot write into a lockfile it will later accept.
+                # npm ci rejects the lockfile @aws-amplify/data-construct's bundled deps produce.
                 (cd ../../amplify && npm install --no-audit --no-fund) || exit 1
-                # sharp ships a native binary and is supplied to the function
-                # by a layer, not the bundle. Built for the Lambda platform
-                # explicitly, so this does not silently depend on the build
-                # host matching.
                 (cd ../.. && npm run layer:sharp) || exit 1
-                # Through `npm run`, not the binary directly: ampx reads
-                # npm_config_user_agent and refuses to start without it, and
-                # only npm sets that. It runs from the repo root because ampx
-                # resolves amplify/backend.ts relative to the cwd, and CDK
-                # bundles by shelling out to esbuild from it as well.
+                # ampx refuses to start without npm_config_user_agent, which only npm run sets.
                 (cd ../.. && npm run deploy:backend -- --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID") || exit 1
               )
     frontend:
@@ -54,21 +28,8 @@ applications:
             - (cd ../.. && npm ci)
         build:
           commands:
-            # Bring the database up to the schema this commit expects before the
-            # app that needs it is built — packages/core/schema/apply.ts. Every
-            # statement there is idempotent, so this is a no-op on most builds.
-            # It uses the branch's DATABASE_URL, and if it fails the build stops,
-            # so the site stays on the previous release rather than going live
-            # against tables that are not there.
             - (cd ../.. && npm run db:schema)
-            # Amplify keeps build-time environment variables out of the SSR
-            # compute on purpose (a Next.js server component does not receive
-            # them by default, so secrets are not exposed to the runtime). The
-            # web tier therefore reads them from .env.production, which Next.js
-            # loads into the SSR process when it starts. Bake the branch
-            # variables into that file here, before the build. `env | grep`
-            # copies NAME=value lines verbatim — no shell interpolation, so a
-            # password with special characters survives intact.
+            # SSR compute does not receive build-time variables; Next.js loads .env.production at runtime.
             - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|EPOCH_INTERVAL_MINUTES|HALL_OWNER_EMAIL)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
       artifacts:
         baseDirectory: .next

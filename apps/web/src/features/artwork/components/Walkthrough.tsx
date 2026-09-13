@@ -6,8 +6,6 @@ import type { PieceDto } from '@tiny/core'
 import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
 
-/* The enlarged view: one work at a time in the artist's order, with the description they wrote. The hall is for discovery; inquiry replaces checkout — the message goes to the artist. */
-
 interface Props {
   slug: string
   artistId: string
@@ -15,14 +13,12 @@ interface Props {
   onClose: () => void
 }
 
-/*  Directional slide between works. Variants rather than inline values: only a variant may be a function, and that function receives the `custom` value carrying the step direction. */
 const SLIDE: Variants = {
   enter: (direction: number) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
   center: { x: 0, opacity: 1 },
   exit: (direction: number) => ({ x: direction > 0 ? -50 : 50, opacity: 0 }),
 }
 
-/* The navigation arrow: a triangle with generously rounded corners, drawn with a stroke and round join rather than a clip-path, which cannot round a corner. */
 function NavArrow() {
   return (
     <svg viewBox="0 0 68 100" aria-hidden="true" focusable="false">
@@ -37,8 +33,6 @@ function NavArrow() {
   )
 }
 
-/* The same triangle as `NavArrow`, turned to point down the plaque: it means
-   the same thing the side arrows do — there is more this way. */
 function MoreArrow() {
   return (
     <svg viewBox="0 0 100 68" aria-hidden="true" focusable="false">
@@ -82,9 +76,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const step = useCallback(
     (stepDir: number) => {
       if (!pieces || pieces.length === 0) return
-      // The click, not the painting-open sound — stepping between works is an
-      // ordinary button press. Played here rather than left to the
-      // document-level handler, which never sees keyboard presses.
       play('click')
       setDirection(stepDir)
       setIndex((i) => (i + stepDir + pieces.length) % pieces.length)
@@ -102,17 +93,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, step])
 
-  /*  The works either side of this one, fetched while this one is being looked
-      at. Stepping through an artist's wall is the one navigation in the museum
-      whose destination is known in advance — it is the next work in their own
-      order, and it is next whether the visitor goes on or turns back — and a
-      reader spends seconds on a description, which is time the connection is
-      otherwise doing nothing. Without this every arrow press paid for a
-      half-megabyte JPEG from cold, which is the wait that reads as lag.
-
-      Both neighbours, because the arrows go both ways, and only the neighbours:
-      prefetching a whole wall would be spending somebody's data on works they
-      have given no sign of wanting. */
   useEffect(() => {
     if (!pieces || pieces.length < 2) return
 
@@ -122,14 +102,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
       const url = pieces[i]?.imageUrl
       if (!url) continue
       const image = new Image()
-      // Behind the work actually on screen, which is still arriving.
       image.fetchPriority = 'low'
       image.decoding = 'async'
       image.src = url
     }
   }, [pieces, index])
 
-  // Report the view once per work, so the artist's dashboard is meaningful.
   useEffect(() => {
     if (!piece) return
     void fetch('/api/events', {
@@ -139,30 +117,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     }).catch(() => {})
   }, [piece, artistId])
 
-  /*  Which way up this work hangs, taken from the framed image the server
-      already rendered for it — `frameWidth`/`frameHeight` arrive in the same
-      payload as the title, so the answer is in hand before anything is drawn.
-
-      This used to be measured by loading the artwork itself into a probe image
-      and reading its natural size, and that was the lag between a wide work and
-      a tall one: nothing about the frame could change until a half-megabyte
-      JPEG had finished downloading, so the frame held the outgoing work's shape
-      for as long as the picture took to arrive and then resized underneath it —
-      one transition of the frame, chasing another of the image, seconds apart.
-      Stepping between orientations is now a single move, and it starts on the
-      same frame as the tap.
-
-      A work whose frame has not been rendered yet — uploaded seconds ago, still
-      in the worker's queue — has no dimensions to read, and falls back to the
-      probe below rather than guessing portrait at it. */
   const framedAspect =
     piece?.frameWidth && piece?.frameHeight ? piece.frameWidth / piece.frameHeight : null
 
   const [probedAspect, setProbedAspect] = useState<number | null>(null)
 
   useEffect(() => {
-    /*  Deliberately not cleared between works: holding the outgoing work's
-        shape until the incoming one is known is one move rather than two. */
     const url = piece?.imageUrl
     if (!url || framedAspect !== null) return
 
@@ -184,18 +144,8 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     [framedAspect, probedAspect],
   )
 
-  /*  Wide enough to leave the floor to the rope. A tall work takes that floor
-      for itself — see `.wt-stage` — and the rope gives way to the column mock 4
-      stands there instead. */
   const wide = frame.ratio > 1
 
-  /*  Whether the description runs past the bottom of the plaque, and whether
-      the reader has already got there. The board is a fixed size, so a long
-      description scrolls inside it; without a mark saying so, text that stops
-      mid-sentence at the board's edge reads as text that was cut. Measured
-      rather than guessed from the length, because how much fits depends on the
-      screen, the font once it has loaded, and where the lines happen to break —
-      hence the observer as well as the scroll handler. */
   const bodyRef = useRef<HTMLParagraphElement>(null)
   const [more, setMore] = useState(false)
 
@@ -225,27 +175,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     [piece, frame],
   )
 
-  /*  Whether this work's ornament is on hand. The artwork is held back until it
-      is, so that the two arrive together: they are separate elements fetched in
-      parallel and the ornament is several times the heavier of the two, so left
-      to themselves the painting lands first and hangs unframed for a few frames.
-
-      Read from the module rather than starting at false, so a frame that has
-      already been seen — which after the hall's preload is nearly always the
-      case — is ready on the first render and the artwork is never held back at
-      all. Only a genuinely cold ornament costs anything, and what it costs is
-      the wait it was already going to cost, spent on empty wall instead of on a
-      painting in the wrong place. */
   const [isOrnamentReady, setIsOrnamentReady] = useState(() => isFrameReady(frame.src))
 
   useEffect(() => {
     setIsOrnamentReady(isFrameReady(frame.src))
   }, [frame.src])
 
-  /*  `onLoad` fires for a cached image too, so this is the whole answer for a
-      second visit as well as a first. `onError` reveals the artwork rather than
-      leaving it hidden: an ornament that will not load is a worse reason to
-      show nobody the painting than no reason at all. */
   const revealArtwork = useCallback(() => {
     markFrameReady(frame.src)
     setIsOrnamentReady(true)
@@ -261,18 +196,9 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
       transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-      /* On the root rather than on the frame alone: the stage sizes itself from
-         the same number, so that the height it asks for is the height its frame
-         could actually use. */
       style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
-      /* One flag for the three things that differ between the two mockups of
-         this screen: how wide a frame may grow, whether the floor carries the
-         rope, and whether the column stands on it. */
       data-wide={wide ? '' : undefined}
     >
-      {/* Home and sound live in the top-right chrome now, so this is the one
-          control that belongs to the enlarged view: back to the hall, on the
-          left, where back belongs. */}
       <div className="wt-top">
         <button className="wt-icon" onClick={onClose} aria-label="Back to the hall">
           ←
@@ -296,11 +222,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 exit="exit"
                 transition={{ type: 'spring', bounce: 0, duration: 0.7 }}
                 className="wt-frame"
-                /*  Its own copy of the ratio, not the root's: the frame on its
-                    way out keeps the props it was last rendered with, so it
-                    holds the shape it was drawn at while it slides away instead
-                    of snapping to the incoming work's on the first frame. The
-                    root's copy is what the stage sizes itself from. */
                 style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
               >
                 <div
@@ -316,9 +237,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                   onLoad={revealArtwork}
                   onError={revealArtwork}
                 />
-                {/* Inside the frame element so it tracks the artwork's real
-                    corner — anchored to the stage it would drift away whenever
-                    the aspect changed. */}
                 <img
                   className="wt-no-photos"
                   src="/assets/icon-no-photos.png"
@@ -329,9 +247,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             </AnimatePresence>
           </div>
 
-          {/* Out of the column's flow, against the side walls at the height both
-              mockups keep them at — so they are siblings of the plaque rather
-              than a row wrapped around it. */}
           <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
             <NavArrow />
           </button>
@@ -349,9 +264,6 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
           </div>
 
           <div className="wt-actions">
-            {/* The artist's own shop link, when they set one. rel="noreferrer"
-                because it leaves the site. No link, no button — a placeholder
-                shop is worse than none. */}
             {piece.shopUrl ? (
               <a
                 className="button secondary wt-shop"
@@ -368,18 +280,8 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             </button>
           </div>
 
-          {/* The rope closes the composition along the bottom, as in mock 8.
-              Decorative and inert — it must never take a tap meant for the
-              buttons above it. An element rather than an image because it is
-              the floor the painting left over: the stylesheet gives the row
-              whatever height remains and hangs the sprite from the top of it,
-              so below a tall work the row is bare floor and the rope is gone. */}
           <div className="wt-rope" aria-hidden="true" />
 
-          {/* The scenery that stands in the rope's place under a tall work, as
-              mock 4 has it. Decorative, behind everything else, and always
-              mounted: it trades places with the rope by fading, and a thing that
-              is not there cannot fade. */}
           <img className="wt-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
         </>
       )}

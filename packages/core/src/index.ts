@@ -45,5 +45,14 @@ export {
   unsubscribe,
   type EventKind,
 } from './domain/audience.ts'
+export {
+  GUEST_NOTE_COLORS,
+  GuestNoteRateLimited,
+  GuestNoteRejected,
+  MAX_GUEST_MESSAGE,
+  MAX_GUEST_NAME,
+  listGuestNotes,
+  postGuestNote,
+} from './domain/guestboard.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

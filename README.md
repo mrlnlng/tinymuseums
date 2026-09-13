@@ -17,6 +17,7 @@ npm install
 npm run setup                            # copies .env.example to .env
 node --experimental-strip-types scripts/db.ts          # terminal 1 — Postgres on :5433
 node --experimental-strip-types --env-file=.env scripts/migrate.ts   # terminal 2 — schema
+npm run db:schema                        # the deploy-applied schema (guest board)
 node --experimental-strip-types --env-file=.env scripts/seed-testing2.ts  # optional seed
 npm run dev                              # web on :3000, worker alongside
 ```
@@ -72,6 +73,7 @@ packages/core        domain logic, shared by web and worker
   epoch.ts           sealing, slices, cursor stability
   publish.ts         the publish bar
   handlers.ts        job handlers, so seeding runs the same pipeline
+  schema/            idempotent SQL applied on every deploy (amplify.yml) and by npm run db:schema
 apps/web             Next.js: SSR pages, route handlers, the hall renderer
 apps/worker          the polling loop and nothing else
 db/migrations        plain SQL

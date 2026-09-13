@@ -71,3 +71,22 @@ export interface ArtistPageDto {
   /** The arranged works (stands 1..30) in order — what a visitor can see. */
   pieces: PieceDto[]
 }
+
+export type GuestNoteColor = 'pink' | 'green'
+
+/** A sticky note on the guest board, as every visitor sees it. */
+export interface GuestNoteDto {
+  id: string
+  name: string
+  message: string
+  color: GuestNoteColor
+  /** ISO 8601. */
+  createdAt: string
+}
+
+export interface GuestNotePageDto {
+  /** Newest first. */
+  notes: GuestNoteDto[]
+  /** Pass back as `cursor` for older notes; null when there are none. */
+  nextCursor: string | null
+}

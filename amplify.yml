@@ -54,6 +54,13 @@ applications:
             - (cd ../.. && npm ci)
         build:
           commands:
+            # Bring the database up to the schema this commit expects before the
+            # app that needs it is built — packages/core/schema/apply.ts. Every
+            # statement there is idempotent, so this is a no-op on most builds.
+            # It uses the branch's DATABASE_URL, and if it fails the build stops,
+            # so the site stays on the previous release rather than going live
+            # against tables that are not there.
+            - (cd ../.. && npm run db:schema)
             # Amplify keeps build-time environment variables out of the SSR
             # compute on purpose (a Next.js server component does not receive
             # them by default, so secrets are not exposed to the runtime). The

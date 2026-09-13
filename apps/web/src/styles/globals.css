@@ -480,6 +480,18 @@ code.token {
 
 .hall-overlay { position: absolute; inset: 0; pointer-events: none; }
 
+/*  The guest board's notes in the hall: a layer the size of the board drawing's
+    canvas, placed over the board each frame (GuestBoardNotes in overlay.ts).
+    Hidden until it is first placed. */
+.hall-guestboard-notes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  aspect-ratio: 2010 / 1550;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* The visitor's own layer, above the plaque overlay. Anything drawn in the WebGL scene sits under that overlay, which is why the bunny is not in it. */
 .hall-character {
   position: absolute;

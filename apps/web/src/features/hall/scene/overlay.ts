@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
 import type { CafeMarks } from './cafe'
+import type { Mark } from './board'
 import type { GiftShopMarks } from './giftshop'
 import type { LobbyMarks } from './lobby'
 import type { MountedDisplay } from './scene'
@@ -456,5 +457,41 @@ export class CafeLink {
 
   clear(): void {
     this.poster.remove()
+  }
+}
+
+/*  The notes pinned to the guest board at the end of the hall. The notes
+    themselves are React's — the same pinned-notes layout the guest board screen
+    draws, rendered into this layer — and this only keeps the layer lying over
+    the board: one element sized to the drawing's canvas and moved with the
+    hall, rather than a node per note, so a full board costs the frame loop the
+    same as an empty one. It takes no pointer: a tap on the board is the scene's,
+    and opens the guest board. */
+export class GuestBoardNotes {
+  constructor(
+    private layer: HTMLElement,
+    private mark: Mark,
+  ) {}
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const at = toScreen(this.mark.x, this.mark.y, camera, viewport)
+    if (!at) {
+      writeStyle(this.layer, 'opacity', '0')
+      return
+    }
+
+    const perUnit = viewport.width / (camera.right - camera.left)
+    writeStyle(this.layer, 'width', `${(this.mark.width * perUnit).toFixed(1)}px`)
+    writeStyle(
+      this.layer,
+      'transform',
+      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
+    )
+    writeStyle(this.layer, 'opacity', '1')
+  }
+
+  /** The layer belongs to React, so it is hidden rather than removed. */
+  clear(): void {
+    writeStyle(this.layer, 'opacity', '0')
   }
 }

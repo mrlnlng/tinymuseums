@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
 import GuestBoard from '@/features/guestboard/components/GuestBoard'
+import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
+import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
 import CoinFound from '@/features/hall/components/CoinFound'
 import HelpGuide from '@/features/hall/components/HelpGuide'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
@@ -22,18 +24,31 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const characterRef = useRef<HTMLDivElement>(null)
+  const guestBoardNotesRef = useRef<HTMLDivElement>(null)
 
   const [openPiece, setOpenPiece] = useState<OpenPiece | null>(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isCoinOpen, setIsCoinOpen] = useState(false)
   const [isGuestBoardOpen, setIsGuestBoardOpen] = useState(false)
+  const [isGuestBoardHung, setIsGuestBoardHung] = useState(false)
+
+  /*  The notes on the board in the hall, fetched once the board is hung at the
+      end of the walk rather than on arrival, and not polled: the open guest
+      board polls, and shares this cache, so what is published there is on the
+      wall when it closes. */
+  const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
   const { setWalking } = useSound()
   const router = useRouter()
 
   const isSuspended = openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen
 
   const { isReady, error } = useHallScene({
-    hosts: { canvas: canvasRef, overlay: overlayRef, character: characterRef },
+    hosts: {
+      canvas: canvasRef,
+      overlay: overlayRef,
+      character: characterRef,
+      guestBoardNotes: guestBoardNotesRef,
+    },
     initialSlice,
     isSuspended,
     onOpenPiece: setOpenPiece,
@@ -42,6 +57,7 @@ export default function Museum({ initialSlice }: MuseumProps) {
     onOpenHelp: () => setIsHelpOpen(true),
     onFindCoin: () => setIsCoinOpen(true),
     onOpenGuestBoard: () => setIsGuestBoardOpen(true),
+    onGuestBoardHung: () => setIsGuestBoardHung(true),
   })
 
   // Anything that stops the hall must stop the footsteps too.
@@ -79,6 +95,9 @@ export default function Museum({ initialSlice }: MuseumProps) {
     >
       <div className="hall-host" ref={canvasRef} />
       <div className="hall-overlay" ref={overlayRef} />
+      <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
+        <PinnedNotes notes={guestNotes} />
+      </div>
       {/* Above the plaques, so the visitor is never painted over. */}
       <div className="hall-character" ref={characterRef} />
 

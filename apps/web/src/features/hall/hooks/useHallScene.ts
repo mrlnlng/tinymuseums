@@ -17,6 +17,7 @@ import { createMatcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
   GiftShopSigns,
+  GuestBoardNotes,
   LobbySigns,
   Placards,
   type Viewport,
@@ -59,6 +60,8 @@ export interface HallHosts {
   canvas: React.RefObject<HTMLDivElement | null>
   overlay: React.RefObject<HTMLDivElement | null>
   character: React.RefObject<HTMLDivElement | null>
+  /** The layer the guest board's pinned notes are drawn into, laid over the board. */
+  guestBoardNotes: React.RefObject<HTMLDivElement | null>
 }
 
 interface Options {
@@ -75,6 +78,8 @@ interface Options {
   onFindCoin: () => void
   /** The visitor tapped the guest board at the end of the hall. */
   onOpenGuestBoard: () => void
+  /** The guest board has been hung, so its notes are worth fetching. */
+  onGuestBoardHung: () => void
 }
 
 export function useHallScene({
@@ -86,6 +91,7 @@ export function useHallScene({
   onOpenHelp,
   onFindCoin,
   onOpenGuestBoard,
+  onGuestBoardHung,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -113,6 +119,9 @@ export function useHallScene({
 
   const onOpenGuestBoardRef = useRef(onOpenGuestBoard)
   onOpenGuestBoardRef.current = onOpenGuestBoard
+
+  const onGuestBoardHungRef = useRef(onGuestBoardHung)
+  onGuestBoardHungRef.current = onGuestBoardHung
 
   useEffect(() => {
     let isDisposed = false
@@ -225,6 +234,7 @@ export function useHallScene({
 
       // Past the shop, so it waits on the same complete hall.
       let guestBoard: GuestBoard | null = null
+      let guestBoardNotes: GuestBoardNotes | null = null
 
       /*  An arrow rather than a declaration, which is the style everything else
           in here uses: a hoisted declaration could in principle run before the
@@ -241,6 +251,9 @@ export function useHallScene({
         const x = hall.layout.guestBoardX
         if (x === null || guestBoard) return
         guestBoard = createGuestBoard(scene, assets, x)
+        const layer = hosts.guestBoardNotes.current
+        if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
+        onGuestBoardHungRef.current()
       }
 
       const raiseCafe = (): void => {
@@ -406,6 +419,7 @@ export function useHallScene({
         lobbySigns.sync(rig.camera, viewport)
         giftShopSigns?.sync(rig.camera, viewport)
         cafeLink?.sync(rig.camera, viewport)
+        guestBoardNotes?.sync(rig.camera, viewport)
 
         // The cat waves on its own clock, wherever the visitor is in the room.
         cafe?.update(dt, traversal.cameraX)
@@ -431,6 +445,7 @@ export function useHallScene({
         lobbySigns.clear()
         giftShopSigns?.clear()
         cafeLink?.clear()
+        guestBoardNotes?.clear()
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()

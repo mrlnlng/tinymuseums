@@ -5,11 +5,14 @@ import useSWRInfinite from 'swr/infinite'
 import type { GuestNoteColor, GuestNoteDto, GuestNotePageDto } from '@tiny/core'
 
 /*  The guest board's notes, newest first, a page at a time from
-    /api/guestboard. SWR owns the cache: it refetches when the visitor comes
-    back to the tab and every half minute while the board is open, so notes
-    other visitors leave turn up without a reload, and a posted note is written
-    straight into the cache from the server's reply rather than waiting for the
-    next refetch (the route caches reads for a few seconds at the edge). */
+    /api/guestboard. SWR owns the cache, and every caller shares it: the board
+    in the hall and the guest board screens read the same notes, so one
+    published on the screens is on the wall when they close. It refetches when
+    the visitor comes back to the tab, and every half minute while a `live`
+    caller (the open screens) is mounted, so notes other visitors leave turn up
+    without a reload. A posted note is written straight into the cache from the
+    server's reply rather than waiting for the next refetch, which the route's
+    few seconds of edge caching could still answer stale. */
 
 const PAGE_SIZE = 50
 const REFRESH_MS = 30_000
@@ -29,15 +32,22 @@ async function fetchPage(url: string): Promise<GuestNotePageDto> {
   return response.json()
 }
 
-export function useGuestNotes() {
+interface Options {
+  /** False holds off fetching entirely, until the notes are wanted. */
+  enabled?: boolean
+  /** Poll while mounted. Off for the hall, where nobody is reading them up close. */
+  live?: boolean
+}
+
+export function useGuestNotes({ enabled = true, live = true }: Options = {}) {
   const { data, size, setSize, mutate } = useSWRInfinite<GuestNotePageDto>(
     (index, previous: GuestNotePageDto | null) => {
-      if (previous && !previous.nextCursor) return null
+      if (!enabled || (previous && !previous.nextCursor)) return null
       const cursor = previous?.nextCursor ? `&cursor=${encodeURIComponent(previous.nextCursor)}` : ''
       return `/api/guestboard?limit=${PAGE_SIZE}${cursor}`
     },
     fetchPage,
-    { refreshInterval: REFRESH_MS, revalidateFirstPage: true },
+    { refreshInterval: live ? REFRESH_MS : 0, revalidateFirstPage: true },
   )
 
   const notes = useMemo(() => data?.flatMap((page) => page.notes) ?? [], [data])

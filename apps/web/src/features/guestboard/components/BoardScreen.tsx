@@ -1,6 +1,5 @@
 import type { GuestNoteDto } from '@tiny/core'
-import StickyNote from '@/features/guestboard/components/StickyNote'
-import { NOTE_PLACES } from '@/features/guestboard/lib/placement'
+import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 
 /*  Mock 1: the board with the latest notes pinned to it, and the way to add one.
 
@@ -17,8 +16,6 @@ interface BoardScreenProps {
 }
 
 export default function BoardScreen({ notes, onClose, onAddNote, onOpenNote }: BoardScreenProps) {
-  const pinned = notes.slice(0, NOTE_PLACES.length)
-
   return (
     <>
       <button type="button" className="guestboard-scrim" onClick={onClose} aria-label="Close the guest board" />
@@ -27,27 +24,7 @@ export default function BoardScreen({ notes, onClose, onAddNote, onOpenNote }: B
 
         <div className="guestboard-board guestboard-board--whole">
           <img className="guestboard-board-art" src="/assets/guestboard/board.png" alt="" />
-          <ul className="guestboard-pins" aria-label="Notes from other visitors">
-            {pinned.map((note, index) => {
-              const place = NOTE_PLACES[index]!
-              return (
-                <li
-                  key={note.id}
-                  className="guestboard-pin"
-                  style={{ left: `${place.left}%`, top: `${place.top}%`, width: `${place.width}%` }}
-                >
-                  <button
-                    type="button"
-                    className="guestboard-pin-button"
-                    onClick={() => onOpenNote(index)}
-                    aria-label={`Read ${note.name}'s note`}
-                  >
-                    <StickyNote color={note.color} name={note.name} />
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          <PinnedNotes notes={notes} onOpenNote={onOpenNote} />
         </div>
 
         <p className="guestboard-intro">

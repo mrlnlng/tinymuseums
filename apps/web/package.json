@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@tiny/core": "*",
+    "embla-carousel-react": "^8.6.0",
     "motion": "^13.1.1",
     "next": "^15.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "swr": "^2.5.1",
     "three": "^0.169.0"
   },
   "devDependencies": {

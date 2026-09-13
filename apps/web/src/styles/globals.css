@@ -1936,3 +1936,276 @@ code.token {
   transform: translateX(-50%);
   background: url('/assets/rope.png') no-repeat center / 100% 100%;
 }
+
+/* ------------------------------------------------------------ guest board */
+
+/*  The guest board screens, from the guestboard mocks (1080x1920). Each screen
+    is a stage at the mock's own proportions, fitted inside the frame and
+    centred, so every position below is the mock's, as a share of that stage:
+    `left`/`width` against its 1080 width (cqw for type and anything square),
+    `top` against its 1920 height. The wall around a stage is the mock's
+    background run on. The mock's text column is centred a little left of the
+    frame's middle (at 527 of 1080), and the text here follows it. */
+.guestboard {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: #ffeac7;
+  container-type: size;
+}
+
+.guestboard-screen { position: absolute; inset: 0; }
+
+/* Tapping the bare wall steps back; it is a scrim, so it draws nothing. */
+.guestboard-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/*  Only what the visitor can act on takes a pointer; the rest of the stage lets
+    a tap through to the scrim behind it. */
+.guestboard-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(100cqw, 56.25cqh);
+  aspect-ratio: 1080 / 1920;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  container-type: inline-size;
+  pointer-events: none;
+}
+.guestboard-stage > :is(.guestboard-board, .guestboard-held, .guestboard-carousel, button) {
+  pointer-events: auto;
+}
+
+/*  The board is board.png at its full canvas, placed by the canvas so that
+    measurements off the artist's file land where the mock draws them. Mock 1
+    shows it whole; mocks 2 and 3 hold it up close and let the frame crop it. */
+.guestboard-board {
+  position: absolute;
+  aspect-ratio: 2010 / 1550;
+}
+.guestboard-board--whole { left: 2.26%; top: 18.08%; width: 95.44%; }
+.guestboard-board--close { left: -44.55%; top: 9%; width: 188.9%; }
+.guestboard-board-art {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.guestboard-heading {
+  position: absolute;
+  top: 14.15%;
+  left: 0;
+  right: 2.31%;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 6.72cqw;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #662f14;
+}
+
+.guestboard-intro,
+.guestboard-reminder {
+  position: absolute;
+  margin: 0;
+  font-family: var(--font-body);
+  text-align: center;
+  color: #662f14;
+}
+.guestboard-intro { top: 61.02%; left: 8.84%; right: 11.16%; font-size: 5.2cqw; line-height: 1.395; }
+.guestboard-reminder { top: 35.29%; left: 10.84%; right: 13.16%; font-size: 2.95cqw; line-height: 1.38; }
+
+/*  The pill, drawn by this element: the mock's own colour and size, with the
+    label set in the museum face at the size the mock's lettering measures. */
+.guestboard-button {
+  position: absolute;
+  width: 39.81cqw;
+  height: 13.89cqw;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #d64f87;
+  color: #fff;
+  font-family: var(--font-button);
+  font-size: 6.95cqw;
+  line-height: 1;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.guestboard-button:active:not(:disabled) { transform: scale(0.97); }
+.guestboard-button:disabled { filter: saturate(0.55) brightness(1.08); cursor: default; }
+.guestboard-button:focus-visible { outline: 3px solid #662f14; outline-offset: 3px; }
+.guestboard-button--add { left: 28.89%; top: 80.73%; }
+.guestboard-button--foot { left: 32.96%; top: 86.46%; }
+
+/*  Not in the mock, which only draws a note that went up: why one did not,
+    under the note, on a scrap of the board's own paper so it reads over the
+    scalloped edge it lands on. */
+.guestboard-error {
+  position: absolute;
+  top: 82.4%;
+  left: 50%;
+  width: max-content;
+  max-width: 84%;
+  margin: 0;
+  padding: 0.6cqw 2.4cqw;
+  border-radius: 999px;
+  background: #fff2f2;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 3.1cqw;
+  line-height: 1.2;
+  text-align: center;
+  color: #a3243f;
+}
+
+/* --- notes pinned to the board ------------------------------------------ */
+
+/* Positioned over the board's canvas, in its percentages; see lib/placement.ts. */
+.guestboard-pins {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guestboard-pin { position: absolute; }
+.guestboard-pin-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease;
+}
+.guestboard-pin-button:hover { transform: translateY(-2%) rotate(-1.5deg); }
+.guestboard-pin-button:focus-visible { outline: 2px solid #662f14; outline-offset: 2px; }
+
+/* --- a note held up close -------------------------------------------------- */
+
+/* Mock 2 holds the note lower, under the reminder; mock 3 higher, between the arrows. */
+.guestboard-held { position: absolute; left: 16.76%; width: 66.48%; }
+.guestboard-held--compose { top: 44.48%; }
+
+.guestboard-carousel {
+  position: absolute;
+  top: 38.75%;
+  left: 0;
+  width: 100%;
+  /* The note's height and its shadow, so a swipe anywhere across that band moves it. */
+  height: 38.6%;
+  overflow: hidden;
+}
+.guestboard-carousel-track { display: flex; height: 100%; margin: 0; padding: 0; list-style: none; touch-action: pan-y pinch-zoom; }
+.guestboard-carousel-slide { position: relative; flex: 0 0 100%; min-width: 0; }
+.guestboard-held--read { top: 0; }
+
+.guestboard-arrow {
+  position: absolute;
+  top: 53.07%;
+  width: 10.56cqw;
+  aspect-ratio: 114 / 65;
+  padding: 0;
+  border: 0;
+  background: url('/assets/guestboard/arrow-left.png') no-repeat center / contain;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.12s ease;
+}
+.guestboard-arrow--prev { left: 1.94%; }
+.guestboard-arrow--next { left: 84.72%; transform: scaleX(-1); }
+.guestboard-arrow:disabled { opacity: 0.3; cursor: default; }
+.guestboard-arrow:focus-visible { outline: 2px solid #662f14; outline-offset: 4px; }
+
+/* --- the note itself --------------------------------------------------------- */
+
+/*  One drawing at every size: everything inside is measured against the note's
+    own width, from the mock's held note (718 wide). The paper, a hairline edge,
+    and under it the curl of shadow the mock draws, deepest near the corners. */
+.sticky-note {
+  position: relative;
+  aspect-ratio: 718 / 695;
+  container-type: inline-size;
+  border: max(1px, 0.28cqw) solid var(--note-edge);
+  background: var(--note-paper);
+  font-family: 'Noto Sans', system-ui, sans-serif;
+  color: #000;
+}
+.sticky-note::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -0.28cqw;
+  right: -0.28cqw;
+  height: 3.2cqw;
+  background: #ebe1e3;
+  clip-path: polygon(0 0, 100% 0, 100% 24%, 97.4% 76%, 83.4% 76%, 50% 28%, 16.6% 76%, 4.7% 100%, 2.6% 76%, 0 24%);
+  pointer-events: none;
+}
+.sticky-note--pink { --note-paper: #f4bad9; --note-edge: #e2afcc; }
+.sticky-note--green { --note-paper: #cbe9a2; --note-edge: #c1df9c; }
+
+.sticky-note-message {
+  position: absolute;
+  top: 7.1cqw;
+  left: 6.1cqw;
+  right: 6.1cqw;
+  bottom: 17cqw;
+  font-size: 8cqw;
+  line-height: 1.355;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* The tiers fit any 280 characters; a note of mostly line breaks can still scroll. */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sticky-note-message[data-length='medium'] { font-size: 6.4cqw; }
+.sticky-note-message[data-length='long'] { font-size: 5.3cqw; }
+
+.sticky-note-name {
+  position: absolute;
+  left: 6cqw;
+  right: 6cqw;
+  bottom: 6.9cqw;
+  font-size: 5.86cqw;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #6e5a70;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*  The fields draw nothing of their own: what is typed is set in the note's own
+    type, in the place it will be read. */
+.sticky-note-field {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  outline: none;
+}
+.sticky-note-field::placeholder { color: inherit; opacity: 0.4; }
+.sticky-note-field--message { height: 100%; resize: none; overflow-y: auto; }
+.sticky-note-field--name { text-overflow: ellipsis; }

@@ -2,14 +2,12 @@ import { createHmac } from 'node:crypto'
 import { query, queryOne } from '../infra/db.ts'
 import { env } from '../infra/env.ts'
 import { hit, type RateLimit } from '../infra/rate-limit.ts'
+import { GUEST_NOTE_COLORS, MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '../guestboard-rules.ts'
 import type { GuestNoteColor, GuestNoteDto, GuestNotePageDto } from '../types.ts'
 
 /* The guest board: sticky notes left by visitors, who have no accounts. Anyone can post, so every rule about what a note may contain, and how often one may be left, lives here — the route only translates HTTP. */
 
-export const GUEST_NOTE_COLORS = ['pink', 'green'] as const satisfies readonly GuestNoteColor[]
-export const MAX_GUEST_NAME = 40
-export const MAX_GUEST_MESSAGE = 280
-export const MAX_GUEST_NOTES_PAGE = 100
+const MAX_GUEST_NOTES_PAGE = 100
 
 /* Two limits, because a client's address is only as trustworthy as the proxy headers it came from: the per-visitor limit is the friendly one, and the board-wide ceiling holds even if an address is spoofed. */
 const PER_VISITOR: RateLimit = { limit: 5, windowSeconds: 60 * 60 }

@@ -53,6 +53,17 @@ overwrites them:
 - **`cafe/thanks-board.png`** — the artist's `thanksBoard.png` (same drop), trimmed, resized
   to 600px wide and palette-quantised; the credits board on the cafe wall.
 
+- **`guestboard/board.png`** and **`guestboard/board-hall.png`** — the artist's
+  `guestboard.png` (the guest board drop), resized to 1600px (the guest board screens) and
+  720px (the board on the wall past the gift shop) and palette-quantised. Not trimmed: the
+  screens place the drawing by its full canvas, as the mocks do. The 1600px copy is also
+  lifted 3.5% on every channel, because the mocks show the board that much brighter than the
+  file (paper #F7E9E8 in the file, #FFF2F2 in the mocks).
+
+- **`guestboard/arrow-left.png`** — the pink arrow cut out of guest board mock 3 (no art
+  file was supplied for it), keyed off the board's paper colour into alpha. The right arrow
+  is the same image mirrored in CSS.
+
 How the helm and the matcha sit on the bunny were measured from the artist's
 `left_walk_hat.gif` and `right_walk_hat.gif`; see `CONFIG.helm` and `CONFIG.matcha`.
 

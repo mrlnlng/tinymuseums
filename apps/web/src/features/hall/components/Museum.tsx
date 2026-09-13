@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
+import GuestBoard from '@/features/guestboard/components/GuestBoard'
 import CoinFound from '@/features/hall/components/CoinFound'
 import HelpGuide from '@/features/hall/components/HelpGuide'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
@@ -25,10 +26,11 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const [openPiece, setOpenPiece] = useState<OpenPiece | null>(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isCoinOpen, setIsCoinOpen] = useState(false)
+  const [isGuestBoardOpen, setIsGuestBoardOpen] = useState(false)
   const { setWalking } = useSound()
   const router = useRouter()
 
-  const isSuspended = openPiece !== null || isHelpOpen || isCoinOpen
+  const isSuspended = openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen
 
   const { isReady, error } = useHallScene({
     hosts: { canvas: canvasRef, overlay: overlayRef, character: characterRef },
@@ -39,6 +41,7 @@ export default function Museum({ initialSlice }: MuseumProps) {
     onLeave: () => router.push('/'),
     onOpenHelp: () => setIsHelpOpen(true),
     onFindCoin: () => setIsCoinOpen(true),
+    onOpenGuestBoard: () => setIsGuestBoardOpen(true),
   })
 
   // Anything that stops the hall must stop the footsteps too.
@@ -85,6 +88,12 @@ export default function Museum({ initialSlice }: MuseumProps) {
 
       <AnimatePresence>
         {isCoinOpen ? <CoinFound key="coin" onClose={() => setIsCoinOpen(false)} /> : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isGuestBoardOpen ? (
+          <GuestBoard key="guestboard" onClose={() => setIsGuestBoardOpen(false)} />
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>

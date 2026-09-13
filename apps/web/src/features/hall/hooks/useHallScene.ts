@@ -10,6 +10,7 @@ import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
+import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm } from '@/features/hall/scene/helm'
 import { createLobby } from '@/features/hall/scene/lobby'
 import { createMatcha } from '@/features/hall/scene/matcha'
@@ -72,6 +73,8 @@ interface Options {
   onOpenHelp: () => void
   /** The visitor tapped the hidden coin. */
   onFindCoin: () => void
+  /** The visitor tapped the guest board at the end of the hall. */
+  onOpenGuestBoard: () => void
 }
 
 export function useHallScene({
@@ -82,6 +85,7 @@ export function useHallScene({
   onLeave,
   onOpenHelp,
   onFindCoin,
+  onOpenGuestBoard,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -106,6 +110,9 @@ export function useHallScene({
 
   const onFindCoinRef = useRef(onFindCoin)
   onFindCoinRef.current = onFindCoin
+
+  const onOpenGuestBoardRef = useRef(onOpenGuestBoard)
+  onOpenGuestBoardRef.current = onOpenGuestBoard
 
   useEffect(() => {
     let isDisposed = false
@@ -216,6 +223,9 @@ export function useHallScene({
       let cafe: Cafe | null = null
       let cafeLink: CafeLink | null = null
 
+      // Past the shop, so it waits on the same complete hall.
+      let guestBoard: GuestBoard | null = null
+
       /*  An arrow rather than a declaration, which is the style everything else
           in here uses: a hoisted declaration could in principle run before the
           host was checked for null, so the checked host is only in scope for a
@@ -225,6 +235,12 @@ export function useHallScene({
         if (x === null || giftShop) return
         giftShop = createGiftShop(scene, assets, x)
         giftShopSigns = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
+      }
+
+      const raiseGuestBoard = (): void => {
+        const x = hall.layout.guestBoardX
+        if (x === null || guestBoard) return
+        guestBoard = createGuestBoard(scene, assets, x)
       }
 
       const raiseCafe = (): void => {
@@ -306,7 +322,15 @@ export function useHallScene({
           return
         }
 
-        if (cafe?.hitTestCat(raycaster)) soundRef.current.play('cafe-hello')
+        if (cafe?.hitTestCat(raycaster)) {
+          soundRef.current.play('cafe-hello')
+          return
+        }
+
+        if (guestBoard?.hitTest(raycaster)) {
+          soundRef.current.play('click')
+          onOpenGuestBoardRef.current()
+        }
       }
 
       renderer.domElement.addEventListener('pointerdown', handlePointerDown)
@@ -376,6 +400,7 @@ export function useHallScene({
         // The found screen has closed, so the coin can go.
         if (!isSuspendedRef.current) hall.releaseCoin()
         raiseGiftShop()
+        raiseGuestBoard()
         raiseCafe()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
@@ -409,6 +434,7 @@ export function useHallScene({
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()
+        guestBoard?.dispose()
         cafe?.dispose()
         backdrop.dispose()
         helm.dispose()

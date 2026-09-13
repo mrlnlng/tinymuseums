@@ -21,6 +21,10 @@ export interface HallLayout {
       it has ten or fewer — so it needs either the eleventh wall to exist or
       the hall to be complete. */
   cafeX: number | null
+  /*  Where the camera parks at the guest board, past the gift shop, or null
+      while the hall is still growing — it is the last thing on the walk, so it
+      waits on the same complete hall the shop does. */
+  guestBoardX: number | null
 }
 
 /*  The cafe's home in piece indices, or null when the hall has not laid out
@@ -74,20 +78,23 @@ export function computeLayout(widths: number[], isComplete = false): HallLayout 
     cursor += CONFIG.cafe.length
   }
 
-  /*  Once every painting is laid out, the hall ends at the gift shop rather
-      than at the last wall, and the camera's right-hand stop moves out to
-      where it parks in front of the counter. Until then it ends a gap past the
+  /*  Once every painting is laid out, the hall ends past the gift shop, at the
+      guest board, rather than at the last wall, and the camera's right-hand
+      stop moves out to where it parks in front of the board. Until then it ends a gap past the
       last piece, so the hall does not stop abruptly at a wall while more of it
       is still on its way. */
   const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
+  // The guest board stands past the shop, so the walk now ends there instead.
+  const guestBoardX = giftShopX === null ? null : giftShopX + CONFIG.guestBoard.length
 
   return {
     centerX,
     pedestalX,
-    totalLength: giftShopX ?? cursor + CONFIG.piece.gap,
+    totalLength: guestBoardX ?? cursor + CONFIG.piece.gap,
     known: widths.length,
     giftShopX,
     cafeX,
+    guestBoardX,
   }
 }
 

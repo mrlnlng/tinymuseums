@@ -46,11 +46,8 @@ export {
   type EventKind,
 } from './domain/audience.ts'
 export {
-  GUEST_NOTE_COLORS,
   GuestNoteRateLimited,
   GuestNoteRejected,
-  MAX_GUEST_MESSAGE,
-  MAX_GUEST_NAME,
   listGuestNotes,
   postGuestNote,
 } from './domain/guestboard.ts'

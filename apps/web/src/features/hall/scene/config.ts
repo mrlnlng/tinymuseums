@@ -213,6 +213,17 @@ export const CONFIG = {
     catFrameMs: 200,
   },
 
+  /*  The guest board, past the gift shop: the very last thing on the walk, so
+      a visitor who has seen everything can leave a note on the way out.
+      `length` runs from where the camera parks at the shop counter to where
+      it parks at the board, a screen further on, so the two never share the
+      view. Tapping the board opens the guest board screens; the board itself
+      is the whole affordance, as the cafe's poster is. */
+  guestBoard: {
+    length: 3.9,
+    board: { dx: 0, centerY: 2.05, width: 3.0, z: 0.3 },
+  },
+
   /*  The helmet easter egg. `worn` is the helm's centre and width in the
       bunny's source pixels (left-facing frames, from the top-left; mirrored for
       right), measured from the artist's `left_walk_hat.gif`: that bunny is the

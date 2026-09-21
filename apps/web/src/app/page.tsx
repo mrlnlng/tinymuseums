@@ -38,12 +38,12 @@ export default function LandingPage() {
         </Link>
       </div>
 
-      <img className="landing-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
+      <img className="landing-column" src="/assets/pedestal.webp" alt="" aria-hidden="true" />
 
       <div className="landing-visitor">
-        <img className="visitor-bunny" src="/assets/bunny-right.png" alt="" aria-hidden="true" />
+        <img className="visitor-bunny" src="/assets/bunny-right.webp" alt="" aria-hidden="true" />
         <Link className="visitor-ticket" href="/museum" aria-label="Start visit">
-          <img src="/assets/ticket.png" alt="" aria-hidden="true" />
+          <img src="/assets/ticket.webp" alt="" aria-hidden="true" />
         </Link>
       </div>
 

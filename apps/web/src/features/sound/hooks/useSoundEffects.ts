@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
+import { gestured } from '@/features/sound/lib/gesture'
 import { applyMix, resumeGain, routeThroughGain } from '@/features/sound/lib/output'
 
 const EFFECTS = {
@@ -42,32 +43,40 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const volumeRef = useRef(volume)
   volumeRef.current = volume
 
-  // Audio cannot sound before a gesture anyway, so the voices are built on the
-  // first one rather than competing with the hall's textures on every page load.
-  const ensureLoaded = useCallback(() => {
-    const voice = (file: string, mix: number, loop = false): HTMLAudioElement => {
-      const audio = new Audio(file)
-      audio.preload = 'auto'
-      audio.loop = loop
-      if (!routeThroughGain(audio, mix)) audio.volume = Math.min(1, mix)
-      return audio
-    }
+  const makeVoice = useCallback((file: string, mix: number, loop = false): HTMLAudioElement => {
+    const audio = new Audio(file)
+    audio.preload = 'auto'
+    audio.loop = loop
+    if (!routeThroughGain(audio, mix)) audio.volume = Math.min(1, mix)
+    return audio
+  }, [])
 
-    // Built once for the page's life: an element routed into Web Audio cannot be released.
-    if (Object.keys(voicesRef.current).length === 0) {
-      for (const [name, spec] of Object.entries(EFFECTS)) {
-        voicesRef.current[name as EffectName] = Array.from({ length: VOICES }, () =>
-          voice(spec.file, spec.volume),
-        )
+  // Each clip is fetched the first time it is actually needed, so entering the
+  // hall costs one footstep loop rather than the whole sound library.
+  // Built once for the page's life: an element routed into Web Audio cannot be released.
+  const voicesFor = useCallback(
+    (name: EffectName): HTMLAudioElement[] | null => {
+      if (!gestured()) return null
+      let pool = voicesRef.current[name]
+      if (!pool) {
+        const spec = EFFECTS[name]
+        pool = Array.from({ length: VOICES }, () => makeVoice(spec.file, spec.volume))
+        voicesRef.current[name] = pool
       }
-    }
+      return pool
+    },
+    [makeVoice],
+  )
 
+  const ensureSteps = useCallback((): HTMLAudioElement | null => {
+    if (!gestured()) return null
     if (!stepsRef.current) {
-      const steps = voice(FOOTSTEPS.file, FOOTSTEPS.volume, true)
+      const steps = makeVoice(FOOTSTEPS.file, FOOTSTEPS.volume, true)
       applyMix(steps, FOOTSTEPS.volume, volumeRef.current)
       stepsRef.current = steps
     }
-  }, [])
+    return stepsRef.current
+  }, [makeVoice])
 
   useEffect(
     () => () => {
@@ -87,9 +96,8 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const play = useCallback(
     (name: EffectName) => {
       if (!isEnabled) return
-      ensureLoaded()
 
-      const pool = voicesRef.current[name]
+      const pool = voicesFor(name)
       if (!pool?.length) return
 
       const at = (nextVoiceRef.current[name] ?? 0) % pool.length
@@ -122,16 +130,19 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       resumeGain()
       void voice.play().catch(() => {})
     },
-    [isEnabled, ensureLoaded],
+    [isEnabled, voicesFor],
   )
 
   const setWalking = useCallback(
     (isWalking: boolean) => {
       if (isWalking === isWalkingRef.current) return
-      if (isWalking && isEnabled) ensureLoaded()
 
-      const steps = stepsRef.current
-      if (!steps) return
+      const steps = isWalking && isEnabled ? ensureSteps() : stepsRef.current
+      if (!steps) {
+        // Nothing to start yet; stay out of sync so the next call retries.
+        if (!isWalking) isWalkingRef.current = false
+        return
+      }
       isWalkingRef.current = isWalking
 
       if (isWalking && isEnabled) {
@@ -142,7 +153,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       steps.pause()
       steps.currentTime = 0
     },
-    [isEnabled, ensureLoaded],
+    [isEnabled, ensureSteps],
   )
 
   const silenceOnMute = useCallback(() => {

@@ -21,7 +21,7 @@ export default function ScreenChrome() {
           aria-label="Back to the entrance"
           title="Back to the entrance"
         >
-          <img src="/assets/icon-home.png" alt="" />
+          <img src="/assets/icon-home.webp" alt="" />
         </button>
       ) : null}
       <SoundToggle />

@@ -239,7 +239,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 />
                 <img
                   className="wt-no-photos"
-                  src="/assets/icon-no-photos.png"
+                  src="/assets/icon-no-photos.webp"
                   alt=""
                   aria-hidden="true"
                 />
@@ -282,7 +282,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
           <div className="wt-rope" aria-hidden="true" />
 
-          <img className="wt-column" src="/assets/pedestal.png" alt="" aria-hidden="true" />
+          <img className="wt-column" src="/assets/pedestal.webp" alt="" aria-hidden="true" />
         </>
       )}
     </motion.div>

@@ -52,7 +52,7 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
   return (
     <div className="guestboard-stage">
       <div className="guestboard-board guestboard-board--close">
-        <img className="guestboard-board-art" src="/assets/guestboard/board.png" alt="" />
+        <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
       </div>
 
       <div

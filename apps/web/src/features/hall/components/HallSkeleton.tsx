@@ -1,9 +1,8 @@
 const ENTRANCE_PRELOADS = [
-  '/assets/floor.png',
-  '/assets/door.png',
+  '/assets/door.webp',
   '/assets/plaque.png',
   '/assets/help-center.png',
-  '/assets/bunny-right.png',
+  '/assets/bunny-right.webp',
 ]
 
 // React hoists these into <head>, so the entrance textures download while the
@@ -22,7 +21,7 @@ export default function HallSkeleton() {
   return (
     <div className="hall-skeleton" aria-hidden="true">
       <HallPreload />
-      <div className="hall-skeleton-floor" />
+      <span className="hall-skeleton-note script">Opening the doors…</span>
     </div>
   )
 }

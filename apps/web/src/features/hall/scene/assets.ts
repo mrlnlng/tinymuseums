@@ -1,9 +1,19 @@
 import * as THREE from 'three'
 import manifestJson from '../../../../public/assets/manifest.json'
+import optimized from '../../../../public/assets/optimized.json'
 
 export type AssetManifest = typeof manifestJson
 
 export const manifest: AssetManifest = manifestJson
+
+// scripts/optimize-assets.ts writes a smaller .webp beside each .png, but only
+// where it actually beats the original; this lists the ones that did.
+const WEBP = new Set<string>(optimized.webp)
+
+function assetUrl(base: string, file: string): string {
+  const stem = file.replace(/\.png$/, '')
+  return WEBP.has(stem) ? `${base}/${stem}.webp` : `${base}/${file}`
+}
 
 const ENTRANCE_FILES = {
   rope: 'rope.png',
@@ -154,12 +164,12 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 
   const [entrance, walkLeft, walkRight, pedestalImages, idleLeft, idleRight] = await Promise.all([
-    loadTolerant(names.map((n) => `${base}/${ENTRANCE_FILES[n]}`)),
-    loadTolerant(leftFiles.map((f) => `${base}/${f}`)),
-    loadTolerant(rightFiles.map((f) => `${base}/${f}`)),
-    loadTolerant(manifest.pedestals.map((p) => `${base}/${p.file}`)),
-    loadRetrying(`${base}/bunny-left.png`).catch(() => loadRetrying(`${base}/bunny.png`)),
-    loadRetrying(`${base}/bunny-right.png`).catch(() => loadRetrying(`${base}/bunny.png`)),
+    loadTolerant(names.map((n) => assetUrl(base, ENTRANCE_FILES[n]))),
+    loadTolerant(leftFiles.map((f) => assetUrl(base, f))),
+    loadTolerant(rightFiles.map((f) => assetUrl(base, f))),
+    loadTolerant(manifest.pedestals.map((p) => assetUrl(base, p.file))),
+    loadRetrying(assetUrl(base, 'bunny-left.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
+    loadRetrying(assetUrl(base, 'bunny-right.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
   ])
 
   const { textures, aspect } = indexBy(names, entrance)
@@ -186,10 +196,10 @@ export async function loadScenery(base = '/assets'): Promise<Scenery> {
   const names = Object.keys(SCENERY_FILES) as SceneryName[]
 
   const [boards, catImages, helm, matcha] = await Promise.all([
-    loadTolerant(names.map((n) => `${base}/${SCENERY_FILES[n]}`)),
-    loadTolerant(CAFE_CAT_FRAMES.map((f) => `${base}/${f}`)),
-    loadRetrying(`${base}/helm.png`),
-    loadRetrying(`${base}/matcha.png`),
+    loadTolerant(names.map((n) => assetUrl(base, SCENERY_FILES[n]))),
+    loadTolerant(CAFE_CAT_FRAMES.map((f) => assetUrl(base, f))),
+    loadRetrying(assetUrl(base, 'helm.png')),
+    loadRetrying(assetUrl(base, 'matcha.png')),
   ])
 
   const { textures, aspect } = indexBy(names, boards)

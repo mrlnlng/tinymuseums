@@ -16,9 +16,9 @@ function shape(src: string, size: number[], window: number[]): FrameShape {
   }
 }
 
-const PORTRAIT = shape('/assets/frame.png', manifest.frame.size, manifest.frame.window)
+const PORTRAIT = shape('/assets/frame.webp', manifest.frame.size, manifest.frame.window)
 const LANDSCAPE = shape(
-  '/assets/frame-landscape.png',
+  '/assets/frame-landscape.webp',
   manifest.frameLandscape.size,
   manifest.frameLandscape.window,
 )

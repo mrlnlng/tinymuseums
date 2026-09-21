@@ -57,8 +57,14 @@ export default function Museum({ initialSlice }: MuseumProps) {
     if (isSuspended) setWalking(false)
   }, [isSuspended, setWalking])
 
+  // The walkthrough frames are only needed once a piece is opened, so they wait
+  // for the browser to be idle rather than racing the hall's own textures.
   useEffect(() => {
-    if (isReady) preloadFrames()
+    if (!isReady) return
+    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 4000))
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout
+    const handle = idle(() => preloadFrames(), { timeout: 15000 })
+    return () => cancel(handle as number)
   }, [isReady])
 
   if (error) {

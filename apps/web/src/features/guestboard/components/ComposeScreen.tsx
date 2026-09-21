@@ -38,7 +38,7 @@ export default function ComposeScreen({ draft, onChange, onPublish, onBack }: Co
       <button type="button" className="guestboard-scrim" onClick={onBack} aria-label="Back to the guest board" />
       <form className="guestboard-stage" onSubmit={handleSubmit}>
         <div className="guestboard-board guestboard-board--close">
-          <img className="guestboard-board-art" src="/assets/guestboard/board.png" alt="" />
+          <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
         </div>
 
         <p className="guestboard-reminder">

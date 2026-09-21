@@ -1105,7 +1105,7 @@ code.token {
   justify-content: flex-end;
   align-items: center;
   padding: 0 clamp(40px, 17%, 90px) 0 0;
-  background: url('/assets/floor.png') repeat-x center top / auto 100%;
+  background: url('/assets/floor.webp') repeat-x center top / auto 100%;
   background-color: var(--floor);
 }
 
@@ -1624,7 +1624,7 @@ code.token {
   aspect-ratio: 114 / 65;
   padding: 0;
   border: 0;
-  background: url('/assets/guestboard/arrow-left.png') no-repeat center / contain;
+  background: url('/assets/guestboard/arrow-left.webp') no-repeat center / contain;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.12s ease;
 }
@@ -1702,13 +1702,26 @@ code.token {
 .sticky-note-field--message { height: 100%; resize: none; overflow-y: auto; }
 .sticky-note-field--name { text-overflow: ellipsis; }
 
-.hall-skeleton { position: absolute; inset: 0; background: var(--wall); }
-
-.hall-skeleton-floor {
+.hall-skeleton {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 77.66%;
-  bottom: 0;
-  background: var(--floor) url('/assets/floor.png') repeat-x center / auto 100%;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--wall);
+}
+
+.hall-skeleton-note {
+  color: var(--script);
+  font-size: 20px;
+  opacity: 0;
+  animation: skeleton-wait 2.4s ease-in-out 0.45s infinite;
+}
+
+@keyframes skeleton-wait {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hall-skeleton-note { animation: none; opacity: 0.6; }
 }

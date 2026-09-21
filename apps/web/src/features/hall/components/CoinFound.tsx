@@ -29,7 +29,7 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
       onClick={onClose}
     >
       <div className="coin-found-stage">
-        <img className="coin-found-urn" src="/assets/pedestal-5.png" alt="" />
+        <img className="coin-found-urn" src="/assets/pedestal-5.webp" alt="" />
         <h2 className="coin-found-title">You found a coin!</h2>
         <p className="coin-found-code" onClick={(e) => e.stopPropagation()}>
           Use &quot;tinymuseum&quot;
@@ -38,7 +38,7 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
         </p>
         <motion.img
           className="coin-found-coin"
-          src="/assets/coin-large.png"
+          src="/assets/coin-large.webp"
           alt=""
           initial={{ scale: 0.4, rotate: -200, opacity: 0 }}
           animate={{ scale: 1, rotate: 0, opacity: 1 }}

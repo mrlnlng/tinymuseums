@@ -16,7 +16,7 @@ export default function BoardScreen({ notes, onClose, onAddNote, onOpenNote }: B
         <h2 className="guestboard-heading">Leave your mark on the wall</h2>
 
         <div className="guestboard-board guestboard-board--whole">
-          <img className="guestboard-board-art" src="/assets/guestboard/board.png" alt="" />
+          <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
           <PinnedNotes notes={notes} onOpenNote={onOpenNote} />
         </div>
 

@@ -117,7 +117,7 @@ export const CONFIG = {
 
   statue: { minDwellMs: 180 },
   loading: { prefetchAheadUnits: 16, sliceSize: 6 },
-  virtualization: { mountRadiusUnits: 9, loadRadiusUnits: 26 },
+  virtualization: { mountRadiusUnits: 9, loadRadiusUnits: 15 },
 }
 
 export function centerYFor(frustumHeight: number): number {

@@ -1,17 +1,23 @@
 import * as THREE from 'three'
 import manifestJson from '../../../../public/assets/manifest.json'
 import optimized from '../../../../public/assets/optimized.json'
+import { supportsAvif } from '@/shared/lib/avif'
 
 export type AssetManifest = typeof manifestJson
 
 export const manifest: AssetManifest = manifestJson
 
-// scripts/optimize-assets.ts writes a smaller .webp beside each .png, but only
-// where it actually beats the original; this lists the ones that did.
+// scripts/optimize-assets.ts writes .webp and .avif beside each .png, but only
+// where they actually beat the original; these list the ones that did.
 const WEBP = new Set<string>(optimized.webp)
+const AVIF = new Set<string>(optimized.avif)
+
+
+let useAvif = false
 
 function assetUrl(base: string, file: string): string {
   const stem = file.replace(/\.png$/, '')
+  if (useAvif && AVIF.has(stem)) return `${base}/${stem}.avif`
   return WEBP.has(stem) ? `${base}/${stem}.webp` : `${base}/${file}`
 }
 
@@ -160,6 +166,7 @@ function indexBy<K extends string>(
 }
 
 export async function loadAssets(base = '/assets'): Promise<Assets> {
+  useAvif = await supportsAvif()
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 

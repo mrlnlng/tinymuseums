@@ -229,14 +229,17 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                   style={artworkStyle}
                   data-waiting={isOrnamentReady ? undefined : ''}
                 />
-                <img
-                  className="wt-frame-art"
-                  src={frame.src}
-                  alt=""
-                  aria-hidden="true"
-                  onLoad={revealArtwork}
-                  onError={revealArtwork}
-                />
+                <picture>
+                  {frame.avif ? <source srcSet={frame.avif} type="image/avif" /> : null}
+                  <img
+                    className="wt-frame-art"
+                    src={frame.src}
+                    alt=""
+                    aria-hidden="true"
+                    onLoad={revealArtwork}
+                    onError={revealArtwork}
+                  />
+                </picture>
                 <img
                   className="wt-no-photos"
                   src="/assets/icon-no-photos.webp"

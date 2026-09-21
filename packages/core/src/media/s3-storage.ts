@@ -48,6 +48,15 @@ export class S3Storage implements Storage {
     return Buffer.from(bytes)
   }
 
+  async getStream(key: string): Promise<{ body: ReadableStream<Uint8Array>; size: number | null }> {
+    const response = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    )
+    const body = response.Body?.transformToWebStream()
+    if (!body) throw new Error(`Empty object at ${key}`)
+    return { body: body as ReadableStream<Uint8Array>, size: response.ContentLength ?? null }
+  }
+
   async exists(key: string): Promise<boolean> {
     return (await this.sizeOf(key)) !== null
   }

@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
-import { BRAND, ensureEpoch, getHallSlice } from '@tiny/core'
+import { BRAND } from '@tiny/core'
+import { firstSlice } from '@/features/hall/lib/slice'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,11 +11,7 @@ const GUIDELINES = [
   'Touching the art, or zooming in to an unreasonable degree, is strictly encouraged.',
 ]
 
-export default async function LandingPage() {
-  const epoch = await ensureEpoch()
-  const slice = epoch ? await getHallSlice(epoch, 0, 8) : null
-  const showing = slice?.slots.map((slot) => slot.display) ?? []
-
+export default function LandingPage() {
   return (
     <main className="landing">
       <div className="landing-body">
@@ -49,23 +47,34 @@ export default async function LandingPage() {
         </Link>
       </div>
 
-      <nav className="offscreen" aria-label="Artists currently showing">
-        <h2>Currently showing</h2>
-        {showing.length > 0 ? (
-          <ul>
-            {showing.map((display) => (
-              <li key={display.artistId}>
-                <Link href={`/a/${display.slug}`}>{display.artistName}</Link> — {display.statement}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Nothing is hanging yet.</p>
-        )}
-        <p>
-          <Link href="/studio/sign-in">Artists: sign in</Link>
-        </p>
-      </nav>
+      <Suspense fallback={null}>
+        <CurrentlyShowing />
+      </Suspense>
     </main>
+  )
+}
+
+async function CurrentlyShowing() {
+  const slice = await firstSlice(8)
+  const showing = slice.slots.map((slot) => slot.display)
+
+  return (
+    <nav className="offscreen" aria-label="Artists currently showing">
+      <h2>Currently showing</h2>
+      {showing.length > 0 ? (
+        <ul>
+          {showing.map((display) => (
+            <li key={display.artistId}>
+              <Link href={`/a/${display.slug}`}>{display.artistName}</Link> — {display.statement}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>Nothing is hanging yet.</p>
+      )}
+      <p>
+        <Link href="/studio/sign-in">Artists: sign in</Link>
+      </p>
+    </nav>
   )
 }

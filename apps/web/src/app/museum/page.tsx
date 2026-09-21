@@ -1,16 +1,27 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
-import { BRAND, ensureEpoch, getHallSlice, type HallSliceDto } from '@tiny/core'
+import { BRAND } from '@tiny/core'
 import Museum from '@/features/hall/components/Museum'
+import HallSkeleton, { HallPreload } from '@/features/hall/components/HallSkeleton'
+import { firstSlice } from '@/features/hall/lib/slice'
 
 export const dynamic = 'force-dynamic'
 
 const FIRST_SLICE = 4
 
-export default async function MuseumPage() {
-  const epoch = await ensureEpoch()
-  const slice: HallSliceDto = epoch
-    ? await getHallSlice(epoch, 0, FIRST_SLICE)
-    : { epochId: 0, slots: [], nextIndex: null, totalSlots: 0 }
+export default function MuseumPage() {
+  return (
+    <>
+      <HallPreload />
+      <Suspense fallback={<HallSkeleton />}>
+        <Hall />
+      </Suspense>
+    </>
+  )
+}
+
+async function Hall() {
+  const slice = await firstSlice(FIRST_SLICE)
 
   if (slice.slots.length === 0) {
     return (

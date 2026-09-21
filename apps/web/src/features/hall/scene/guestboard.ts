@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Assets } from './assets'
+import type { Scenery } from './assets'
 import { disposeBoards, plane, type Mark } from './board'
 import { pickPainted } from './hit'
 import { CONFIG } from './config'
@@ -11,14 +11,14 @@ export interface GuestBoard {
   dispose(): void
 }
 
-export function createGuestBoard(scene: THREE.Scene, assets: Assets, x: number): GuestBoard {
+export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number): GuestBoard {
   const { board } = CONFIG.guestBoard
   const group = new THREE.Group()
 
   const boardMesh = plane(
     board.width,
-    board.width / assets.aspect.guestBoard,
-    assets.textures.guestBoard,
+    board.width / scenery.aspect.guestBoard,
+    scenery.textures.guestBoard,
     x + board.dx,
     board.centerY,
     board.z,

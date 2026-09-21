@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Assets } from './assets'
+import type { Assets, Scenery } from './assets'
 import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
 import { CONFIG } from './config'
 
@@ -15,15 +15,20 @@ export interface GiftShop {
   dispose(): void
 }
 
-export function createGiftShop(scene: THREE.Scene, assets: Assets, x: number): GiftShop {
+export function createGiftShop(
+  scene: THREE.Scene,
+  assets: Assets,
+  scenery: Scenery,
+  x: number,
+): GiftShop {
   const { counter, note, sign, button, noteText, signText } = CONFIG.giftShop
   const group = new THREE.Group()
 
   group.add(
     plane(
-      counter.height * assets.aspect.giftShop,
+      counter.height * scenery.aspect.giftShop,
       counter.height,
-      assets.textures.giftShop,
+      scenery.textures.giftShop,
       x + counter.dx,
       counter.centerY,
       counter.z,

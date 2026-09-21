@@ -99,6 +99,12 @@ export const env = {
     return required('MEDIA_BASE_URL', 'http://localhost:3000/api/media')
   },
 
+  // Set to the bucket's CDN origin to let /api/media redirect there instead of
+  // proxying every object through the SSR compute.
+  get mediaOriginUrl(): string {
+    return setting('MEDIA_ORIGIN_URL', '')
+  },
+
   get sessionSecret(): string {
     return sessionSecret()
   },

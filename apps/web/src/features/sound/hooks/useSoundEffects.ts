@@ -42,7 +42,9 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const volumeRef = useRef(volume)
   volumeRef.current = volume
 
-  const loadEffects = useCallback(() => {
+  // Audio cannot sound before a gesture anyway, so the voices are built on the
+  // first one rather than competing with the hall's textures on every page load.
+  const ensureLoaded = useCallback(() => {
     const voice = (file: string, mix: number, loop = false): HTMLAudioElement => {
       const audio = new Audio(file)
       audio.preload = 'auto'
@@ -65,16 +67,17 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       applyMix(steps, FOOTSTEPS.volume, volumeRef.current)
       stepsRef.current = steps
     }
+  }, [])
 
-    return () => {
+  useEffect(
+    () => () => {
       stepsRef.current?.pause()
       for (const pool of Object.values(voicesRef.current)) {
         for (const audio of pool ?? []) audio.pause()
       }
-    }
-  }, [])
-
-  useEffect(() => loadEffects(), [loadEffects])
+    },
+    [],
+  )
 
   useEffect(() => {
     const steps = stepsRef.current
@@ -83,8 +86,11 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
 
   const play = useCallback(
     (name: EffectName) => {
+      if (!isEnabled) return
+      ensureLoaded()
+
       const pool = voicesRef.current[name]
-      if (!isEnabled || !pool?.length) return
+      if (!pool?.length) return
 
       const at = (nextVoiceRef.current[name] ?? 0) % pool.length
       nextVoiceRef.current[name] = at + 1
@@ -116,13 +122,16 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       resumeGain()
       void voice.play().catch(() => {})
     },
-    [isEnabled],
+    [isEnabled, ensureLoaded],
   )
 
   const setWalking = useCallback(
     (isWalking: boolean) => {
+      if (isWalking === isWalkingRef.current) return
+      if (isWalking && isEnabled) ensureLoaded()
+
       const steps = stepsRef.current
-      if (isWalking === isWalkingRef.current || !steps) return
+      if (!steps) return
       isWalkingRef.current = isWalking
 
       if (isWalking && isEnabled) {
@@ -133,7 +142,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       steps.pause()
       steps.currentTime = 0
     },
-    [isEnabled],
+    [isEnabled, ensureLoaded],
   )
 
   const silenceOnMute = useCallback(() => {

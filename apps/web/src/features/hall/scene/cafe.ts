@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Assets } from './assets'
+import type { Scenery } from './assets'
 import { disposeBoards, plane, type Mark } from './board'
 import { pickPainted } from './hit'
 import { CONFIG } from './config'
@@ -18,14 +18,14 @@ export interface Cafe {
   dispose(): void
 }
 
-export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe {
+export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Cafe {
   const { counter, sign, menu, poster, thanks, cat, catFrameMs } = CONFIG.cafe
   const group = new THREE.Group()
 
   const counterMesh = plane(
-    counter.height * assets.aspect.cafeFront,
+    counter.height * scenery.aspect.cafeFront,
     counter.height,
-    assets.textures.cafeFront,
+    scenery.textures.cafeFront,
     x + counter.dx,
     counter.centerY,
     counter.z,
@@ -35,19 +35,19 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
   group.add(
     plane(
       sign.width,
-      sign.width / assets.aspect.cafeSign,
-      assets.textures.cafeSign,
+      sign.width / scenery.aspect.cafeSign,
+      scenery.textures.cafeSign,
       x + sign.dx,
       sign.centerY,
       sign.z,
     ),
   )
 
-  const menuWidth = menu.height * assets.aspect.cafeMenu
+  const menuWidth = menu.height * scenery.aspect.cafeMenu
   const menuMesh = plane(
     menuWidth,
     menu.height,
-    assets.textures.cafeMenu,
+    scenery.textures.cafeMenu,
     x + menu.dx,
     menu.centerY,
     menu.z,
@@ -57,9 +57,9 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
 
   group.add(
     plane(
-      poster.height * assets.aspect.cafePoster,
+      poster.height * scenery.aspect.cafePoster,
       poster.height,
-      assets.textures.cafePoster,
+      scenery.textures.cafePoster,
       x + poster.dx,
       poster.centerY,
       poster.z,
@@ -68,17 +68,17 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
 
   group.add(
     plane(
-      thanks.height * assets.aspect.cafeThanks,
+      thanks.height * scenery.aspect.cafeThanks,
       thanks.height,
-      assets.textures.cafeThanks,
+      scenery.textures.cafeThanks,
       x + thanks.dx,
       thanks.centerY,
       thanks.z,
     ),
   )
 
-  const catFrames = assets.cafeCat.map((s) => s.texture)
-  const catAspect = assets.cafeCat[0]?.aspect ?? 1
+  const catFrames = scenery.cafeCat.map((s) => s.texture)
+  const catAspect = scenery.cafeCat[0]?.aspect ?? 1
   const catMesh = plane(
     cat.height * catAspect,
     cat.height,
@@ -120,7 +120,7 @@ export function createCafe(scene: THREE.Scene, assets: Assets, x: number): Cafe 
       poster: {
         x: x + poster.dx,
         y: poster.centerY,
-        width: poster.height * assets.aspect.cafePoster,
+        width: poster.height * scenery.aspect.cafePoster,
         height: poster.height,
       },
     },

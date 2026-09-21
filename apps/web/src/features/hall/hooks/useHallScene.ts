@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { HallSliceDto } from '@tiny/core'
-import { loadAssets, type Assets } from '@/features/hall/scene/assets'
+import { loadAssets, loadScenery, type Assets, type Scenery } from '@/features/hall/scene/assets'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
@@ -11,9 +11,9 @@ import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
-import { createHelm } from '@/features/hall/scene/helm'
+import { createHelm, type Helm } from '@/features/hall/scene/helm'
 import { createLobby } from '@/features/hall/scene/lobby'
-import { createMatcha } from '@/features/hall/scene/matcha'
+import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
   GiftShopSigns,
@@ -137,8 +137,6 @@ export function useHallScene({
       hall.ingestSlice(initialSlice)
 
       const character = createCharacter(assets, characterHost)
-      const helm = createHelm(assets, characterHost, hall)
-      const matcha = createMatcha(assets, characterHost, () => cafe)
       const placards = new Placards(overlayHost)
       const lobbySigns = new LobbySigns(overlayHost, lobby.marks, () => onOpenHelpRef.current())
       const traversal = new Traversal()
@@ -170,18 +168,33 @@ export function useHallScene({
       traversal.reset(entrance)
 
       let isFetching = false
+      let sliceFailures = 0
+      let sliceRetryAt = 0
+
+      // needsMore() stays true until a slice lands, so a failure without this
+      // backoff would refire the request on every frame.
       async function fetchNextSlice(): Promise<void> {
         if (isFetching || hall.nextIndex === null) return
+        if (performance.now() < sliceRetryAt) return
         isFetching = true
         try {
           const response = await fetch(
             `/api/hall?epoch=${hall.epochId}&after=${hall.nextIndex}&limit=${CONFIG.loading.sliceSize}`,
           )
-          if (response.ok) hall.ingestSlice((await response.json()) as HallSliceDto)
-        } catch {} finally {
+          if (!response.ok) throw new Error(`hall slice ${response.status}`)
+          hall.ingestSlice((await response.json()) as HallSliceDto)
+          sliceFailures = 0
+        } catch {
+          sliceFailures += 1
+          sliceRetryAt = performance.now() + Math.min(10000, 500 * 2 ** sliceFailures)
+        } finally {
           isFetching = false
         }
       }
+
+      let scenery: Scenery | null = null
+      let helm: Helm | null = null
+      let matcha: Matcha | null = null
 
       let giftShop: GiftShop | null = null
       let giftShopSigns: GiftShopSigns | null = null
@@ -194,15 +207,15 @@ export function useHallScene({
 
       const raiseGiftShop = (): void => {
         const x = hall.layout.giftShopX
-        if (x === null || giftShop) return
-        giftShop = createGiftShop(scene, assets, x)
+        if (x === null || giftShop || !scenery) return
+        giftShop = createGiftShop(scene, assets, scenery, x)
         giftShopSigns = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
       }
 
       const raiseGuestBoard = (): void => {
         const x = hall.layout.guestBoardX
-        if (x === null || guestBoard) return
-        guestBoard = createGuestBoard(scene, assets, x)
+        if (x === null || guestBoard || !scenery) return
+        guestBoard = createGuestBoard(scene, scenery, x)
         const layer = hosts.guestBoardNotes.current
         if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
         onGuestBoardHungRef.current()
@@ -210,10 +223,22 @@ export function useHallScene({
 
       const raiseCafe = (): void => {
         const x = hall.layout.cafeX
-        if (x === null || cafe) return
-        cafe = createCafe(scene, assets, x)
+        if (x === null || cafe || !scenery) return
+        cafe = createCafe(scene, scenery, x)
         cafeLink = new CafeLink(overlayHost, cafe.marks, CAFE_URL)
       }
+
+      void loadScenery()
+        .then((loaded) => {
+          if (isDisposed) {
+            loaded.dispose()
+            return
+          }
+          scenery = loaded
+          helm = createHelm(loaded, characterHost, hall)
+          matcha = createMatcha(loaded, characterHost, () => cafe)
+        })
+        .catch(() => {})
 
       const raycaster = new THREE.Raycaster()
       const pointer = new THREE.Vector2()
@@ -262,14 +287,14 @@ export function useHallScene({
         }
 
         const pedestal = hall.hitTestPedestal(raycaster)
-        if (pedestal && helm.tap(pedestal)) return
+        if (pedestal && helm?.tap(pedestal)) return
         if (pedestal?.voice) {
           soundRef.current.play(pedestal.voice)
           pedestal.chime()
           return
         }
 
-        if (matcha.tap(raycaster)) {
+        if (matcha?.tap(raycaster)) {
           soundRef.current.play('click')
           return
         }
@@ -322,12 +347,9 @@ export function useHallScene({
         lastFrameAt = now
 
         if (!isReadyRef.current) {
-          const stats = hall.stats()
-          if (stats.mounted > 0 || stats.total === 0) {
-            isReadyRef.current = true
-            setIsReady(true)
-            traversal.playIntro(introStart, entrance)
-          }
+          isReadyRef.current = true
+          setIsReady(true)
+          traversal.playIntro(introStart, entrance)
         } else {
           traversal.setSuspended(isSuspendedRef.current)
           traversal.update(dt, hall.layout.totalLength)
@@ -335,8 +357,8 @@ export function useHallScene({
 
         rig.sync(traversal.cameraX)
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
-        helm.update(dt, character, rig.camera, viewport)
-        matcha.update(dt, character, rig.camera, viewport)
+        helm?.update(dt, character, rig.camera, viewport)
+        matcha?.update(dt, character, rig.camera, viewport)
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
 
         hall.update(now, dt, traversal.cameraX)
@@ -380,8 +402,9 @@ export function useHallScene({
         guestBoard?.dispose()
         cafe?.dispose()
         backdrop.dispose()
-        helm.dispose()
-        matcha.dispose()
+        helm?.dispose()
+        matcha?.dispose()
+        scenery?.dispose()
         character.dispose()
         renderer.dispose()
         renderer.domElement.remove()

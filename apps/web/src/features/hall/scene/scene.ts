@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { HallPieceDto, HallSliceDto } from '@tiny/core'
-import { loadDisplayTexture, type Assets } from './assets'
+import { disposeDisplayTexture, loadDisplayTexture, type Assets } from './assets'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal } from './pedestal'
@@ -15,6 +15,14 @@ interface SlotRuntime {
   startedAt?: number
   readyAt?: number
   inRangeAt?: number
+  attempts?: number
+  retryAt?: number
+}
+
+const MAX_TEXTURE_ATTEMPTS = 4
+
+function retryDelayMs(attempts: number): number {
+  return Math.min(8000, 500 * 2 ** attempts)
 }
 
 function wallSize(piece: HallPieceDto): { width: number; height: number } {
@@ -109,12 +117,21 @@ export class HallScene {
       const distance = Math.abs(centerX - cameraX)
 
       if (distance > loadRadiusUnits) {
-        if (this.mounted.has(slot.index)) this.unmount(slot.index)
+        // An exhausted slot is reset too, so walking back gives it fresh attempts.
+        if (this.mounted.has(slot.index) || slot.status === 'error') this.unmount(slot.index)
         continue
       }
 
       if (slot.status === 'idle') {
         this.beginLoad(slot, now)
+        continue
+      }
+
+      if (slot.status === 'error') {
+        const attempts = slot.attempts ?? 0
+        if (attempts < MAX_TEXTURE_ATTEMPTS && now >= (slot.retryAt ?? 0)) {
+          this.beginLoad(slot, now)
+        }
         continue
       }
 
@@ -144,9 +161,13 @@ export class HallScene {
         slot.texture = texture
         slot.status = 'ready'
         slot.readyAt = performance.now()
+        slot.attempts = 0
       })
       .catch(() => {
+        const attempts = (slot.attempts ?? 0) + 1
         slot.status = 'error'
+        slot.attempts = attempts
+        slot.retryAt = performance.now() + retryDelayMs(attempts)
       })
   }
 
@@ -292,12 +313,16 @@ export class HallScene {
     this.unmountMesh(index)
 
     const slot = this.slots.get(index)
-    if (slot?.texture) {
-      slot.texture.dispose()
+    if (!slot) return
+
+    if (slot.texture) {
+      disposeDisplayTexture(slot.texture)
       slot.texture = undefined
-      slot.status = 'idle'
-      slot.readyAt = undefined
     }
+    slot.status = 'idle'
+    slot.readyAt = undefined
+    slot.attempts = 0
+    slot.retryAt = undefined
   }
 
   private removePedestal(index: number): void {

@@ -1,4 +1,4 @@
-import { getStorage } from '@tiny/core'
+import { env, getStorage } from '@tiny/core'
 
 const CONTENT_TYPES: Record<string, string> = {
   png: 'image/png',
@@ -8,6 +8,8 @@ const CONTENT_TYPES: Record<string, string> = {
   avif: 'image/avif',
   tif: 'image/tiff',
 }
+
+const CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
 export async function GET(
   _request: Request,
@@ -20,16 +22,27 @@ export async function GET(
     return new Response('Not found', { status: 404 })
   }
 
-  try {
-    const body = await getStorage().get(storageKey)
-    const extension = storageKey.split('.').pop()?.toLowerCase() ?? ''
-    return new Response(new Uint8Array(body), {
+  const origin = env.mediaOriginUrl
+  if (origin) {
+    return new Response(null, {
+      status: 308,
       headers: {
-        'content-type': CONTENT_TYPES[extension] ?? 'application/octet-stream',
-        'cache-control': 'public, max-age=31536000, immutable',
-        'content-length': String(body.length),
+        location: `${origin.replace(/\/$/, '')}/${storageKey}`,
+        'cache-control': CACHE_CONTROL,
       },
     })
+  }
+
+  try {
+    const { body, size } = await getStorage().getStream(storageKey)
+    const extension = storageKey.split('.').pop()?.toLowerCase() ?? ''
+    const headers: Record<string, string> = {
+      'content-type': CONTENT_TYPES[extension] ?? 'application/octet-stream',
+      'cache-control': CACHE_CONTROL,
+    }
+    if (size !== null) headers['content-length'] = String(size)
+
+    return new Response(body, { headers })
   } catch {
     return new Response('Not found', { status: 404 })
   }

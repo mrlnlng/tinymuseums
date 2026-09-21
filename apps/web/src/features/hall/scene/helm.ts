@@ -1,5 +1,5 @@
 import type * as THREE from 'three'
-import type { Assets } from './assets'
+import type { Scenery } from './assets'
 import { createCarried } from './carried'
 import type { Character } from './character'
 import { CONFIG } from './config'
@@ -13,11 +13,11 @@ export interface Helm {
   dispose(): void
 }
 
-export function createHelm(assets: Assets, host: HTMLElement, hall: HallScene): Helm {
+export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene): Helm {
   const { worn, stand } = CONFIG.helm
   const pedestalWidth = CONFIG.pedestal.height * (stand.drawing[0] / stand.drawing[1])
   let standIndex = -1
-  const helm = createCarried(host, assets.helm, worn, (out) => {
+  const helm = createCarried(host, scenery.helm, worn, (out) => {
     hall.helmStandPoint(standIndex, out)
     return (stand.width / stand.drawing[0]) * pedestalWidth
   })

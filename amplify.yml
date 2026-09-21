@@ -30,7 +30,7 @@ applications:
           commands:
             - (cd ../.. && npm run db:schema)
             # SSR compute does not receive build-time variables; Next.js loads .env.production at runtime.
-            - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|EPOCH_INTERVAL_MINUTES|HALL_OWNER_EMAIL)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
+            - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|MEDIA_ORIGIN_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|EPOCH_INTERVAL_MINUTES|HALL_OWNER_EMAIL)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
       artifacts:
         baseDirectory: .next
         files:

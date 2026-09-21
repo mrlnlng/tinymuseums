@@ -1701,3 +1701,14 @@ code.token {
 .sticky-note-field::placeholder { color: inherit; opacity: 0.4; }
 .sticky-note-field--message { height: 100%; resize: none; overflow-y: auto; }
 .sticky-note-field--name { text-overflow: ellipsis; }
+
+.hall-skeleton { position: absolute; inset: 0; background: var(--wall); }
+
+.hall-skeleton-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 77.66%;
+  bottom: 0;
+  background: var(--floor) url('/assets/floor.png') repeat-x center / auto 100%;
+}

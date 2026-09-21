@@ -1,5 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
+import { createReadStream } from 'node:fs'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { Readable } from 'node:stream'
 import { dirname, join, resolve } from 'node:path'
 import { env } from '../infra/env.ts'
 import { S3Storage } from './s3-storage.ts'
@@ -14,6 +16,7 @@ export interface PresignedUpload {
 export interface Storage {
   put(key: string, body: Buffer, contentType: string): Promise<void>
   get(key: string): Promise<Buffer>
+  getStream(key: string): Promise<{ body: ReadableStream<Uint8Array>; size: number | null }>
   exists(key: string): Promise<boolean>
   sizeOf(key: string): Promise<number | null>
   remove(key: string): Promise<void>
@@ -44,6 +47,14 @@ class FilesystemStorage implements Storage {
 
   async get(key: string): Promise<Buffer> {
     return readFile(this.pathFor(key))
+  }
+
+  async getStream(key: string): Promise<{ body: ReadableStream<Uint8Array>; size: number | null }> {
+    const target = this.pathFor(key)
+    const info = await stat(target)
+    // createReadStream closes its own descriptor once the stream ends or errors.
+    const body = Readable.toWeb(createReadStream(target)) as ReadableStream<Uint8Array>
+    return { body, size: info.size }
   }
 
   async exists(key: string): Promise<boolean> {

@@ -60,7 +60,10 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       let pool = voicesRef.current[name]
       if (!pool) {
         const spec = EFFECTS[name]
-        pool = Array.from({ length: VOICES }, () => makeVoice(spec.file, spec.volume))
+        // One voice to begin with. Creating all VOICES up front fires VOICES
+        // parallel requests for the same file, none of which can hit the cache
+        // yet, so every clip was being downloaded three times.
+        pool = [makeVoice(spec.file, spec.volume)]
         voicesRef.current[name] = pool
       }
       return pool
@@ -100,11 +103,19 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       const pool = voicesFor(name)
       if (!pool?.length) return
 
-      const at = (nextVoiceRef.current[name] ?? 0) % pool.length
-      nextVoiceRef.current[name] = at + 1
-
       const spec = EFFECTS[name] as EffectSpec
-      const voice = pool[at]
+
+      let voice = pool.find((candidate) => candidate.paused || candidate.ended)
+      if (!voice && pool.length < VOICES) {
+        // Overlapping playback needs another element, but the file is cached now.
+        voice = makeVoice(spec.file, spec.volume)
+        pool.push(voice)
+      }
+      if (!voice) {
+        const at = (nextVoiceRef.current[name] ?? 0) % pool.length
+        nextVoiceRef.current[name] = at + 1
+        voice = pool[at]
+      }
       applyMix(voice, spec.volume, volumeRef.current)
 
       const from = spec.start ?? 0
@@ -130,7 +141,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       resumeGain()
       void voice.play().catch(() => {})
     },
-    [isEnabled, voicesFor],
+    [isEnabled, voicesFor, makeVoice],
   )
 
   const setWalking = useCallback(

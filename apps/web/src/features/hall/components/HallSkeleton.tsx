@@ -25,10 +25,10 @@ export function HallPreload() {
   )
 }
 
-export default function HallSkeleton() {
+export default function HallSkeleton({ preload = true }: { preload?: boolean }) {
   return (
     <div className="hall-skeleton" aria-hidden="true">
-      <HallPreload />
+      {preload ? <HallPreload /> : null}
       <span className="hall-skeleton-note script">Opening the doors…</span>
     </div>
   )

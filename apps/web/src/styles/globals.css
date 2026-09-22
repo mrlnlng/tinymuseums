@@ -1491,7 +1491,7 @@ code.token {
   width: min(100cqw, 56.25cqh);
   aspect-ratio: 1080 / 1920;
   margin: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, calc(-50% - var(--lift, 0px)));
   container-type: inline-size;
   pointer-events: none;
 }
@@ -1697,10 +1697,18 @@ code.token {
   line-height: inherit;
   color: inherit;
   outline: none;
+  /* Under 16px iOS zooms the page the moment the field takes focus. */
+  font-size: max(16px, 1em);
 }
 .sticky-note-field::placeholder { color: inherit; opacity: 0.4; }
 .sticky-note-field--message { height: 100%; resize: none; overflow-y: auto; }
 .sticky-note-field--name { text-overflow: ellipsis; }
+
+.hall-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
 
 .hall-skeleton {
   position: absolute;

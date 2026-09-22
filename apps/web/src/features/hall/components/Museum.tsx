@@ -8,6 +8,7 @@ import GuestBoard from '@/features/guestboard/components/GuestBoard'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
 import CoinFound from '@/features/hall/components/CoinFound'
+import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import HelpGuide from '@/features/hall/components/HelpGuide'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
@@ -78,44 +79,59 @@ export default function Museum({ initialSlice }: MuseumProps) {
   }
 
   return (
-    <motion.div
-      className="museum"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isReady ? 1 : 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="hall-host" ref={canvasRef} />
-      <div className="hall-overlay" ref={overlayRef} />
-      <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
-        <PinnedNotes notes={guestNotes} />
-      </div>
-      <div className="hall-character" ref={characterRef} />
+    <>
+      <motion.div
+        className="museum"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isReady ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="hall-host" ref={canvasRef} />
+        <div className="hall-overlay" ref={overlayRef} />
+        <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
+          <PinnedNotes notes={guestNotes} />
+        </div>
+        <div className="hall-character" ref={characterRef} />
+
+        <AnimatePresence>
+          {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isCoinOpen ? <CoinFound key="coin" onClose={() => setIsCoinOpen(false)} /> : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isGuestBoardOpen ? (
+            <GuestBoard key="guestboard" onClose={() => setIsGuestBoardOpen(false)} />
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {openPiece ? (
+            <Walkthrough
+              key="walkthrough"
+              slug={openPiece.slug}
+              artistId={openPiece.artistId}
+              initialPieceId={openPiece.pieceId}
+              onClose={() => setOpenPiece(null)}
+            />
+          ) : null}
+        </AnimatePresence>
+      </motion.div>
 
       <AnimatePresence>
-        {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}
+        {isReady ? null : (
+          <motion.div
+            key="curtain"
+            className="hall-curtain"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <HallSkeleton preload={false} />
+          </motion.div>
+        )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {isCoinOpen ? <CoinFound key="coin" onClose={() => setIsCoinOpen(false)} /> : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isGuestBoardOpen ? (
-          <GuestBoard key="guestboard" onClose={() => setIsGuestBoardOpen(false)} />
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {openPiece ? (
-          <Walkthrough
-            key="walkthrough"
-            slug={openPiece.slug}
-            artistId={openPiece.artistId}
-            initialPieceId={openPiece.pieceId}
-            onClose={() => setOpenPiece(null)}
-          />
-        ) : null}
-      </AnimatePresence>
-    </motion.div>
+    </>
   )
 }

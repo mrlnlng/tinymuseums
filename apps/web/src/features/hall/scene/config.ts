@@ -43,7 +43,7 @@ export const CONFIG = {
   },
 
   lobby: {
-    length: 4.9,
+    length: 4.3,
     startX: 0,
     introWalk: 1.9,
     door: { x: -0.09, centerY: 1.165, height: 2.81, z: 0.2 },
@@ -63,8 +63,11 @@ export const CONFIG = {
     signText: { dx: -0.075, centerY: 2.684, width: 1.515 },
   },
 
+  // lead/trail are the wall either side of the origin the art is hung from,
+  // which is not its middle: the thanks board hangs well right of the counter.
   cafe: {
-    length: 6.8,
+    lead: 3.03,
+    trail: 3.183,
     counter: { dx: 0, centerY: 0.77, height: 2.3, z: 0.4 },
     sign: { dx: 0, centerY: 2.75, width: 2.6, z: 0.3 },
     poster: { dx: -0.75, centerY: 1.9, height: 1.1, z: 0.3 },
@@ -75,7 +78,8 @@ export const CONFIG = {
   },
 
   guestBoard: {
-    length: 3.9,
+    lead: 1.775,
+    trail: 2.05,
     board: { dx: 0, centerY: 2.05, width: 3.0, z: 0.3 },
   },
 

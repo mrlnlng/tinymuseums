@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '@tiny/core/guestboard'
 import StickyNote from '@/features/guestboard/components/StickyNote'
+import { useKeyboardLift } from '@/features/guestboard/hooks/useKeyboardLift'
 import { PostRejected, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 
 interface ComposeScreenProps {
@@ -13,6 +14,9 @@ interface ComposeScreenProps {
 export default function ComposeScreen({ draft, onChange, onPublish, onBack }: ComposeScreenProps) {
   const [isPosting, setIsPosting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const stageRef = useRef<HTMLFormElement>(null)
+
+  useKeyboardLift(stageRef)
 
   const canPublish = draft.message.trim() !== '' && draft.name.trim() !== '' && !isPosting
 
@@ -36,7 +40,7 @@ export default function ComposeScreen({ draft, onChange, onPublish, onBack }: Co
   return (
     <>
       <button type="button" className="guestboard-scrim" onClick={onBack} aria-label="Back to the guest board" />
-      <form className="guestboard-stage" onSubmit={handleSubmit}>
+      <form className="guestboard-stage" ref={stageRef} onSubmit={handleSubmit}>
         <div className="guestboard-board guestboard-board--close">
           <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
         </div>

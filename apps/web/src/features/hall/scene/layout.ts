@@ -20,6 +20,14 @@ export function computeLayout(widths: number[], isComplete = false): HallLayout 
   const centerX: number[] = []
   const pedestalX: number[] = []
   let cafeX: number | null = null
+  let guestBoardX: number | null = null
+
+  function placeCafe(start: number): number {
+    cafeX = start + CONFIG.cafe.lead
+    const afterCafe = cafeX + CONFIG.cafe.trail
+    guestBoardX = afterCafe + CONFIG.guestBoard.lead
+    return guestBoardX + CONFIG.guestBoard.trail
+  }
 
   let cursor = CONFIG.lobby.length
   const after = cafeAfterIndex(widths, isComplete)
@@ -29,26 +37,21 @@ export function computeLayout(widths: number[], isComplete = false): HallLayout 
     if (i >= widths.length - 1) return
 
     if (after === i) {
-      cafeX = cursor + CONFIG.cafe.length / 2
-      cursor += CONFIG.cafe.length
+      cursor = placeCafe(cursor)
     } else {
       if (hasPedestal(i)) pedestalX.push(cursor + CONFIG.piece.gap / 2)
       cursor += CONFIG.piece.gap
     }
   })
 
-  if (isComplete && after === widths.length - 1) {
-    cafeX = cursor + CONFIG.cafe.length / 2
-    cursor += CONFIG.cafe.length
-  }
+  if (isComplete && after === widths.length - 1) cursor = placeCafe(cursor)
 
   const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
-  const guestBoardX = giftShopX === null ? null : giftShopX + CONFIG.guestBoard.length
 
   return {
     centerX,
     pedestalX,
-    totalLength: guestBoardX ?? cursor + CONFIG.piece.gap,
+    totalLength: giftShopX ?? cursor + CONFIG.piece.gap,
     known: widths.length,
     giftShopX,
     cafeX,

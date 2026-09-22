@@ -1602,7 +1602,10 @@ code.token {
 .guestboard-pin-button:hover { transform: translateY(-2%) rotate(-1.5deg); }
 .guestboard-pin-button:focus-visible { outline: 2px solid #662f14; outline-offset: 2px; }
 
-.guestboard-held { position: absolute; left: 16.76%; width: 66.48%; }
+/* .sticky-note sets position: relative further down this file, and WebKit
+   will not resolve a percentage top against the stage's aspect-ratio height
+   for an in-flow box, so the note has to win the cascade here. */
+.sticky-note.guestboard-held { position: absolute; left: 16.76%; width: 66.48%; }
 .guestboard-held--compose { top: 44.48%; }
 
 .guestboard-carousel {

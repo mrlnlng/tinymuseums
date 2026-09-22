@@ -226,6 +226,30 @@ export async function loadScenery(base = '/assets'): Promise<Scenery> {
 }
 
 export async function loadDisplayTexture(url: string): Promise<THREE.Texture> {
+  try {
+    return await fetchDisplayTexture(url)
+  } catch (error) {
+    const ownOrigin = sameOriginUrl(url)
+    if (ownOrigin === null) throw error
+    return fetchDisplayTexture(ownOrigin)
+  }
+}
+
+// WebGL refuses any cross-origin image that did not come back with CORS
+// headers, so a CDN that answers without them leaves a hole in the wall that
+// retrying cannot close. The app serves the same object from its own origin,
+// where CORS does not apply at all.
+function sameOriginUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url, window.location.href)
+    if (parsed.origin === window.location.origin) return null
+    return `/api/media${parsed.pathname}`
+  } catch {
+    return null
+  }
+}
+
+async function fetchDisplayTexture(url: string): Promise<THREE.Texture> {
   if (typeof createImageBitmap === 'function') {
     try {
       return await bitmapTexture(url)

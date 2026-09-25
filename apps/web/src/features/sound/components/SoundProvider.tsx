@@ -17,6 +17,7 @@ interface SoundState {
   setVolume: (value: number) => void
   toggle: () => void
   play: (name: EffectName) => void
+  prepare: (name: EffectName) => void
   setWalking: (isWalking: boolean) => void
 }
 
@@ -28,6 +29,7 @@ const SoundContext = createContext<SoundState>({
   setVolume: () => {},
   toggle: () => {},
   play: () => {},
+  prepare: () => {},
   setWalking: () => {},
 })
 
@@ -52,6 +54,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
         setVolume: music.setVolume,
         toggle: music.toggle,
         play: effects.play,
+        prepare: effects.prepare,
         setWalking: effects.setWalking,
       }}
     >

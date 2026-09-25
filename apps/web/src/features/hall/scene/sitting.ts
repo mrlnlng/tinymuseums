@@ -20,7 +20,7 @@ export function createSitting(
   traversal: Traversal,
   character: Character,
   helm: () => Helm | null,
-  onHop: () => void,
+  sound: { prepare(): void; hop(): void },
 ): Sitting {
   const { hopSeconds, hopLift, idleSeconds, nearDistance } = CONFIG.sit
   const stand = CONFIG.character
@@ -34,6 +34,7 @@ export function createSitting(
 
   function approach(follow: boolean): void {
     state = 'approaching'
+    sound.prepare()
     traversal.hold(seat.x, follow)
   }
 
@@ -61,7 +62,7 @@ export function createSitting(
 
   return {
     tap(raycaster) {
-      if (!board.hitTestBeanbag(raycaster)) return false
+      if (!board.hitTestBeanbag(raycaster, state !== 'free' && state !== 'approaching')) return false
       if (state === 'free') approach(false)
       else if (state === 'approaching') standUp()
       else if (state === 'seated') {
@@ -82,7 +83,7 @@ export function createSitting(
         if (!traversal.isHeld) return
         state = 'rising'
         progress = 0
-        onHop()
+        sound.hop()
       }
 
       if (state === 'seated') {

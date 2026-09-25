@@ -139,7 +139,7 @@ export function useHallScene({
 
       const character = createCharacter(assets, characterHost)
       const placards = new Placards(overlayHost)
-      const lobbySigns = new LobbySigns(overlayHost, lobby.marks, () => onOpenHelpRef.current())
+      const lobbySigns = new LobbySigns(overlayHost, lobby.marks)
       const traversal = new Traversal()
       traversal.attach(renderer.domElement)
 
@@ -224,7 +224,10 @@ export function useHallScene({
           traversal,
           character,
           () => helm,
-          () => soundRef.current.play('jump'),
+          {
+            prepare: () => soundRef.current.prepare('jump'),
+            hop: () => soundRef.current.play('jump'),
+          },
         )
         const layer = hosts.guestBoardNotes.current
         if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
@@ -257,6 +260,7 @@ export function useHallScene({
       let pressedAt = 0
 
       function handlePointerDown(event: PointerEvent): void {
+        soundRef.current.prepare('jump')
         pressX = event.clientX
         pressY = event.clientY
         pressedAt = performance.now()
@@ -276,6 +280,12 @@ export function useHallScene({
         if (lobby.hitTestDoor(raycaster)) {
           soundRef.current.play('click')
           onLeaveRef.current()
+          return
+        }
+
+        if (lobby.hitTestCat(raycaster)) {
+          soundRef.current.play('click')
+          onOpenHelpRef.current()
           return
         }
 

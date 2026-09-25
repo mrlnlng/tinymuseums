@@ -15,7 +15,7 @@ export interface GuestBoard {
   mark: Mark
   seat: Seat
   hitTest(raycaster: THREE.Raycaster): boolean
-  hitTestBeanbag(raycaster: THREE.Raycaster): boolean
+  hitTestBeanbag(raycaster: THREE.Raycaster, occupied: boolean): boolean
   dispose(): void
 }
 
@@ -44,7 +44,7 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
   group.add(sitMesh)
   scene.add(group)
 
-  const { u, v } = sitArea.beanbag
+  const { u, v, occupiedTop } = sitArea.beanbag
 
   return {
     x,
@@ -55,9 +55,10 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
       return pickPainted(raycaster, [boardMesh]) !== null
     },
 
-    hitTestBeanbag(raycaster) {
-      const uv = pickPainted(raycaster, [sitMesh])?.uv
-      return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= v[1]
+    hitTestBeanbag(raycaster, occupied) {
+      const uv = raycaster.intersectObject(sitMesh, false)[0]?.uv
+      const top = occupied ? occupiedTop : v[1]
+      return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= top
     },
 
     dispose() {

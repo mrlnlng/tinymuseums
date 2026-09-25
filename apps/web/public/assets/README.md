@@ -27,4 +27,3 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `guestboard/sit-area.png` | `sit_area.png`, trimmed, quantised |
 | `bunny-sit.png`, `bunny-sit-helm.png` | `bunny_sit.png` and `bunny_sit_hat.png` on one shared canvas so config offsets fit both |
 | `help/cat-1.png` … `help/cat-6.png` | the six frames of `cat.gif`, trimmed to their shared box, 460px tall, quantised |
-| `help/cat.webp` | the same six frames as an animated WebP at 130ms a frame, for the help guide |

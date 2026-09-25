@@ -2,16 +2,17 @@ import * as THREE from 'three'
 import type { Assets } from './assets'
 import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
 import { CONFIG } from './config'
+import { pickPainted } from './hit'
 
 export interface LobbyMarks {
   sign: Mark
   direction: Mark
-  help: Mark & { height: number }
 }
 
 export interface Lobby {
   marks: LobbyMarks
   hitTestDoor(raycaster: THREE.Raycaster): boolean
+  hitTestCat(raycaster: THREE.Raycaster): boolean
   update(dt: number, cameraX: number): void
   dispose(): void
 }
@@ -44,7 +45,7 @@ function svgTexture(svg: string): THREE.Texture {
 }
 
 export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
-  const { door, sign, post, booth, helpButton, cat, catFrameMs } = CONFIG.lobby
+  const { door, sign, post, booth, cat, catFrameMs } = CONFIG.lobby
   const group = new THREE.Group()
 
   const doorMesh = plane(
@@ -81,16 +82,15 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
   )
   group.add(postMesh)
 
-  group.add(
-    plane(
-      booth.height * assets.aspect.helpCenter,
-      booth.height,
-      assets.textures.helpCenter,
-      booth.x,
-      booth.centerY,
-      booth.z,
-    ),
+  const boothMesh = plane(
+    booth.height * assets.aspect.helpCenter,
+    booth.height,
+    assets.textures.helpCenter,
+    booth.x,
+    booth.centerY,
+    booth.z,
   )
+  group.add(boothMesh)
 
   const catFrames = assets.helpCat.map((s) => s.texture)
   const catMesh = plane(
@@ -117,12 +117,6 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
       y: post.top - POST_PANEL.y * (postHeight / POST_BOX.height),
       width: POST_PANEL.width * perUnit,
     },
-    help: {
-      x: booth.x,
-      y: booth.centerY + helpButton.dy,
-      width: helpButton.width,
-      height: helpButton.height,
-    },
   }
 
   return {
@@ -130,6 +124,10 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
 
     hitTestDoor(raycaster) {
       return raycaster.intersectObject(doorMesh, false).length > 0
+    },
+
+    hitTestCat(raycaster) {
+      return pickPainted(raycaster, [boothMesh, catMesh])?.object === catMesh
     },
 
     update(dt, cameraX) {

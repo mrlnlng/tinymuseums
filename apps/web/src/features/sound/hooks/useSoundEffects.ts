@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { gestured } from '@/features/sound/lib/gesture'
-import { applyMix, resumeGain, routeThroughGain } from '@/features/sound/lib/output'
+import { applyMix, decodeClip, playClip, resumeGain, routeThroughGain } from '@/features/sound/lib/output'
 
 const EFFECTS = {
   click: { file: '/audio/sfx-click.mp3', volume: 0.63 },
@@ -27,10 +27,11 @@ const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
 
 const VOICES = 3
 
-const CLICKABLE = '.button, .chrome-button, .lobby-help-button, .gift-shop-button'
+const CLICKABLE = '.button, .chrome-button, .gift-shop-button'
 
 export interface SoundEffects {
   play: (name: EffectName) => void
+  prepare: (name: EffectName) => void
   setWalking: (isWalking: boolean) => void
 }
 
@@ -40,6 +41,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const stepsRef = useRef<HTMLAudioElement | null>(null)
   const stopTimersRef = useRef(new Map<HTMLAudioElement, number>())
   const isWalkingRef = useRef(false)
+  const clipsRef = useRef(new Map<EffectName, AudioBuffer | null>())
 
   const volumeRef = useRef(volume)
   volumeRef.current = volume
@@ -97,14 +99,35 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
     if (steps) applyMix(steps, FOOTSTEPS.volume, volume)
   }, [volume])
 
+  // iOS starts an <audio> element late enough to miss an animation, so effects that
+  // must land on a frame are decoded up front and played from a Web Audio buffer.
+  const prepare = useCallback((name: EffectName) => {
+    const clips = clipsRef.current
+    if (clips.has(name) || !gestured()) return
+    clips.set(name, null)
+    void fetch(EFFECTS[name].file)
+      .then((response) => response.arrayBuffer())
+      .then(decodeClip)
+      .then((buffer) => {
+        if (buffer) clips.set(name, buffer)
+        else clips.delete(name)
+      })
+      .catch(() => clips.delete(name))
+  }, [])
+
   const play = useCallback(
     (name: EffectName) => {
       if (!isEnabled) return
 
+      const spec = EFFECTS[name] as EffectSpec
+      const clip = clipsRef.current.get(name)
+      if (clip) {
+        resumeGain()
+        if (playClip(clip, spec.volume, spec.start, spec.end)) return
+      }
+
       const pool = voicesFor(name)
       if (!pool?.length) return
-
-      const spec = EFFECTS[name] as EffectSpec
 
       let voice = pool.find((candidate) => candidate.paused || candidate.ended)
       if (!voice && pool.length < VOICES) {
@@ -191,5 +214,5 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
 
   useEffect(() => bindClickSound(), [bindClickSound])
 
-  return { play, setWalking }
+  return { play, prepare, setWalking }
 }

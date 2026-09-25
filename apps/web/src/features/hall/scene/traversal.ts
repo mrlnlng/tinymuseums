@@ -144,7 +144,7 @@ export class Traversal {
       this.velocity = 0
     }
 
-    this.walkVelocity = dt > 0 ? (this.x - this.lastFootX) / dt : 0
+    this.walkVelocity = this.walking && dt > 0 ? (this.x - this.lastFootX) / dt : 0
     this.lastFootX = this.x
 
     if (this.introducing && !this.walking) this.introducing = false

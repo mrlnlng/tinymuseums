@@ -156,14 +156,10 @@ export class Placards {
 export class LobbySigns {
   private sign = document.createElement('div')
   private direction = document.createElement('div')
-  private help = document.createElement('button')
-  private isHelpOnScreen: boolean | null = null
-  private helpHeight = ''
 
   constructor(
     container: HTMLElement,
     private marks: LobbyMarks,
-    onOpenHelp: () => void,
   ) {
     this.sign.className = 'lobby-sign'
     this.sign.textContent = 'Visitor Center'
@@ -171,12 +167,7 @@ export class LobbySigns {
     this.direction.className = 'lobby-direction'
     this.direction.innerHTML = '<span>To Exhibition</span><span aria-hidden="true">\u2192</span>'
 
-    this.help.type = 'button'
-    this.help.className = 'lobby-help-button'
-    this.help.textContent = 'View help guide'
-    this.help.addEventListener('click', onOpenHelp)
-
-    for (const node of [this.sign, this.direction, this.help]) container.appendChild(node)
+    for (const node of [this.sign, this.direction]) container.appendChild(node)
   }
 
   sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
@@ -185,17 +176,6 @@ export class LobbySigns {
 
     this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
     this.place(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
-
-    const onScreen = this.place(this.help, this.marks.help, perUnit, camera, viewport, 0.11)
-    if (onScreen !== this.isHelpOnScreen) {
-      this.isHelpOnScreen = onScreen
-      this.help.style.pointerEvents = onScreen ? 'auto' : 'none'
-    }
-    const height = `${(this.marks.help.height * perUnit).toFixed(1)}px`
-    if (height !== this.helpHeight) {
-      this.helpHeight = height
-      this.help.style.height = height
-    }
   }
 
   private place(
@@ -225,7 +205,7 @@ export class LobbySigns {
   }
 
   clear(): void {
-    for (const node of [this.sign, this.direction, this.help]) node.remove()
+    for (const node of [this.sign, this.direction]) node.remove()
   }
 }
 

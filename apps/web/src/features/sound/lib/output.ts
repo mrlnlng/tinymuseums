@@ -65,6 +65,33 @@ export function routeThroughGain(element: HTMLMediaElement, mix = 1): boolean {
   }
 }
 
+export async function decodeClip(data: ArrayBuffer): Promise<AudioBuffer | null> {
+  if (!ensureMaster() || !context) return null
+  try {
+    return await context.decodeAudioData(data)
+  } catch {
+    return null
+  }
+}
+
+export function playClip(buffer: AudioBuffer, mix: number, start = 0, end?: number): boolean {
+  const target = ensureMaster()
+  if (!target || !context) return false
+  try {
+    const voice = context.createGain()
+    voice.gain.value = mix
+    voice.connect(target)
+    const source = context.createBufferSource()
+    source.buffer = buffer
+    source.connect(voice)
+    source.onended = () => voice.disconnect()
+    source.start(0, start, end === undefined ? undefined : Math.max(0, end - start))
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function isRouted(element: HTMLMediaElement | null | undefined): boolean {
   return !!element && routed.has(element)
 }

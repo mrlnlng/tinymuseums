@@ -43,15 +43,14 @@ export const CONFIG = {
   },
 
   lobby: {
-    length: 4.9,
+    length: 5.9,
     startX: 0,
     introWalk: 1.9,
     door: { x: -0.09, centerY: 1.165, height: 2.81, z: 0.2 },
     sign: { x: 0.165, centerY: 3.007, width: 1.977, height: 0.427, z: 0.2 },
-    post: { x: 1.19, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
+    post: { x: 4.48, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
     booth: { x: 2.39, centerY: 1.56, height: 3.467, z: 0.4 },
-    helpButton: { dy: 0.16, width: 1.06, height: 0.35 },
-    cat: { dx: 0, centerY: 1.025, height: 1.05, z: 0.35 },
+    cat: { dx: 0, centerY: 1.165, height: 1.27, z: 0.35 },
     catFrameMs: 130,
   },
 
@@ -87,7 +86,7 @@ export const CONFIG = {
       centerY: 0.868,
       height: 2.422,
       z: 0.35,
-      beanbag: { u: [0.06, 0.42], v: [0.1, 0.61] },
+      beanbag: { u: [0, 0.44], v: [0.03, 0.62], occupiedTop: 0.82 },
     },
     seat: { dx: -1.119, centerY: 0.893, height: 1.455 },
   },
@@ -95,7 +94,7 @@ export const CONFIG = {
   sit: {
     hopSeconds: 0.45,
     hopLift: 0.35,
-    idleSeconds: 30,
+    idleSeconds: 10,
     nearDistance: 13.5,
   },
 

@@ -12,6 +12,7 @@ export interface LobbyMarks {
 export interface Lobby {
   marks: LobbyMarks
   hitTestDoor(raycaster: THREE.Raycaster): boolean
+  update(dt: number, cameraX: number): void
   dispose(): void
 }
 
@@ -43,7 +44,7 @@ function svgTexture(svg: string): THREE.Texture {
 }
 
 export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
-  const { door, sign, post, booth, helpButton } = CONFIG.lobby
+  const { door, sign, post, booth, helpButton, cat, catFrameMs } = CONFIG.lobby
   const group = new THREE.Group()
 
   const doorMesh = plane(
@@ -91,7 +92,22 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
     ),
   )
 
+  const catFrames = assets.helpCat.map((s) => s.texture)
+  const catMesh = plane(
+    cat.height * (assets.helpCat[0]?.aspect ?? 1),
+    cat.height,
+    catFrames[0],
+    booth.x + cat.dx,
+    cat.centerY,
+    cat.z,
+  )
+  const catMaterial = catMesh.material as THREE.MeshBasicMaterial
+  group.add(catMesh)
+
   scene.add(group)
+
+  let catElapsed = 0
+  let catFrame = 0
 
   const perUnit = post.width / POST_BOX.width
   const marks: LobbyMarks = {
@@ -116,7 +132,20 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
       return raycaster.intersectObject(doorMesh, false).length > 0
     },
 
+    update(dt, cameraX) {
+      const far = Math.abs(cameraX - booth.x) > CONFIG.virtualization.mountRadiusUnits
+      if (far || catFrames.length === 0) return
+
+      catElapsed += dt
+      const next = Math.floor(catElapsed / (catFrameMs / 1000)) % catFrames.length
+      if (next !== catFrame) {
+        catFrame = next
+        catMaterial.map = catFrames[catFrame]
+      }
+    },
+
     dispose() {
+      for (const texture of catFrames) texture.dispose()
       disposeBoards(scene, group)
     },
   }

@@ -19,10 +19,17 @@ export class Traversal {
 
   private walking = false
 
+  private heldAt: number | null = null
+
+  private following = false
+
+  idleSeconds = 0
+
   private worldPerPixel = 0.0084
 
   attach(element: HTMLElement): void {
     window.addEventListener('keydown', (e) => {
+      this.idleSeconds = 0
       if (e.repeat) return
       this.keys.add(e.key.toLowerCase())
     })
@@ -30,7 +37,9 @@ export class Traversal {
     window.addEventListener('blur', () => this.keys.clear())
 
     element.addEventListener('pointerdown', (e) => {
+      this.idleSeconds = 0
       if (this.locked) return
+      this.following = false
       this.dragging = true
       this.lastPointerX = e.clientX
       this.dragVelocity = 0
@@ -61,6 +70,7 @@ export class Traversal {
       (e) => {
         if (this.locked) return
         e.preventDefault()
+        this.following = false
         const amount = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
         const step = amount * this.worldPerPixel * CONFIG.move.wheelFactor
         this.cameraX += step
@@ -85,6 +95,16 @@ export class Traversal {
       this.dragging = false
       this.velocity = 0
     }
+  }
+
+  hold(x: number | null, follow = false): void {
+    this.heldAt = x
+    this.following = x !== null && follow
+    if (x !== null) this.walking = true
+  }
+
+  get isHeld(): boolean {
+    return this.heldAt !== null && this.x === this.heldAt && !this.walking
   }
 
   get isIntro(): boolean {
@@ -119,11 +139,23 @@ export class Traversal {
     if (!this.locked) this.moveCamera(dt, totalLength)
     this.walkToward(dt)
     this.enforceLeash()
+    if (this.following) {
+      this.cameraX = this.x
+      this.velocity = 0
+    }
 
     this.walkVelocity = dt > 0 ? (this.x - this.lastFootX) / dt : 0
     this.lastFootX = this.x
 
     if (this.introducing && !this.walking) this.introducing = false
+
+    const resting =
+      !this.locked &&
+      !this.dragging &&
+      !this.walking &&
+      this.keys.size === 0 &&
+      Math.abs(this.velocity) < 0.01
+    this.idleSeconds = resting ? this.idleSeconds + dt : 0
   }
 
   private moveCamera(dt: number, totalLength: number): void {
@@ -132,6 +164,7 @@ export class Traversal {
     const input = (right ? 1 : 0) - (left ? 1 : 0)
 
     if (input !== 0) {
+      this.following = false
       this.velocity += input * CONFIG.move.accel * dt
     } else if (!this.dragging) {
       this.velocity -= this.velocity * Math.min(1, CONFIG.move.damping * dt)
@@ -156,23 +189,25 @@ export class Traversal {
     }
 
     const { followStartDistance, followStopDistance, arriveSeconds } = CONFIG.character
-    const gap = this.cameraX - this.x
+    const target = this.heldAt ?? this.cameraX
+    const gap = target - this.x
     const distance = Math.abs(gap)
 
     if (!this.walking && distance > followStartDistance) this.walking = true
     if (this.walking && distance <= followStopDistance) {
       this.walking = false
-      this.x = this.cameraX
+      this.x = target
       return
     }
     if (!this.walking) return
 
     const speed = Math.min(CONFIG.move.maxSpeed, distance / arriveSeconds)
     const step = Math.sign(gap) * speed * dt
-    this.x = Math.abs(step) >= distance ? this.cameraX : this.x + step
+    this.x = Math.abs(step) >= distance ? target : this.x + step
   }
 
   private enforceLeash(): void {
+    if (this.heldAt !== null) return
     const max = CONFIG.character.maxTrailDistance
     const gap = this.cameraX - this.x
     if (Math.abs(gap) <= max) return

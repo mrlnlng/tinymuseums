@@ -15,7 +15,7 @@ export interface Matcha {
 export function createMatcha(scenery: Scenery, host: HTMLElement, cafe: () => Cafe | null): Matcha {
   const cup = createCarried(host, scenery.matcha, CONFIG.matcha.held, (out) => {
     cafe()?.matchaPoint(out)
-    return CONFIG.matcha.menuWidth
+    return CONFIG.matcha.cup.width
   })
 
   return {

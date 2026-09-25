@@ -20,6 +20,11 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `coin.png`, `coin-large.png` | `coin.png`, trimmed, 256px and 900px, quantised |
 | `matcha.png` | `matcha.png`, trimmed, 280px wide, quantised |
 | `cafe/thanks-board.png` | `thanksBoard.png`, trimmed, 600px wide, quantised |
+| `cafe/buy-matcha.png` | `buy_matcha_board.png`, trimmed, 640px wide, quantised |
 | `guestboard/board.png` | `guestboard.png`, untrimmed, 1600px, quantised, brightened 3.5% to match the mocks |
 | `guestboard/board-hall.png` | `guestboard.png`, untrimmed, 720px, quantised |
 | `guestboard/arrow-left.png` | cut from guest board mock 3; mirrored in CSS for the right arrow |
+| `guestboard/sit-area.png` | `sit_area.png`, trimmed, quantised |
+| `bunny-sit.png`, `bunny-sit-helm.png` | `bunny_sit.png` and `bunny_sit_hat.png` on one shared canvas so config offsets fit both |
+| `help/cat-1.png` … `help/cat-6.png` | the six frames of `cat.gif`, trimmed to their shared box, 460px tall, quantised |
+| `help/cat.webp` | the same six frames as an animated WebP at 130ms a frame, for the help guide |

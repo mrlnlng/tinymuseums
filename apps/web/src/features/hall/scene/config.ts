@@ -50,7 +50,9 @@ export const CONFIG = {
     sign: { x: 0.165, centerY: 3.007, width: 1.977, height: 0.427, z: 0.2 },
     post: { x: 1.19, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
     booth: { x: 2.39, centerY: 1.56, height: 3.467, z: 0.4 },
-    helpButton: { dy: -0.215, width: 1.06, height: 0.35 },
+    helpButton: { dy: 0.16, width: 1.06, height: 0.35 },
+    cat: { dx: 0, centerY: 1.025, height: 1.05, z: 0.35 },
+    catFrameMs: 130,
   },
 
   giftShop: {
@@ -78,8 +80,23 @@ export const CONFIG = {
 
   guestBoard: {
     lead: 1.775,
-    trail: 2.05,
-    board: { dx: 0, centerY: 2.05, width: 3.0, z: 0.3 },
+    trail: 2.8,
+    board: { dx: 0, centerY: 1.93, width: 3.0, z: 0.3 },
+    sitArea: {
+      dx: 0.072,
+      centerY: 0.868,
+      height: 2.422,
+      z: 0.35,
+      beanbag: { u: [0.06, 0.42], v: [0.1, 0.61] },
+    },
+    seat: { dx: -1.119, centerY: 0.893, height: 1.455 },
+  },
+
+  sit: {
+    hopSeconds: 0.45,
+    hopLift: 0.35,
+    idleSeconds: 30,
+    nearDistance: 13.5,
   },
 
   helm: {
@@ -88,6 +105,7 @@ export const CONFIG = {
       width: 446,
       walk: { x: 262, y: 106, rotation: 0 },
       idle: { x: 243.8, y: 79.8, rotation: -9.2 },
+      sit: { x: 208, y: 216, rotation: 0, width: 420, flip: -1 },
     },
     stand: { x: 370, y: 357, width: 400, drawing: [821, 1299] },
   },
@@ -98,9 +116,9 @@ export const CONFIG = {
       width: 136,
       walk: { x: 399, y: 291, rotation: 14 },
       idle: { x: 360, y: 215, rotation: 14 },
+      sit: { x: 455, y: 405, rotation: 10, width: 146, flip: 1 },
     },
-    menuColumn: { u: [0.08, 0.5], v: [0.12, 0.86] },
-    menuWidth: 0.22,
+    cup: { u: [0.594, 0.668], v: [0.452, 0.633], center: [0.631, 0.536], width: 0.274 },
   },
 
   carry: {

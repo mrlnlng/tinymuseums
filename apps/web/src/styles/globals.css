@@ -636,6 +636,7 @@ code.token {
   z-index: 40;
   display: flex;
   align-items: center;
+  align-items: safe center;
   justify-content: center;
   overflow: hidden;
 }
@@ -758,6 +759,7 @@ code.token {
   --band: calc(var(--counter) - var(--awning));
   --band-top: var(--awning);
   background: var(--panel-fill);
+  padding-bottom: 14.5cqw;
 }
 
 .help-band-counter {
@@ -769,7 +771,7 @@ code.token {
 .help-steps {
   position: relative;
   margin: 0;
-  padding: 7% 20% 9% 26%;
+  padding: 3% 20% 9% 26%;
   display: flex;
   flex-direction: column;
   gap: 0.85em;
@@ -780,6 +782,14 @@ code.token {
 }
 
 .help-steps li { padding-left: 0.2em; }
+
+.help-guide-cat {
+  position: absolute;
+  left: 50%;
+  bottom: -5cqw;
+  width: 25cqw;
+  transform: translateX(-50%);
+}
 
 .help-steps li::marker {
   font-family: var(--font-button);

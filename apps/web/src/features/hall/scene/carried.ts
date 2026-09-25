@@ -7,6 +7,7 @@ export type CarriedState = 'away' | 'to-bunny' | 'held' | 'back'
 
 export interface Carried {
   readonly state: CarriedState
+  conceal(hidden: boolean): void
   take(): void
   giveBack(): void
   update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): boolean
@@ -18,6 +19,7 @@ export interface Attachment {
   width: number
   walk: { x: number; y: number; rotation: number }
   idle: { x: number; y: number; rotation: number }
+  sit: { x: number; y: number; rotation: number; width: number; flip: number }
 }
 
 export function createCarried(
@@ -38,6 +40,7 @@ export function createCarried(
   host.appendChild(sprite)
 
   let state: CarriedState = 'away'
+  let concealed = false
   let elapsed = 0
   const world = new THREE.Vector3()
   const onBunny: Pose = { x: 0, y: 0, width: 0, rotation: 0, flip: 1 }
@@ -81,6 +84,11 @@ export function createCarried(
       return state
     },
 
+    conceal(hidden) {
+      concealed = hidden
+      sprite.hidden = state === 'away' || (state === 'held' && concealed)
+    },
+
     take() {
       if (state !== 'away') return
       state = 'to-bunny'
@@ -99,9 +107,11 @@ export function createCarried(
 
       character.attach(attachment, onBunny)
       if (state === 'held') {
+        sprite.hidden = concealed
         place(onBunny)
         return false
       }
+      sprite.hidden = false
 
       const width = home(world)
       world.project(camera)

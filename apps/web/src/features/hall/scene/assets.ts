@@ -37,15 +37,18 @@ const SCENERY_FILES = {
   cafeFront: 'cafe/front.png',
   cafeSign: 'cafe/sign-removebg.png',
   cafeMenu: 'cafe/menu.png',
-  cafePoster: 'cafe/buy-coffee.png',
+  cafePoster: 'cafe/buy-matcha.png',
   cafeThanks: 'cafe/thanks-board.png',
   guestBoard: 'guestboard/board-hall.png',
+  sitArea: 'guestboard/sit-area.png',
 } as const
 
 export const HELM_PEDESTAL_FILE = 'pedestal-4.png'
 
 export type EntranceName = keyof typeof ENTRANCE_FILES
 export type SceneryName = keyof typeof SCENERY_FILES
+
+const HELP_CAT_FRAMES = [1, 2, 3, 4, 5, 6].map((n) => `help/cat-${n}.png`)
 
 const CAFE_CAT_FRAMES = [
   'cafe/cat-1.png',
@@ -70,6 +73,7 @@ export interface Assets {
   walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
   bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   pedestals: PedestalSprite[]
+  helpCat: Sprite[]
 }
 
 export interface Scenery {
@@ -77,6 +81,7 @@ export interface Scenery {
   aspect: Record<SceneryName, number>
   helm: HTMLImageElement
   matcha: HTMLImageElement
+  bunnySit: { plain: HTMLImageElement; helm: HTMLImageElement }
   cafeCat: Sprite[]
   dispose(): void
 }
@@ -170,13 +175,14 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 
-  const [entrance, walkLeft, walkRight, pedestalImages, idleLeft, idleRight] = await Promise.all([
+  const [entrance, walkLeft, walkRight, pedestalImages, idleLeft, idleRight, helpCat] = await Promise.all([
     loadTolerant(names.map((n) => assetUrl(base, ENTRANCE_FILES[n]))),
     loadTolerant(leftFiles.map((f) => assetUrl(base, f))),
     loadTolerant(rightFiles.map((f) => assetUrl(base, f))),
     loadTolerant(manifest.pedestals.map((p) => assetUrl(base, p.file))),
     loadRetrying(assetUrl(base, 'bunny-left.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
     loadRetrying(assetUrl(base, 'bunny-right.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
+    loadTolerant(HELP_CAT_FRAMES.map((f) => assetUrl(base, f))),
   ])
 
   const { textures, aspect } = indexBy(names, entrance)
@@ -194,6 +200,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
       ...toSprite(img),
       file: manifest.pedestals[i].file,
     })),
+    helpCat: helpCat.map(toSprite),
   }
 }
 
@@ -202,11 +209,12 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
 export async function loadScenery(base = '/assets'): Promise<Scenery> {
   const names = Object.keys(SCENERY_FILES) as SceneryName[]
 
-  const [boards, catImages, helm, matcha] = await Promise.all([
+  const [boards, catImages, helm, matcha, sitting] = await Promise.all([
     loadTolerant(names.map((n) => assetUrl(base, SCENERY_FILES[n]))),
     loadTolerant(CAFE_CAT_FRAMES.map((f) => assetUrl(base, f))),
     loadRetrying(assetUrl(base, 'helm.png')),
     loadRetrying(assetUrl(base, 'matcha.png')),
+    loadTolerant(['bunny-sit.png', 'bunny-sit-helm.png'].map((f) => assetUrl(base, f))),
   ])
 
   const { textures, aspect } = indexBy(names, boards)
@@ -217,6 +225,7 @@ export async function loadScenery(base = '/assets'): Promise<Scenery> {
     aspect,
     helm,
     matcha,
+    bunnySit: { plain: sitting[0], helm: sitting[1] },
     cafeCat,
     dispose() {
       for (const texture of Object.values(textures) as THREE.Texture[]) texture.dispose()

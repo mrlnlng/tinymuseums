@@ -8,6 +8,8 @@ import type { Pedestal } from './pedestal'
 import type { HallScene } from './scene'
 
 export interface Helm {
+  readonly worn: boolean
+  conceal(hidden: boolean): void
   tap(pedestal: Pedestal): boolean
   update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): void
   dispose(): void
@@ -23,6 +25,12 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
   })
 
   return {
+    get worn() {
+      return helm.state === 'held'
+    },
+
+    conceal: helm.conceal,
+
     tap(pedestal) {
       if (!pedestal.holdsHelm) return false
       if (helm.state === 'away') {

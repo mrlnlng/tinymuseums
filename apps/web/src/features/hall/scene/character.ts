@@ -12,7 +12,17 @@ export interface Pose {
   flip: number
 }
 
+export interface Perch {
+  image: HTMLImageElement
+  x: number
+  y: number
+  height: number
+  seated: boolean
+}
+
 export interface Character {
+  readonly idleImage: HTMLImageElement
+  perch(perch: Perch | null): void
   attach(attachment: Attachment, out: Pose): Pose
   update(
     dt: number,
@@ -50,6 +60,7 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   let scale = 1
   let currentHeight = ''
   let currentTransform = ''
+  let perched: Perch | null = null
 
   function setFrame(image: HTMLImageElement): void {
     currentImage = image
@@ -59,9 +70,27 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   }
 
   return {
+    get idleImage() {
+      return idle[facing]
+    },
+
+    perch(perch) {
+      perched = perch
+    },
+
     attach(attachment, out) {
-      const place = moving ? attachment.walk : attachment.idle
       const { naturalWidth, naturalHeight } = currentImage
+      if (perched?.seated) {
+        const { sit } = attachment
+        out.x = screenX + (sit.x - naturalWidth / 2) * scale
+        out.y = screenY + (sit.y - naturalHeight / 2) * scale
+        out.width = sit.width * scale
+        out.rotation = sit.rotation
+        out.flip = sit.flip
+        return out
+      }
+
+      const place = moving ? attachment.walk : attachment.idle
       const asDrawn = facing === attachment.facing
       const drawnX = asDrawn ? place.x : naturalWidth - place.x
       out.x = screenX + (drawnX - naturalWidth / 2) * scale
@@ -74,11 +103,13 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
 
     update(dt, x, velocity, camera, viewport) {
       const speed = Math.abs(velocity)
-      moving = speed > 0.12
+      moving = !perched && speed > 0.12
 
       distance += speed * dt
 
-      if (moving) {
+      if (perched) {
+        setFrame(perched.image)
+      } else if (moving) {
         facing = velocity > 0 ? 'right' : 'left'
         const frames = cycles[facing]
         const step = Math.floor(distance * CONFIG.character.cyclesPerUnit * frames.length)
@@ -91,14 +122,16 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
         ? Math.sin(distance * CONFIG.character.cyclesPerUnit * Math.PI * 2) * CONFIG.character.bob
         : 0
 
-      projected.set(x, CONFIG.character.centerY + float, 0)
+      if (perched) projected.set(perched.x, perched.y, 0)
+      else projected.set(x, CONFIG.character.centerY + float, 0)
       projected.project(camera)
 
       screenX = (projected.x * 0.5 + 0.5) * viewport.width
       screenY = (-projected.y * 0.5 + 0.5) * viewport.height
 
       const frustumHeight = camera.top - camera.bottom
-      const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
+      const worldHeight = perched ? perched.height : CONFIG.character.height
+      const heightPx = (worldHeight / frustumHeight) * viewport.height
       const height = `${heightPx.toFixed(1)}px`
       if (height !== currentHeight) {
         currentHeight = height

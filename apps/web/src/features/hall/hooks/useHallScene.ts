@@ -23,6 +23,7 @@ import {
   type Viewport,
 } from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
+import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
 
@@ -204,6 +205,7 @@ export function useHallScene({
 
       let guestBoard: GuestBoard | null = null
       let guestBoardNotes: GuestBoardNotes | null = null
+      let sitting: Sitting | null = null
 
       const raiseGiftShop = (): void => {
         const x = hall.layout.giftShopX
@@ -216,6 +218,14 @@ export function useHallScene({
         const x = hall.layout.guestBoardX
         if (x === null || guestBoard || !scenery) return
         guestBoard = createGuestBoard(scene, scenery, x)
+        sitting = createSitting(
+          scenery,
+          guestBoard,
+          traversal,
+          character,
+          () => helm,
+          () => soundRef.current.play('jump'),
+        )
         const layer = hosts.guestBoardNotes.current
         if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
         onGuestBoardHungRef.current()
@@ -304,6 +314,11 @@ export function useHallScene({
           return
         }
 
+        if (sitting?.tap(raycaster)) {
+          soundRef.current.play('click')
+          return
+        }
+
         if (guestBoard?.hitTest(raycaster)) {
           soundRef.current.play('click')
           onOpenGuestBoardRef.current()
@@ -343,7 +358,7 @@ export function useHallScene({
 
       function renderFrame(now: number): void {
         frameHandle = requestAnimationFrame(renderFrame)
-        const dt = Math.min(0.05, (now - lastFrameAt) / 1000)
+        const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
         lastFrameAt = now
 
         if (!isReadyRef.current) {
@@ -356,6 +371,7 @@ export function useHallScene({
         }
 
         rig.sync(traversal.cameraX)
+        sitting?.update(dt, traversal.cameraX, rig.viewWidth / 2)
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
         helm?.update(dt, character, rig.camera, viewport)
         matcha?.update(dt, character, rig.camera, viewport)
@@ -372,6 +388,7 @@ export function useHallScene({
         cafeLink?.sync(rig.camera, viewport)
         guestBoardNotes?.sync(rig.camera, viewport)
 
+        lobby.update(dt, traversal.cameraX)
         cafe?.update(dt, traversal.cameraX)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
@@ -399,6 +416,7 @@ export function useHallScene({
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()
+        sitting?.dispose()
         guestBoard?.dispose()
         cafe?.dispose()
         backdrop.dispose()

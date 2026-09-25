@@ -11,6 +11,7 @@ const EFFECTS = {
   owl: { file: '/audio/sfx-owl.mp3', volume: 0.59, start: 0.7, end: 3.7 },
   'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.87, start: 0.48, end: 1.3 },
   coin: { file: '/audio/sfx-coin.mp3', volume: 0.72, start: 0.06 },
+  jump: { file: '/audio/sfx-jump.mp3', volume: 2.5 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS

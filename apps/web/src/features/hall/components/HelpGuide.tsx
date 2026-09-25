@@ -4,12 +4,13 @@ import { useEffect } from 'react'
 import { motion } from 'motion/react'
 
 const AWNING = 0.462
-const COUNTER = 0.74
+const COUNTER = 0.725
 const BOOTH_ASPECT = 811 / 1039
 
 const STEPS = [
   'Use the left and right arrows to take a guilt-free scroll through the museum.',
   'Interact: tap any painting that catches your eye to view more details.',
+  'Explore: hidden easter eggs are tucked all around the museum!',
 ]
 
 interface HelpGuideProps {
@@ -65,6 +66,7 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
               <li key={step}>{step}</li>
             ))}
           </ol>
+          <img className="help-guide-cat" src="/assets/help/cat.webp" alt="" aria-hidden="true" />
         </div>
 
         <div className="help-band help-band-counter" />

@@ -22,8 +22,9 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
   const { counter, sign, menu, poster, thanks, cat, catFrameMs } = CONFIG.cafe
   const group = new THREE.Group()
 
+  const counterWidth = counter.height * scenery.aspect.cafeFront
   const counterMesh = plane(
-    counter.height * scenery.aspect.cafeFront,
+    counterWidth,
     counter.height,
     scenery.textures.cafeFront,
     x + counter.dx,
@@ -43,17 +44,17 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
     ),
   )
 
-  const menuWidth = menu.height * scenery.aspect.cafeMenu
-  const menuMesh = plane(
-    menuWidth,
-    menu.height,
-    scenery.textures.cafeMenu,
-    x + menu.dx,
-    menu.centerY,
-    menu.z,
+  group.add(
+    plane(
+      menu.height * scenery.aspect.cafeMenu,
+      menu.height,
+      scenery.textures.cafeMenu,
+      x + menu.dx,
+      menu.centerY,
+      menu.z,
+    ),
   )
-  group.add(menuMesh)
-  const { u, v } = CONFIG.matcha.menuColumn
+  const { u, v, center } = CONFIG.matcha.cup
 
   group.add(
     plane(
@@ -103,16 +104,15 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
     },
 
     hitTestMatcha(raycaster: THREE.Raycaster): boolean {
-      if (pickPainted(raycaster, [catMesh])) return false
-      const uv = raycaster.intersectObject(menuMesh, false)[0]?.uv
+      const uv = raycaster.intersectObject(counterMesh, false)[0]?.uv
       return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= v[1]
     },
 
     matchaPoint(out) {
       return out.set(
-        x + menu.dx + ((u[0] + u[1]) / 2 - 0.5) * menuWidth,
-        menu.centerY + ((v[0] + v[1]) / 2 - 0.5) * menu.height,
-        menu.z,
+        x + counter.dx + (center[0] - 0.5) * counterWidth,
+        counter.centerY + (center[1] - 0.5) * counter.height,
+        counter.z,
       )
     },
 

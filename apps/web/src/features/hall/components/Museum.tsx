@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
@@ -10,6 +10,7 @@ import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
 import CoinFound from '@/features/hall/components/CoinFound'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import HelpGuide from '@/features/hall/components/HelpGuide'
+import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import Walkthrough from '@/features/artwork/components/Walkthrough'
@@ -30,6 +31,8 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const [isCoinOpen, setIsCoinOpen] = useState(false)
   const [isGuestBoardOpen, setIsGuestBoardOpen] = useState(false)
   const [isGuestBoardHung, setIsGuestBoardHung] = useState(false)
+  const [isHintShown, setIsHintShown] = useState(false)
+  const hideHint = useCallback(() => setIsHintShown(false), [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
   const { setWalking } = useSound()
@@ -52,10 +55,14 @@ export default function Museum({ initialSlice }: MuseumProps) {
     onFindCoin: () => setIsCoinOpen(true),
     onOpenGuestBoard: () => setIsGuestBoardOpen(true),
     onGuestBoardHung: () => setIsGuestBoardHung(true),
+    onIntroDone: () => setIsHintShown(claimSwipeHint()),
+    onFirstMove: hideHint,
   })
 
   useEffect(() => {
-    if (isSuspended) setWalking(false)
+    if (!isSuspended) return
+    setWalking(false)
+    setIsHintShown(false)
   }, [isSuspended, setWalking])
 
   // The walkthrough frames are only needed once a piece is opened, so they wait
@@ -92,6 +99,10 @@ export default function Museum({ initialSlice }: MuseumProps) {
           <PinnedNotes notes={guestNotes} />
         </div>
         <div className="hall-character" ref={characterRef} />
+
+        <AnimatePresence>
+          {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
+        </AnimatePresence>
 
         <AnimatePresence>
           {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}

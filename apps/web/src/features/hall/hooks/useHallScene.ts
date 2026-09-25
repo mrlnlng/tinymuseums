@@ -63,6 +63,8 @@ interface Options {
   onFindCoin: () => void
   onOpenGuestBoard: () => void
   onGuestBoardHung: () => void
+  onIntroDone: () => void
+  onFirstMove: () => void
 }
 
 export function useHallScene({
@@ -75,6 +77,8 @@ export function useHallScene({
   onFindCoin,
   onOpenGuestBoard,
   onGuestBoardHung,
+  onIntroDone,
+  onFirstMove,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,6 +109,12 @@ export function useHallScene({
 
   const onGuestBoardHungRef = useRef(onGuestBoardHung)
   onGuestBoardHungRef.current = onGuestBoardHung
+
+  const onIntroDoneRef = useRef(onIntroDone)
+  onIntroDoneRef.current = onIntroDone
+
+  const onFirstMoveRef = useRef(onFirstMove)
+  onFirstMoveRef.current = onFirstMove
 
   useEffect(() => {
     let isDisposed = false
@@ -365,6 +375,8 @@ export function useHallScene({
 
       let frameHandle = 0
       let lastFrameAt = performance.now()
+      let restX: number | null = null
+      let hasMoved = false
 
       function renderFrame(now: number): void {
         frameHandle = requestAnimationFrame(renderFrame)
@@ -378,6 +390,14 @@ export function useHallScene({
         } else {
           traversal.setSuspended(isSuspendedRef.current)
           traversal.update(dt, hall.layout.totalLength)
+        }
+
+        if (restX === null && !traversal.isIntro) {
+          restX = traversal.cameraX
+          onIntroDoneRef.current()
+        } else if (restX !== null && !hasMoved && Math.abs(traversal.cameraX - restX) > 0.05) {
+          hasMoved = true
+          onFirstMoveRef.current()
         }
 
         rig.sync(traversal.cameraX)

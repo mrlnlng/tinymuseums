@@ -427,6 +427,47 @@ code.token {
   pointer-events: none;
   z-index: 2;
 }
+.swipe-hint {
+  position: absolute;
+  top: 8%;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  width: max-content;
+  margin: 0 auto;
+  padding: 0.7em 1.2em 0.6em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  border: 3px solid var(--plaque);
+  border-radius: 1.2em;
+  background: rgb(255 250 240 / 88%);
+  box-shadow: 0 6px 18px rgb(109 64 46 / 16%);
+  color: var(--ink);
+  font-size: clamp(13px, calc(var(--screen-width) * 0.04), 17px);
+  pointer-events: none;
+}
+
+.swipe-hint-track {
+  display: flex;
+  align-items: center;
+  gap: 1.8em;
+}
+
+.swipe-hint-hand { width: 2.9em; }
+
+.swipe-hint-arrow {
+  width: 0.8em;
+  color: var(--ink-soft);
+}
+
+.swipe-hint-text {
+  margin: 0;
+  font-family: var(--font-button);
+  letter-spacing: 0.03em;
+}
+
 
 .hall-bunny {
   position: absolute;

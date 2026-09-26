@@ -13,7 +13,7 @@ const COUNTER_CROP = 0.75
 const MIN_SCALE = 0.75
 
 const STEPS = [
-  'Use the left and right arrows to take a guilt-free scroll through the museum.',
+  'Swipe left and right to take a guilt-free scroll through the museum.',
   'Interact: tap any painting that catches your eye to view more details.',
   'Explore: hidden easter eggs are tucked all around the museum!',
 ]

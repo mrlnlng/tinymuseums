@@ -1,5 +1,5 @@
-import { claim, complete, closePool, env, fail, requeueStale } from '@tiny/core'
-import { repairUnframed, runJob, scheduleNextSeal } from '@tiny/core/worker'
+import { claim, complete, closePool, fail, requeueStale } from '@tiny/core'
+import { repairUnframed, runJob } from '@tiny/core/worker'
 
 const IDLE_DELAY_MS = 750
 const STALE_SWEEP_MS = 60_000
@@ -61,8 +61,6 @@ process.on('SIGTERM', shutdown)
 
 console.log('[worker] started')
 
-await scheduleNextSeal(env.epochIntervalMinutes)
-setInterval(() => void scheduleNextSeal(env.epochIntervalMinutes), env.epochIntervalMinutes * 60_000)
 setInterval(() => void sweepStale(), STALE_SWEEP_MS)
 await repairUnframed().then((n) => {
   if (n > 0) console.log(`[worker] requeued frame rendering for ${n} artist(s)`)

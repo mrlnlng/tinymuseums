@@ -12,7 +12,7 @@ export interface HallLayout {
 
 function cafeAfterIndex(widths: number[], isComplete: boolean): number | null {
   if (widths.length > 10) return 9
-  if (isComplete && widths.length > 0) return widths.length - 1
+  if (isComplete) return widths.length - 1
   return null
 }
 

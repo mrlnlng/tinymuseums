@@ -41,7 +41,7 @@ Amplify Hosting builds from `amplify.yml`:
   builds the web app. A failed schema step stops the build, leaving the previous release live.
 
 Branch variables: `DATABASE_URL`, `SESSION_SECRET`, `PUBLIC_BASE_URL`, `MEDIA_BASE_URL`,
-`STORAGE_DRIVER`, `S3_BUCKET`, `AWS_REGION`, `MAIL_TRANSPORT`, `EPOCH_INTERVAL_MINUTES`,
+`STORAGE_DRIVER`, `S3_BUCKET`, `AWS_REGION`, `MAIL_TRANSPORT`,
 `HALL_OWNER_EMAIL`.
 
 ## Known gaps

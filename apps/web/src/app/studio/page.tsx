@@ -62,7 +62,7 @@ export default async function StudioHome({
               </button>
             </form>
             <p className="small muted flush">
-              Taking down is immediate — it does not wait for the next rotation.
+              Taking down is immediate.
             </p>
           </>
         ) : (

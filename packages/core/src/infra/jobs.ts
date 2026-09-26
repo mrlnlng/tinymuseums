@@ -11,16 +11,11 @@ export interface Job {
 
 const MAX_ATTEMPTS = 5
 
-export async function enqueue(
-  kind: JobKind,
-  payload: Record<string, unknown> = {},
-  runAfter?: Date,
-): Promise<void> {
-  await query(
-    `insert into jobs (kind, payload, run_after)
-     values ($1, $2::jsonb, coalesce($3, now()))`,
-    [kind, JSON.stringify(payload), runAfter ?? null],
-  )
+export async function enqueue(kind: JobKind, payload: Record<string, unknown> = {}): Promise<void> {
+  await query(`insert into jobs (kind, payload) values ($1, $2::jsonb)`, [
+    kind,
+    JSON.stringify(payload),
+  ])
 }
 
 export async function claim(): Promise<Job | null> {

@@ -1,12 +1,5 @@
-import {
-  claim,
-  complete,
-  env,
-  fail,
-  hasPendingJob,
-  requeueStale,
-} from '@tiny/core'
-import { repairUnframed, runJob, scheduleNextSeal } from '@tiny/core/worker'
+import { claim, complete, fail, hasPendingJob, requeueStale } from '@tiny/core'
+import { repairUnframed, runJob } from '@tiny/core/worker'
 
 const TIME_BUDGET_MS = 105_000
 
@@ -14,11 +7,6 @@ export interface DrainResult {
   processed: number
   failed: number
   drained: boolean
-}
-
-async function keepRotating(): Promise<void> {
-  if (await hasPendingJob('seal_epoch')) return
-  await scheduleNextSeal(env.epochIntervalMinutes)
 }
 
 // enqueue does not deduplicate, so repairs wait until the previous round has drained.
@@ -36,7 +24,6 @@ export async function handler(): Promise<DrainResult> {
   let failed = 0
 
   await requeueStale()
-  await keepRotating()
   await repairFrames()
 
   while (Date.now() < deadline) {

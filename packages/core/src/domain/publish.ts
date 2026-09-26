@@ -108,6 +108,7 @@ export async function unpublishArtist(artistId: string): Promise<void> {
      on conflict (subject_type, subject_id) do nothing`,
     [artistId],
   )
+  await enqueue('seal_epoch', { reason: 'unpublish', artistId })
 }
 
 export async function republishArtist(artistId: string): Promise<void> {

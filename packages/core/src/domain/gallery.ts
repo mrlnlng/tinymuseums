@@ -146,13 +146,17 @@ export async function deletePiece(artistId: string, pieceId: string): Promise<vo
     asset_id: string | null
     flattened_key: string | null
     sketch_key: string | null
+    order_index: number
   }>(
-    `select asset_id, flattened_key, sketch_key from pieces where id = $1 and artist_id = $2`,
+    `select asset_id, flattened_key, sketch_key, order_index from pieces where id = $1 and artist_id = $2`,
     [pieceId, artistId],
   )
   if (!piece) return
 
   await query(`delete from pieces where id = $1 and artist_id = $2`, [pieceId, artistId])
+  if (piece.order_index >= 1 && piece.order_index <= MAX_STANDS) {
+    await enqueue('seal_epoch', { reason: 'rearranged' })
+  }
 
   const storage = getStorage()
   if (piece.flattened_key) {

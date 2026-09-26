@@ -29,6 +29,9 @@ export default async function GalleryPage({
       <p className="muted lead">
         Upload your works — each one hangs on its own stand in the museum, up to 30.
       </p>
+      <p className="small muted lead">
+        Changes to your works take a few minutes to appear in the museum.
+      </p>
 
       <Message m={m} k={k} />
 

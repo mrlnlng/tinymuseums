@@ -25,23 +25,6 @@ export default function MuseumPage() {
 async function Hall() {
   const slice = await firstSlice(FIRST_SLICE)
 
-  if (slice.slots.length === 0) {
-    return (
-      <main className="page">
-        <h1 className="script page-title lg">{BRAND} is empty</h1>
-        <p>
-          Nothing has been hung yet. The first artist to clear the publish bar gets the
-          entrance to themselves.
-        </p>
-        <p>
-          <Link className="button" href="/studio/register">
-            Claim a wall
-          </Link>
-        </p>
-      </main>
-    )
-  }
-
   return (
     <>
       <Museum initialSlice={slice} />

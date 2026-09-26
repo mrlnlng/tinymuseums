@@ -10,10 +10,9 @@ export interface EpochRow {
   seed: number
   display_count: number
   sealed_at: Date
-  expires_at: Date
 }
 
-export async function sealEpoch(): Promise<EpochRow | null> {
+export async function sealEpoch(): Promise<EpochRow> {
   const candidates = await query<{ id: string }>(
     `select p.id
        from pieces p
@@ -26,19 +25,15 @@ export async function sealEpoch(): Promise<EpochRow | null> {
     env.hallOwnerEmail ? [MAX_STANDS, env.hallOwnerEmail] : [MAX_STANDS],
   )
 
-  if (candidates.length === 0) return null
-
   const seed = Math.floor(Math.random() * 0x7fffffff)
   const order = candidates.map((row) => row.id)
 
-  const graceMinutes = Math.max(env.epochIntervalMinutes * 3, 30)
-
   return transaction(async (client) => {
     const { rows } = await client.query<EpochRow>(
-      `insert into museum_epochs (seed, display_count, expires_at)
-       values ($1, $2, now() + ($3 || ' minutes')::interval)
-       returning id, seed, display_count, sealed_at, expires_at`,
-      [seed, order.length, String(graceMinutes)],
+      `insert into museum_epochs (seed, display_count)
+       values ($1, $2)
+       returning id, seed, display_count, sealed_at`,
+      [seed, order.length],
     )
     const epoch = rows[0]
 
@@ -55,9 +50,8 @@ export async function sealEpoch(): Promise<EpochRow | null> {
 
 async function currentEpoch(): Promise<EpochRow | null> {
   return queryOne<EpochRow>(
-    `select id, seed, display_count, sealed_at, expires_at
+    `select id, seed, display_count, sealed_at
        from museum_epochs
-      where expires_at > now()
       order by id desc
       limit 1`,
   )
@@ -65,19 +59,20 @@ async function currentEpoch(): Promise<EpochRow | null> {
 
 export async function epochById(id: number): Promise<EpochRow | null> {
   return queryOne<EpochRow>(
-    `select id, seed, display_count, sealed_at, expires_at
+    `select id, seed, display_count, sealed_at
        from museum_epochs
-      where id = $1 and expires_at > now()`,
+      where id = $1`,
     [id],
   )
 }
 
-export async function ensureEpoch(): Promise<EpochRow | null> {
+export async function ensureEpoch(): Promise<EpochRow> {
   return (await currentEpoch()) ?? (await sealEpoch())
 }
 
 interface SliceRow {
   index: number
+  total: number
   artist_id: string
   slug: string
   display_name: string
@@ -99,37 +94,41 @@ export async function getHallSlice(
   const storage = getStorage()
 
   const rows = await query<SliceRow>(
-    `select s.index,
-            a.id            as artist_id,
-            a.slug,
-            a.display_name,
-            a.statement,
-            p.id            as piece_id,
-            p.title,
-            p.description,
-            p.flattened_key,
-            p.flattened_width,
-            p.flattened_height,
-            p.flattened_version
-       from epoch_slots s
-       join pieces   p on p.id = s.piece_id
-       join artists  a on a.id = p.artist_id
-      where s.epoch_id = $1
-        and s.index >= $2
-        and a.status = 'live'
-        and p.flattened_key is not null
-        -- Read-time takedown. Outside the epoch snapshot on purpose.
-        and not exists (
-          select 1 from suppressions sup
-           where (sup.subject_type = 'artist' and sup.subject_id = a.id)
-              or (sup.subject_type = 'piece'  and sup.subject_id = p.id)
-        )
-      order by s.index
+    `with visible as (
+       select (row_number() over (order by s.index) - 1)::int as index,
+              count(*) over ()::int as total,
+              a.id            as artist_id,
+              a.slug,
+              a.display_name,
+              a.statement,
+              p.id            as piece_id,
+              p.title,
+              p.description,
+              p.flattened_key,
+              p.flattened_width,
+              p.flattened_height,
+              p.flattened_version
+         from epoch_slots s
+         join pieces   p on p.id = s.piece_id
+         join artists  a on a.id = p.artist_id
+        where s.epoch_id = $1
+          and a.status = 'live'
+          and p.flattened_key is not null
+          -- Read-time takedown. Outside the epoch snapshot on purpose.
+          and not exists (
+            select 1 from suppressions sup
+             where (sup.subject_type = 'artist' and sup.subject_id = a.id)
+                or (sup.subject_type = 'piece'  and sup.subject_id = p.id)
+          )
+     )
+     select * from visible
+      where index >= $2
+      order by index
       limit $3`,
     [epoch.id, fromIndex, limit],
   )
 
-  const totalSlots = epoch.display_count
+  const totalSlots = rows[0]?.total ?? fromIndex
 
   const slots = rows.map((row) => {
     const display: HallPieceDto = {

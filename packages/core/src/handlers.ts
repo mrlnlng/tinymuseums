@@ -64,15 +64,18 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
   if (rows.length === 0) return
 
   const storage = getStorage()
+  let framed = false
 
   for (const row of rows) {
-    await renderPieceFrame(row, storage)
+    if (await renderPieceFrame(row, storage)) framed = true
     await renderPieceSketch(row, storage)
   }
+
+  if (framed) await enqueue('seal_epoch', { reason: 'framed', artistId })
 }
 
-async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise<void> {
-  if (row.flattened_key && row.flattened_version === FRAME_VERSION) return
+async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise<boolean> {
+  if (row.flattened_key && row.flattened_version === FRAME_VERSION) return false
 
   const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
   const output = await renderSinglePieceFrame({
@@ -98,6 +101,7 @@ async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise
     await storage.remove(stale).catch(() => {})
     await storage.remove(frameAvifKey(stale)).catch(() => {})
   }
+  return true
 }
 
 async function renderPieceSketch(row: DisplayPieceRow, storage: Storage): Promise<void> {
@@ -162,11 +166,6 @@ export async function runJob(job: Job): Promise<void> {
     default:
       throw new Error(`Unknown job kind: ${job.kind}`)
   }
-}
-
-export async function scheduleNextSeal(intervalMinutes: number): Promise<void> {
-  const runAfter = new Date(Date.now() + intervalMinutes * 60 * 1000)
-  await enqueue('seal_epoch', { reason: 'scheduled' }, runAfter)
 }
 
 export async function repairUnframed(): Promise<number> {

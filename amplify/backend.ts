@@ -99,7 +99,6 @@ const worker = new NodejsFunction(stack, 'Worker', {
     MEDIA_BASE_URL: setting('MEDIA_BASE_URL', ''),
     PUBLIC_BASE_URL: setting('PUBLIC_BASE_URL', ''),
     MAIL_TRANSPORT: setting('MAIL_TRANSPORT', 'console'),
-    EPOCH_INTERVAL_MINUTES: setting('EPOCH_INTERVAL_MINUTES', '60'),
     HALL_OWNER_EMAIL: setting('HALL_OWNER_EMAIL', ''),
     NODE_OPTIONS: '--enable-source-maps',
   },

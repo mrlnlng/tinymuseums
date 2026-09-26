@@ -18,5 +18,4 @@ export {
   handleSealEpoch,
   repairUnframed,
   runJob,
-  scheduleNextSeal,
 } from './handlers.ts'

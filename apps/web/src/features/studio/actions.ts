@@ -165,7 +165,7 @@ export async function publishAction(): Promise<void> {
 
   await republishArtist(artist.id)
   revalidatePath('/studio')
-  back('/studio', 'Published. You will appear in the hall at the next rotation.')
+  back('/studio', 'Published. You will appear in the hall in a few minutes.')
 }
 
 export async function unpublishAction(): Promise<void> {

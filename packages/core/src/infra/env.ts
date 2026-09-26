@@ -117,10 +117,6 @@ export const env = {
     return setting('MAIL_TRANSPORT', 'console') as 'console' | 'file'
   },
 
-  get epochIntervalMinutes(): number {
-    return Number(setting('EPOCH_INTERVAL_MINUTES', '60'))
-  },
-
   get hallOwnerEmail(): string {
     return setting('HALL_OWNER_EMAIL', '')
   },

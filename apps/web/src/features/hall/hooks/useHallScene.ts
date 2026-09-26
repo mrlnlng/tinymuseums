@@ -290,8 +290,9 @@ export function useHallScene({
       let pressX = 0
       let pressY = 0
       let pressedAt = 0
+      let isTap = false
 
-      function aim(event: PointerEvent): void {
+      function aim(event: MouseEvent): void {
         const rect = renderer.domElement.getBoundingClientRect()
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
         pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
@@ -299,6 +300,7 @@ export function useHallScene({
       }
 
       function handlePointerDown(event: PointerEvent): void {
+        isTap = false
         soundRef.current.prepare('jump')
         pressX = event.clientX
         pressY = event.clientY
@@ -314,7 +316,15 @@ export function useHallScene({
         const moved = Math.hypot(event.clientX - pressX, event.clientY - pressY)
         const slop = event.pointerType === 'touch' ? TAP_SLOP_PX.touch : TAP_SLOP_PX.mouse
         const tooSlow = performance.now() - pressedAt > TAP_TIMEOUT_MS
-        if (moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro) return
+        isTap = !(moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro)
+      }
+
+      // Taps act on click, not pointerup: on touch screens the browser's click lands on
+      // whatever is under the finger afterwards, so an overlay opened on pointerup would
+      // receive that click on its close-on-tap scrim and shut straight away.
+      function handleClick(event: MouseEvent): void {
+        if (!isTap) return
+        isTap = false
 
         aim(event)
 
@@ -384,6 +394,7 @@ export function useHallScene({
 
       renderer.domElement.addEventListener('pointerdown', handlePointerDown)
       renderer.domElement.addEventListener('pointerup', handlePointerUp)
+      renderer.domElement.addEventListener('click', handleClick)
 
       const viewedDisplays = new Set<number>()
       const VIEW_CHECK_MS = 250
@@ -496,6 +507,7 @@ export function useHallScene({
         resizeObserver.disconnect()
         renderer.domElement.removeEventListener('pointerdown', handlePointerDown)
         renderer.domElement.removeEventListener('pointerup', handlePointerUp)
+        renderer.domElement.removeEventListener('click', handleClick)
         placards.clear()
         lobbySigns.clear()
         giftShopSigns?.clear()

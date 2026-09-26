@@ -44,7 +44,11 @@ export class Traversal {
       this.lastPointerX = e.clientX
       this.dragVelocity = 0
       this.velocity = 0
-      element.setPointerCapture(e.pointerId)
+      try {
+        element.setPointerCapture(e.pointerId)
+      } catch {
+        // The pointer can already be gone by the time pointerdown is handled.
+      }
     })
 
     element.addEventListener('pointermove', (e) => {

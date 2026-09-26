@@ -45,6 +45,7 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const [isHintShown, setIsHintShown] = useState(false)
   const [sketchGame, setSketchGame] = useState<PreparedGame | null>(null)
   const [isSketchOpen, setIsSketchOpen] = useState(false)
+  const [sketchSession, setSketchSession] = useState(0)
   const hideHint = useCallback(() => setIsHintShown(false), [])
 
   useEffect(() => {
@@ -75,7 +76,10 @@ export default function Museum({ initialSlice }: MuseumProps) {
     onGuestBoardHung: () => setIsGuestBoardHung(true),
     onIntroDone: () => setIsHintShown(claimSwipeHint()),
     onFirstMove: hideHint,
-    onOpenSketchGame: () => setIsSketchOpen(true),
+    onOpenSketchGame: () => {
+      setSketchSession((n) => n + 1)
+      setIsSketchOpen(true)
+    },
   })
 
   useEffect(() => {
@@ -147,7 +151,7 @@ export default function Museum({ initialSlice }: MuseumProps) {
         <AnimatePresence>
           {isSketchOpen ? (
             <SketchGuess
-              key="sketch-guess"
+              key={`sketch-guess-${sketchSession}`}
               epochId={initialSlice.epochId}
               prepared={sketchGame}
               onClose={closeSketchGuess}

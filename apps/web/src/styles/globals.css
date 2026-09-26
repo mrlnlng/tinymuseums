@@ -1793,7 +1793,57 @@ code.token {
   font-size: 14px;
 }
 
-.sketchbook-round { flex: 1; letter-spacing: 0.03em; }
+.sketchbook-round { flex: 1; padding-left: 66px; letter-spacing: 0.03em; white-space: nowrap; }
+
+.sketchbook-streak {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: var(--ink);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.sketchbook-streak.is-bonus { background: #f2b233; box-shadow: 0 0 0 3px rgb(242 178 51 / 30%); }
+
+.sketchbook-bonus { color: #e39a12; font-size: 13px; }
+
+.bunny-artist {
+  position: absolute;
+  top: -54px;
+  left: 4px;
+  z-index: 1;
+  width: 70px;
+  transform-origin: 50% 90%;
+  pointer-events: none;
+}
+.bunny-artist img { display: block; width: 100%; height: auto; }
+
+.bunny-artist-pencil {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  width: 30px;
+  rotate: -35deg;
+}
+
+.sketchbook-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  pointer-events: none;
+}
+.sketchbook-burst span {
+  position: absolute;
+  margin: -10px 0 0 -8px;
+  color: #f2b233;
+  font-size: 20px;
+  text-shadow: 0 1px 0 rgb(109 64 46 / 30%);
+}
 
 .sketchbook-stars { color: rgb(139 86 65 / 30%); letter-spacing: 1px; }
 .sketchbook-stars .is-lit { color: #f2b233; }
@@ -1851,6 +1901,72 @@ code.token {
   text-align: center;
   font-size: 15px;
 }
+
+.sketchbook-levels {
+  width: 100%;
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.sketchbook-level {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 2px solid rgb(139 86 65 / 22%);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.sketchbook-level:hover { border-color: var(--pink-deep); }
+.sketchbook-level.is-last { border-color: var(--pink); background: #fff6f8; }
+
+.sketchbook-level-name {
+  font-family: var(--font-button);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sketchbook-level-hint {
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+}
+
+.sketchbook-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: -2px;
+}
+
+.sketchbook-worth {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.sketchbook-more {
+  padding: 6px 14px;
+  border: 2px solid var(--plaque);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sketchbook-more:hover { border-color: var(--pink-deep); }
 
 .sketchbook-choices {
   display: grid;

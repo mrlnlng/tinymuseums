@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
+import { CONFIG } from './config'
 
 export interface Backdrop {
   dispose(): void
@@ -9,9 +10,14 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, hallLength: n
   const span = hallLength + 120
   const centerX = hallLength / 2
 
+  const wallTexture = assets.textures.wallpaper.clone()
+  wallTexture.wrapS = THREE.RepeatWrapping
+  wallTexture.repeat.set(span / CONFIG.wallpaper.stripePairWidth, 1)
+  wallTexture.needsUpdate = true
+
   const wall = new THREE.Mesh(
     new THREE.PlaneGeometry(span, 30),
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(assets.manifest.room.wallColor) }),
+    new THREE.MeshBasicMaterial({ map: wallTexture }),
   )
   wall.position.set(centerX, 15, -0.5)
   scene.add(wall)

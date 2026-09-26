@@ -25,6 +25,7 @@ const ENTRANCE_FILES = {
   rope: 'rope.png',
   plaque: 'plaque.png',
   floor: 'floor.png',
+  wallpaper: 'wallpaper.png',
   door: 'door.png',
   helpCenter: 'help-center.png',
   musicNotes: 'music-notes.svg',

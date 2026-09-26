@@ -5,6 +5,8 @@ export const CONFIG = {
     floorTopRatio: 0.7766,
   },
 
+  wallpaper: { stripePairWidth: 0.62 },
+
   displayBottomY: 0.608,
   displayTitleGap: 0.07,
 

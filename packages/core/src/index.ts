@@ -48,6 +48,7 @@ export {
 export {
   GuestNoteRateLimited,
   GuestNoteRejected,
+  hideGuestNote,
   listGuestNotes,
   postGuestNote,
 } from './domain/guestboard.ts'

@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { artistForSession, type AuthedArtist } from '@tiny/core'
+import { artistForSession, env, type AuthedArtist } from '@tiny/core'
 
 export const SESSION_COOKIE = 'tm_session'
 
@@ -12,6 +12,17 @@ export async function currentArtist(): Promise<AuthedArtist | null> {
 export async function requireArtist(): Promise<AuthedArtist> {
   const artist = await currentArtist()
   if (!artist) redirect('/studio/sign-in')
+  return artist
+}
+
+export function isHallOwner(artist: AuthedArtist): boolean {
+  const owner = env.hallOwnerEmail.trim().toLowerCase()
+  return owner !== '' && artist.email.toLowerCase() === owner
+}
+
+export async function requireHallOwner(): Promise<AuthedArtist> {
+  const artist = await requireArtist()
+  if (!isHallOwner(artist)) redirect('/studio')
   return artist
 }
 

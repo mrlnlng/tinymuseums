@@ -9,6 +9,7 @@ import {
   destroySession,
   ensureQrToken,
   hashPassword,
+  hideGuestNote,
   hangPiece,
   hitForVisitor,
   movePiece,
@@ -23,7 +24,13 @@ import {
   verifyPassword,
 } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
-import { clearSessionCookie, requireArtist, setSessionCookie, SESSION_COOKIE } from '@/shared/lib/session'
+import {
+  clearSessionCookie,
+  requireArtist,
+  requireHallOwner,
+  setSessionCookie,
+  SESSION_COOKIE,
+} from '@/shared/lib/session'
 import { isEmail, isHttpUrl } from '@/shared/lib/validate'
 
 function back(path: string, message: string, kind: 'ok' | 'bad' = 'ok'): never {
@@ -189,4 +196,11 @@ export async function deleteCodeAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   await revokeQrToken(artist.id, String(formData.get('token') ?? ''))
   revalidatePath('/studio/gallery')
+}
+
+export async function deleteGuestNoteAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  await hideGuestNote(String(formData.get('id') ?? ''))
+  revalidatePath('/studio/guestboard')
+  back('/studio/guestboard', 'Note deleted')
 }

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { BRAND } from '@tiny/core'
-import { currentArtist } from '@/shared/lib/session'
+import { currentArtist, isHallOwner } from '@/shared/lib/session'
 import { signOutAction } from '@/features/studio/actions'
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,7 @@ export default async function StudioLayout({ children }: { children: React.React
             <Link href="/studio">Wall</Link>
             <Link href="/studio/gallery">Gallery</Link>
             <Link href="/studio/analytics">Visitors</Link>
+            {isHallOwner(artist) ? <Link href="/studio/guestboard">Guest board</Link> : null}
             <Link href={`/a/${artist.slug}`}>View</Link>
             <form action={signOutAction}>
               <button type="submit" className="nav-button">

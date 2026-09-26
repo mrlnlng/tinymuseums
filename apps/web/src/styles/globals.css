@@ -209,6 +209,10 @@ h1, h2, h3 { text-wrap: balance; }
 .piece-fields { flex: 1; min-width: 0; }
 .piece-remove { margin-top: 10px; }
 
+.guest-note-row { display: flex; gap: 16px; align-items: flex-start; }
+.guest-note-meta { margin-top: 0; margin-bottom: 6px; }
+.guest-note-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+
 .stat-value { font-size: 30px; font-weight: 800; }
 .stat-section { font-size: 18px; margin-top: 28px; }
 

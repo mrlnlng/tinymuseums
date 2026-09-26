@@ -140,3 +140,8 @@ async function enforceLimits(ip: string | null): Promise<void> {
   const board = await hit('guestboard:all', WHOLE_BOARD)
   if (!board.allowed) throw new GuestNoteRateLimited(board.retryAfterSeconds)
 }
+
+export async function hideGuestNote(id: string): Promise<void> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return
+  await query(`update guest_notes set hidden_at = now() where id = $1 and hidden_at is null`, [id])
+}

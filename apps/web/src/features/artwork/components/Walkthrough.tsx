@@ -5,6 +5,7 @@ import { motion, AnimatePresence, type Variants } from 'motion/react'
 import type { PieceDto } from '@tiny/core'
 import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 
 interface Props {
   slug: string
@@ -54,16 +55,14 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
   useEffect(() => {
     let cancelled = false
-    void (async () => {
-      const response = await fetch(`/api/artists/${slug}/pieces`)
-      if (!response.ok || cancelled) return
-      const data = (await response.json()) as { pieces: PieceDto[] }
-      const ordered = [...data.pieces].sort((a, b) => a.orderIndex - b.orderIndex)
-      if (cancelled) return
-      setPieces(ordered)
-      const found = ordered.findIndex((p) => p.id === initialPieceId)
-      setIndex(found >= 0 ? found : 0)
-    })()
+    loadArtistPieces(slug)
+      .then((ordered) => {
+        if (cancelled) return
+        setPieces(ordered)
+        const found = ordered.findIndex((p) => p.id === initialPieceId)
+        setIndex(found >= 0 ? found : 0)
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }

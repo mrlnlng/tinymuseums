@@ -6,7 +6,7 @@ import { GUEST_NOTE_COLORS } from '@tiny/core/guestboard'
 import BoardScreen from '@/features/guestboard/components/BoardScreen'
 import ComposeScreen from '@/features/guestboard/components/ComposeScreen'
 import ReadScreen from '@/features/guestboard/components/ReadScreen'
-import { useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
+import { PostRejected, useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 
 type View = { screen: 'board' } | { screen: 'compose' } | { screen: 'read'; index: number }
 
@@ -23,6 +23,7 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
   const { notes, hasMore, loadMore, post } = useGuestNotes()
   const [view, setView] = useState<View>({ screen: 'board' })
   const [draft, setDraft] = useState<NoteDraft>(blankDraft)
+  const [publishError, setPublishError] = useState<string | null>(null)
 
   const toBoard = useCallback(() => setView({ screen: 'board' }), [])
 
@@ -37,9 +38,19 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
   }, [view.screen, onClose, toBoard])
 
   const publish = useCallback(async () => {
-    await post(draft)
-    setDraft(blankDraft())
+    setPublishError(null)
     toBoard()
+    try {
+      await post(draft)
+      setDraft(blankDraft())
+    } catch (postError) {
+      setPublishError(
+        postError instanceof PostRejected
+          ? postError.message
+          : 'Your note could not be pinned up. Check your connection and try again.',
+      )
+      setView({ screen: 'compose' })
+    }
   }, [draft, post, toBoard])
 
   return (
@@ -70,7 +81,13 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
               onOpenNote={(index) => setView({ screen: 'read', index })}
             />
           ) : view.screen === 'compose' ? (
-            <ComposeScreen draft={draft} onChange={setDraft} onPublish={publish} onBack={toBoard} />
+            <ComposeScreen
+              draft={draft}
+              error={publishError}
+              onChange={setDraft}
+              onPublish={publish}
+              onBack={toBoard}
+            />
           ) : (
             <ReadScreen
               notes={notes}

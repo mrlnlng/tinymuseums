@@ -12,7 +12,9 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
+import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { createLobby } from '@/features/hall/scene/lobby'
+import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
@@ -32,6 +34,7 @@ const BACKDROP_LENGTH = 600
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
 const SCENERY_MAX_WAIT_MS = 5000
+const QUIET_AFTER_SECONDS = 2
 
 const VIEWED_WITHIN_UNITS = 3.0
 
@@ -142,7 +145,7 @@ export function useHallScene({
       if (isDisposed) return
 
       const renderer = new THREE.WebGLRenderer({ antialias: false })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      const pixelRatio = createPixelRatioGovernor(renderer, window.devicePixelRatio)
       renderer.setClearColor(new THREE.Color(assets.manifest.room.wallColor))
       renderer.domElement.className = 'hall-canvas'
       canvasHost.appendChild(renderer.domElement)
@@ -152,6 +155,7 @@ export function useHallScene({
       const lobby = createLobby(scene, assets)
       const hall = new HallScene(scene, assets)
       hall.ingestSlice(initialSlice)
+      hall.onTextureReady = (texture) => renderer.initTexture(texture)
 
       const character = createCharacter(assets, characterHost)
       const placards = new Placards(overlayHost)
@@ -286,11 +290,23 @@ export function useHallScene({
       let pressY = 0
       let pressedAt = 0
 
+      function aim(event: PointerEvent): void {
+        const rect = renderer.domElement.getBoundingClientRect()
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+        raycaster.setFromCamera(pointer, rig.camera)
+      }
+
       function handlePointerDown(event: PointerEvent): void {
         soundRef.current.prepare('jump')
         pressX = event.clientX
         pressY = event.clientY
         pressedAt = performance.now()
+
+        if (isSuspendedRef.current || traversal.isIntro) return
+        aim(event)
+        const hit = hall.hitTest(raycaster)
+        if (hit) loadArtistPieces(hit.mounted.display.slug).catch(() => {})
       }
 
       function handlePointerUp(event: PointerEvent): void {
@@ -299,10 +315,7 @@ export function useHallScene({
         const tooSlow = performance.now() - pressedAt > TAP_TIMEOUT_MS
         if (moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro) return
 
-        const rect = renderer.domElement.getBoundingClientRect()
-        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-        raycaster.setFromCamera(pointer, rig.camera)
+        aim(event)
 
         if (lobby.hitTestDoor(raycaster)) {
           soundRef.current.play('click')
@@ -397,12 +410,14 @@ export function useHallScene({
       }
 
       let frameHandle = 0
+      let frameCount = 0
       let lastFrameAt = performance.now()
       let restX: number | null = null
       let hasMoved = false
 
       function renderFrame(now: number): void {
         frameHandle = requestAnimationFrame(renderFrame)
+        pixelRatio.sample(now - lastFrameAt)
         const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
         lastFrameAt = now
 
@@ -450,6 +465,9 @@ export function useHallScene({
           recordDisplayView(traversal.cameraX)
         }
 
+        const quiet = isSuspendedRef.current || traversal.idleSeconds > QUIET_AFTER_SECONDS
+        frameCount += 1
+        if (quiet && frameCount % 2 === 1) return
         renderer.render(scene, rig.camera)
       }
 

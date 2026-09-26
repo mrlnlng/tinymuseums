@@ -1,40 +1,27 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '@tiny/core/guestboard'
 import StickyNote from '@/features/guestboard/components/StickyNote'
 import { useKeyboardLift } from '@/features/guestboard/hooks/useKeyboardLift'
-import { PostRejected, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
+import type { NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 
 interface ComposeScreenProps {
   draft: NoteDraft
+  error: string | null
   onChange: (draft: NoteDraft) => void
-  onPublish: () => Promise<void>
+  onPublish: () => void
   onBack: () => void
 }
 
-export default function ComposeScreen({ draft, onChange, onPublish, onBack }: ComposeScreenProps) {
-  const [isPosting, setIsPosting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export default function ComposeScreen({ draft, error, onChange, onPublish, onBack }: ComposeScreenProps) {
   const stageRef = useRef<HTMLFormElement>(null)
 
   useKeyboardLift(stageRef)
 
-  const canPublish = draft.message.trim() !== '' && draft.name.trim() !== '' && !isPosting
+  const canPublish = draft.message.trim() !== '' && draft.name.trim() !== ''
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!canPublish) return
-    setIsPosting(true)
-    setError(null)
-    try {
-      await onPublish()
-    } catch (postError) {
-      setError(
-        postError instanceof PostRejected
-          ? postError.message
-          : 'Your note could not be pinned up. Check your connection and try again.',
-      )
-      setIsPosting(false)
-    }
+    if (canPublish) onPublish()
   }
 
   return (
@@ -90,7 +77,6 @@ export default function ComposeScreen({ draft, onChange, onPublish, onBack }: Co
           type="submit"
           className="guestboard-button guestboard-button--foot"
           disabled={!canPublish}
-          aria-busy={isPosting}
         >
           Publish
         </button>

@@ -58,6 +58,7 @@ export class HallScene {
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
   private inFlight = 0
+  onTextureReady: ((texture: THREE.Texture) => void) | null = null
   private pedestals = new Map<number, Pedestal>()
   private mountedList: MountedDisplay[] = []
   private bareHelmStand: number | null = null
@@ -113,6 +114,7 @@ export class HallScene {
   update(now: number, dt: number, cameraX: number): void {
     const { mountRadiusUnits, loadRadiusUnits } = CONFIG.virtualization
     const wanted: { slot: SlotRuntime; distance: number }[] = []
+    let mountedThisFrame = false
 
     for (const slot of this.slots.values()) {
       const centerX = this.layout.centerX[slot.index]
@@ -148,7 +150,10 @@ export class HallScene {
       if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
         const arrivedAt = slot.inRangeAt ?? now
         const earliest = arrivedAt + CONFIG.statue.minDwellMs
-        if (now >= Math.max(slot.readyAt ?? now, earliest)) this.mount(slot)
+        if (!mountedThisFrame && now >= Math.max(slot.readyAt ?? now, earliest)) {
+          this.mount(slot)
+          mountedThisFrame = true
+        }
       }
     }
 
@@ -173,6 +178,7 @@ export class HallScene {
         this.inFlight -= 1
       })
       .then((texture) => {
+        this.onTextureReady?.(texture)
         slot.texture = texture
         slot.status = 'ready'
         slot.readyAt = performance.now()

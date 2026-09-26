@@ -47,26 +47,40 @@ export function useGuestNotes({ enabled = true, live = true }: Options = {}) {
 
   const post = useCallback(
     async (draft: NoteDraft): Promise<GuestNoteDto> => {
-      const response = await fetch('/api/guestboard', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(draft),
-      })
-      const body = (await response.json().catch(() => ({}))) as { note?: GuestNoteDto; error?: string }
-      if (!response.ok || !body.note) {
-        throw new PostRejected(body.error ?? 'Your note could not be pinned up. Try again?')
+      const pinned = (pages: GuestNotePageDto[] | undefined, note: GuestNoteDto): GuestNotePageDto[] => {
+        if (!pages?.length) return [{ notes: [note], nextCursor: null }]
+        const [first, ...rest] = pages
+        return [{ ...first, notes: [note, ...first.notes] }, ...rest]
+      }
+      const pending: GuestNoteDto = {
+        id: `pending-${Date.now()}`,
+        name: draft.name.trim(),
+        message: draft.message.trim(),
+        color: draft.color,
+        createdAt: new Date().toISOString(),
       }
 
-      const note = body.note
-      await mutate(
-        (pages) => {
-          if (!pages?.length) return [{ notes: [note], nextCursor: null }]
-          const [first, ...rest] = pages
-          return [{ ...first, notes: [note, ...first.notes] }, ...rest]
-        },
-        { revalidate: false },
-      )
-      return note
+      const withoutPending = (pages: GuestNotePageDto[] | undefined) =>
+        pages?.map((page) => ({ ...page, notes: page.notes.filter((note) => note.id !== pending.id) }))
+
+      await mutate((pages) => pinned(pages, pending), { revalidate: false })
+      try {
+        const response = await fetch('/api/guestboard', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(draft),
+        })
+        const body = (await response.json().catch(() => ({}))) as { note?: GuestNoteDto; error?: string }
+        if (!response.ok || !body.note) {
+          throw new PostRejected(body.error ?? 'Your note could not be pinned up. Try again?')
+        }
+        const saved = body.note
+        await mutate((pages) => pinned(withoutPending(pages), saved), { revalidate: false })
+        return saved
+      } catch (error) {
+        await mutate((pages) => withoutPending(pages), { revalidate: false })
+        throw error
+      }
     },
     [mutate],
   )

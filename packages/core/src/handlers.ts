@@ -4,7 +4,8 @@ import { sealEpoch } from './domain/epoch.ts'
 import { ImageRejected, generateDerivatives } from './media/images.ts'
 import { enqueue, type Job } from './infra/jobs.ts'
 import { getMailer, newWorkNotice } from './infra/mail.ts'
-import { pieceFrameKey, getStorage } from './media/storage.ts'
+import { SKETCH_VERSION, renderSketch } from './media/sketch.ts'
+import { pieceFrameKey, pieceSketchKey, getStorage, type Storage } from './media/storage.ts'
 import { confirmedFollowers } from './domain/audience.ts'
 import { MAX_STANDS } from './domain/gallery.ts'
 import type { Derivative } from './types.ts'
@@ -37,17 +38,22 @@ export async function handleDerivatives(assetId: string): Promise<void> {
   }
 }
 
+interface DisplayPieceRow {
+  piece_id: string
+  width: number
+  height: number
+  derivatives: Derivative[] | null
+  flattened_key: string | null
+  flattened_version: number
+  sketch_key: string | null
+  sketch_version: number
+}
+
 export async function handleRenderDisplay(artistId: string): Promise<void> {
-  const rows = await query<{
-    piece_id: string
-    width: number
-    height: number
-    derivatives: Derivative[] | null
-    flattened_key: string | null
-    flattened_version: number
-  }>(
+  const rows = await query<DisplayPieceRow>(
     `select p.id as piece_id, a.width, a.height, a.derivatives,
-            p.flattened_key, p.flattened_version
+            p.flattened_key, p.flattened_version,
+            p.sketch_key, p.sketch_version
        from pieces p
        join assets a on a.id = p.asset_id
       where p.artist_id = $1
@@ -60,29 +66,54 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
   const storage = getStorage()
 
   for (const row of rows) {
-    if (row.flattened_key && row.flattened_version === FRAME_VERSION) continue
-
-    const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
-    const output = await renderSinglePieceFrame({
-      aspect,
-      derivatives: row.derivatives ?? [],
-      storage,
-    })
-    const key = pieceFrameKey(row.piece_id, FRAME_VERSION, FRAME_FORMAT.extension)
-    await storage.put(key, output.buffer, FRAME_FORMAT.contentType)
-    // Point the row at the new object before removing the old one: an orphaned file is harmless, a dangling key is not.
-    const stale = row.flattened_key
-    await query(
-      `update pieces
-          set flattened_key = $2,
-              flattened_width = $3,
-              flattened_height = $4,
-              flattened_version = $5
-        where id = $1`,
-      [row.piece_id, key, output.width, output.height, FRAME_VERSION],
-    )
-    if (stale && stale !== key) await storage.remove(stale).catch(() => {})
+    await renderPieceFrame(row, storage)
+    await renderPieceSketch(row, storage)
   }
+}
+
+async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise<void> {
+  if (row.flattened_key && row.flattened_version === FRAME_VERSION) return
+
+  const aspect = row.width > 0 && row.height > 0 ? row.width / row.height : 0.7
+  const output = await renderSinglePieceFrame({
+    aspect,
+    derivatives: row.derivatives ?? [],
+    storage,
+  })
+  const key = pieceFrameKey(row.piece_id, FRAME_VERSION, FRAME_FORMAT.extension)
+  await storage.put(key, output.buffer, FRAME_FORMAT.contentType)
+  // Point the row at the new object before removing the old one: an orphaned file is harmless, a dangling key is not.
+  const stale = row.flattened_key
+  await query(
+    `update pieces
+        set flattened_key = $2,
+            flattened_width = $3,
+            flattened_height = $4,
+            flattened_version = $5
+      where id = $1`,
+    [row.piece_id, key, output.width, output.height, FRAME_VERSION],
+  )
+  if (stale && stale !== key) await storage.remove(stale).catch(() => {})
+}
+
+async function renderPieceSketch(row: DisplayPieceRow, storage: Storage): Promise<void> {
+  if (row.sketch_key && row.sketch_version === SKETCH_VERSION) return
+
+  const output = await renderSketch(row.derivatives ?? [], storage)
+  if (!output) return
+
+  const key = pieceSketchKey(row.piece_id, SKETCH_VERSION)
+  await storage.put(key, output.buffer, 'image/png')
+  await query(
+    `update pieces
+        set sketch_key = $2,
+            sketch_width = $3,
+            sketch_height = $4,
+            sketch_version = $5
+      where id = $1`,
+    [row.piece_id, key, output.width, output.height, SKETCH_VERSION],
+  )
+  if (row.sketch_key && row.sketch_key !== key) await storage.remove(row.sketch_key).catch(() => {})
 }
 
 export async function handleSealEpoch(): Promise<void> {
@@ -140,9 +171,10 @@ export async function repairUnframed(): Promise<number> {
        from pieces p
        join assets a on a.id = p.asset_id
       where p.order_index between 1 and $1
-        and (p.flattened_key is null or p.flattened_version <> $2)
+        and (p.flattened_key is null or p.flattened_version <> $2
+             or p.sketch_key is null or p.sketch_version <> $3)
         and a.status = 'ready'`,
-    [MAX_STANDS, FRAME_VERSION],
+    [MAX_STANDS, FRAME_VERSION, SKETCH_VERSION],
   )
   for (const row of rows) await enqueue('render_display', { artistId: row.artist_id })
   return rows.length

@@ -142,8 +142,12 @@ export async function unhangPiece(artistId: string, pieceId: string): Promise<vo
 }
 
 export async function deletePiece(artistId: string, pieceId: string): Promise<void> {
-  const piece = await queryOne<{ asset_id: string | null; flattened_key: string | null }>(
-    `select asset_id, flattened_key from pieces where id = $1 and artist_id = $2`,
+  const piece = await queryOne<{
+    asset_id: string | null
+    flattened_key: string | null
+    sketch_key: string | null
+  }>(
+    `select asset_id, flattened_key, sketch_key from pieces where id = $1 and artist_id = $2`,
     [pieceId, artistId],
   )
   if (!piece) return
@@ -152,6 +156,7 @@ export async function deletePiece(artistId: string, pieceId: string): Promise<vo
 
   const storage = getStorage()
   if (piece.flattened_key) await storage.remove(piece.flattened_key).catch(() => {})
+  if (piece.sketch_key) await storage.remove(piece.sketch_key).catch(() => {})
 
   if (piece.asset_id) {
     const refs = await queryOne<{ n: number }>(

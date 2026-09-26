@@ -89,6 +89,8 @@ export const CONFIG = {
       height: 2.422,
       z: 0.35,
       beanbag: { u: [0, 0.44], v: [0.03, 0.62], occupiedTop: 0.82 },
+      // The box itself spans u 0.651-0.773, v 0.395-0.447; padded to a comfortable tap target.
+      sketchBox: { u: [0.64, 0.785], v: [0.35, 0.5] },
     },
     seat: { dx: -1.119, centerY: 0.893, height: 1.455 },
   },

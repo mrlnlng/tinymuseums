@@ -75,3 +75,18 @@ export interface GuestNotePageDto {
   notes: GuestNoteDto[]
   nextCursor: string | null
 }
+
+export interface SketchRoundDto {
+  epochId: number
+  round: number
+  poolSize: number
+  answer: {
+    pieceId: string
+    title: string
+    artistName: string
+    slug: string
+    sketch: { url: string; width: number; height: number }
+    image: { url: string }
+  }
+  choices: { pieceId: string; title: string }[]
+}

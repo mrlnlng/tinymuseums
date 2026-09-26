@@ -9,6 +9,7 @@ import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
+import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
@@ -17,11 +18,13 @@ const loadGuestBoard = () => import('@/features/guestboard/components/GuestBoard
 const loadCoinFound = () => import('@/features/hall/components/CoinFound')
 const loadHelpGuide = () => import('@/features/hall/components/HelpGuide')
 const loadWalkthrough = () => import('@/features/artwork/components/Walkthrough')
+const loadSketchGuess = () => import('@/features/sketchguess/components/SketchGuess')
 
 const GuestBoard = dynamic(loadGuestBoard, { ssr: false })
 const CoinFound = dynamic(loadCoinFound, { ssr: false })
 const HelpGuide = dynamic(loadHelpGuide, { ssr: false })
 const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
+const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
@@ -39,13 +42,16 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const [isGuestBoardOpen, setIsGuestBoardOpen] = useState(false)
   const [isGuestBoardHung, setIsGuestBoardHung] = useState(false)
   const [isHintShown, setIsHintShown] = useState(false)
+  const [sketchGame, setSketchGame] = useState<PreparedGame | null>(null)
+  const [isSketchOpen, setIsSketchOpen] = useState(false)
   const hideHint = useCallback(() => setIsHintShown(false), [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
   const { setWalking } = useSound()
   const router = useRouter()
 
-  const isSuspended = openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen
+  const isSuspended =
+    openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || isSketchOpen
 
   const { isReady, error } = useHallScene({
     hosts: {
@@ -64,7 +70,25 @@ export default function Museum({ initialSlice }: MuseumProps) {
     onGuestBoardHung: () => setIsGuestBoardHung(true),
     onIntroDone: () => setIsHintShown(claimSwipeHint()),
     onFirstMove: hideHint,
+    onOpenSketchGame: () => setIsSketchOpen(true),
   })
+
+  useEffect(() => {
+    if (!isGuestBoardHung || sketchGame || isSketchOpen) return
+    const controller = new AbortController()
+    loadSketchGuess()
+      .then(({ prepareSketchGame }) => prepareSketchGame(initialSlice.epochId, controller.signal))
+      .then((game) => {
+        if (!controller.signal.aborted) setSketchGame(game)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [isGuestBoardHung, sketchGame, isSketchOpen, initialSlice.epochId])
+
+  const closeSketchGuess = useCallback(() => {
+    setIsSketchOpen(false)
+    setSketchGame(null)
+  }, [])
 
   useEffect(() => {
     if (!isSuspended) return
@@ -113,6 +137,17 @@ export default function Museum({ initialSlice }: MuseumProps) {
 
         <AnimatePresence>
           {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isSketchOpen ? (
+            <SketchGuess
+              key="sketch-guess"
+              epochId={initialSlice.epochId}
+              prepared={sketchGame}
+              onClose={closeSketchGuess}
+            />
+          ) : null}
         </AnimatePresence>
 
         <AnimatePresence>

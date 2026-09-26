@@ -66,6 +66,7 @@ interface Options {
   onGuestBoardHung: () => void
   onIntroDone: () => void
   onFirstMove: () => void
+  onOpenSketchGame: () => void
 }
 
 export function useHallScene({
@@ -80,6 +81,7 @@ export function useHallScene({
   onGuestBoardHung,
   onIntroDone,
   onFirstMove,
+  onOpenSketchGame,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -116,6 +118,9 @@ export function useHallScene({
 
   const onFirstMoveRef = useRef(onFirstMove)
   onFirstMoveRef.current = onFirstMove
+
+  const onOpenSketchGameRef = useRef(onOpenSketchGame)
+  onOpenSketchGameRef.current = onOpenSketchGame
 
   useEffect(() => {
     let isDisposed = false
@@ -343,6 +348,12 @@ export function useHallScene({
 
         if (cafe?.hitTestCat(raycaster)) {
           soundRef.current.play('cafe-hello')
+          return
+        }
+
+        if (guestBoard?.hitTestSketchBox(raycaster)) {
+          soundRef.current.play('click')
+          onOpenSketchGameRef.current()
           return
         }
 

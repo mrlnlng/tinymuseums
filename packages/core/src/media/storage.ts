@@ -154,6 +154,10 @@ export function derivativeKey(
   return `artists/${artistId}/derivatives/${assetId}/${variant}.${extension}`
 }
 
+export function pieceSketchKey(pieceId: string, version: number): string {
+  return `pieces/${pieceId}/sketch/v${version}.png`
+}
+
 export function pieceFrameKey(pieceId: string, version: number, extension: string): string {
   return `pieces/${pieceId}/frame/v${version}.${extension}`
 }

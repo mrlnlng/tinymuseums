@@ -13,6 +13,7 @@ import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
+import { MUSEUM_START_MARK } from '@/shared/lib/vitals-marks'
 
 const loadGuestBoard = () => import('@/features/guestboard/components/GuestBoard')
 const loadCoinFound = () => import('@/features/hall/components/CoinFound')
@@ -45,6 +46,10 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const [sketchGame, setSketchGame] = useState<PreparedGame | null>(null)
   const [isSketchOpen, setIsSketchOpen] = useState(false)
   const hideHint = useCallback(() => setIsHintShown(false), [])
+
+  useEffect(() => {
+    performance.mark(MUSEUM_START_MARK)
+  }, [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
   const { setWalking } = useSound()

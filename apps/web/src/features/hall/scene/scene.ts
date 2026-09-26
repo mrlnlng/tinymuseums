@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { HallPieceDto, HallSliceDto } from '@tiny/core'
 import { disposeDisplayTexture, loadDisplayTexture, type Assets } from './assets'
+import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal } from './pedestal'
@@ -187,6 +188,7 @@ export class HallScene {
   private mount(slot: SlotRuntime): void {
     const centerX = this.layout.centerX[slot.index]
     if (centerX === undefined || !slot.texture) return
+    if (performance.getEntriesByName(FIRST_PAINTING_MARK).length === 0) performance.mark(FIRST_PAINTING_MARK)
 
     const piece = slot.piece
     const group = new THREE.Group()

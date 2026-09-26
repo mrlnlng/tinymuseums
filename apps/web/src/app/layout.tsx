@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { BRAND } from '@tiny/core'
 import ScreenChrome from '@/shared/components/ScreenChrome'
 import SoundProvider from '@/features/sound/components/SoundProvider'
+import VitalsReporter from '@/shared/components/VitalsReporter'
 import '../styles/globals.css'
 
 const inspiratiq = localFont({
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <ScreenChrome />
           </div>
+          <VitalsReporter />
         </SoundProvider>
       </body>
     </html>

@@ -16,6 +16,7 @@ export {
 } from './domain/auth.ts'
 export { ensureEpoch, epochById, getHallSlice } from './domain/epoch.ts'
 export { getSketchPool, getSketchRound, type SketchCandidate } from './domain/sketch.ts'
+export { parseVitalsReport, recordVitals, summarizeVitals, type VitalSummary } from './domain/vitals.ts'
 export { getArtistPage } from './domain/artists.ts'
 export {
   MAX_STANDS,

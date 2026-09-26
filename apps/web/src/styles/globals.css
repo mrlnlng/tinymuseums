@@ -208,6 +208,14 @@ h1, h2, h3 { text-wrap: balance; }
 .stat-value { font-size: 30px; font-weight: 800; }
 .stat-section { font-size: 18px; margin-top: 28px; }
 
+table.vitals th, table.vitals td { padding: 7px 5px; }
+table.vitals td.num { white-space: nowrap; }
+.vitals-short { display: block; color: var(--ink-soft); font-size: 11px; }
+
+.vital-good { color: #2f7a4b; }
+.vital-fair { color: #b7791f; }
+.vital-poor { color: var(--bad); }
+
 label.plaque-card,
 label.card { cursor: pointer; margin: 0; }
 

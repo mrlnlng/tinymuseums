@@ -17,7 +17,12 @@ export default async function StudioLayout({ children }: { children: React.React
             <Link href="/studio">Wall</Link>
             <Link href="/studio/gallery">Gallery</Link>
             <Link href="/studio/analytics">Visitors</Link>
-            {isHallOwner(artist) ? <Link href="/studio/guestboard">Guest board</Link> : null}
+            {isHallOwner(artist) ? (
+              <>
+                <Link href="/studio/guestboard">Guest board</Link>
+                <Link href="/studio/performance">Performance</Link>
+              </>
+            ) : null}
             <Link href={`/a/${artist.slug}`}>View</Link>
             <form action={signOutAction}>
               <button type="submit" className="nav-button">

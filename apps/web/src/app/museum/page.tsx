@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { BRAND } from '@tiny/core'
+import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import Museum from '@/features/hall/components/Museum'
 import HallSkeleton, { HallPreload } from '@/features/hall/components/HallSkeleton'
 import { firstSlice } from '@/features/hall/lib/slice'
@@ -12,6 +13,7 @@ const FIRST_SLICE = 4
 export default function MuseumPage() {
   return (
     <>
+      <MediaPreconnect />
       <HallPreload />
       <Suspense fallback={<HallSkeleton />}>
         <Hall />

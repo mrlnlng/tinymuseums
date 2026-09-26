@@ -1,6 +1,14 @@
 applications:
   - appRoot: apps/web
     customHeaders:
+      - pattern: '/'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'
+      - pattern: '/museum'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'
       - pattern: '/assets/*'
         headers:
           - key: 'Cache-Control'

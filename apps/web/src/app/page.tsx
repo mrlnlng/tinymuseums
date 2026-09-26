@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { BRAND } from '@tiny/core'
+import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import { firstSlice } from '@/features/hall/lib/slice'
 
 export const revalidate = 30
@@ -14,6 +15,7 @@ const GUIDELINES = [
 export default function LandingPage() {
   return (
     <main className="landing">
+      <MediaPreconnect />
       <div className="landing-body">
         <div className="welcome-plaque">
           <span className="welcome-kicker">Welcome to</span>

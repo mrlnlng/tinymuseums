@@ -488,6 +488,7 @@ export function useHallScene({
         const nearCafe =
           cafeX !== null && Math.abs(cafeX - traversal.cameraX) < CONFIG.virtualization.loadRadiusUnits
         if (nearCafe) soundRef.current.prepare('cafe-hello')
+        for (const voice of hall.nearbyVoices()) soundRef.current.prepare(voice)
         cafe?.update(dt, traversal.cameraX)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()

@@ -4,7 +4,7 @@ import { disposeDisplayTexture, loadDisplayTexture, prefersAvif, type Assets } f
 import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
-import { createPedestal, type Pedestal } from './pedestal'
+import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 
@@ -413,6 +413,12 @@ export class HallScene {
 
   getMounted(): readonly MountedDisplay[] {
     return this.mountedList
+  }
+
+  nearbyVoices(): PedestalVoice[] {
+    const voices: PedestalVoice[] = []
+    for (const pedestal of this.pedestals.values()) if (pedestal.voice) voices.push(pedestal.voice)
+    return voices
   }
 
   stats(): { mounted: number; loaded: number; total: number } {

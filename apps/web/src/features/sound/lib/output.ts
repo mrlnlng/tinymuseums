@@ -74,9 +74,14 @@ export async function decodeClip(data: ArrayBuffer): Promise<AudioBuffer | null>
   }
 }
 
-export function playClip(buffer: AudioBuffer, mix: number, start = 0, end?: number): boolean {
+export function playClip(
+  buffer: AudioBuffer,
+  mix: number,
+  start = 0,
+  end?: number,
+): AudioBufferSourceNode | null {
   const target = ensureMaster()
-  if (!target || !context) return false
+  if (!target || !context) return null
   try {
     const voice = context.createGain()
     voice.gain.value = mix
@@ -86,9 +91,9 @@ export function playClip(buffer: AudioBuffer, mix: number, start = 0, end?: numb
     source.connect(voice)
     source.onended = () => voice.disconnect()
     source.start(0, start, end === undefined ? undefined : Math.max(0, end - start))
-    return true
+    return source
   } catch {
-    return false
+    return null
   }
 }
 

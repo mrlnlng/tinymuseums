@@ -484,6 +484,10 @@ export function useHallScene({
         guestBoardNotes?.sync(rig.camera, viewport)
 
         lobby.update(dt, traversal.cameraX)
+        const cafeX = hall.layout.cafeX
+        const nearCafe =
+          cafeX !== null && Math.abs(cafeX - traversal.cameraX) < CONFIG.virtualization.loadRadiusUnits
+        if (nearCafe) soundRef.current.prepare('cafe-hello')
         cafe?.update(dt, traversal.cameraX)
 
         if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()

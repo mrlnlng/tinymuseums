@@ -42,6 +42,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const stopTimersRef = useRef(new Map<HTMLAudioElement, number>())
   const isWalkingRef = useRef(false)
   const clipsRef = useRef(new Map<EffectName, AudioBuffer | null>())
+  const sourcesRef = useRef(new Map<EffectName, AudioBufferSourceNode>())
 
   const volumeRef = useRef(volume)
   volumeRef.current = volume
@@ -123,7 +124,12 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
       const clip = clipsRef.current.get(name)
       if (clip) {
         resumeGain()
-        if (playClip(clip, spec.volume, spec.start, spec.end)) return
+        sourcesRef.current.get(name)?.stop()
+        const source = playClip(clip, spec.volume, spec.start, spec.end)
+        if (source) {
+          sourcesRef.current.set(name, source)
+          return
+        }
       }
 
       const pool = voicesFor(name)

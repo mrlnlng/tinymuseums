@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { BRAND } from '@tiny/core'
 import ScreenChrome from '@/shared/components/ScreenChrome'
 import SoundProvider from '@/features/sound/components/SoundProvider'
+import ServiceWorker from '@/shared/components/ServiceWorker'
 import VitalsReporter from '@/shared/components/VitalsReporter'
 import '../styles/globals.css'
 
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ScreenChrome />
           </div>
           <VitalsReporter />
+          <ServiceWorker />
         </SoundProvider>
       </body>
     </html>

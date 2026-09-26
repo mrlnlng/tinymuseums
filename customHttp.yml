@@ -1,6 +1,10 @@
 applications:
   - appRoot: apps/web
     customHeaders:
+      - pattern: '/sw.js'
+        headers:
+          - key: 'Cache-Control'
+            value: 'no-cache'
       - pattern: '/'
         headers:
           - key: 'Cache-Control'

@@ -87,6 +87,7 @@ export interface SketchRoundDto {
     slug: string
     sketch: { url: string; width: number; height: number }
     image: { url: string }
+    detail: { url: string }
   }
   choices: { pieceId: string; title: string }[]
 }

@@ -9,6 +9,7 @@ export const SKETCH_VERSION = 1
 
 export const SKETCH_WIDTH = 400
 export const SKETCH_COLOR_WIDTH = 640
+export const SKETCH_DETAIL_WIDTH = 1080
 
 const INK_LEVELS = 3
 

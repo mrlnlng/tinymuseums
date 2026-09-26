@@ -71,6 +71,24 @@ async function loadInk(url: string, signal?: AbortSignal): Promise<InkMap> {
   return { width, height, ink }
 }
 
+export function decodeImage(url: string, signal?: AbortSignal): Promise<void> {
+  return guarded(async (guard) => {
+    const image = new Image()
+    image.decoding = 'async'
+    const abort = () => {
+      image.src = ''
+    }
+    guard.addEventListener('abort', abort, { once: true })
+    image.src = url
+    try {
+      await image.decode()
+    } finally {
+      guard.removeEventListener('abort', abort)
+    }
+    if (guard.aborted) throw guard.reason
+  }, signal)
+}
+
 function warmImage(url: string): void {
   const image = new Image()
   image.decoding = 'async'

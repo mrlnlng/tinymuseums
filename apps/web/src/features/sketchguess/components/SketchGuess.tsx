@@ -1,40 +1,35 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useSound } from '@/features/sound/components/SoundProvider'
-import { loadRound, type LoadedRound } from '../lib/api'
+import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
+import { pickFocus } from '../lib/focus'
+import {
+  DIFFICULTIES,
+  LAST_STEP,
+  LEVEL_HINTS,
+  MODE_ORDER,
+  MODES,
+  STARS_BY_STEP,
+  isDifficulty,
+  isMode,
+  type Difficulty,
+  type Mode,
+} from '../lib/modes'
 import { planGame, randomRound } from '../lib/plan'
 import { createReveal, type SketchReveal } from '../lib/reveal'
 import BunnyArtist, { type BunnyMood } from './BunnyArtist'
 
 const ROUNDS = 3
-const STARS_BY_STEP = [3, 2, 1, 1]
-const LAST_STEP = STARS_BY_STEP.length - 1
 const MAX_STARS = ROUNDS * STARS_BY_STEP[0]
 const STEP_DRAW_MS = 1100
 const STREAK_FOR_BONUS = 3
 
-// Fractions of strokes, not of ink: strokes overlap, so medium uncovers roughly 20%, 45%, 70% and all of the drawing.
-const REVEAL_STEPS = {
-  easy: [0.045, 0.11, 0.2, 1],
-  medium: [0.02, 0.06, 0.13, 1],
-  hard: [0.008, 0.022, 0.05, 1],
-} as const
-
-type Difficulty = keyof typeof REVEAL_STEPS
-
-const DIFFICULTIES = Object.keys(REVEAL_STEPS) as Difficulty[]
-
-const LEVEL_HINTS: Record<Difficulty, string> = {
-  easy: 'Plenty of lines to go on',
-  medium: 'A fair challenge',
-  hard: 'Just a few scribbles',
-}
-
 const BEST_KEY = 'tiny-museum:sketch-best'
 const BEST_STREAK_KEY = 'tiny-museum:sketch-streak'
 const DIFFICULTY_KEY = 'tiny-museum:sketch-difficulty'
+const MODE_KEY = 'tiny-museum:sketch-mode'
 
 export interface PreparedGame {
   first: LoadedRound
@@ -68,11 +63,25 @@ function writeStored(key: string, value: string): void {
 
 function readDifficulty(): Difficulty {
   const saved = readStored(DIFFICULTY_KEY)
-  return DIFFICULTIES.includes(saved as Difficulty) ? (saved as Difficulty) : 'medium'
+  return isDifficulty(saved) ? saved : 'medium'
 }
 
-function bestKeyFor(difficulty: Difficulty): string {
+function readMode(): Mode {
+  const saved = readStored(MODE_KEY)
+  return isMode(saved) ? saved : 'sketch'
+}
+
+function bestKeyFor(mode: Mode, difficulty: Difficulty): string {
+  if (mode !== 'sketch') return `${BEST_KEY}:${mode}:${difficulty}`
   return difficulty === 'medium' ? BEST_KEY : `${BEST_KEY}:${difficulty}`
+}
+
+function clueUrl(mode: Mode, loaded: LoadedRound): string | null {
+  const { answer } = loaded.round
+  // Round responses cached before detail images existed do not carry one.
+  if (mode === 'zoom') return (answer.detail ?? answer.image).url
+  if (mode === 'colour') return answer.image.url
+  return null
 }
 
 function saveIfHigher(key: string, value: number): number {
@@ -121,6 +130,7 @@ interface SketchGuessProps {
 
 export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessProps) {
   const { play } = useSound()
+  const [mode, setMode] = useState(readMode)
   const [difficulty, setDifficulty] = useState(readDifficulty)
   const [started, setStarted] = useState(false)
   const [plan, setPlan] = useState(() => openingPlan(prepared))
@@ -187,9 +197,20 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const requestPlayable = useCallback(
+    async (round: number): Promise<LoadedRound> => {
+      const loadedRound = await requestRound(round)
+      const url = clueUrl(mode, loadedRound)
+      if (url) await decodeImage(url, abortRef.current?.signal)
+      return loadedRound
+    },
+    [requestRound, mode],
+  )
+
   useEffect(() => {
-    for (const round of plan.slice(1)) requestRound(round).catch(() => {})
-  }, [plan, requestRound])
+    const request = started ? requestPlayable : requestRound
+    for (const round of plan.slice(1)) request(round).catch(() => {})
+  }, [plan, started, requestPlayable, requestRound])
 
   const currentRound = plan[roundIndex]
 
@@ -210,7 +231,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       return
     }
 
-    requestRound(currentRound)
+    requestPlayable(currentRound)
       .then((loadedRound) => {
         if (cancelled) return
         const { poolSize, round } = loadedRound.round
@@ -228,10 +249,10 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     return () => {
       cancelled = true
     }
-  }, [currentRound, attempt, started, requestRound])
+  }, [currentRound, attempt, started, requestRound, requestPlayable])
 
   useEffect(() => {
-    if (phase !== 'guessing' || !loaded || !canvasRef.current) return
+    if (mode !== 'sketch' || phase !== 'guessing' || !loaded || !canvasRef.current) return
     if (revealForRef.current !== loaded) {
       revealRef.current = createReveal(canvasRef.current, loaded.ink)
       revealForRef.current = loaded
@@ -239,7 +260,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     }
     const reveal = revealRef.current!
     const from = drawnRef.current
-    const to = REVEAL_STEPS[difficulty][step]
+    const to = MODES.sketch.steps[difficulty][step]
     const startedAt = performance.now()
     setIsDrawing(true)
 
@@ -254,7 +275,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [phase, loaded, step, difficulty])
+  }, [mode, phase, loaded, step, difficulty])
 
   const revealMore = useCallback(() => {
     if (phase !== 'guessing') return
@@ -286,9 +307,9 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       setRoundIndex(roundIndex + 1)
       return
     }
-    setBest(saveIfHigher(bestKeyFor(difficulty), total))
+    setBest(saveIfHigher(bestKeyFor(mode, difficulty), total))
     setPhase('done')
-  }, [roundIndex, total, difficulty])
+  }, [roundIndex, total, mode, difficulty])
 
   const playAgain = useCallback(() => {
     const poolSize = poolSizeRef.current
@@ -306,18 +327,26 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   const startGame = useCallback(
     (level: Difficulty) => {
       writeStored(DIFFICULTY_KEY, level)
+      writeStored(MODE_KEY, mode)
       setDifficulty(level)
       setStarted(true)
       play('click')
     },
-    [play],
+    [mode, play],
+  )
+
+  const focus = useMemo(
+    () => (loaded ? pickFocus(loaded.ink.ink, loaded.ink.width, loaded.ink.height) : null),
+    [loaded],
   )
 
   const lastScore = scores[scores.length - 1] ?? 0
   const round = loaded?.round
   const isAnswered = phase === 'answered'
 
-  let message = 'Which painting is being drawn?'
+  const spec = MODES[mode]
+  const clueValue = spec.steps[difficulty][step]
+  let message = spec.question
   if (isAnswered && round) {
     if (lastScore === 0) message = `It was ${round.answer.title} by ${round.answer.artistName}`
     else if (earnedBonus) message = `${streak} in a row! Bonus star`
@@ -325,7 +354,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   }
 
   let mood: BunnyMood = 'idle'
-  if (phase === 'guessing') mood = isDrawing ? 'drawing' : 'idle'
+  if (phase === 'guessing') mood = mode === 'sketch' && isDrawing ? 'drawing' : 'idle'
   else if (isAnswered) mood = lastScore > 0 ? 'cheering' : 'sad'
   else if (phase === 'done') mood = total >= MAX_STARS / 2 ? 'cheering' : 'idle'
 
@@ -356,7 +385,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
             {phase === 'done'
               ? 'Finished'
               : phase === 'choosing'
-                ? 'Sketch & Guess'
+                ? 'Guess the painting'
                 : `Round ${roundIndex + 1} of ${ROUNDS}`}
           </span>
           {phase === 'choosing' ? null : <Stars count={earned} of={MAX_STARS} />}
@@ -368,8 +397,22 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
 
         {phase === 'choosing' ? (
           <div className="sketchbook-summary">
-            <p className="sketchbook-title">Pick a difficulty</p>
-            <p className="sketchbook-note">The fewer lines you need, the more stars you earn.</p>
+            <p className="sketchbook-title">How will you play?</p>
+            <div className="sketchbook-modes" role="radiogroup" aria-label="Game mode">
+              {MODE_ORDER.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={option === mode}
+                  className={option === mode ? 'is-selected' : undefined}
+                  onClick={() => setMode(option)}
+                >
+                  {MODES[option].label}
+                </button>
+              ))}
+            </div>
+            <p className="sketchbook-note">The less you need to see, the more stars you earn.</p>
             <div className="sketchbook-levels">
               {DIFFICULTIES.map((level) => (
                 <button
@@ -395,7 +438,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
               </p>
             ) : null}
             <p className="sketchbook-note">
-              Best on {difficulty}: {best} · Best streak: {bestStreak}
+              Best on {spec.label.toLowerCase()}, {difficulty}: {best} · Best streak: {bestStreak}
             </p>
             <div className="sketchbook-actions">
               <button type="button" className="button" onClick={playAgain}>
@@ -409,7 +452,30 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
         ) : (
           <>
             <div className="sketchbook-page">
-              <canvas ref={canvasRef} className="sketchbook-canvas" aria-hidden="true" />
+              {mode === 'sketch' ? (
+                <canvas ref={canvasRef} className="sketchbook-canvas" aria-hidden="true" />
+              ) : loaded && focus ? (
+                <div
+                  className="sketchbook-fit"
+                  style={{ '--ratio': loaded.ink.width / loaded.ink.height } as React.CSSProperties}
+                  aria-hidden="true"
+                >
+                  <img
+                    className={`sketchbook-clue is-${mode}`}
+                    src={clueUrl(mode, loaded) ?? undefined}
+                    alt=""
+                    draggable={false}
+                    style={
+                      mode === 'zoom'
+                        ? {
+                            transform: `scale(${clueValue})`,
+                            transformOrigin: `${focus.x * 100}% ${focus.y * 100}%`,
+                          }
+                        : { filter: `blur(calc(${clueValue} * 100cqw))` }
+                    }
+                  />
+                </div>
+              ) : null}
               {round ? (
                 <img
                   key={round.answer.pieceId}
@@ -456,10 +522,10 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
                 </span>
                 {step < LAST_STEP ? (
                   <button type="button" className="sketchbook-more" onClick={revealMore}>
-                    Reveal more
+                    {spec.more}
                   </button>
                 ) : (
-                  <span className="sketchbook-worth">Fully drawn</span>
+                  <span className="sketchbook-worth">Nothing left to show</span>
                 )}
               </div>
             ) : null}

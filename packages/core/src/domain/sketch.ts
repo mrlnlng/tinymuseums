@@ -1,7 +1,7 @@
 import { query, queryOne } from '../infra/db.ts'
 import { mulberry32 } from '../infra/random.ts'
 import { pickDerivative } from '../media/derivatives.ts'
-import { SKETCH_COLOR_WIDTH, SKETCH_VERSION } from '../media/sketch.ts'
+import { SKETCH_COLOR_WIDTH, SKETCH_DETAIL_WIDTH, SKETCH_VERSION } from '../media/sketch.ts'
 import { getStorage } from '../media/storage.ts'
 import type { Derivative, SketchRoundDto } from '../types.ts'
 import type { EpochRow } from './epoch.ts'
@@ -107,10 +107,12 @@ export async function getSketchRound(
   if (!piece) return null
 
   const storage = getStorage()
-  const color =
-    pickDerivative(piece.derivatives ?? [], SKETCH_COLOR_WIDTH, 'webp') ??
-    pickDerivative(piece.derivatives ?? [], SKETCH_COLOR_WIDTH, 'jpg')
+  const derivatives = piece.derivatives ?? []
+  const pick = (width: number) =>
+    pickDerivative(derivatives, width, 'webp') ?? pickDerivative(derivatives, width, 'jpg')
+  const color = pick(SKETCH_COLOR_WIDTH)
   if (!color) return null
+  const detail = pick(SKETCH_DETAIL_WIDTH) ?? color
 
   const titles = new Map(pool.map((candidate) => [candidate.id, candidate.title]))
 
@@ -129,6 +131,7 @@ export async function getSketchRound(
         height: piece.sketch_height,
       },
       image: { url: storage.urlFor(color.key) },
+      detail: { url: storage.urlFor(detail.key) },
     },
     choices: plan.choiceIds.map((id) => ({ pieceId: id, title: titles.get(id) ?? '' })),
   }

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { HallPieceDto, HallSliceDto } from '@tiny/core'
-import { disposeDisplayTexture, loadDisplayTexture, type Assets } from './assets'
+import { disposeDisplayTexture, loadDisplayTexture, prefersAvif, type Assets } from './assets'
 import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
@@ -167,7 +167,8 @@ export class HallScene {
     slot.startedAt = now
     this.inFlight += 1
 
-    loadDisplayTexture(slot.piece.image.url)
+    const { url, avifUrl } = slot.piece.image
+    loadDisplayTexture(prefersAvif() && avifUrl ? avifUrl : url)
       .finally(() => {
         this.inFlight -= 1
       })

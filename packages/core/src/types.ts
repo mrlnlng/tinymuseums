@@ -20,7 +20,7 @@ export interface HallPieceDto {
   statement: string
   description: string
   canvas: { w: number; h: number }
-  image: { url: string; width: number; height: number }
+  image: { url: string; avifUrl?: string; width: number; height: number }
 }
 
 export interface HallSlotDto {

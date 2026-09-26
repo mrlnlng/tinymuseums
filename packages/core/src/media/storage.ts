@@ -158,6 +158,10 @@ export function pieceSketchKey(pieceId: string, version: number): string {
   return `pieces/${pieceId}/sketch/v${version}.png`
 }
 
+export function frameAvifKey(frameKey: string): string {
+  return frameKey.replace(/\.webp$/, '.avif')
+}
+
 export function pieceFrameKey(pieceId: string, version: number, extension: string): string {
   return `pieces/${pieceId}/frame/v${version}.${extension}`
 }

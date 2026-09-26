@@ -13,7 +13,10 @@ const ASSETS_DIR =
 export const PX_PER_UNIT = 300
 
 // Bump whenever the rendered frame changes; frames from older versions are re-rendered by the worker.
-export const FRAME_VERSION = 3
+export const FRAME_VERSION = 4
+
+// Frames from this version on have an .avif sibling next to the .webp.
+export const FRAME_AVIF_SINCE = 4
 
 export const FRAME_FORMAT = { extension: 'webp', contentType: 'image/webp' } as const
 
@@ -75,6 +78,7 @@ export interface SinglePieceInput {
 
 export interface SinglePieceOutput {
   buffer: Buffer
+  avif: Buffer
   width: number
   height: number
   canvas: { w: number; h: number }
@@ -124,12 +128,16 @@ export async function renderSinglePieceFrame({
     .toBuffer()
   overlays.push({ input: framed, left: 0, top: 0 })
 
-  const buffer = await sharp({
+  const composed = await sharp({
     create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(overlays)
-    .webp({ quality: 80, alphaQuality: 80 })
+    .png()
     .toBuffer()
+  const [buffer, avif] = await Promise.all([
+    sharp(composed).webp({ quality: 80, alphaQuality: 80 }).toBuffer(),
+    sharp(composed).avif({ quality: 50, effort: 4 }).toBuffer(),
+  ])
 
-  return { buffer, width, height, canvas: { w: canvasW, h: canvasH } }
+  return { buffer, avif, width, height, canvas: { w: canvasW, h: canvasH } }
 }

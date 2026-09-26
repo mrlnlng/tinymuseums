@@ -1,7 +1,7 @@
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { enqueue } from '../infra/jobs.ts'
 import { pickDerivative } from '../media/derivatives.ts'
-import { getStorage } from '../media/storage.ts'
+import { frameAvifKey, getStorage } from '../media/storage.ts'
 import type { Derivative } from '../types.ts'
 
 export const MAX_STANDS = 30
@@ -155,7 +155,10 @@ export async function deletePiece(artistId: string, pieceId: string): Promise<vo
   await query(`delete from pieces where id = $1 and artist_id = $2`, [pieceId, artistId])
 
   const storage = getStorage()
-  if (piece.flattened_key) await storage.remove(piece.flattened_key).catch(() => {})
+  if (piece.flattened_key) {
+    await storage.remove(piece.flattened_key).catch(() => {})
+    await storage.remove(frameAvifKey(piece.flattened_key)).catch(() => {})
+  }
   if (piece.sketch_key) await storage.remove(piece.sketch_key).catch(() => {})
 
   if (piece.asset_id) {

@@ -5,7 +5,7 @@ import { ImageRejected, generateDerivatives } from './media/images.ts'
 import { enqueue, type Job } from './infra/jobs.ts'
 import { getMailer, newWorkNotice } from './infra/mail.ts'
 import { SKETCH_VERSION, renderSketch } from './media/sketch.ts'
-import { pieceFrameKey, pieceSketchKey, getStorage, type Storage } from './media/storage.ts'
+import { frameAvifKey, pieceFrameKey, pieceSketchKey, getStorage, type Storage } from './media/storage.ts'
 import { confirmedFollowers } from './domain/audience.ts'
 import { MAX_STANDS } from './domain/gallery.ts'
 import type { Derivative } from './types.ts'
@@ -82,6 +82,7 @@ async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise
   })
   const key = pieceFrameKey(row.piece_id, FRAME_VERSION, FRAME_FORMAT.extension)
   await storage.put(key, output.buffer, FRAME_FORMAT.contentType)
+  await storage.put(frameAvifKey(key), output.avif, 'image/avif')
   // Point the row at the new object before removing the old one: an orphaned file is harmless, a dangling key is not.
   const stale = row.flattened_key
   await query(
@@ -93,7 +94,10 @@ async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise
       where id = $1`,
     [row.piece_id, key, output.width, output.height, FRAME_VERSION],
   )
-  if (stale && stale !== key) await storage.remove(stale).catch(() => {})
+  if (stale && stale !== key) {
+    await storage.remove(stale).catch(() => {})
+    await storage.remove(frameAvifKey(stale)).catch(() => {})
+  }
 }
 
 async function renderPieceSketch(row: DisplayPieceRow, storage: Storage): Promise<void> {

@@ -1,7 +1,7 @@
 import { env } from '../infra/env.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
-import { PX_PER_UNIT } from '../media/collage.ts'
-import { getStorage } from '../media/storage.ts'
+import { FRAME_AVIF_SINCE, PX_PER_UNIT } from '../media/collage.ts'
+import { frameAvifKey, getStorage } from '../media/storage.ts'
 import { MAX_STANDS } from './gallery.ts'
 import type { HallPieceDto, HallSliceDto } from '../types.ts'
 
@@ -88,6 +88,7 @@ interface SliceRow {
   flattened_key: string
   flattened_width: number
   flattened_height: number
+  flattened_version: number
 }
 
 export async function getHallSlice(
@@ -108,7 +109,8 @@ export async function getHallSlice(
             p.description,
             p.flattened_key,
             p.flattened_width,
-            p.flattened_height
+            p.flattened_height,
+            p.flattened_version
        from epoch_slots s
        join pieces   p on p.id = s.piece_id
        join artists  a on a.id = p.artist_id
@@ -144,6 +146,10 @@ export async function getHallSlice(
       },
       image: {
         url: storage.urlFor(row.flattened_key),
+        avifUrl:
+          row.flattened_version >= FRAME_AVIF_SINCE
+            ? storage.urlFor(frameAvifKey(row.flattened_key))
+            : undefined,
         width: row.flattened_width,
         height: row.flattened_height,
       },

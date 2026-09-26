@@ -16,6 +16,10 @@ const AVIF = new Set<string>(optimized.avif)
 
 let useAvif = false
 
+export function prefersAvif(): boolean {
+  return useAvif
+}
+
 function assetUrl(base: string, file: string): string {
   const stem = file.replace(/\.png$/, '')
   if (useAvif && AVIF.has(stem)) return `${base}/${stem}.avif`

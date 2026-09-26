@@ -1,0 +1,27 @@
+applications:
+  - appRoot: apps/web
+    customHeaders:
+      - pattern: '/assets/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+      - pattern: '/assets/**/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+      - pattern: '/fonts/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+      - pattern: '/fonts/**/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+      - pattern: '/audio/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+      - pattern: '/audio/**/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'public, max-age=86400, stale-while-revalidate=604800'

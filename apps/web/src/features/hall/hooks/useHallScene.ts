@@ -31,6 +31,7 @@ const BACKDROP_LENGTH = 600
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
+const SCENERY_MAX_WAIT_MS = 5000
 
 const VIEWED_WITHIN_UNITS = 3.0
 
@@ -251,17 +252,28 @@ export function useHallScene({
         cafeLink = new CafeLink(overlayHost, cafe.marks, CAFE_URL)
       }
 
-      void loadScenery()
-        .then((loaded) => {
-          if (isDisposed) {
-            loaded.dispose()
-            return
-          }
-          scenery = loaded
-          helm = createHelm(loaded, characterHost, hall)
-          matcha = createMatcha(loaded, characterHost, () => cafe)
-        })
-        .catch(() => {})
+      const requestScenery = (): void => {
+        void loadScenery()
+          .then((loaded) => {
+            if (isDisposed) {
+              loaded.dispose()
+              return
+            }
+            scenery = loaded
+            helm = createHelm(loaded, characterHost, hall)
+            matcha = createMatcha(loaded, characterHost, () => cafe)
+          })
+          .catch(() => {})
+      }
+
+      const sceneryWaitStart = performance.now()
+      const sceneryGate = window.setInterval(() => {
+        const { loaded, total } = hall.stats()
+        const nearestReady = loaded >= Math.min(2, total)
+        if (!nearestReady && performance.now() - sceneryWaitStart < SCENERY_MAX_WAIT_MS) return
+        window.clearInterval(sceneryGate)
+        requestScenery()
+      }, 250)
 
       const raycaster = new THREE.Raycaster()
       const pointer = new THREE.Vector2()
@@ -433,6 +445,7 @@ export function useHallScene({
       frameHandle = requestAnimationFrame(renderFrame)
 
       teardown = () => {
+        window.clearInterval(sceneryGate)
         cancelAnimationFrame(frameHandle)
         soundRef.current.setWalking(false)
         resizeObserver.disconnect()

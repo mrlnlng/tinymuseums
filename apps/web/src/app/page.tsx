@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { BRAND } from '@tiny/core'
 import { firstSlice } from '@/features/hall/lib/slice'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 30
 
 const GUIDELINES = [
   'Silence is not required — share your favourite pieces with your friends.',

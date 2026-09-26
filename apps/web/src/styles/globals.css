@@ -1,11 +1,3 @@
-@font-face {
-  font-family: "Inspiratiq Tiny Museum";
-  src: url("/fonts/Inspiratiq_tiny_museum-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --wall: #fff1d2;
   --wall-deep: #fbebc0;
@@ -25,11 +17,11 @@
   --ok: #4f8a63;
   --bad: #c0533a;
 
-  --font-script: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
-  --font-title: "Beth Ellen", "Segoe Script", cursive;
-  --font-ui: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
-  --font-body: "Sniglet", ui-rounded, system-ui, -apple-system, sans-serif;
-  --font-button: "Inspiratiq Tiny Museum", "Sniglet", ui-rounded, system-ui, sans-serif;
+  --font-script: var(--font-inspiratiq), var(--font-sniglet), ui-rounded, system-ui, sans-serif;
+  --font-title: var(--font-beth-ellen), "Segoe Script", cursive;
+  --font-ui: var(--font-inspiratiq), var(--font-sniglet), ui-rounded, system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-sniglet), ui-rounded, system-ui, -apple-system, sans-serif;
+  --font-button: var(--font-inspiratiq), var(--font-sniglet), ui-rounded, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --screen-width: min(430px, calc(100dvw - 24px), calc((100dvh - 24px) * 9 / 16));
@@ -1664,7 +1656,7 @@ code.token {
   container-type: inline-size;
   border: max(1px, 0.28cqw) solid var(--note-edge);
   background: var(--note-paper);
-  font-family: 'Noto Sans', system-ui, sans-serif;
+  font-family: var(--font-noto-sans), system-ui, sans-serif;
   color: #000;
 }
 .sticky-note::after {

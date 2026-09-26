@@ -92,11 +92,11 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
   )
   group.add(boothMesh)
 
-  const catFrames = assets.helpCat.map((s) => s.texture)
+  const catFrames = assets.helpCat
   const catMesh = plane(
     cat.height * (assets.helpCat[0]?.aspect ?? 1),
     cat.height,
-    catFrames[0],
+    catFrames[0].texture,
     booth.x + cat.dx,
     cat.centerY,
     cat.z,
@@ -138,12 +138,12 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
       const next = Math.floor(catElapsed / (catFrameMs / 1000)) % catFrames.length
       if (next !== catFrame) {
         catFrame = next
-        catMaterial.map = catFrames[catFrame]
+        catMaterial.map = catFrames[catFrame].texture
       }
     },
 
     dispose() {
-      for (const texture of catFrames) texture.dispose()
+      for (const frame of catFrames) frame.texture.dispose()
       disposeBoards(scene, group)
     },
   }

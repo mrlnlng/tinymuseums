@@ -13,7 +13,7 @@ const ASSETS_DIR =
 export const PX_PER_UNIT = 300
 
 // Bump whenever the rendered frame changes; frames from older versions are re-rendered by the worker.
-export const FRAME_VERSION = 2
+export const FRAME_VERSION = 3
 
 export const FRAME_FORMAT = { extension: 'webp', contentType: 'image/webp' } as const
 
@@ -128,7 +128,7 @@ export async function renderSinglePieceFrame({
     create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(overlays)
-    .webp({ quality: 90, alphaQuality: 100 })
+    .webp({ quality: 80, alphaQuality: 80 })
     .toBuffer()
 
   return { buffer, width, height, canvas: { w: canvasW, h: canvasH } }

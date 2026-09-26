@@ -35,11 +35,9 @@ export interface Character {
 }
 
 export function createCharacter(assets: Assets, host: HTMLElement): Character {
-  const cycles = {
-    left: assets.walk.left.length > 0 ? assets.walk.left : [assets.bunnyIdle.left],
-    right: assets.walk.right.length > 0 ? assets.walk.right : [assets.bunnyIdle.right],
-  }
   const idle = assets.bunnyIdle
+  const cycle = (side: 'left' | 'right'): HTMLImageElement[] =>
+    assets.walk[side].length > 0 ? assets.walk[side] : [idle[side]]
 
   const sprite = document.createElement('img')
   sprite.className = 'hall-bunny'
@@ -111,7 +109,7 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
         setFrame(perched.image)
       } else if (moving) {
         facing = velocity > 0 ? 'right' : 'left'
-        const frames = cycles[facing]
+        const frames = cycle(facing)
         const step = Math.floor(distance * CONFIG.character.cyclesPerUnit * frames.length)
         setFrame(frames[((step % frames.length) + frames.length) % frames.length])
       } else {

@@ -20,6 +20,7 @@ interface SlotRuntime {
 }
 
 const MAX_TEXTURE_ATTEMPTS = 4
+const MAX_CONCURRENT_LOADS = 2
 
 function retryDelayMs(attempts: number): number {
   return Math.min(8000, 500 * 2 ** attempts)
@@ -55,6 +56,7 @@ export class HallScene {
 
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
+  private inFlight = 0
   private pedestals = new Map<number, Pedestal>()
   private mountedList: MountedDisplay[] = []
   private bareHelmStand: number | null = null
@@ -109,6 +111,7 @@ export class HallScene {
 
   update(now: number, dt: number, cameraX: number): void {
     const { mountRadiusUnits, loadRadiusUnits } = CONFIG.virtualization
+    const wanted: { slot: SlotRuntime; distance: number }[] = []
 
     for (const slot of this.slots.values()) {
       const centerX = this.layout.centerX[slot.index]
@@ -123,14 +126,14 @@ export class HallScene {
       }
 
       if (slot.status === 'idle') {
-        this.beginLoad(slot, now)
+        wanted.push({ slot, distance })
         continue
       }
 
       if (slot.status === 'error') {
         const attempts = slot.attempts ?? 0
         if (attempts < MAX_TEXTURE_ATTEMPTS && now >= (slot.retryAt ?? 0)) {
-          this.beginLoad(slot, now)
+          wanted.push({ slot, distance })
         }
         continue
       }
@@ -148,6 +151,12 @@ export class HallScene {
       }
     }
 
+    wanted.sort((a, b) => a.distance - b.distance)
+    for (const { slot } of wanted) {
+      if (this.inFlight >= MAX_CONCURRENT_LOADS) break
+      this.beginLoad(slot, now)
+    }
+
     this.updatePedestals(dt, cameraX)
     this.coin.update(dt)
   }
@@ -155,8 +164,12 @@ export class HallScene {
   private beginLoad(slot: SlotRuntime, now: number): void {
     slot.status = 'loading'
     slot.startedAt = now
+    this.inFlight += 1
 
     loadDisplayTexture(slot.piece.image.url)
+      .finally(() => {
+        this.inFlight -= 1
+      })
       .then((texture) => {
         slot.texture = texture
         slot.status = 'ready'

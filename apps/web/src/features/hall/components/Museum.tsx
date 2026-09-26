@@ -1,20 +1,27 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
-import GuestBoard from '@/features/guestboard/components/GuestBoard'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
-import CoinFound from '@/features/hall/components/CoinFound'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
-import HelpGuide from '@/features/hall/components/HelpGuide'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
-import Walkthrough from '@/features/artwork/components/Walkthrough'
 import { preloadFrames } from '@/features/artwork/lib/frame'
+
+const loadGuestBoard = () => import('@/features/guestboard/components/GuestBoard')
+const loadCoinFound = () => import('@/features/hall/components/CoinFound')
+const loadHelpGuide = () => import('@/features/hall/components/HelpGuide')
+const loadWalkthrough = () => import('@/features/artwork/components/Walkthrough')
+
+const GuestBoard = dynamic(loadGuestBoard, { ssr: false })
+const CoinFound = dynamic(loadCoinFound, { ssr: false })
+const HelpGuide = dynamic(loadHelpGuide, { ssr: false })
+const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
@@ -65,13 +72,17 @@ export default function Museum({ initialSlice }: MuseumProps) {
     setIsHintShown(false)
   }, [isSuspended, setWalking])
 
-  // The walkthrough frames are only needed once a piece is opened, so they wait
-  // for the browser to be idle rather than racing the hall's own textures.
   useEffect(() => {
     if (!isReady) return
     const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 4000))
     const cancel = window.cancelIdleCallback ?? window.clearTimeout
-    const handle = idle(() => preloadFrames(), { timeout: 15000 })
+    const handle = idle(
+      () => {
+        preloadFrames()
+        void Promise.all([loadGuestBoard(), loadCoinFound(), loadHelpGuide(), loadWalkthrough()])
+      },
+      { timeout: 15000 },
+    )
     return () => cancel(handle as number)
   }, [isReady])
 

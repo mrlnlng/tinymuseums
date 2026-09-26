@@ -13,6 +13,8 @@ const config: NextConfig = {
   serverExternalPackages: ['pg', '@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
   eslint: { ignoreDuringBuilds: true },
   poweredByHeader: false,
+  // Must stay below the epoch grace window, or a stale page can point at an expired epoch.
+  expireTime: 3600,
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }]
   },

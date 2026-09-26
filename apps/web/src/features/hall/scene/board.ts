@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { CONFIG } from './config'
 
 export interface Mark {
   x: number
@@ -23,7 +22,7 @@ export function plane(
   return mesh
 }
 
-const CUTS = CONFIG.plaqueCuts
+const CUTS = [0, 0.28, 0.72, 1] as const
 
 export function stretchedBoard(
   texture: THREE.Texture,

@@ -1738,55 +1738,25 @@ code.token {
 .hall-skeleton {
   position: absolute;
   inset: 0;
-  container-type: size;
+  display: grid;
+  place-items: center;
   background: var(--wall);
 }
 
-.lobby-poster {
-  --u: min(100cqw / 3.6, 100cqh / 6.4);
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: repeating-linear-gradient(
-    to right,
-    #fff8de 0 calc(var(--stripe) * 0.5 * var(--u)),
-    #fff2c5 0 calc(var(--stripe) * var(--u))
-  );
-  background-position-x: calc(50% + var(--wall-phase) * var(--u));
+.hall-skeleton-note {
+  color: var(--script);
+  font-size: 20px;
+  opacity: 0;
+  animation: skeleton-wait 2.4s ease-in-out 0.45s infinite;
 }
 
-.lobby-poster-floor {
-  position: absolute;
-  inset: 0;
-  top: var(--floor-top);
-  background: var(--floor-src) repeat-x;
-  background-color: var(--floor);
-  background-size: auto calc(var(--floor-height) * var(--u));
-  background-position-x: calc(50% + var(--floor-phase) * var(--u));
+@keyframes skeleton-wait {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
 }
 
-.lobby-poster-item {
-  position: absolute;
-  translate: -50% 0;
-  max-width: none;
-}
-
-.lobby-poster-sign {
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  border-style: solid;
-  border-width: 0 var(--plaque-end);
-  border-image-source: var(--plaque-src);
-  border-image-slice: 0 var(--plaque-cut-end) 0 var(--plaque-cut-start) fill;
-  border-image-repeat: stretch;
-}
-.lobby-poster-sign span {
-  font-family: var(--font-button);
-  color: var(--ink);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
+@media (prefers-reduced-motion: reduce) {
+  .hall-skeleton-note { animation: none; opacity: 0.6; }
 }
 
 .sketch-guess {

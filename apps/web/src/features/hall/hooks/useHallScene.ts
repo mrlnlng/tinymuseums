@@ -34,6 +34,7 @@ const BACKDROP_LENGTH = 600
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
 const SCENERY_MAX_WAIT_MS = 5000
+const OPENING_MAX_WAIT_MS = 5000
 const QUIET_AFTER_SECONDS = 2
 
 const VIEWED_WITHIN_UNITS = 3.0
@@ -409,6 +410,19 @@ export function useHallScene({
         }).catch(() => {})
       }
 
+      let fontsReady = false
+      void document.fonts.ready.then(() => {
+        fontsReady = true
+      })
+      const openingStart = performance.now()
+
+      // OPENING_MAX_WAIT_MS keeps a slow painting from holding the curtain down.
+      function openingReady(now: number): boolean {
+        if (now - openingStart > OPENING_MAX_WAIT_MS) return true
+        const { loaded, total } = hall.stats()
+        return fontsReady && loaded >= Math.min(1, total)
+      }
+
       let frameHandle = 0
       let frameCount = 0
       let lastFrameAt = performance.now()
@@ -422,9 +436,11 @@ export function useHallScene({
         lastFrameAt = now
 
         if (!isReadyRef.current) {
-          isReadyRef.current = true
-          setIsReady(true)
-          traversal.playIntro(introStart, entrance)
+          if (openingReady(now)) {
+            isReadyRef.current = true
+            setIsReady(true)
+            traversal.playIntro(introStart, entrance)
+          }
         } else {
           traversal.setSuspended(isSuspendedRef.current)
           traversal.update(dt, hall.layout.totalLength)

@@ -181,23 +181,17 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 
-  const [firstCat, ...restCat] = HELP_CAT_FRAMES
   const [entrance, walkRight, pedestalImages, idleLeft, idleRight, helpCat] = await Promise.all([
     loadTolerant(names.map((n) => assetUrl(base, ENTRANCE_FILES[n]))),
     loadTolerant(rightFiles.map((f) => assetUrl(base, f))),
     loadTolerant(manifest.pedestals.map((p) => assetUrl(base, p.file))),
     loadRetrying(assetUrl(base, 'bunny-left.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
     loadRetrying(assetUrl(base, 'bunny-right.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
-    loadTolerant([assetUrl(base, firstCat)]),
+    loadTolerant(HELP_CAT_FRAMES.map((f) => assetUrl(base, f))),
   ])
 
   const walkLeft: HTMLImageElement[] = []
-  const helpCatSprites = helpCat.map(toSprite)
-
   void loadTolerant(leftFiles.map((f) => assetUrl(base, f))).then((images) => walkLeft.push(...images))
-  void loadTolerant(restCat.map((f) => assetUrl(base, f))).then((images) =>
-    helpCatSprites.push(...images.map(toSprite)),
-  )
 
   const { textures, aspect } = indexBy(names, entrance)
 
@@ -214,7 +208,7 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
       ...toSprite(img),
       file: manifest.pedestals[i].file,
     })),
-    helpCat: helpCatSprites,
+    helpCat: helpCat.map(toSprite),
   }
 }
 

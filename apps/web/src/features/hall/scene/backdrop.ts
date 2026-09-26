@@ -7,7 +7,7 @@ export interface Backdrop {
 }
 
 export function createBackdrop(scene: THREE.Scene, assets: Assets, hallLength: number): Backdrop {
-  const span = hallLength + 120
+  const span = hallLength + CONFIG.backdrop.margin * 2
   const centerX = hallLength / 2
 
   const wallTexture = assets.textures.wallpaper.clone()
@@ -22,7 +22,7 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, hallLength: n
   wall.position.set(centerX, 15, -0.5)
   scene.add(wall)
 
-  const floorHeight = 2.6
+  const { floorHeight } = CONFIG.backdrop
   const floorTexture = assets.textures.floor.clone()
   floorTexture.wrapS = THREE.RepeatWrapping
   floorTexture.needsUpdate = true

@@ -7,6 +7,10 @@ export const CONFIG = {
 
   wallpaper: { stripePairWidth: 0.62 },
 
+  backdrop: { margin: 60, floorHeight: 2.6 },
+
+  plaqueCuts: [0, 0.28, 0.72, 1],
+
   displayBottomY: 0.608,
   displayTitleGap: 0.07,
 

@@ -138,16 +138,20 @@ export function useHallScene({
       const characterHost = hosts.character.current
       if (!canvasHost || !overlayHost || !characterHost) return
 
+      const renderer = new THREE.WebGLRenderer({ antialias: false })
       let assets: Assets
       try {
-        assets = await loadAssets()
+        assets = await loadAssets(renderer)
       } catch (loadError) {
+        renderer.dispose()
         if (!isDisposed) setError((loadError as Error).message)
         return
       }
-      if (isDisposed) return
+      if (isDisposed) {
+        renderer.dispose()
+        return
+      }
 
-      const renderer = new THREE.WebGLRenderer({ antialias: false })
       const pixelRatio = createPixelRatioGovernor(renderer, window.devicePixelRatio)
       renderer.setClearColor(new THREE.Color(assets.manifest.room.wallColor))
       renderer.domElement.className = 'hall-canvas'

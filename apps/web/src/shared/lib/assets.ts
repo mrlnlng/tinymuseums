@@ -17,6 +17,7 @@ export interface AssetEntry {
 const images = manifest.images as Record<string, AssetEntry>
 
 export interface AtlasSheet extends BuiltImage {
+  ktx2?: string
   sprites: Record<string, [number, number, number, number]>
 }
 
@@ -25,6 +26,12 @@ export type AtlasGroup = keyof typeof manifest.atlases
 export function atlasSheets(group: AtlasGroup, density: 2 | 3 = screenDensity()): AtlasSheet[] {
   const sheets = manifest.atlases[group] as unknown as { x2: AtlasSheet[]; x3: AtlasSheet[] }
   return density === 3 ? sheets.x3 : sheets.x2
+}
+
+// Present only when the optimiser was run with ASSET_KTX2=1.
+export function ktx2TranscoderPath(): string | null {
+  const ktx2 = (manifest as { ktx2?: { transcoder: string } | null }).ktx2
+  return ktx2 ? builtUrl(ktx2.transcoder) : null
 }
 
 export function spriteMasks(): { url: string; sprites: Record<string, [number, number, number, number]> } {

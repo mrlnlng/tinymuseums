@@ -64,16 +64,28 @@ under 10s; iOS Safari starts crashing WebGL pages around 300-500MB.
       time, looked up through the texture's offset/repeat (a compressed or
       atlased texture cannot be read back).
 
-## Phase 3: KTX2 (Basis Universal) for the atlases and floor
+## Phase 3: KTX2 (Basis Universal), built and switched off
 
-- [ ] Optimiser encodes each atlas and the floor to KTX2 with `ktx2-encoder`
-      (Binomial's encoder as WASM), Y-flipped, sRGB, with mipmaps.
-- [ ] Try ETC1S and UASTC; measure fidelity against the source with the same
-      SSIM check as AVIF, and download size against the AVIF atlas. Keep the
-      choice that passes, record it in the manifest, and report the numbers.
-- [ ] Runtime: three's `KTX2Loader` with the transcoder copied into
-      `public/immutable/basis-<three version>/`; fall back to the AVIF/WebP
-      atlas if KTX2 is unsupported or fails.
+- [x] Optimiser can encode each lossy atlas sheet to KTX2 with `ktx2-encoder`
+      (Binomial's encoder as WASM): UASTC + Zstandard, Y-flipped, sRGB, mipmaps.
+- [x] The result is decoded with three's own transcoder and must pass the
+      same per-sprite fidelity gate as AVIF, or the sheet gets no KTX2.
+- [x] Runtime: three's `KTX2Loader` (imported only when needed) with the
+      transcoder copied to `public/immutable/basis-<three version>/`; any
+      sheet that fails to load or transcode falls back to its AVIF/WebP.
+- [x] Measured and decided: ETC1S was both larger (172KB vs 88KB) and worse
+      (0.983 vs 0.990) than the AVIF sheet. UASTC passes on the lossy sheets
+      only (never on lossless ones) and at 3x takes the hall's sheets from
+      692KB to 2.4MB while cutting their GPU memory from 81MB to 39MB. The
+      hall uses ~100MB in total against iOS's 300-500MB ceiling, so it ships
+      switched off.
+- [x] The floor stays a 3KB lossless webp; KTX2 cannot match it.
+
+To turn it on: `ASSET_KTX2=1 node --experimental-strip-types
+scripts/optimize-assets.ts`, then commit the new `.ktx2` files, the copied
+transcoder and the manifest (which then carries `ktx2.transcoder`). The hall
+uses KTX2 for every sheet the manifest lists it for. Turn it back off by
+rerunning without the variable.
 
 ## Phase 4: ThumbHash placeholders for paintings
 

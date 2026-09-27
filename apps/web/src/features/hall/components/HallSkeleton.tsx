@@ -1,4 +1,4 @@
-import { atlasSheets, builtUrl, pictureSources } from '@/shared/lib/assets'
+import { atlasSheets, builtUrl, ktx2TranscoderPath, pictureSources } from '@/shared/lib/assets'
 
 // Density media queries mirror screenDensity(): 3x above a device pixel ratio of 2.
 const DENSITY_MEDIA = { 2: '(max-resolution: 2dppx)', 3: '(min-resolution: 2.01dppx)' } as const
@@ -11,7 +11,9 @@ export function HallPreload() {
   return (
     <>
       {([2, 3] as const).flatMap((density) =>
-        atlasSheets('entrance', density).map((sheet) => (
+        atlasSheets('entrance', density)
+          .filter((sheet) => !(sheet.ktx2 && ktx2TranscoderPath()))
+          .map((sheet) => (
           <link
             key={sheet.src}
             rel="preload"
@@ -21,7 +23,7 @@ export function HallPreload() {
             media={DENSITY_MEDIA[density]}
             fetchPriority="high"
           />
-        )),
+          )),
       )}
       <link rel="preload" as="image" href={bunny.src} fetchPriority="high" />
     </>

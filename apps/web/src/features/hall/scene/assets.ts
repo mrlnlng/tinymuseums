@@ -5,6 +5,7 @@ import {
   assetUrl as builtAssetUrl,
   atlasSheets,
   builtUrl,
+  ktx2TranscoderPath,
   spriteMasks,
   type AssetName,
   type AtlasGroup,
@@ -166,18 +167,50 @@ function stem(file: string): string {
   return file.replace(/\.(png|svg)$/, '')
 }
 
+interface CompressedLoader {
+  loadAsync(url: string): Promise<THREE.Texture>
+}
+
+let ktx2: CompressedLoader | null = null
+
+async function prepareKtx2(renderer: THREE.WebGLRenderer): Promise<void> {
+  const transcoder = ktx2TranscoderPath()
+  if (!transcoder || ktx2) return
+  const { KTX2Loader } = await import('three/examples/jsm/loaders/KTX2Loader.js')
+  ktx2 = new KTX2Loader().setTranscoderPath(transcoder).detectSupport(renderer)
+}
+
+async function loadCompressed(url: string): Promise<THREE.Texture | null> {
+  if (!ktx2) return null
+  try {
+    const texture = await ktx2.loadAsync(url)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.anisotropy = 4
+    texture.magFilter = THREE.LinearFilter
+    return texture
+  } catch (error) {
+    console.warn(`[hall] ${url} did not transcode; using the image sheet`, error)
+    return null
+  }
+}
+
+async function loadSheetImage(url: string): Promise<THREE.Texture> {
+  const image = await loadRetrying(url).catch(async (error) => {
+    console.warn(`[hall] giving up on ${url}`, error)
+    return blankImage()
+  })
+  return toTexture(image)
+}
+
 // Each sprite is a clone of its sheet's texture showing one region, so a sheet is
 // uploaded to the GPU once however many sprites it holds.
 async function loadSheets(group: AtlasGroup): Promise<Map<string, Sprite>> {
   const sprites = new Map<string, Sprite>()
   await Promise.all(
     atlasSheets(group).map(async (sheet) => {
-      const url = builtUrl(useAvif && sheet.avif ? sheet.avif : sheet.src)
-      const image = await loadRetrying(url).catch(async (error) => {
-        console.warn(`[hall] giving up on ${url}`, error)
-        return blankImage()
-      })
-      const texture = toTexture(image)
+      const texture =
+        (sheet.ktx2 ? await loadCompressed(builtUrl(sheet.ktx2)) : null) ??
+        (await loadSheetImage(builtUrl(useAvif && sheet.avif ? sheet.avif : sheet.src)))
       for (const [name, [x, y, w, h]] of Object.entries(sheet.sprites)) {
         const region: SpriteRegion = { name, u0: x / sheet.w, v0: 1 - (y + h) / sheet.h, du: w / sheet.w, dv: h / sheet.h }
         const sprite = texture.clone()
@@ -245,8 +278,9 @@ function spriteFrom(sheets: Map<string, Sprite>, file: string): Sprite {
   return sprite
 }
 
-export async function loadAssets(): Promise<Assets> {
+export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets> {
   useAvif = await supportsAvif()
+  await prepareKtx2(renderer).catch((error) => console.warn('[hall] KTX2 unavailable', error))
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 

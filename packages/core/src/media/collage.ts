@@ -10,13 +10,20 @@ import type { Derivative } from '../types.ts'
 const ASSETS_DIR =
   process.env.CORE_ASSETS_DIR || join(repoRoot, 'packages', 'core', 'assets')
 
-export const PX_PER_UNIT = 300
+export const PX_PER_UNIT = 400
 
 // Bump whenever the rendered frame changes; frames from older versions are re-rendered by the worker.
-export const FRAME_VERSION = 4
+export const FRAME_VERSION = 5
 
 // Frames from this version on have an .avif sibling next to the .webp.
 export const FRAME_AVIF_SINCE = 4
+
+// Frames rendered before this version are still stored at 300px per world unit.
+const FRAME_HIRES_SINCE = 5
+
+export function framePxPerUnit(version: number): number {
+  return version >= FRAME_HIRES_SINCE ? PX_PER_UNIT : 300
+}
 
 export const FRAME_FORMAT = { extension: 'webp', contentType: 'image/webp' } as const
 
@@ -107,10 +114,10 @@ export async function renderSinglePieceFrame({
 
   const overlays: sharp.OverlayOptions[] = []
 
-  const source = pickDerivative(derivatives, windowW, 'jpg')
+  const drawW = Math.round(windowW * ARTWORK_OVERSCAN)
+  const drawH = Math.round(windowH * ARTWORK_OVERSCAN)
+  const source = pickDerivative(derivatives, Math.max(drawW, Math.ceil(drawH * aspect)), 'jpg')
   if (source) {
-    const drawW = Math.round(windowW * ARTWORK_OVERSCAN)
-    const drawH = Math.round(windowH * ARTWORK_OVERSCAN)
     const left = Math.max(0, Math.min(width - drawW, windowLeft - Math.round((drawW - windowW) / 2)))
     const top = Math.max(0, Math.min(height - drawH, windowTop - Math.round((drawH - windowH) / 2)))
 
@@ -135,8 +142,8 @@ export async function renderSinglePieceFrame({
     .png()
     .toBuffer()
   const [buffer, avif] = await Promise.all([
-    sharp(composed).webp({ quality: 80, alphaQuality: 80 }).toBuffer(),
-    sharp(composed).avif({ quality: 50, effort: 4 }).toBuffer(),
+    sharp(composed).webp({ quality: 90, alphaQuality: 100 }).toBuffer(),
+    sharp(composed).avif({ quality: 70, effort: 4 }).toBuffer(),
   ])
 
   return { buffer, avif, width, height, canvas: { w: canvasW, h: canvasH } }

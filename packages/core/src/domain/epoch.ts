@@ -1,6 +1,6 @@
 import { env } from '../infra/env.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
-import { FRAME_AVIF_SINCE, PX_PER_UNIT } from '../media/collage.ts'
+import { FRAME_AVIF_SINCE, framePxPerUnit } from '../media/collage.ts'
 import { frameAvifKey, getStorage } from '../media/storage.ts'
 import { MAX_STANDS } from './gallery.ts'
 import type { HallPieceDto, HallSliceDto } from '../types.ts'
@@ -140,8 +140,8 @@ export async function getHallSlice(
       statement: row.statement,
       description: row.description,
       canvas: {
-        w: row.flattened_width / PX_PER_UNIT,
-        h: row.flattened_height / PX_PER_UNIT,
+        w: row.flattened_width / framePxPerUnit(row.flattened_version),
+        h: row.flattened_height / framePxPerUnit(row.flattened_version),
       },
       image: {
         url: storage.urlFor(row.flattened_key),

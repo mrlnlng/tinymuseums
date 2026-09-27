@@ -23,6 +23,7 @@ export const VISIT_FEATURES = {
   music_toggle: 'Music toggled',
   volume: 'Volume changed',
   leave: 'Left through the door',
+  bug_report: 'Report a problem opened',
 } as const
 
 export type VisitFeature = keyof typeof VISIT_FEATURES

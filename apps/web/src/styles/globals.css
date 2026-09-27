@@ -206,6 +206,7 @@ h1, h2, h3 { text-wrap: balance; }
 .guest-note-row { display: flex; gap: 16px; align-items: flex-start; }
 .guest-note-meta { margin-top: 0; margin-bottom: 6px; }
 .guest-note-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bug-context { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 11.5px; }
 
 .stat-value { font-size: 30px; font-weight: 800; }
 .stat-section { font-size: 18px; margin-top: 28px; }
@@ -811,6 +812,22 @@ code.token {
   color: var(--script);
 }
 
+.help-report {
+  position: relative;
+  display: block;
+  margin: -4% auto 0;
+  padding: 0 20% 7% 26%;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: clamp(11px, 3cqw, 16px);
+  color: var(--script);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
 .hall-index {
   position: absolute;
   width: 1px;
@@ -1387,6 +1404,76 @@ code.token {
 .sound-toggle .waves[data-on='false'] { opacity: 0.22; }
 
 .sound-toggle .slash { stroke: var(--script); }
+
+.bug-toggle svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--script);
+}
+
+.bug-report {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: start center;
+  padding: calc(56px + env(safe-area-inset-top)) 16px 16px;
+}
+
+.bug-report-scrim {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  background: rgba(70, 45, 25, 0.35);
+  cursor: pointer;
+}
+
+.bug-report-card {
+  position: relative;
+  width: min(100%, 360px);
+  display: grid;
+  gap: 12px;
+  padding: 22px 20px 18px;
+  background: var(--wall);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(70, 45, 25, 0.28);
+}
+
+.bug-report-title {
+  margin: 0;
+  text-align: center;
+  font-size: 22px;
+}
+
+.bug-report-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink);
+  background: #fffaf0;
+  border: 2px solid rgba(139, 86, 65, 0.22);
+  border-radius: 10px;
+  resize: none;
+}
+
+.bug-report-input:focus { outline: none; border-color: var(--script); }
+
+.bug-report-note,
+.bug-report-error {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.bug-report-error { color: var(--bad); }
+
+.bug-report-actions { display: flex; justify-content: center; gap: 10px; }
+.bug-report-actions .button { padding: 10px 22px; font-size: 15px; }
 
 .chrome-button:focus-visible {
   outline: 2px solid var(--script);

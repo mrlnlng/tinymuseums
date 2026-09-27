@@ -1,5 +1,6 @@
 import { query, queryOne } from '../infra/db.ts'
 import { hit, hitForVisitor, type RateLimit } from '../infra/rate-limit.ts'
+import { cleanText } from '../infra/text.ts'
 import { GUEST_NOTE_COLORS, MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '../guestboard-rules.ts'
 import type { GuestNoteColor, GuestNoteDto, GuestNotePageDto } from '../types.ts'
 
@@ -100,8 +101,8 @@ export async function postGuestNote(
 }
 
 function validate(input: GuestNoteInput): { name: string; message: string; color: GuestNoteColor } {
-  const name = clean(input.name, { multiline: false })
-  const message = clean(input.message, { multiline: true })
+  const name = cleanText(input.name, { multiline: false })
+  const message = cleanText(input.message, { multiline: true })
 
   if (!name) throw new GuestNoteRejected('Sign your note with a name')
   if (!message) throw new GuestNoteRejected('Write something on your note')
@@ -122,15 +123,6 @@ function validate(input: GuestNoteInput): { name: string; message: string; color
   }
 
   return { name, message, color }
-}
-
-function clean(value: unknown, { multiline }: { multiline: boolean }): string {
-  if (typeof value !== 'string') return ''
-  let text = value.normalize('NFC').replace(/\r\n?/g, '\n')
-  text = multiline
-    ? text.replace(/[^\P{Cc}\n]/gu, '').replace(/\n{3,}/g, '\n\n')
-    : text.replace(/\p{Cc}/gu, ' ').replace(/\s+/g, ' ')
-  return text.trim()
 }
 
 async function enforceLimits(ip: string | null): Promise<void> {

@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts",
     "./guestboard": "./src/guestboard-rules.ts",
+    "./bugs": "./src/bug-report-rules.ts",
     "./brand": "./src/brand.ts",
     "./visit-features": "./src/visit-features.ts"
   },

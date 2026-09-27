@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
+import { openBugReport } from '@/features/feedback/lib/bug-report'
 
 const AWNING = 0.462
 const COUNTER = 0.725
@@ -127,6 +128,17 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
                 <li key={step}>{step}</li>
               ))}
             </ol>
+            <button
+              type="button"
+              className="help-report"
+              data-track="bug_report"
+              onClick={() => {
+                onClose()
+                openBugReport()
+              }}
+            >
+              Something not working? Tell us
+            </button>
           </div>
 
           <div ref={counterRef} className="help-band help-band-counter" />

@@ -10,6 +10,7 @@ import {
   ensureQrToken,
   hashPassword,
   hideGuestNote,
+  setBugReportResolved,
   hangPiece,
   hitForVisitor,
   movePiece,
@@ -203,4 +204,12 @@ export async function deleteGuestNoteAction(formData: FormData): Promise<void> {
   await hideGuestNote(String(formData.get('id') ?? ''))
   revalidatePath('/studio/guestboard')
   back('/studio/guestboard', 'Note deleted')
+}
+
+export async function setBugReportResolvedAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  const resolved = formData.get('resolved') === 'true'
+  await setBugReportResolved(String(formData.get('id') ?? ''), resolved)
+  revalidatePath('/studio/bugs')
+  back('/studio/bugs', resolved ? 'Marked fixed' : 'Reopened')
 }

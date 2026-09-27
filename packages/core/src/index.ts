@@ -14,6 +14,16 @@ export {
   verifyPassword,
   type AuthedArtist,
 } from './domain/auth.ts'
+export {
+  BugReportRateLimited,
+  BugReportRejected,
+  countOpenBugReports,
+  listBugReports,
+  postBugReport,
+  setBugReportResolved,
+  type BugContext,
+  type BugReportDto,
+} from './domain/bug-reports.ts'
 export { ensureEpoch, epochById, getHallSlice } from './domain/epoch.ts'
 export { getSketchPool, getSketchRound, type SketchCandidate } from './domain/sketch.ts'
 export { parseVitalsReport, recordVitals, summarizeVitals, type VitalSummary } from './domain/vitals.ts'

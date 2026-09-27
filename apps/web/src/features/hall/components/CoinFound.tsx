@@ -2,6 +2,10 @@
 
 import { useEffect } from 'react'
 import { motion } from 'motion/react'
+import AssetImage from '@/shared/components/AssetImage'
+import { pictureSources } from '@/shared/lib/assets'
+
+const coin = pictureSources('coin-large')
 
 interface CoinFoundProps {
   onClose: () => void
@@ -29,21 +33,25 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
       onClick={onClose}
     >
       <div className="coin-found-stage">
-        <img className="coin-found-urn" src="/assets/pedestal-5-large.webp" alt="" />
+        <AssetImage name="pedestal-5-large" className="coin-found-urn" />
         <h2 className="coin-found-title">You found a coin!</h2>
         <p className="coin-found-code" onClick={(e) => e.stopPropagation()}>
           Use &quot;tinymuseum&quot;
           <br />
           for 2$ OFF your order
         </p>
-        <motion.img
-          className="coin-found-coin"
-          src="/assets/coin-large.webp"
-          alt=""
-          initial={{ scale: 0.4, rotate: -200, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ type: 'spring', bounce: 0.35, duration: 0.7 }}
-        />
+        <picture>
+          {coin.avifSrcSet ? <source srcSet={coin.avifSrcSet} type="image/avif" /> : null}
+          <motion.img
+            className="coin-found-coin"
+            src={coin.src}
+            srcSet={coin.srcSet}
+            alt=""
+            initial={{ scale: 0.4, rotate: -200, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            transition={{ type: 'spring', bounce: 0.35, duration: 0.7 }}
+          />
+        </picture>
       </div>
     </motion.div>
   )

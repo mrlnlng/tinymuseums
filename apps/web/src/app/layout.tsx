@@ -7,6 +7,7 @@ import SoundProvider from '@/features/sound/components/SoundProvider'
 import ServiceWorker from '@/shared/components/ServiceWorker'
 import VitalsReporter from '@/shared/components/VitalsReporter'
 import VisitTracker from '@/shared/components/VisitTracker'
+import { assetCssVariables } from '@/shared/lib/assets'
 import '../styles/globals.css'
 
 const inspiratiq = localFont({
@@ -54,6 +55,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inspiratiq.variable} ${sniglet.variable} ${bethEllen.variable} ${notoSans.variable}`}>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: assetCssVariables() }} />
+      </head>
       <body>
         <SoundProvider>
           <div className="screen">

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import SoundToggle from '@/features/sound/components/SoundToggle'
+import AssetImage from '@/shared/components/AssetImage'
 
 export default function ScreenChrome() {
   const pathname = usePathname()
@@ -21,7 +22,7 @@ export default function ScreenChrome() {
           aria-label="Back to the entrance"
           title="Back to the entrance"
         >
-          <img src="/assets/icon-home.webp" alt="" />
+          <AssetImage name="icon-home" />
         </button>
       ) : null}
       <SoundToggle />

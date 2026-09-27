@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BRAND } from '@tiny/core'
 import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import { firstSlice } from '@/features/hall/lib/slice'
+import AssetImage from '@/shared/components/AssetImage'
 
 export const revalidate = 30
 
@@ -40,12 +41,12 @@ export default function LandingPage() {
         </Link>
       </div>
 
-      <img className="landing-column" src="/assets/pedestal.webp" alt="" aria-hidden="true" />
+      <AssetImage name="pedestal" className="landing-column" aria-hidden="true" />
 
       <div className="landing-visitor">
-        <img className="visitor-bunny" src="/assets/bunny-right.webp" alt="" aria-hidden="true" />
+        <AssetImage name="bunny-right" className="visitor-bunny" aria-hidden="true" />
         <Link className="visitor-ticket" href="/museum" data-track="start_visit" aria-label="Start visit">
-          <img src="/assets/ticket.webp" alt="" aria-hidden="true" />
+          <AssetImage name="ticket" aria-hidden="true" />
         </Link>
       </div>
 

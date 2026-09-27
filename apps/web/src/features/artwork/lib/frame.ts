@@ -1,22 +1,20 @@
 import manifest from '../../../../public/assets/manifest.json'
-import optimized from '../../../../public/assets/optimized.json'
 import { supportsAvif } from '@/shared/lib/avif'
-
-const AVIF = new Set<string>(optimized.avif)
+import { pictureSources, preloadImage, type AssetName } from '@/shared/lib/assets'
 
 export interface FrameShape {
+  name: AssetName
   src: string
-  avif: string | null
   window: { left: string; top: string; width: string; height: string }
   ratio: number
 }
 
-function shape(stem: string, size: number[], window: number[]): FrameShape {
+function shape(name: AssetName, size: number[], window: number[]): FrameShape {
   const [x, y, w, h] = window
   const percent = (value: number) => `${(value * 100).toFixed(3)}%`
   return {
-    src: `/assets/${stem}.webp`,
-    avif: AVIF.has(stem) ? `/assets/${stem}.avif` : null,
+    name,
+    src: pictureSources(name).src,
     window: { left: percent(x), top: percent(y), width: percent(w), height: percent(h) },
     ratio: size[0] / size[1],
   }
@@ -33,11 +31,8 @@ export async function preloadFrames(): Promise<void> {
   if (typeof window === 'undefined') return
   const avif = await supportsAvif()
   for (const shape of [PORTRAIT, LANDSCAPE]) {
-    const image = new Image()
-    image.fetchPriority = 'low'
-    image.decoding = 'async'
+    const image = preloadImage(shape.name, avif, 'low')
     image.onload = () => markFrameReady(shape.src)
-    image.src = avif && shape.avif ? shape.avif : shape.src
   }
 }
 

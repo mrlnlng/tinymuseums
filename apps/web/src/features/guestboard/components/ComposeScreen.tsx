@@ -3,6 +3,7 @@ import { MAX_GUEST_MESSAGE, MAX_GUEST_NAME } from '@tiny/core/guestboard'
 import StickyNote from '@/features/guestboard/components/StickyNote'
 import { useKeyboardLift } from '@/features/guestboard/hooks/useKeyboardLift'
 import type { NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
+import AssetImage from '@/shared/components/AssetImage'
 
 interface ComposeScreenProps {
   draft: NoteDraft
@@ -29,7 +30,7 @@ export default function ComposeScreen({ draft, error, onChange, onPublish, onBac
       <button type="button" className="guestboard-scrim" onClick={onBack} aria-label="Back to the guest board" />
       <form className="guestboard-stage" ref={stageRef} onSubmit={handleSubmit}>
         <div className="guestboard-board guestboard-board--close">
-          <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
+          <AssetImage name="guestboard/board" className="guestboard-board-art" />
         </div>
 
         <p className="guestboard-reminder">

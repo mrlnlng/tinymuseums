@@ -6,6 +6,7 @@ import type { PieceDto } from '@tiny/core'
 import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
+import AssetImage from '@/shared/components/AssetImage'
 
 interface Props {
   slug: string
@@ -228,23 +229,14 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                   style={artworkStyle}
                   data-waiting={isOrnamentReady ? undefined : ''}
                 />
-                <picture>
-                  {frame.avif ? <source srcSet={frame.avif} type="image/avif" /> : null}
-                  <img
-                    className="wt-frame-art"
-                    src={frame.src}
-                    alt=""
-                    aria-hidden="true"
-                    onLoad={revealArtwork}
-                    onError={revealArtwork}
-                  />
-                </picture>
-                <img
-                  className="wt-no-photos"
-                  src="/assets/icon-no-photos.webp"
-                  alt=""
+                <AssetImage
+                  name={frame.name}
+                  className="wt-frame-art"
                   aria-hidden="true"
+                  onLoad={revealArtwork}
+                  onError={revealArtwork}
                 />
+                <AssetImage name="icon-no-photos" className="wt-no-photos" aria-hidden="true" />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -274,7 +266,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                 target="_blank"
                 rel="noreferrer"
               >
-                <img className="wt-shop-icon" src="/assets/icon-basket.svg" alt="" aria-hidden="true" />
+                <AssetImage name="icon-basket" className="wt-shop-icon" aria-hidden="true" />
                 Shop print
               </a>
             ) : null}
@@ -285,7 +277,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
           <div className="wt-rope" aria-hidden="true" />
 
-          <img className="wt-column" src="/assets/pedestal.webp" alt="" aria-hidden="true" />
+          <AssetImage name="pedestal" className="wt-column" aria-hidden="true" />
         </>
       )}
     </motion.div>

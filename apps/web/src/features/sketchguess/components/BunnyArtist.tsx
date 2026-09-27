@@ -1,11 +1,10 @@
 'use client'
 
 import { motion, useReducedMotion, type TargetAndTransition, type Transition } from 'motion/react'
+import AssetImage from '@/shared/components/AssetImage'
 
 export type BunnyMood = 'idle' | 'drawing' | 'cheering' | 'sad'
 
-const SITTING = '/assets/sketchguess/bunny'
-const JUMPING = '/assets/bunny-right.webp'
 
 const POSES: Record<BunnyMood, { animate: TargetAndTransition; transition: Transition }> = {
   idle: { animate: { y: 0, rotate: 0, x: 0 }, transition: { duration: 0.3 } },
@@ -52,14 +51,7 @@ export default function BunnyArtist({ mood }: { mood: BunnyMood }) {
       animate={isStill ? undefined : pose.animate}
       transition={pose.transition}
     >
-      {mood === 'cheering' ? (
-        <img src={JUMPING} alt="" draggable={false} />
-      ) : (
-        <picture>
-          <source srcSet={`${SITTING}.avif`} type="image/avif" />
-          <img src={`${SITTING}.webp`} alt="" draggable={false} />
-        </picture>
-      )}
+      <AssetImage name={mood === 'cheering' ? 'bunny-right' : 'sketchguess/bunny'} draggable={false} />
       {mood === 'cheering' ? null : <Pencil scribbling={mood === 'drawing'} />}
     </motion.div>
   )

@@ -1,10 +1,12 @@
 // To retire this worker, replace this file with one that calls
 // self.registration.unregister() in its activate handler, then deploy.
-const VERSION = 'v1'
+const VERSION = 'v2'
 const STATIC_CACHE = `tm-static-${VERSION}`
 const ASSET_CACHE = `tm-assets-${VERSION}`
 const MEDIA_CACHE = `tm-media-${VERSION}`
+const IMMUTABLE_CACHE = `tm-immutable-${VERSION}`
 const MEDIA_LIMIT = 80
+const IMMUTABLE_LIMIT = 300
 
 // Versioned, never-rewritten media paths; they are safe to serve from cache forever.
 const MEDIA_PATH = /\/(pieces\/[^/]+\/(frame|sketch)\/v\d+\.\w+|artists\/[^/]+\/derivatives\/[^/]+\/w\d+\.\w+)$/
@@ -14,7 +16,7 @@ self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      const current = new Set([STATIC_CACHE, ASSET_CACHE, MEDIA_CACHE])
+      const current = new Set([STATIC_CACHE, ASSET_CACHE, MEDIA_CACHE, IMMUTABLE_CACHE])
       for (const key of await caches.keys()) {
         if (key.startsWith('tm-') && !current.has(key)) await caches.delete(key)
       }
@@ -32,6 +34,8 @@ self.addEventListener('fetch', (event) => {
 
   if (sameOrigin && url.pathname.startsWith('/_next/static/')) {
     event.respondWith(cacheFirst(request, STATIC_CACHE))
+  } else if (sameOrigin && url.pathname.startsWith('/immutable/')) {
+    event.respondWith(cacheFirst(request, IMMUTABLE_CACHE, IMMUTABLE_LIMIT))
   } else if (sameOrigin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/'))) {
     event.respondWith(staleWhileRevalidate(event, ASSET_CACHE))
   } else if (MEDIA_PATH.test(url.pathname)) {

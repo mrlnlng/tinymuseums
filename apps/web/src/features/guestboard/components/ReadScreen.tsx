@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import type { GuestNoteDto } from '@tiny/core'
 import StickyNote from '@/features/guestboard/components/StickyNote'
+import AssetImage from '@/shared/components/AssetImage'
 
 const LOAD_AHEAD = 3
 
@@ -52,7 +53,7 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
   return (
     <div className="guestboard-stage">
       <div className="guestboard-board guestboard-board--close">
-        <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
+        <AssetImage name="guestboard/board" className="guestboard-board-art" />
       </div>
 
       <div

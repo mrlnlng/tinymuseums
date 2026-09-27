@@ -5,6 +5,7 @@ import type { Mark } from './board'
 import type { GiftShopMarks } from './giftshop'
 import type { LobbyMarks } from './lobby'
 import type { MountedDisplay } from './scene'
+import { assetUrl } from '@/shared/lib/assets'
 
 export interface Viewport {
   width: number
@@ -234,7 +235,7 @@ export class GiftShopSigns {
     this.link.target = '_blank'
     this.link.rel = 'noreferrer noopener'
     this.link.innerHTML =
-      '<img class="gift-shop-basket" src="/assets/icon-basket.svg" alt="" aria-hidden="true">' +
+      `<img class="gift-shop-basket" src="${assetUrl('icon-basket')}" alt="" aria-hidden="true">` +
       '<span>View gift shop</span>'
 
     for (const node of [this.note, this.sign, this.link]) container.appendChild(node)

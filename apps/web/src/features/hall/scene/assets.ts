@@ -1,18 +1,12 @@
 import * as THREE from 'three'
 import manifestJson from '../../../../public/assets/manifest.json'
-import optimized from '../../../../public/assets/optimized.json'
 import { supportsAvif } from '@/shared/lib/avif'
+import { assetUrl as builtAssetUrl, type AssetName } from '@/shared/lib/assets'
 import { sameOriginUrl } from '@/features/hall/lib/media'
 
 export type AssetManifest = typeof manifestJson
 
 export const manifest: AssetManifest = manifestJson
-
-// scripts/optimize-assets.ts writes .webp and .avif beside each .png, but only
-// where they actually beat the original; these list the ones that did.
-const WEBP = new Set<string>(optimized.webp)
-const AVIF = new Set<string>(optimized.avif)
-
 
 let useAvif = false
 
@@ -20,10 +14,8 @@ export function prefersAvif(): boolean {
   return useAvif
 }
 
-function assetUrl(base: string, file: string): string {
-  const stem = file.replace(/\.png$/, '')
-  if (useAvif && AVIF.has(stem)) return `${base}/${stem}.avif`
-  return WEBP.has(stem) ? `${base}/${stem}.webp` : `${base}/${file}`
+function assetUrl(file: string): string {
+  return builtAssetUrl(file.replace(/\.(png|svg)$/, '') as AssetName, { avif: useAvif })
 }
 
 const ENTRANCE_FILES = {
@@ -176,22 +168,22 @@ function indexBy<K extends string>(
   return { textures, aspect }
 }
 
-export async function loadAssets(base = '/assets'): Promise<Assets> {
+export async function loadAssets(): Promise<Assets> {
   useAvif = await supportsAvif()
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 
   const [entrance, walkRight, pedestalImages, idleLeft, idleRight, helpCat] = await Promise.all([
-    loadTolerant(names.map((n) => assetUrl(base, ENTRANCE_FILES[n]))),
-    loadTolerant(rightFiles.map((f) => assetUrl(base, f))),
-    loadTolerant(manifest.pedestals.map((p) => assetUrl(base, p.file))),
-    loadRetrying(assetUrl(base, 'bunny-left.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
-    loadRetrying(assetUrl(base, 'bunny-right.png')).catch(() => loadRetrying(assetUrl(base, 'bunny.png'))),
-    loadTolerant(HELP_CAT_FRAMES.map((f) => assetUrl(base, f))),
+    loadTolerant(names.map((n) => assetUrl(ENTRANCE_FILES[n]))),
+    loadTolerant(rightFiles.map((f) => assetUrl(f))),
+    loadTolerant(manifest.pedestals.map((p) => assetUrl(p.file))),
+    loadRetrying(assetUrl('bunny-left.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
+    loadRetrying(assetUrl('bunny-right.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
+    loadTolerant(HELP_CAT_FRAMES.map((f) => assetUrl(f))),
   ])
 
   const walkLeft: HTMLImageElement[] = []
-  void loadTolerant(leftFiles.map((f) => assetUrl(base, f))).then((images) => walkLeft.push(...images))
+  void loadTolerant(leftFiles.map((f) => assetUrl(f))).then((images) => walkLeft.push(...images))
 
   const { textures, aspect } = indexBy(names, entrance)
 
@@ -214,15 +206,15 @@ export async function loadAssets(base = '/assets'): Promise<Assets> {
 
 // The cafe, gift shop and guest board sit far down the hall; they load behind the
 // opening scene rather than in front of it.
-export async function loadScenery(base = '/assets'): Promise<Scenery> {
+export async function loadScenery(): Promise<Scenery> {
   const names = Object.keys(SCENERY_FILES) as SceneryName[]
 
   const [boards, catImages, helm, matcha, sitting] = await Promise.all([
-    loadTolerant(names.map((n) => assetUrl(base, SCENERY_FILES[n]))),
-    loadTolerant(CAFE_CAT_FRAMES.map((f) => assetUrl(base, f))),
-    loadRetrying(assetUrl(base, 'helm.png')),
-    loadRetrying(assetUrl(base, 'matcha.png')),
-    loadTolerant(['bunny-sit.png', 'bunny-sit-helm.png'].map((f) => assetUrl(base, f))),
+    loadTolerant(names.map((n) => assetUrl(SCENERY_FILES[n]))),
+    loadTolerant(CAFE_CAT_FRAMES.map((f) => assetUrl(f))),
+    loadRetrying(assetUrl('helm.png')),
+    loadRetrying(assetUrl('matcha.png')),
+    loadTolerant(['bunny-sit.png', 'bunny-sit-helm.png'].map((f) => assetUrl(f))),
   ])
 
   const { textures, aspect } = indexBy(names, boards)

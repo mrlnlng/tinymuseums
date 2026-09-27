@@ -1,5 +1,6 @@
 import type { GuestNoteDto } from '@tiny/core'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
+import AssetImage from '@/shared/components/AssetImage'
 
 interface BoardScreenProps {
   notes: GuestNoteDto[]
@@ -16,7 +17,7 @@ export default function BoardScreen({ notes, onClose, onAddNote, onOpenNote }: B
         <h2 className="guestboard-heading">Leave your mark on the wall</h2>
 
         <div className="guestboard-board guestboard-board--whole">
-          <img className="guestboard-board-art" src="/assets/guestboard/board.webp" alt="" />
+          <AssetImage name="guestboard/board" className="guestboard-board-art" />
           <PinnedNotes notes={notes} onOpenNote={onOpenNote} />
         </div>
 

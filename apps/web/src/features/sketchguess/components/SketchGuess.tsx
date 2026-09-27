@@ -23,6 +23,7 @@ import { planGame, randomRound } from '../lib/plan'
 import { createReveal, type SketchReveal } from '../lib/reveal'
 import { shareResult, shareText, type ShareOutcome } from '../lib/share'
 import BunnyArtist, { type BunnyMood } from './BunnyArtist'
+import AssetImage from '@/shared/components/AssetImage'
 
 const ROUNDS = 3
 const MAX_STARS = ROUNDS * STARS_BY_STEP[0]
@@ -94,15 +95,6 @@ function saveIfHigher(key: string, value: number): number {
   if (value <= previous) return previous
   writeStored(key, String(value))
   return value
-}
-
-function Art({ stem, className }: { stem: string; className: string }) {
-  return (
-    <picture>
-      <source srcSet={`/assets/sketchguess/${stem}.avif`} type="image/avif" />
-      <img className={className} src={`/assets/sketchguess/${stem}.webp`} alt="" draggable={false} />
-    </picture>
-  )
 }
 
 function pickAtRandom<T>(options: readonly T[]): T {
@@ -457,7 +449,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
 
         {phase === 'choosing' ? (
           <div className="sketchbook-summary">
-            <Art stem="computer" className="sketchbook-computer" />
+            <AssetImage name="sketchguess/computer" className="sketchbook-computer" draggable={false} />
             <p className="sketchbook-title">How will you play?</p>
             <div className="sketchbook-modes" role="radiogroup" aria-label="Game mode">
               {MODE_ORDER.map((option) => (
@@ -499,7 +491,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
                 animate={isRolling ? { rotate: [0, -25, 200, 340, 360], y: [0, -14, -6, -10, 0] } : { rotate: 0, y: 0 }}
                 transition={{ duration: ROLL_MS / 1000, ease: 'easeOut' }}
               >
-                <Art stem="dice" className="sketchbook-dice-art" />
+                <AssetImage name="sketchguess/dice" className="sketchbook-dice-art" draggable={false} />
               </motion.span>
               {isRolling ? 'Rolling…' : 'Surprise me'}
             </button>

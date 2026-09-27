@@ -30,6 +30,8 @@
 
 * { box-sizing: border-box; }
 
+picture { display: contents; }
+
 button, input, select, textarea { font-family: inherit; }
 
 html, body {
@@ -766,7 +768,7 @@ code.token {
   right: 0;
   top: calc(var(--band-top) / var(--band) * -100%);
   height: calc(100% / var(--band));
-  background: url('/assets/help-center.png') no-repeat center / 100% 100%;
+  background: var(--asset-help-center) no-repeat center / 100% 100%;
 }
 
 .help-band-awning {
@@ -968,7 +970,7 @@ code.token {
   min-height: 0;
   position: relative;
   padding: 4% 7%;
-  background: url('/assets/plaque.png') no-repeat center / 100% 100%;
+  background: var(--asset-plaque) no-repeat center / 100% 100%;
 }
 
 .wt-plaque p {
@@ -1046,7 +1048,7 @@ code.token {
   justify-content: center;
   gap: 2px;
   padding: 3% 8%;
-  background: url('/assets/plaque.png') no-repeat center / 100% 100%;
+  background: var(--asset-plaque) no-repeat center / 100% 100%;
   text-align: center;
 }
 
@@ -1073,7 +1075,7 @@ code.token {
   justify-content: center;
   gap: calc(var(--screen-width) * 0.024);
   padding: 12.5% 8% 12%;
-  background: url('/assets/sticky.png') no-repeat center / 100% 100%;
+  background: var(--asset-sticky) no-repeat center / 100% 100%;
 }
 
 .guidelines h2 {
@@ -1127,7 +1129,7 @@ code.token {
   justify-content: flex-end;
   align-items: center;
   padding: 0 clamp(40px, 17%, 90px) 0 0;
-  background: url('/assets/floor.webp') repeat-x center top / auto 100%;
+  background: var(--asset-floor) repeat-x center top / auto 100%;
   background-color: var(--floor);
 }
 
@@ -1483,7 +1485,7 @@ code.token {
   width: 80.37%;
   aspect-ratio: 1.2427;
   transform: translateX(-50%);
-  background: url('/assets/rope.png') no-repeat center / 100% 100%;
+  background: var(--asset-rope) no-repeat center / 100% 100%;
 }
 
 .guestboard {
@@ -1649,7 +1651,7 @@ code.token {
   aspect-ratio: 114 / 65;
   padding: 0;
   border: 0;
-  background: url('/assets/guestboard/arrow-left.webp') no-repeat center / contain;
+  background: var(--asset-guestboard-arrow-left) no-repeat center / contain;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.12s ease;
 }

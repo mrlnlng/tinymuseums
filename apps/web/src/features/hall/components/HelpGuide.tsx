@@ -11,6 +11,11 @@ const BOOTH_WIDTH = 140
 const COVER_WIDTH = 136
 const COUNTER_CROP = 0.75
 const MIN_SCALE = 0.75
+const SCALE_STEP = 0.01
+
+function fitWidth(scale: number): number {
+  return Math.max(BOOTH_WIDTH, COVER_WIDTH / scale)
+}
 
 const STEPS = [
   'Swipe left and right to take a guilt-free scroll through the museum.',
@@ -32,30 +37,44 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
   }, [onClose])
 
   const rootRef = useRef<HTMLDivElement>(null)
+  const fitRef = useRef<HTMLDivElement>(null)
   const boothRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
     const root = rootRef.current
+    const fitBox = fitRef.current
     const booth = boothRef.current
-    if (!root || !booth) return
+    const counter = counterRef.current
+    if (!root || !fitBox || !booth || !counter) return
 
-    // The booth is widened as it shrinks so the counter still spans the screen; that
-    // rewraps the tips, so the fit settles over a few resize callbacks.
+    // Widening the booth rewraps the tips, so height is not monotonic in scale; measuring
+    // each candidate avoids a feedback loop that flipped the line count every frame.
     const fit = () => {
-      const croppable = (counterRef.current?.offsetHeight ?? 0) * COUNTER_CROP
-      const next = Math.min(
-        1,
-        Math.max(MIN_SCALE, root.clientHeight / (booth.offsetHeight - croppable)),
-      )
-      setScale((current) => (Math.abs(next - current) < 0.002 ? current : next))
+      let chosen = MIN_SCALE
+      for (let candidate = 1; candidate > MIN_SCALE; candidate -= SCALE_STEP) {
+        fitBox.style.width = `${fitWidth(candidate)}%`
+        const height = booth.offsetHeight - counter.offsetHeight * COUNTER_CROP
+        if (height * candidate <= root.clientHeight) {
+          chosen = candidate
+          break
+        }
+      }
+      fitBox.style.width = `${fitWidth(chosen)}%`
+      setScale(chosen)
     }
+    let isMounted = true
     fit()
     const observer = new ResizeObserver(fit)
     observer.observe(root)
-    observer.observe(booth)
-    return () => observer.disconnect()
+    void document.fonts?.ready.then(() => {
+      if (isMounted) fit()
+    })
+    return () => {
+      isMounted = false
+      observer.disconnect()
+    }
   }, [])
 
   return (
@@ -78,9 +97,10 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
       />
 
       <div
+        ref={fitRef}
         className="help-guide-fit"
         style={{
-          width: `${Math.max(BOOTH_WIDTH, COVER_WIDTH / scale)}%`,
+          width: `${fitWidth(scale)}%`,
           transform: `scale(${scale})`,
         }}
       >

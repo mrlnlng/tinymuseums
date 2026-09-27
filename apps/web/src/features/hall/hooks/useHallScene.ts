@@ -36,6 +36,7 @@ const TAP_TIMEOUT_MS = 600
 const SCENERY_MAX_WAIT_MS = 5000
 const OPENING_MAX_WAIT_MS = 5000
 const QUIET_AFTER_SECONDS = 2
+const SETTLE_AFTER_READY_MS = 3000
 
 const VIEWED_WITHIN_UNITS = 3.0
 
@@ -437,18 +438,20 @@ export function useHallScene({
       let frameHandle = 0
       let frameCount = 0
       let lastFrameAt = performance.now()
+      let readyAt = Infinity
       let restX: number | null = null
       let hasMoved = false
 
       function renderFrame(now: number): void {
         frameHandle = requestAnimationFrame(renderFrame)
-        pixelRatio.sample(now - lastFrameAt)
+        pixelRatio.sample(now - lastFrameAt, now - readyAt > SETTLE_AFTER_READY_MS)
         const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
         lastFrameAt = now
 
         if (!isReadyRef.current) {
           if (openingReady(now)) {
             isReadyRef.current = true
+            readyAt = now
             setIsReady(true)
             traversal.playIntro(introStart, entrance)
           }

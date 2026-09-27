@@ -6,7 +6,7 @@ import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
-import { sliceOf } from './board'
+import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 
@@ -277,35 +277,8 @@ export class HallScene {
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
-    const ropeHeight = CONFIG.rope.height
-    const ropeNaturalWidth = ropeHeight * this.assets.aspect.rope
-
-    const CUTS = [0, 0.24, 0.78, 1] as const
-    const endWidths = [
-      (CUTS[1] - CUTS[0]) * ropeNaturalWidth,
-      (CUTS[3] - CUTS[2]) * ropeNaturalWidth,
-    ]
-    const ropeSpan = width
-    const middleWidth = Math.max(
-      (CUTS[2] - CUTS[1]) * ropeNaturalWidth,
-      ropeSpan - endWidths[0] - endWidths[1],
-    )
-
-    const sliceWidths = [endWidths[0], middleWidth, endWidths[1]]
-    const totalWidth = sliceWidths[0] + sliceWidths[1] + sliceWidths[2]
-
-    let cursorX = -totalWidth / 2
-    for (let i = 0; i < 3; i++) {
-      const sliceTexture = sliceOf(this.assets.textures.rope, CUTS[i], CUTS[i + 1])
-      sliceTexture.userData.ownedByDisplay = true
-
-      const slice = new THREE.Mesh(
-        new THREE.PlaneGeometry(sliceWidths[i], ropeHeight),
-        new THREE.MeshBasicMaterial({ map: sliceTexture, transparent: true, opacity: 1 }),
-      )
-      slice.position.set(cursorX + sliceWidths[i] / 2, CONFIG.rope.centerY, CONFIG.rope.z)
+    for (const slice of ropeSlices(this.assets.textures.rope, this.assets.aspect.rope, width, 'ownedByDisplay')) {
       group.add(slice)
-      cursorX += sliceWidths[i]
     }
 
     this.coin.attach({

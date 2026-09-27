@@ -271,7 +271,7 @@ export function useHallScene({
       const raiseComingSoon = (): void => {
         const x = hall.layout.comingSoonX
         if (x === null || comingSoon || !scenery) return
-        comingSoon = createComingSoon(scene, scenery, x)
+        comingSoon = createComingSoon(scene, assets, scenery, x)
         comingSoonNote = new ComingSoonNote(overlayHost, comingSoon.noteMark)
       }
 

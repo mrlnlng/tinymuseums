@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { CONFIG } from './config'
 
 export interface Mark {
   x: number
@@ -69,5 +70,36 @@ export function disposeBoards(scene: THREE.Scene, group: THREE.Group): void {
     const material = obj.material as THREE.MeshBasicMaterial
     if (material.map?.userData.ownedByBoard) material.map.dispose()
     material.dispose()
+  })
+}
+
+const ROPE_CUTS = [0, 0.24, 0.78, 1] as const
+
+export function ropeSlices(
+  texture: THREE.Texture,
+  aspect: number,
+  span: number,
+  owner: 'ownedByDisplay' | 'ownedByBoard',
+): THREE.Mesh[] {
+  const { height, centerY, z } = CONFIG.rope
+  const naturalWidth = height * aspect
+  const ends = [
+    (ROPE_CUTS[1] - ROPE_CUTS[0]) * naturalWidth,
+    (ROPE_CUTS[3] - ROPE_CUTS[2]) * naturalWidth,
+  ]
+  const middle = Math.max((ROPE_CUTS[2] - ROPE_CUTS[1]) * naturalWidth, span - ends[0] - ends[1])
+  const widths = [ends[0], middle, ends[1]]
+
+  let cursorX = -(widths[0] + widths[1] + widths[2]) / 2
+  return widths.map((sliceWidth, i) => {
+    const map = sliceOf(texture, ROPE_CUTS[i], ROPE_CUTS[i + 1])
+    map.userData[owner] = true
+    const slice = new THREE.Mesh(
+      new THREE.PlaneGeometry(sliceWidth, height),
+      new THREE.MeshBasicMaterial({ map, transparent: true, opacity: 1 }),
+    )
+    slice.position.set(cursorX + sliceWidth / 2, centerY, z)
+    cursorX += sliceWidth
+    return slice
   })
 }

@@ -5,13 +5,15 @@ import { NOTE_PLACES } from '@/features/guestboard/lib/placement'
 interface PinnedNotesProps {
   notes: GuestNoteDto[]
   onOpenNote?: (index: number) => void
+  avoidSitArea?: boolean
 }
 
-export default function PinnedNotes({ notes, onOpenNote }: PinnedNotesProps) {
+export default function PinnedNotes({ notes, onOpenNote, avoidSitArea = false }: PinnedNotesProps) {
   return (
     <ul className="guestboard-pins" aria-label={onOpenNote ? 'Notes from other visitors' : undefined}>
       {notes.slice(0, NOTE_PLACES.length).map((note, index) => {
         const place = NOTE_PLACES[index]!
+        if (avoidSitArea && place.behindSitArea) return null
         const drawn = (
           <StickyNote color={note.color} message={note.message} text={note.message} name={note.name} />
         )

@@ -2,6 +2,7 @@ export interface NotePlace {
   left: number
   top: number
   width: number
+  behindSitArea?: boolean
 }
 
 export const NOTE_PLACES: readonly NotePlace[] = [
@@ -14,8 +15,8 @@ export const NOTE_PLACES: readonly NotePlace[] = [
   { left: 36.5, top: 36.5, width: 11.2 },
   { left: 53.5, top: 35.5, width: 11.4 },
   { left: 70.0, top: 34.5, width: 12.6 },
-  { left: 11.0, top: 71.0, width: 12.0 },
+  { left: 11.0, top: 71.0, width: 12.0, behindSitArea: true },
   { left: 44.0, top: 70.5, width: 13.0 },
-  { left: 61.5, top: 73.5, width: 11.2 },
-  { left: 78.5, top: 70.0, width: 11.8 },
+  { left: 61.5, top: 73.5, width: 11.2, behindSitArea: true },
+  { left: 78.5, top: 70.0, width: 11.8, behindSitArea: true },
 ]

@@ -140,7 +140,7 @@ export default function Museum({ initialSlice }: MuseumProps) {
         <div className="hall-host" ref={canvasRef} />
         <div className="hall-overlay" ref={overlayRef} />
         <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
-          <PinnedNotes notes={guestNotes} />
+          <PinnedNotes notes={guestNotes} avoidSitArea />
         </div>
         <div className="hall-character" ref={characterRef} />
 

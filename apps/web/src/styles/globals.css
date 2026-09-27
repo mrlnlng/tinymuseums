@@ -584,7 +584,8 @@ code.token {
   pointer-events: none;
 }
 
-.gift-shop-sign {
+.gift-shop-sign,
+.fun-zone-sign {
   position: absolute;
   top: 0;
   left: 0;

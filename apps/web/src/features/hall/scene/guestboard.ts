@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import type { Scenery } from './assets'
-import { disposeBoards, plane, type Mark } from './board'
+import type { Assets, Scenery } from './assets'
+import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
 import { pickPainted } from './hit'
 import { CONFIG } from './config'
 
@@ -13,6 +13,7 @@ export interface Seat {
 export interface GuestBoard {
   x: number
   mark: Mark
+  signMark: Mark
   seat: Seat
   hitTest(raycaster: THREE.Raycaster): boolean
   hitTestBeanbag(raycaster: THREE.Raycaster, occupied: boolean): boolean
@@ -20,8 +21,8 @@ export interface GuestBoard {
   dispose(): void
 }
 
-export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number): GuestBoard {
-  const { board, sitArea, seat } = CONFIG.guestBoard
+export function createGuestBoard(scene: THREE.Scene, assets: Assets, scenery: Scenery, x: number): GuestBoard {
+  const { board, sign, signText, sitArea, seat } = CONFIG.guestBoard
   const group = new THREE.Group()
 
   const boardMesh = plane(
@@ -33,6 +34,18 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
     board.z,
   )
   group.add(boardMesh)
+
+  group.add(
+    stretchedBoard(
+      assets.textures.plaque,
+      assets.aspect.plaque,
+      x + sign.dx,
+      sign.centerY,
+      sign.z,
+      sign.width,
+      sign.height,
+    ),
+  )
 
   const sitMesh = plane(
     sitArea.height * scenery.aspect.sitArea,
@@ -55,6 +68,7 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
   return {
     x,
     mark: { x: x + board.dx, y: board.centerY, width: board.width },
+    signMark: { x: x + signText.dx, y: signText.centerY, width: signText.width },
     seat: { x: x + seat.dx, y: seat.centerY, height: seat.height },
 
     hitTest(raycaster) {

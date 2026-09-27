@@ -154,6 +154,33 @@ export class Placards {
   }
 }
 
+// Pins a text label to a point in the world, sized to its width in world units.
+function placeLabel(
+  node: HTMLElement,
+  mark: { x: number; y: number; width: number },
+  perUnit: number,
+  camera: THREE.OrthographicCamera,
+  viewport: Viewport,
+  fontRatio: number,
+): boolean {
+  const at = toScreen(mark.x, mark.y, camera, viewport)
+  if (!at) {
+    writeStyle(node, 'opacity', '0')
+    return false
+  }
+
+  const widthPx = mark.width * perUnit
+  writeStyle(node, 'width', `${widthPx.toFixed(1)}px`)
+  writeStyle(node, 'fontSize', `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`)
+  writeStyle(
+    node,
+    'transform',
+    `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
+  )
+  writeStyle(node, 'opacity', '1')
+  return true
+}
+
 export class LobbySigns {
   private sign = document.createElement('div')
   private direction = document.createElement('div')
@@ -175,34 +202,8 @@ export class LobbySigns {
     const viewWidth = camera.right - camera.left
     const perUnit = viewport.width / viewWidth
 
-    this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
-    this.place(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
-  }
-
-  private place(
-    node: HTMLElement,
-    mark: { x: number; y: number; width: number },
-    perUnit: number,
-    camera: THREE.OrthographicCamera,
-    viewport: Viewport,
-    fontRatio: number,
-  ): boolean {
-    const at = toScreen(mark.x, mark.y, camera, viewport)
-    if (!at) {
-      writeStyle(node, 'opacity', '0')
-      return false
-    }
-
-    const widthPx = mark.width * perUnit
-    writeStyle(node, 'width', `${widthPx.toFixed(1)}px`)
-    writeStyle(node, 'fontSize', `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`)
-    writeStyle(
-      node,
-      'transform',
-      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
-    )
-    writeStyle(node, 'opacity', '1')
-    return true
+    placeLabel(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
+    placeLabel(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
   }
 
   clear(): void {
@@ -245,10 +246,10 @@ export class GiftShopSigns {
     const viewWidth = camera.right - camera.left
     const perUnit = viewport.width / viewWidth
 
-    this.place(this.note, this.marks.note, perUnit, camera, viewport, 0.065)
-    this.place(this.sign, this.marks.sign, perUnit, camera, viewport, 0.134)
+    placeLabel(this.note, this.marks.note, perUnit, camera, viewport, 0.065)
+    placeLabel(this.sign, this.marks.sign, perUnit, camera, viewport, 0.134)
 
-    const onScreen = this.place(this.link, this.marks.button, perUnit, camera, viewport, 0.09)
+    const onScreen = placeLabel(this.link, this.marks.button, perUnit, camera, viewport, 0.09)
     if (onScreen !== this.isLinkOnScreen) {
       this.isLinkOnScreen = onScreen
       this.link.style.pointerEvents = onScreen ? 'auto' : 'none'
@@ -261,34 +262,30 @@ export class GiftShopSigns {
     }
   }
 
-  private place(
-    node: HTMLElement,
-    mark: { x: number; y: number; width: number },
-    perUnit: number,
-    camera: THREE.OrthographicCamera,
-    viewport: Viewport,
-    fontRatio: number,
-  ): boolean {
-    const at = toScreen(mark.x, mark.y, camera, viewport)
-    if (!at) {
-      writeStyle(node, 'opacity', '0')
-      return false
-    }
+  clear(): void {
+    for (const node of [this.note, this.sign, this.link]) node.remove()
+  }
+}
 
-    const widthPx = mark.width * perUnit
-    writeStyle(node, 'width', `${widthPx.toFixed(1)}px`)
-    writeStyle(node, 'fontSize', `${Math.max(8, widthPx * fontRatio).toFixed(1)}px`)
-    writeStyle(
-      node,
-      'transform',
-      `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) translate(-50%, -50%)`,
-    )
-    writeStyle(node, 'opacity', '1')
-    return true
+export class FunZoneSign {
+  private sign = document.createElement('div')
+
+  constructor(
+    container: HTMLElement,
+    private mark: Mark,
+  ) {
+    this.sign.className = 'fun-zone-sign'
+    this.sign.textContent = 'Fun zone'
+    container.appendChild(this.sign)
+  }
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const perUnit = viewport.width / (camera.right - camera.left)
+    placeLabel(this.sign, this.mark, perUnit, camera, viewport, 0.134)
   }
 
   clear(): void {
-    for (const node of [this.note, this.sign, this.link]) node.remove()
+    this.sign.remove()
   }
 }
 

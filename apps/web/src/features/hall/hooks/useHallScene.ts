@@ -18,6 +18,7 @@ import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
+  FunZoneSign,
   GiftShopSigns,
   GuestBoardNotes,
   LobbySigns,
@@ -232,6 +233,7 @@ export function useHallScene({
 
       let guestBoard: GuestBoard | null = null
       let guestBoardNotes: GuestBoardNotes | null = null
+      let funZoneSign: FunZoneSign | null = null
       let sitting: Sitting | null = null
 
       const raiseGiftShop = (): void => {
@@ -244,7 +246,8 @@ export function useHallScene({
       const raiseGuestBoard = (): void => {
         const x = hall.layout.guestBoardX
         if (x === null || guestBoard || !scenery) return
-        guestBoard = createGuestBoard(scene, scenery, x)
+        guestBoard = createGuestBoard(scene, assets, scenery, x)
+        funZoneSign = new FunZoneSign(overlayHost, guestBoard.signMark)
         sitting = createSitting(
           scenery,
           guestBoard,
@@ -512,6 +515,7 @@ export function useHallScene({
         giftShopSigns?.sync(rig.camera, viewport)
         cafeLink?.sync(rig.camera, viewport)
         guestBoardNotes?.sync(rig.camera, viewport)
+        funZoneSign?.sync(rig.camera, viewport)
 
         lobby.update(dt, traversal.cameraX)
         const cafeX = hall.layout.cafeX
@@ -549,6 +553,7 @@ export function useHallScene({
         giftShopSigns?.clear()
         cafeLink?.clear()
         guestBoardNotes?.clear()
+        funZoneSign?.clear()
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()

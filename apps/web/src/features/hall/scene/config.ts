@@ -83,6 +83,8 @@ export const CONFIG = {
     lead: 1.775,
     trail: 2.8,
     board: { dx: 0, centerY: 1.93, width: 3.0, z: 0.3 },
+    sign: { dx: 0, centerY: 3.45, width: 1.993, height: 0.43, z: 0.2 },
+    signText: { dx: -0.027, centerY: 3.47, width: 1.515 },
     sitArea: {
       dx: 0.072,
       centerY: 0.893,

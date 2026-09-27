@@ -16,7 +16,7 @@ export interface GuestBoard {
   seat: Seat
   hitTest(raycaster: THREE.Raycaster): boolean
   hitTestBeanbag(raycaster: THREE.Raycaster, occupied: boolean): boolean
-  hitTestSketchBox(raycaster: THREE.Raycaster): boolean
+  hitTestDesktop(raycaster: THREE.Raycaster): boolean
   dispose(): void
 }
 
@@ -46,7 +46,7 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
   scene.add(group)
 
   const { u, v, occupiedTop } = sitArea.beanbag
-  const { sketchBox } = sitArea
+  const { desktop } = sitArea
 
   function sitUv(raycaster: THREE.Raycaster): THREE.Vector2 | undefined {
     return raycaster.intersectObject(sitMesh, false)[0]?.uv
@@ -67,14 +67,14 @@ export function createGuestBoard(scene: THREE.Scene, scenery: Scenery, x: number
       return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= top
     },
 
-    hitTestSketchBox(raycaster) {
+    hitTestDesktop(raycaster) {
       const uv = sitUv(raycaster)
       return (
         !!uv &&
-        uv.x >= sketchBox.u[0] &&
-        uv.x <= sketchBox.u[1] &&
-        uv.y >= sketchBox.v[0] &&
-        uv.y <= sketchBox.v[1]
+        uv.x >= desktop.u[0] &&
+        uv.x <= desktop.u[1] &&
+        uv.y >= desktop.v[0] &&
+        uv.y <= desktop.v[1]
       )
     },
 

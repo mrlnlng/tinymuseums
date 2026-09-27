@@ -2068,6 +2068,37 @@ code.token {
 
 .sketchbook-note { margin: 0; color: var(--ink-soft); }
 
+.sketchbook-computer {
+  display: block;
+  width: 112px;
+  height: auto;
+  margin: -12px 0 2px;
+}
+
+.sketchbook-surprise {
+  margin-top: 4px;
+  min-width: 196px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 18px 6px 10px;
+  border: 2px dashed rgb(139 86 65 / 30%);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sketchbook-surprise:not(:disabled):hover { border-color: var(--pink-deep); }
+.sketchbook-surprise:disabled { cursor: default; }
+
+.sketchbook-dice { display: inline-block; width: 34px; }
+.sketchbook-dice-art { display: block; width: 100%; height: auto; }
+
 .sketchbook-actions {
   margin-top: 12px;
   display: flex;

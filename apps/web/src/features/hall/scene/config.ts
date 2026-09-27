@@ -85,12 +85,12 @@ export const CONFIG = {
     board: { dx: 0, centerY: 1.93, width: 3.0, z: 0.3 },
     sitArea: {
       dx: 0.072,
-      centerY: 0.868,
-      height: 2.422,
+      centerY: 0.893,
+      height: 2.47,
       z: 0.35,
-      beanbag: { u: [0, 0.44], v: [0.03, 0.62], occupiedTop: 0.82 },
-      // The box itself spans u 0.651-0.773, v 0.395-0.447; padded to a comfortable tap target.
-      sketchBox: { u: [0.64, 0.785], v: [0.35, 0.5] },
+      beanbag: { u: [0, 0.44], v: [0.029, 0.608], occupiedTop: 0.804 },
+      // The computer spans u 0.607-0.793, v 0.367-0.669; padded to a comfortable tap target.
+      desktop: { u: [0.6, 0.8], v: [0.355, 0.68] },
     },
     seat: { dx: -1.119, centerY: 0.893, height: 1.455 },
   },

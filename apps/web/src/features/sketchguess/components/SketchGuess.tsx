@@ -25,6 +25,7 @@ const ROUNDS = 3
 const MAX_STARS = ROUNDS * STARS_BY_STEP[0]
 const STEP_DRAW_MS = 1100
 const STREAK_FOR_BONUS = 3
+const ROLL_MS = 650
 
 const BEST_KEY = 'tiny-museum:sketch-best'
 const BEST_STREAK_KEY = 'tiny-museum:sketch-streak'
@@ -91,6 +92,19 @@ function saveIfHigher(key: string, value: number): number {
   return value
 }
 
+function Art({ stem, className }: { stem: string; className: string }) {
+  return (
+    <picture>
+      <source srcSet={`/assets/sketchguess/${stem}.avif`} type="image/avif" />
+      <img className={className} src={`/assets/sketchguess/${stem}.webp`} alt="" draggable={false} />
+    </picture>
+  )
+}
+
+function pickAtRandom<T>(options: readonly T[]): T {
+  return options[Math.floor(Math.random() * options.length)]
+}
+
 function Stars({ count, of }: { count: number; of: number }) {
   return (
     <span className="sketchbook-stars" role="img" aria-label={`${count} of ${of} stars`}>
@@ -147,6 +161,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   const [earnedBonus, setEarnedBonus] = useState(false)
   const [best, setBest] = useState(0)
   const [bestStreak, setBestStreak] = useState(0)
+  const [isRolling, setIsRolling] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const revealRef = useRef<SketchReveal | null>(null)
@@ -325,15 +340,31 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
   const startGame = useCallback(
-    (level: Difficulty) => {
+    (level: Difficulty, chosenMode: Mode = mode) => {
       writeStored(DIFFICULTY_KEY, level)
-      writeStored(MODE_KEY, mode)
+      writeStored(MODE_KEY, chosenMode)
+      setMode(chosenMode)
       setDifficulty(level)
       setStarted(true)
       play('click')
     },
     [mode, play],
   )
+
+  useEffect(() => {
+    if (!isRolling) return
+    const timer = window.setTimeout(() => {
+      setIsRolling(false)
+      startGame(pickAtRandom(DIFFICULTIES), pickAtRandom(MODE_ORDER))
+    }, ROLL_MS)
+    return () => window.clearTimeout(timer)
+  }, [isRolling, startGame])
+
+  const rollDice = useCallback(() => {
+    if (isRolling) return
+    setIsRolling(true)
+    play('click')
+  }, [isRolling, play])
 
   const focus = useMemo(
     () => (loaded ? pickFocus(loaded.ink.ink, loaded.ink.width, loaded.ink.height) : null),
@@ -397,6 +428,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
 
         {phase === 'choosing' ? (
           <div className="sketchbook-summary">
+            <Art stem="computer" className="sketchbook-computer" />
             <p className="sketchbook-title">How will you play?</p>
             <div className="sketchbook-modes" role="radiogroup" aria-label="Game mode">
               {MODE_ORDER.map((option) => (
@@ -426,6 +458,21 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              className="sketchbook-surprise"
+              onClick={rollDice}
+              disabled={isRolling}
+            >
+              <motion.span
+                className="sketchbook-dice"
+                animate={isRolling ? { rotate: [0, -25, 200, 340, 360], y: [0, -14, -6, -10, 0] } : { rotate: 0, y: 0 }}
+                transition={{ duration: ROLL_MS / 1000, ease: 'easeOut' }}
+              >
+                <Art stem="dice" className="sketchbook-dice-art" />
+              </motion.span>
+              {isRolling ? 'Rolling…' : 'Surprise me'}
+            </button>
           </div>
         ) : phase === 'done' ? (
           <div className="sketchbook-summary">

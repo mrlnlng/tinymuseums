@@ -376,7 +376,7 @@ export function useHallScene({
           return
         }
 
-        if (guestBoard?.hitTestSketchBox(raycaster)) {
+        if (guestBoard?.hitTestDesktop(raycaster)) {
           soundRef.current.play('click')
           onOpenSketchGameRef.current()
           return

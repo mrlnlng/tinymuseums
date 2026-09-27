@@ -6,7 +6,7 @@ import { useSound } from './SoundProvider'
 const OPEN_MS = 4000
 
 export default function SoundToggle() {
-  const { isSounding, isAvailable, volume, setVolume, toggle } = useSound()
+  const { isEnabled, isSounding, isAvailable, volume, setVolume, toggle } = useSound()
 
   const [isOpen, setIsOpen] = useState(false)
   const closeAt = useRef<number | null>(null)
@@ -38,7 +38,8 @@ export default function SoundToggle() {
   if (!isAvailable) return null
 
   const label = isSounding ? 'Turn the music off' : 'Turn the music on'
-  const shown = isSounding ? volume : 0
+  // Not isSounding: the track may not be playing yet, and the slider would snap back to 0.
+  const shown = isEnabled ? volume : 0
 
   return (
     <div className="sound" data-open={isOpen ? 'true' : 'false'}>

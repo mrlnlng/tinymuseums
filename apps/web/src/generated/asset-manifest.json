@@ -138,141 +138,6 @@
         "src": "bunny-walk-right-5.a5ad7ab8bd.webp"
       }
     },
-    "cafe/buy-matcha": {
-      "w": 640,
-      "h": 422,
-      "x2": {
-        "w": 640,
-        "h": 422,
-        "src": "cafe-buy-matcha.d3a132a5cf.webp"
-      }
-    },
-    "cafe/cat-1": {
-      "w": 515,
-      "h": 616,
-      "x2": {
-        "w": 418,
-        "h": 500,
-        "src": "cafe-cat-1@2x.2a091a8ea6.webp",
-        "avif": "cafe-cat-1@2x.e4aae78691.avif"
-      },
-      "x3": {
-        "w": 515,
-        "h": 616,
-        "src": "cafe-cat-1@3x.096e57161f.webp",
-        "avif": "cafe-cat-1@3x.aee83a6bcf.avif"
-      }
-    },
-    "cafe/cat-2": {
-      "w": 515,
-      "h": 616,
-      "x2": {
-        "w": 418,
-        "h": 500,
-        "src": "cafe-cat-2@2x.e0ca16ebdb.webp",
-        "avif": "cafe-cat-2@2x.7e79d569c1.avif"
-      },
-      "x3": {
-        "w": 515,
-        "h": 616,
-        "src": "cafe-cat-2@3x.45440c34a4.webp",
-        "avif": "cafe-cat-2@3x.6d40847c9a.avif"
-      }
-    },
-    "cafe/cat-3": {
-      "w": 515,
-      "h": 616,
-      "x2": {
-        "w": 418,
-        "h": 500,
-        "src": "cafe-cat-3@2x.ff82825a3d.webp",
-        "avif": "cafe-cat-3@2x.c826d24865.avif"
-      },
-      "x3": {
-        "w": 515,
-        "h": 616,
-        "src": "cafe-cat-3@3x.9c9e8cb844.webp",
-        "avif": "cafe-cat-3@3x.fcc9c06542.avif"
-      }
-    },
-    "cafe/cat-4": {
-      "w": 515,
-      "h": 616,
-      "x2": {
-        "w": 418,
-        "h": 500,
-        "src": "cafe-cat-4@2x.9dbe6df442.webp",
-        "avif": "cafe-cat-4@2x.4494f93f10.avif"
-      },
-      "x3": {
-        "w": 515,
-        "h": 616,
-        "src": "cafe-cat-4@3x.79e3e2b36a.webp",
-        "avif": "cafe-cat-4@3x.549f80a273.avif"
-      }
-    },
-    "cafe/front": {
-      "w": 1070,
-      "h": 496,
-      "x2": {
-        "w": 1070,
-        "h": 496,
-        "src": "cafe-front.a5f575e030.webp",
-        "avif": "cafe-front.b03159084a.avif"
-      }
-    },
-    "cafe/menu": {
-      "w": 380,
-      "h": 263,
-      "x2": {
-        "w": 380,
-        "h": 263,
-        "src": "cafe-menu.6938b86323.webp",
-        "avif": "cafe-menu.47e24c8781.avif"
-      }
-    },
-    "cafe/sign-removebg": {
-      "w": 779,
-      "h": 159,
-      "x2": {
-        "w": 779,
-        "h": 159,
-        "src": "cafe-sign-removebg.0673569bc4.webp",
-        "avif": "cafe-sign-removebg.ebc66862d5.avif"
-      }
-    },
-    "cafe/thanks-board": {
-      "w": 525,
-      "h": 630,
-      "x2": {
-        "w": 350,
-        "h": 420,
-        "src": "cafe-thanks-board@2x.9d160855e4.webp",
-        "avif": "cafe-thanks-board@2x.cb30961967.avif"
-      },
-      "x3": {
-        "w": 525,
-        "h": 630,
-        "src": "cafe-thanks-board@3x.3dec33d3e5.webp",
-        "avif": "cafe-thanks-board@3x.1e04e88b8e.avif"
-      }
-    },
-    "coin": {
-      "w": 196,
-      "h": 195,
-      "x2": {
-        "w": 131,
-        "h": 130,
-        "src": "coin@2x.fc64e1b254.webp",
-        "avif": "coin@2x.7695050060.avif"
-      },
-      "x3": {
-        "w": 196,
-        "h": 195,
-        "src": "coin@3x.c96c91a15a.webp",
-        "avif": "coin@3x.68073b1bb6.avif"
-      }
-    },
     "coin-large": {
       "w": 815,
       "h": 810,
@@ -287,16 +152,6 @@
         "h": 810,
         "src": "coin-large@3x.eda01f21e5.webp",
         "avif": "coin-large@3x.6559edc547.avif"
-      }
-    },
-    "door": {
-      "w": 633,
-      "h": 858,
-      "x2": {
-        "w": 633,
-        "h": 858,
-        "src": "door.db2462eb70.webp",
-        "avif": "door.a75ac5bcee.avif"
       }
     },
     "floor": {
@@ -340,15 +195,6 @@
         "avif": "frame-landscape@3x.e67477db85.avif"
       }
     },
-    "gift-shop": {
-      "w": 1104,
-      "h": 836,
-      "x2": {
-        "w": 1104,
-        "h": 836,
-        "src": "gift-shop.ed3c5e3151.webp"
-      }
-    },
     "guestboard/arrow-left": {
       "w": 114,
       "h": 65,
@@ -365,31 +211,6 @@
         "w": 1600,
         "h": 1234,
         "src": "guestboard-board.64165da934.webp"
-      }
-    },
-    "guestboard/board-hall": {
-      "w": 720,
-      "h": 555,
-      "x2": {
-        "w": 720,
-        "h": 555,
-        "src": "guestboard-board-hall.ff25192951.webp"
-      }
-    },
-    "guestboard/sit-area": {
-      "w": 2023,
-      "h": 1140,
-      "x2": {
-        "w": 1349,
-        "h": 760,
-        "src": "guestboard-sit-area@2x.51d35b703b.webp",
-        "avif": "guestboard-sit-area@2x.f58b8e5d85.avif"
-      },
-      "x3": {
-        "w": 2023,
-        "h": 1140,
-        "src": "guestboard-sit-area@3x.b6e3933926.webp",
-        "avif": "guestboard-sit-area@3x.9cf0d96b4b.avif"
       }
     },
     "helm": {
@@ -415,60 +236,6 @@
         "w": 811,
         "h": 1039,
         "src": "help-center.803163d58e.webp"
-      }
-    },
-    "help/cat-1": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-1.e9fc2a4c21.webp"
-      }
-    },
-    "help/cat-2": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-2.8db639957f.webp"
-      }
-    },
-    "help/cat-3": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-3.41bff78194.webp"
-      }
-    },
-    "help/cat-4": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-4.2744f37188.webp"
-      }
-    },
-    "help/cat-5": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-5.41bff78194.webp"
-      }
-    },
-    "help/cat-6": {
-      "w": 419,
-      "h": 460,
-      "x2": {
-        "w": 419,
-        "h": 460,
-        "src": "help-cat-6.8db639957f.webp"
       }
     },
     "icon-basket": {
@@ -537,102 +304,6 @@
         "h": 790,
         "src": "pedestal@3x.b548bf36f1.webp",
         "avif": "pedestal@3x.131c9816b9.avif"
-      }
-    },
-    "pedestal-1": {
-      "w": 507,
-      "h": 690,
-      "x2": {
-        "w": 338,
-        "h": 460,
-        "src": "pedestal-1@2x.c2bbe2bca9.webp",
-        "avif": "pedestal-1@2x.b5cfe6011d.avif"
-      },
-      "x3": {
-        "w": 507,
-        "h": 690,
-        "src": "pedestal-1@3x.9c46f365fe.webp",
-        "avif": "pedestal-1@3x.e0023f09d7.avif"
-      }
-    },
-    "pedestal-2": {
-      "w": 507,
-      "h": 690,
-      "x2": {
-        "w": 338,
-        "h": 460,
-        "src": "pedestal-2@2x.cc1a800a4f.webp",
-        "avif": "pedestal-2@2x.495f685c1b.avif"
-      },
-      "x3": {
-        "w": 507,
-        "h": 690,
-        "src": "pedestal-2@3x.cfb601570a.webp",
-        "avif": "pedestal-2@3x.c648f47cbb.avif"
-      }
-    },
-    "pedestal-3": {
-      "w": 507,
-      "h": 690,
-      "x2": {
-        "w": 338,
-        "h": 460,
-        "src": "pedestal-3@2x.eace7b3fd8.webp",
-        "avif": "pedestal-3@2x.aaeb8f84e1.avif"
-      },
-      "x3": {
-        "w": 507,
-        "h": 690,
-        "src": "pedestal-3@3x.c47ad882ef.webp",
-        "avif": "pedestal-3@3x.d85690c1f2.avif"
-      }
-    },
-    "pedestal-4": {
-      "w": 436,
-      "h": 690,
-      "x2": {
-        "w": 291,
-        "h": 460,
-        "src": "pedestal-4@2x.ed920ca2c4.webp",
-        "avif": "pedestal-4@2x.4e28329c78.avif"
-      },
-      "x3": {
-        "w": 436,
-        "h": 690,
-        "src": "pedestal-4@3x.a40172af00.webp",
-        "avif": "pedestal-4@3x.51fcf1e98e.avif"
-      }
-    },
-    "pedestal-4-bare": {
-      "w": 436,
-      "h": 690,
-      "x2": {
-        "w": 291,
-        "h": 460,
-        "src": "pedestal-4-bare@2x.7fd4f98724.webp",
-        "avif": "pedestal-4-bare@2x.fe196a2641.avif"
-      },
-      "x3": {
-        "w": 436,
-        "h": 690,
-        "src": "pedestal-4-bare@3x.b0647276e6.webp",
-        "avif": "pedestal-4-bare@3x.39be977492.avif"
-      }
-    },
-    "pedestal-5": {
-      "w": 436,
-      "h": 690,
-      "x2": {
-        "w": 291,
-        "h": 460,
-        "src": "pedestal-5@2x.c2196deec8.webp",
-        "avif": "pedestal-5@2x.0ea13ba3ef.avif"
-      },
-      "x3": {
-        "w": 436,
-        "h": 690,
-        "src": "pedestal-5@3x.de7afc931d.webp",
-        "avif": "pedestal-5@3x.7edfe144f2.avif"
       }
     },
     "pedestal-5-large": {
@@ -762,6 +433,651 @@
         "h": 8,
         "src": "wallpaper.18f31684c5.webp"
       }
+    }
+  },
+  "atlases": {
+    "entrance": {
+      "x2": [
+        {
+          "w": 1500,
+          "h": 1376,
+          "src": "atlas-entrance-avif-q62@2x.a9cd393b17.webp",
+          "avif": "atlas-entrance-avif-q62@2x.f8a2ad535f.avif",
+          "sprites": {
+            "door": [
+              18,
+              18,
+              633,
+              858
+            ],
+            "plaque": [
+              671,
+              18,
+              811,
+              400
+            ],
+            "rope": [
+              671,
+              438,
+              472,
+              380
+            ],
+            "pedestal-4-bare": [
+              18,
+              896,
+              291,
+              460
+            ],
+            "pedestal-1": [
+              329,
+              896,
+              338,
+              460
+            ],
+            "pedestal-5": [
+              1163,
+              438,
+              291,
+              460
+            ],
+            "coin": [
+              687,
+              918,
+              131,
+              130
+            ]
+          }
+        },
+        {
+          "w": 732,
+          "h": 976,
+          "src": "atlas-entrance-avif-q70@2x.74c8c1e5f9.webp",
+          "avif": "atlas-entrance-avif-q70@2x.ee61d88a95.avif",
+          "sprites": {
+            "pedestal-2": [
+              18,
+              18,
+              338,
+              460
+            ],
+            "pedestal-3": [
+              376,
+              18,
+              338,
+              460
+            ],
+            "pedestal-4": [
+              18,
+              498,
+              291,
+              460
+            ]
+          }
+        },
+        {
+          "w": 1336,
+          "h": 976,
+          "src": "atlas-entrance-webp-lossless@2x.f5552dc4fb.webp",
+          "sprites": {
+            "help/cat-1": [
+              18,
+              18,
+              419,
+              460
+            ],
+            "help/cat-2": [
+              457,
+              18,
+              419,
+              460
+            ],
+            "help/cat-3": [
+              18,
+              498,
+              419,
+              460
+            ],
+            "help/cat-4": [
+              457,
+              498,
+              419,
+              460
+            ],
+            "help/cat-5": [
+              896,
+              18,
+              419,
+              460
+            ],
+            "help/cat-6": [
+              896,
+              498,
+              419,
+              460
+            ]
+          }
+        },
+        {
+          "w": 848,
+          "h": 1076,
+          "src": "atlas-entrance-webp-near@2x.65e8cbb27d.webp",
+          "sprites": {
+            "help-center": [
+              18,
+              18,
+              811,
+              1039
+            ]
+          }
+        }
+      ],
+      "x3": [
+        {
+          "w": 1924,
+          "h": 2316,
+          "src": "atlas-entrance-avif-q62@3x.4713d396c4.webp",
+          "avif": "atlas-entrance-avif-q62@3x.b9052f0bde.avif",
+          "sprites": {
+            "door": [
+              18,
+              18,
+              633,
+              858
+            ],
+            "rope": [
+              671,
+              18,
+              708,
+              570
+            ],
+            "pedestal-4-bare": [
+              18,
+              896,
+              436,
+              690
+            ],
+            "pedestal-1": [
+              474,
+              896,
+              507,
+              690
+            ],
+            "pedestal-2": [
+              1399,
+              18,
+              507,
+              690
+            ],
+            "pedestal-3": [
+              1001,
+              728,
+              507,
+              690
+            ],
+            "pedestal-5": [
+              18,
+              1606,
+              436,
+              690
+            ],
+            "coin": [
+              671,
+              608,
+              196,
+              195
+            ]
+          }
+        },
+        {
+          "w": 472,
+          "h": 728,
+          "src": "atlas-entrance-avif-q70@3x.5e98714cd1.webp",
+          "avif": "atlas-entrance-avif-q70@3x.74dcd72e5b.avif",
+          "sprites": {
+            "pedestal-4": [
+              18,
+              18,
+              436,
+              690
+            ]
+          }
+        },
+        {
+          "w": 1464,
+          "h": 1484,
+          "src": "atlas-entrance-webp-lossless@3x.2e8059ea7f.webp",
+          "sprites": {
+            "plaque": [
+              18,
+              18,
+              987,
+              487
+            ],
+            "help/cat-1": [
+              18,
+              525,
+              419,
+              460
+            ],
+            "help/cat-2": [
+              457,
+              525,
+              419,
+              460
+            ],
+            "help/cat-3": [
+              18,
+              1005,
+              419,
+              460
+            ],
+            "help/cat-4": [
+              457,
+              1005,
+              419,
+              460
+            ],
+            "help/cat-5": [
+              1025,
+              18,
+              419,
+              460
+            ],
+            "help/cat-6": [
+              1025,
+              498,
+              419,
+              460
+            ]
+          }
+        },
+        {
+          "w": 848,
+          "h": 1076,
+          "src": "atlas-entrance-webp-near@3x.65e8cbb27d.webp",
+          "sprites": {
+            "help-center": [
+              18,
+              18,
+              811,
+              1039
+            ]
+          }
+        }
+      ]
+    },
+    "scenery": {
+      "x2": [
+        {
+          "w": 1824,
+          "h": 2012,
+          "src": "atlas-scenery-avif-q62@2x.489a94ff94.webp",
+          "avif": "atlas-scenery-avif-q62@2x.8704d22906.avif",
+          "sprites": {
+            "guestboard/sit-area": [
+              18,
+              18,
+              1349,
+              760
+            ],
+            "cafe/front": [
+              18,
+              798,
+              1070,
+              496
+            ],
+            "cafe/sign-removebg": [
+              18,
+              1314,
+              779,
+              159
+            ],
+            "cafe/cat-1": [
+              1387,
+              18,
+              418,
+              500
+            ],
+            "cafe/cat-2": [
+              1387,
+              538,
+              418,
+              500
+            ],
+            "cafe/cat-3": [
+              18,
+              1493,
+              418,
+              500
+            ],
+            "cafe/cat-4": [
+              456,
+              1493,
+              418,
+              500
+            ],
+            "cafe/thanks-board": [
+              894,
+              1314,
+              350,
+              420
+            ],
+            "cafe/menu": [
+              1264,
+              1058,
+              380,
+              263
+            ]
+          }
+        },
+        {
+          "w": 756,
+          "h": 592,
+          "src": "atlas-scenery-webp-lossless@2x.df612078dd.webp",
+          "sprites": {
+            "guestboard/board-hall": [
+              18,
+              18,
+              720,
+              555
+            ]
+          }
+        },
+        {
+          "w": 1140,
+          "h": 1316,
+          "src": "atlas-scenery-webp-near@2x.ca01c2a277.webp",
+          "sprites": {
+            "gift-shop": [
+              18,
+              18,
+              1104,
+              836
+            ],
+            "cafe/buy-matcha": [
+              18,
+              874,
+              640,
+              422
+            ]
+          }
+        }
+      ],
+      "x3": [
+        {
+          "w": 2596,
+          "h": 2344,
+          "src": "atlas-scenery-avif-q62@3x.986d79ceb9.webp",
+          "avif": "atlas-scenery-avif-q62@3x.f24ace5e63.avif",
+          "sprites": {
+            "guestboard/sit-area": [
+              18,
+              18,
+              2023,
+              1140
+            ],
+            "cafe/front": [
+              18,
+              1178,
+              1070,
+              496
+            ],
+            "cafe/sign-removebg": [
+              1108,
+              1178,
+              779,
+              159
+            ],
+            "cafe/thanks-board": [
+              18,
+              1694,
+              525,
+              630
+            ],
+            "cafe/cat-1": [
+              563,
+              1694,
+              515,
+              616
+            ],
+            "cafe/cat-2": [
+              1098,
+              1694,
+              515,
+              616
+            ],
+            "cafe/cat-3": [
+              2061,
+              18,
+              515,
+              616
+            ],
+            "cafe/cat-4": [
+              2061,
+              654,
+              515,
+              616
+            ],
+            "cafe/menu": [
+              1108,
+              1357,
+              380,
+              263
+            ]
+          }
+        },
+        {
+          "w": 756,
+          "h": 592,
+          "src": "atlas-scenery-webp-lossless@3x.df612078dd.webp",
+          "sprites": {
+            "guestboard/board-hall": [
+              18,
+              18,
+              720,
+              555
+            ]
+          }
+        },
+        {
+          "w": 1140,
+          "h": 1316,
+          "src": "atlas-scenery-webp-near@3x.ca01c2a277.webp",
+          "sprites": {
+            "gift-shop": [
+              18,
+              18,
+              1104,
+              836
+            ],
+            "cafe/buy-matcha": [
+              18,
+              874,
+              640,
+              422
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "masks": {
+    "file": "atlas-masks.c5cfeb1854.png",
+    "sprites": {
+      "door": [
+        0,
+        0,
+        94,
+        128
+      ],
+      "help-center": [
+        95,
+        0,
+        100,
+        128
+      ],
+      "rope": [
+        0,
+        129,
+        128,
+        103
+      ],
+      "plaque": [
+        196,
+        0,
+        128,
+        63
+      ],
+      "coin": [
+        196,
+        64,
+        128,
+        128
+      ],
+      "pedestal-4-bare": [
+        0,
+        233,
+        81,
+        128
+      ],
+      "pedestal-1": [
+        82,
+        233,
+        94,
+        128
+      ],
+      "pedestal-2": [
+        177,
+        193,
+        94,
+        128
+      ],
+      "pedestal-3": [
+        325,
+        0,
+        94,
+        128
+      ],
+      "pedestal-4": [
+        325,
+        129,
+        81,
+        128
+      ],
+      "pedestal-5": [
+        0,
+        362,
+        81,
+        128
+      ],
+      "help/cat-1": [
+        82,
+        362,
+        117,
+        128
+      ],
+      "help/cat-2": [
+        272,
+        258,
+        117,
+        128
+      ],
+      "help/cat-3": [
+        420,
+        0,
+        117,
+        128
+      ],
+      "help/cat-4": [
+        407,
+        129,
+        117,
+        128
+      ],
+      "help/cat-5": [
+        390,
+        258,
+        117,
+        128
+      ],
+      "help/cat-6": [
+        0,
+        491,
+        117,
+        128
+      ],
+      "gift-shop": [
+        118,
+        491,
+        128,
+        97
+      ],
+      "cafe/front": [
+        200,
+        387,
+        128,
+        59
+      ],
+      "cafe/sign-removebg": [
+        118,
+        589,
+        128,
+        26
+      ],
+      "cafe/menu": [
+        329,
+        387,
+        128,
+        89
+      ],
+      "cafe/buy-matcha": [
+        247,
+        477,
+        128,
+        84
+      ],
+      "cafe/thanks-board": [
+        376,
+        477,
+        107,
+        128
+      ],
+      "guestboard/board-hall": [
+        538,
+        0,
+        128,
+        99
+      ],
+      "guestboard/sit-area": [
+        538,
+        100,
+        128,
+        72
+      ],
+      "cafe/cat-1": [
+        525,
+        173,
+        107,
+        128
+      ],
+      "cafe/cat-2": [
+        508,
+        302,
+        107,
+        128
+      ],
+      "cafe/cat-3": [
+        484,
+        431,
+        107,
+        128
+      ],
+      "cafe/cat-4": [
+        0,
+        620,
+        107,
+        128
+      ]
     }
   }
 }

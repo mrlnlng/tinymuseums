@@ -44,17 +44,23 @@ under 10s; iOS Safari starts crashing WebGL pages around 300-500MB.
 
 ## Phase 2: texture atlases for the hall sprites
 
-- [ ] Pack hall sprites into two atlases by when they load: entrance (door,
+- [x] Pack hall sprites into two atlases by when they load: entrance (door,
       help centre and its cat frames, rope, plaque, coin, pedestals, bare
       helm stand) and scenery (café, gift shop, guest board, sitting area,
       café cat frames). Floor and wallpaper repeat, so they stay standalone.
-- [ ] Packed separately per density (2x and 3x) with padding against mipmap
-      bleed; each sprite's rectangle stored in the manifest.
-- [ ] Sprite textures are clones of the atlas texture with offset/repeat, so
+- [x] Packed separately per density (2x and 3x) with padding and 2px edge
+      extrusion against mipmap bleed; each sprite's rectangle in the manifest.
+- [x] One sheet per encoder setting (AVIF q62/q70, near-lossless and
+      lossless webp...), each checked sprite by sprite against that sprite's
+      own standalone fidelity. A single sheet per group forced every sprite
+      to the strictest sprite's setting (entrance went 306KB -> 464KB).
+      Result: entrance 17 requests -> 4 and 306KB -> 247KB at 2x; scenery 12
+      -> 3 at about the same size (389KB vs 345KB at 3x).
+- [x] Sprite textures are clones of the atlas texture with offset/repeat, so
       they share one GPU upload.
-- [ ] Board slicing (plaque, rope) composes its slice with the sprite's own
+- [x] Board slicing (plaque, rope) composes its slice with the sprite's own
       offset/repeat instead of overwriting it.
-- [ ] Hit testing: per-sprite alpha masks packed into one small PNG at build
+- [x] Hit testing: per-sprite alpha masks packed into one small PNG at build
       time, looked up through the texture's offset/repeat (a compressed or
       atlased texture cannot be read back).
 

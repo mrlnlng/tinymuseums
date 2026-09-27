@@ -16,6 +16,25 @@ export interface AssetEntry {
 
 const images = manifest.images as Record<string, AssetEntry>
 
+export interface AtlasSheet extends BuiltImage {
+  sprites: Record<string, [number, number, number, number]>
+}
+
+export type AtlasGroup = keyof typeof manifest.atlases
+
+export function atlasSheets(group: AtlasGroup, density: 2 | 3 = screenDensity()): AtlasSheet[] {
+  const sheets = manifest.atlases[group] as unknown as { x2: AtlasSheet[]; x3: AtlasSheet[] }
+  return density === 3 ? sheets.x3 : sheets.x2
+}
+
+export function spriteMasks(): { url: string; sprites: Record<string, [number, number, number, number]> } {
+  const { file, sprites } = manifest.masks as unknown as {
+    file: string
+    sprites: Record<string, [number, number, number, number]>
+  }
+  return { url: builtUrl(file), sprites }
+}
+
 export type AssetName = keyof typeof manifest.images
 
 export function assetEntry(name: AssetName): AssetEntry {

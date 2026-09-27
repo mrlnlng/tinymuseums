@@ -1,30 +1,29 @@
-import { pictureSources, type AssetName } from '@/shared/lib/assets'
+import { atlasSheets, builtUrl, pictureSources } from '@/shared/lib/assets'
 
-const ENTRANCE_PRELOADS: AssetName[] = ['door', 'plaque', 'help-center', 'bunny-right']
+// Density media queries mirror screenDensity(): 3x above a device pixel ratio of 2.
+const DENSITY_MEDIA = { 2: '(max-resolution: 2dppx)', 3: '(min-resolution: 2.01dppx)' } as const
 
-// These must resolve to the exact file the hall loader will ask for, or the sprite
-// is fetched twice. A typed AVIF preload is skipped by browsers that cannot decode
-// it, which then simply load their own format through the loader as usual.
+// These must name the exact files the hall loader will ask for, or they are fetched
+// twice. A typed AVIF preload is skipped by browsers that cannot decode it, which
+// then simply load their own format through the loader as usual.
 export function HallPreload() {
+  const bunny = pictureSources('bunny-right')
   return (
     <>
-      {ENTRANCE_PRELOADS.map((name) => {
-        const { src, srcSet, avifSrcSet } = pictureSources(name)
-        const isSingle = srcSet === undefined
-        return avifSrcSet ? (
+      {([2, 3] as const).flatMap((density) =>
+        atlasSheets('entrance', density).map((sheet) => (
           <link
-            key={name}
+            key={sheet.src}
             rel="preload"
             as="image"
-            href={isSingle ? avifSrcSet : undefined}
-            imageSrcSet={isSingle ? undefined : avifSrcSet}
-            type="image/avif"
+            href={builtUrl(sheet.avif ?? sheet.src)}
+            type={sheet.avif ? 'image/avif' : undefined}
+            media={DENSITY_MEDIA[density]}
             fetchPriority="high"
           />
-        ) : (
-          <link key={name} rel="preload" as="image" href={src} imageSrcSet={srcSet} fetchPriority="high" />
-        )
-      })}
+        )),
+      )}
+      <link rel="preload" as="image" href={bunny.src} fetchPriority="high" />
     </>
   )
 }

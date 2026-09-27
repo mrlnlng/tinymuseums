@@ -22,6 +22,15 @@ export function plane(
   return mesh
 }
 
+// A horizontal slice of a texture that may itself be a region of an atlas.
+export function sliceOf(texture: THREE.Texture, from: number, to: number): THREE.Texture {
+  const slice = texture.clone()
+  slice.repeat.set((to - from) * texture.repeat.x, texture.repeat.y)
+  slice.offset.set(texture.offset.x + from * texture.repeat.x, texture.offset.y)
+  slice.needsUpdate = true
+  return slice
+}
+
 const CUTS = [0, 0.28, 0.72, 1] as const
 
 export function stretchedBoard(
@@ -43,11 +52,8 @@ export function stretchedBoard(
 
   let cursor = x - total / 2
   for (let i = 0; i < 3; i++) {
-    const slice = texture.clone()
-    slice.repeat.set(CUTS[i + 1] - CUTS[i], 1)
-    slice.offset.set(CUTS[i], 0)
+    const slice = sliceOf(texture, CUTS[i], CUTS[i + 1])
     slice.userData.ownedByBoard = true
-    slice.needsUpdate = true
     group.add(plane(widths[i], height, slice, cursor + widths[i] / 2, y, z))
     cursor += widths[i]
   }

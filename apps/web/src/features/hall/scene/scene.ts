@@ -6,6 +6,7 @@ import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
+import { sliceOf } from './board'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 
 interface SlotRuntime {
@@ -243,11 +244,8 @@ export class HallScene {
 
     let cursorX = -totalWidth / 2
     for (let i = 0; i < 3; i++) {
-      const sliceTexture = this.assets.textures.rope.clone()
-      sliceTexture.repeat.set(CUTS[i + 1] - CUTS[i], 1)
-      sliceTexture.offset.set(CUTS[i], 0)
+      const sliceTexture = sliceOf(this.assets.textures.rope, CUTS[i], CUTS[i + 1])
       sliceTexture.userData.ownedByDisplay = true
-      sliceTexture.needsUpdate = true
 
       const slice = new THREE.Mesh(
         new THREE.PlaneGeometry(sliceWidths[i], ropeHeight),

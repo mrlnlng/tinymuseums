@@ -1,7 +1,15 @@
 import * as THREE from 'three'
 import manifestJson from '../../../../public/assets/manifest.json'
 import { supportsAvif } from '@/shared/lib/avif'
-import { assetUrl as builtAssetUrl, type AssetName } from '@/shared/lib/assets'
+import {
+  assetUrl as builtAssetUrl,
+  atlasSheets,
+  builtUrl,
+  spriteMasks,
+  type AssetName,
+  type AtlasGroup,
+} from '@/shared/lib/assets'
+import { registerSpriteMask, type SpriteRegion } from './hit'
 import { sameOriginUrl } from '@/features/hall/lib/media'
 
 export type AssetManifest = typeof manifestJson
@@ -154,18 +162,87 @@ function toSprite(img: HTMLImageElement): Sprite {
   return { texture: toTexture(img), aspect: img.naturalWidth / img.naturalHeight }
 }
 
-function indexBy<K extends string>(
+function stem(file: string): string {
+  return file.replace(/\.(png|svg)$/, '')
+}
+
+// Each sprite is a clone of its sheet's texture showing one region, so a sheet is
+// uploaded to the GPU once however many sprites it holds.
+async function loadSheets(group: AtlasGroup): Promise<Map<string, Sprite>> {
+  const sprites = new Map<string, Sprite>()
+  await Promise.all(
+    atlasSheets(group).map(async (sheet) => {
+      const url = builtUrl(useAvif && sheet.avif ? sheet.avif : sheet.src)
+      const image = await loadRetrying(url).catch(async (error) => {
+        console.warn(`[hall] giving up on ${url}`, error)
+        return blankImage()
+      })
+      const texture = toTexture(image)
+      for (const [name, [x, y, w, h]] of Object.entries(sheet.sprites)) {
+        const region: SpriteRegion = { name, u0: x / sheet.w, v0: 1 - (y + h) / sheet.h, du: w / sheet.w, dv: h / sheet.h }
+        const sprite = texture.clone()
+        sprite.offset.set(region.u0, region.v0)
+        sprite.repeat.set(region.du, region.dv)
+        sprite.userData.sprite = region
+        sprite.needsUpdate = true
+        sprites.set(name, { texture: sprite, aspect: w / h })
+      }
+    }),
+  )
+  return sprites
+}
+
+let masks: Promise<void> | null = null
+
+function loadMasks(): Promise<void> {
+  masks ??= (async () => {
+    const { url, sprites } = spriteMasks()
+    const image = await loadRetrying(url)
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return
+    ctx.drawImage(image, 0, 0)
+    for (const [name, [x, y, w, h]] of Object.entries(sprites)) {
+      const { data } = ctx.getImageData(x, y, w, h)
+      const alpha = new Uint8Array(w * h)
+      for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4]
+      registerSpriteMask(name, w, h, alpha)
+    }
+  })().catch((error) => console.warn('[hall] no sprite masks; taps fall back to whole sprites', error))
+  return masks
+}
+
+function pick<K extends string>(
   names: readonly K[],
-  images: HTMLImageElement[],
+  files: Record<K, string>,
+  sheets: Map<string, Sprite>,
+  standalone: Map<string, HTMLImageElement>,
 ): { textures: Record<K, THREE.Texture>; aspect: Record<K, number> } {
   const textures = {} as Record<K, THREE.Texture>
   const aspect = {} as Record<K, number>
-  names.forEach((name, i) => {
-    const img = images[i]
-    textures[name] = toTexture(img)
-    aspect[name] = img.naturalWidth / img.naturalHeight
-  })
+  for (const name of names) {
+    const sprite = sheets.get(stem(files[name])) ?? toSprite(standalone.get(files[name])!)
+    textures[name] = sprite.texture
+    aspect[name] = sprite.aspect
+  }
   return { textures, aspect }
+}
+
+async function loadStandalone(files: string[]): Promise<Map<string, HTMLImageElement>> {
+  const images = await loadTolerant(files.map((f) => assetUrl(f)))
+  return new Map(files.map((f, i) => [f, images[i]]))
+}
+
+function inSheets(group: AtlasGroup): Set<string> {
+  return new Set(atlasSheets(group).flatMap((sheet) => Object.keys(sheet.sprites)))
+}
+
+function spriteFrom(sheets: Map<string, Sprite>, file: string): Sprite {
+  const sprite = sheets.get(stem(file))
+  if (!sprite) throw new Error(`${file} is not in an atlas`)
+  return sprite
 }
 
 export async function loadAssets(): Promise<Assets> {
@@ -173,19 +250,20 @@ export async function loadAssets(): Promise<Assets> {
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
   const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
 
-  const [entrance, walkRight, pedestalImages, idleLeft, idleRight, helpCat] = await Promise.all([
-    loadTolerant(names.map((n) => assetUrl(ENTRANCE_FILES[n]))),
+  const packed = inSheets('entrance')
+  const [sheets, standalone, walkRight, idleLeft, idleRight] = await Promise.all([
+    loadSheets('entrance'),
+    loadStandalone(names.map((n) => ENTRANCE_FILES[n]).filter((f) => !packed.has(stem(f)))),
     loadTolerant(rightFiles.map((f) => assetUrl(f))),
-    loadTolerant(manifest.pedestals.map((p) => assetUrl(p.file))),
     loadRetrying(assetUrl('bunny-left.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
     loadRetrying(assetUrl('bunny-right.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
-    loadTolerant(HELP_CAT_FRAMES.map((f) => assetUrl(f))),
   ])
+  void loadMasks()
 
   const walkLeft: HTMLImageElement[] = []
   void loadTolerant(leftFiles.map((f) => assetUrl(f))).then((images) => walkLeft.push(...images))
 
-  const { textures, aspect } = indexBy(names, entrance)
+  const { textures, aspect } = pick(names, ENTRANCE_FILES, sheets, standalone)
 
   textures.floor.wrapS = THREE.RepeatWrapping
   textures.floor.wrapT = THREE.ClampToEdgeWrapping
@@ -196,11 +274,8 @@ export async function loadAssets(): Promise<Assets> {
     aspect,
     walk: { left: walkLeft, right: walkRight },
     bunnyIdle: { left: idleLeft, right: idleRight },
-    pedestals: pedestalImages.map((img, i) => ({
-      ...toSprite(img),
-      file: manifest.pedestals[i].file,
-    })),
-    helpCat: helpCat.map(toSprite),
+    pedestals: manifest.pedestals.map((p) => ({ ...spriteFrom(sheets, p.file), file: p.file })),
+    helpCat: HELP_CAT_FRAMES.map((f) => spriteFrom(sheets, f)),
   }
 }
 
@@ -209,16 +284,15 @@ export async function loadAssets(): Promise<Assets> {
 export async function loadScenery(): Promise<Scenery> {
   const names = Object.keys(SCENERY_FILES) as SceneryName[]
 
-  const [boards, catImages, helm, matcha, sitting] = await Promise.all([
-    loadTolerant(names.map((n) => assetUrl(SCENERY_FILES[n]))),
-    loadTolerant(CAFE_CAT_FRAMES.map((f) => assetUrl(f))),
+  const [sheets, helm, matcha, sitting] = await Promise.all([
+    loadSheets('scenery'),
     loadRetrying(assetUrl('helm.png')),
     loadRetrying(assetUrl('matcha.png')),
     loadTolerant(['bunny-sit.png', 'bunny-sit-helm.png'].map((f) => assetUrl(f))),
   ])
 
-  const { textures, aspect } = indexBy(names, boards)
-  const cafeCat = catImages.map(toSprite)
+  const { textures, aspect } = pick(names, SCENERY_FILES, sheets, new Map())
+  const cafeCat = CAFE_CAT_FRAMES.map((f) => spriteFrom(sheets, f))
 
   return {
     textures,

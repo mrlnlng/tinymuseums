@@ -13,6 +13,22 @@ interface AlphaMap {
 
 const alphaMaps = new WeakMap<TexImageSource, AlphaMap | null>()
 
+// Atlas sprites share one image (and a compressed texture has none to read), so
+// their alpha comes from masks built with the assets, keyed by sprite name.
+const spriteMasks = new Map<string, AlphaMap>()
+
+export interface SpriteRegion {
+  name: string
+  u0: number
+  v0: number
+  du: number
+  dv: number
+}
+
+export function registerSpriteMask(name: string, width: number, height: number, alpha: Uint8Array): void {
+  spriteMasks.set(name, { width, height, data: spread(alpha, width, height), exact: alpha })
+}
+
 const OPAQUE_ALPHA = 32
 
 function alphaMapFor(image: TexImageSource): AlphaMap | null {
@@ -82,14 +98,25 @@ export function isPaintedAt(hit: THREE.Intersection, exact = false): boolean {
   if (!hit.uv) return true
 
   const material = (hit.object as THREE.Mesh).material as THREE.MeshBasicMaterial
-  const image = material.map?.image as TexImageSource | undefined
-  if (!image) return true
+  const texture = material.map
+  if (!texture) return true
 
-  const map = alphaMapFor(image)
+  let map: AlphaMap | null | undefined
+  let u = hit.uv.x
+  let v = hit.uv.y
+  const region = texture.userData.sprite as SpriteRegion | undefined
+  if (region) {
+    map = spriteMasks.get(region.name)
+    u = (texture.offset.x + u * texture.repeat.x - region.u0) / region.du
+    v = (texture.offset.y + v * texture.repeat.y - region.v0) / region.dv
+  } else {
+    const image = texture.image as TexImageSource | undefined
+    map = image ? alphaMapFor(image) : null
+  }
   if (!map) return true
 
-  const x = Math.min(map.width - 1, Math.max(0, Math.floor(hit.uv.x * map.width)))
-  const y = Math.min(map.height - 1, Math.max(0, Math.floor((1 - hit.uv.y) * map.height)))
+  const x = Math.min(map.width - 1, Math.max(0, Math.floor(u * map.width)))
+  const y = Math.min(map.height - 1, Math.max(0, Math.floor((1 - v) * map.height)))
   return (exact ? map.exact : map.data)[y * map.width + x] >= OPAQUE_ALPHA
 }
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { BRAND } from '@tiny/core/brand'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
 import { pickFocus } from '../lib/focus'
@@ -19,6 +20,7 @@ import {
 } from '../lib/modes'
 import { planGame, randomRound } from '../lib/plan'
 import { createReveal, type SketchReveal } from '../lib/reveal'
+import { shareResult, shareText, type ShareOutcome } from '../lib/share'
 import BunnyArtist, { type BunnyMood } from './BunnyArtist'
 
 const ROUNDS = 3
@@ -26,6 +28,7 @@ const MAX_STARS = ROUNDS * STARS_BY_STEP[0]
 const STEP_DRAW_MS = 1100
 const STREAK_FOR_BONUS = 3
 const ROLL_MS = 650
+const SHARE_NOTICE_MS = 2200
 
 const BEST_KEY = 'tiny-museum:sketch-best'
 const BEST_STREAK_KEY = 'tiny-museum:sketch-streak'
@@ -162,6 +165,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   const [best, setBest] = useState(0)
   const [bestStreak, setBestStreak] = useState(0)
   const [isRolling, setIsRolling] = useState(false)
+  const [shareOutcome, setShareOutcome] = useState<ShareOutcome | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const revealRef = useRef<SketchReveal | null>(null)
@@ -333,11 +337,32 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     setRoundIndex(0)
     setScores([])
     setBonus(0)
+    setShareOutcome(null)
     setStarted(false)
     setAttempt((n) => n + 1)
   }, [plan])
 
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
+
+  const share = useCallback(async () => {
+    const text = shareText({
+      brand: BRAND,
+      modeLabel: MODES[mode].label,
+      difficulty,
+      scores,
+      starsPerRound: STARS_BY_STEP[0],
+      bonus,
+      url: `${window.location.origin}/museum`,
+    })
+    play('click')
+    setShareOutcome(await shareResult(text))
+  }, [mode, difficulty, scores, bonus, play])
+
+  useEffect(() => {
+    if (shareOutcome !== 'copied' && shareOutcome !== 'failed') return
+    const timer = window.setTimeout(() => setShareOutcome(null), SHARE_NOTICE_MS)
+    return () => window.clearTimeout(timer)
+  }, [shareOutcome])
 
   const startGame = useCallback(
     (level: Difficulty, chosenMode: Mode = mode) => {
@@ -488,7 +513,14 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
               Best on {spec.label.toLowerCase()}, {difficulty}: {best} · Best streak: {bestStreak}
             </p>
             <div className="sketchbook-actions">
-              <button type="button" className="button" onClick={playAgain}>
+              <button type="button" className="button" onClick={share}>
+                {shareOutcome === 'copied'
+                  ? 'Copied!'
+                  : shareOutcome === 'failed'
+                    ? 'Could not share'
+                    : 'Share my stars'}
+              </button>
+              <button type="button" className="button secondary" onClick={playAgain}>
                 Play again
               </button>
               <button type="button" className="button secondary" onClick={onClose}>

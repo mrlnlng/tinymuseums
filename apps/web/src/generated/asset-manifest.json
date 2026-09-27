@@ -711,8 +711,8 @@
         {
           "w": 1824,
           "h": 2012,
-          "src": "atlas-scenery-avif-q62@2x.489a94ff94.webp",
-          "avif": "atlas-scenery-avif-q62@2x.8704d22906.avif",
+          "src": "atlas-scenery-avif-q62@2x.2803ffbf77.webp",
+          "avif": "atlas-scenery-avif-q62@2x.c159fc0a59.avif",
           "sprites": {
             "guestboard/sit-area": [
               18,
@@ -807,8 +807,8 @@
         {
           "w": 2596,
           "h": 2344,
-          "src": "atlas-scenery-avif-q62@3x.986d79ceb9.webp",
-          "avif": "atlas-scenery-avif-q62@3x.f24ace5e63.avif",
+          "src": "atlas-scenery-avif-q62@3x.683a551389.webp",
+          "avif": "atlas-scenery-avif-q62@3x.166430e568.avif",
           "sprites": {
             "guestboard/sit-area": [
               18,
@@ -902,7 +902,7 @@
     }
   },
   "masks": {
-    "file": "atlas-masks.c5cfeb1854.png",
+    "file": "atlas-masks.fccf00c608.png",
     "sprites": {
       "door": [
         0,

@@ -84,6 +84,7 @@ interface SliceRow {
   flattened_width: number
   flattened_height: number
   flattened_version: number
+  flattened_thumbhash: string | null
 }
 
 export async function getHallSlice(
@@ -107,7 +108,8 @@ export async function getHallSlice(
               p.flattened_key,
               p.flattened_width,
               p.flattened_height,
-              p.flattened_version
+              p.flattened_version,
+              p.flattened_thumbhash
          from epoch_slots s
          join pieces   p on p.id = s.piece_id
          join artists  a on a.id = p.artist_id
@@ -149,6 +151,7 @@ export async function getHallSlice(
           row.flattened_version >= FRAME_AVIF_SINCE
             ? storage.urlFor(frameAvifKey(row.flattened_key))
             : undefined,
+        thumbhash: row.flattened_thumbhash ?? undefined,
         width: row.flattened_width,
         height: row.flattened_height,
       },

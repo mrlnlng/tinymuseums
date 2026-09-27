@@ -93,9 +93,10 @@ async function renderPieceFrame(row: DisplayPieceRow, storage: Storage): Promise
         set flattened_key = $2,
             flattened_width = $3,
             flattened_height = $4,
-            flattened_version = $5
+            flattened_version = $5,
+            flattened_thumbhash = $6
       where id = $1`,
-    [row.piece_id, key, output.width, output.height, FRAME_VERSION],
+    [row.piece_id, key, output.width, output.height, FRAME_VERSION, output.thumbhash],
   )
   if (stale && stale !== key) {
     await storage.remove(stale).catch(() => {})

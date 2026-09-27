@@ -89,12 +89,21 @@ rerunning without the variable.
 
 ## Phase 4: ThumbHash placeholders for paintings
 
-- [ ] Worker computes a ThumbHash (with alpha) of each framed painting and
+- [x] Worker computes a ThumbHash (with alpha) of each framed painting and
       stores it on the piece; `FRAME_VERSION` 6 re-renders every frame.
-- [ ] Hall API returns it with the image.
-- [ ] Hall mounts a painting as soon as it is in range, drawn from the
+- [x] Hall API returns it with the image.
+- [x] Hall mounts a painting as soon as it is in range, drawn from the
       ThumbHash, and crossfades to the full image when it arrives.
+- [x] The `first_painting` performance mark now fires when a real painting
+      shows, not a placeholder, so the Performance page means the same thing.
+- [x] On deploy the worker (backend phase) can start before the frontend
+      build applies `thumbhash.sql`; its first render then fails on the
+      missing column and the job retries once the column exists.
 
 ## Completed
 
-(filled in as phases land)
+All four phases are done (KTX2 built but switched off, see phase 3).
+
+Follow-up noticed on the way, not part of this work: the landing page's
+"Currently showing" list keys items by artist id, which repeats now that
+the hall walks one artist's works, so React logs a duplicate-key warning.

@@ -7,6 +7,7 @@ import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
 import { sliceOf } from './board'
+import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 
 interface SlotRuntime {
@@ -22,10 +23,15 @@ interface SlotRuntime {
 }
 
 const MAX_TEXTURE_ATTEMPTS = 4
+const CROSSFADE_MS = 300
 const MAX_CONCURRENT_LOADS = 2
 
 function retryDelayMs(attempts: number): number {
   return Math.min(8000, 500 * 2 ** attempts)
+}
+
+function markFirstPainting(): void {
+  if (performance.getEntriesByName(FIRST_PAINTING_MARK).length === 0) performance.mark(FIRST_PAINTING_MARK)
 }
 
 function wallSize(piece: HallPieceDto): { width: number; height: number } {
@@ -43,6 +49,8 @@ export interface MountedDisplay {
   height: number
   plaqueY: number
   titleY: number
+  showsPlaceholder: boolean
+  fade?: { mesh: THREE.Mesh; startedAt: number }
 }
 
 export interface PieceHit {
@@ -129,6 +137,16 @@ export class HallScene {
         continue
       }
 
+      const mounted = this.mounted.get(slot.index)
+      if (distance <= mountRadiusUnits && slot.status !== 'ready' && !mounted && slot.piece.image.thumbhash) {
+        if (!mountedThisFrame) {
+          this.mount(slot)
+          mountedThisFrame = true
+        }
+      } else if (mounted?.showsPlaceholder && !mounted.fade && slot.status === 'ready' && slot.texture) {
+        this.beginFade(mounted, slot.texture, now)
+      }
+
       if (slot.status === 'idle') {
         wanted.push({ slot, distance })
         continue
@@ -164,8 +182,41 @@ export class HallScene {
       this.beginLoad(slot, now)
     }
 
+    this.updateFades(now)
     this.updatePedestals(dt, cameraX)
     this.coin.update(dt)
+  }
+
+  private beginFade(mount: MountedDisplay, texture: THREE.Texture, now: number): void {
+    const mesh = new THREE.Mesh(
+      mount.mesh.geometry,
+      new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0 }),
+    )
+    mesh.position.copy(mount.mesh.position)
+    mesh.position.z += 0.001
+    mesh.userData.slotIndex = mount.index
+    mount.group.add(mesh)
+    mount.fade = { mesh, startedAt: now }
+  }
+
+  private updateFades(now: number): void {
+    for (const mount of this.mountedList) {
+      if (!mount.fade) continue
+      const t = Math.min(1, (now - mount.fade.startedAt) / CROSSFADE_MS)
+      const material = mount.fade.mesh.material as THREE.MeshBasicMaterial
+      material.opacity = 1 - (1 - t) ** 2
+      if (t < 1) continue
+
+      const base = mount.mesh.material as THREE.MeshBasicMaterial
+      base.map?.dispose()
+      base.map = material.map
+      base.needsUpdate = true
+      mount.group.remove(mount.fade.mesh)
+      material.dispose()
+      mount.fade = undefined
+      mount.showsPlaceholder = false
+      markFirstPainting()
+    }
   }
 
   private beginLoad(slot: SlotRuntime, now: number): void {
@@ -195,8 +246,9 @@ export class HallScene {
 
   private mount(slot: SlotRuntime): void {
     const centerX = this.layout.centerX[slot.index]
-    if (centerX === undefined || !slot.texture) return
-    if (performance.getEntriesByName(FIRST_PAINTING_MARK).length === 0) performance.mark(FIRST_PAINTING_MARK)
+    const map = slot.texture ?? (slot.piece.image.thumbhash ? placeholderTexture(slot.piece.image.thumbhash) : null)
+    if (centerX === undefined || !map) return
+    if (slot.texture) markFirstPainting()
 
     const piece = slot.piece
     const group = new THREE.Group()
@@ -206,7 +258,7 @@ export class HallScene {
     const { width, height } = wallSize(piece)
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(width, height),
-      new THREE.MeshBasicMaterial({ map: slot.texture, transparent: true, opacity: 1 }),
+      new THREE.MeshBasicMaterial({ map, transparent: true, opacity: 1 }),
     )
     mesh.position.set(0, bottom + height / 2, 0)
     mesh.userData.slotIndex = slot.index
@@ -277,6 +329,7 @@ export class HallScene {
       height,
       plaqueY,
       titleY: bottom + height + CONFIG.displayTitleGap,
+      showsPlaceholder: !slot.texture,
     })
     this.mountedList = [...this.mounted.values()]
   }

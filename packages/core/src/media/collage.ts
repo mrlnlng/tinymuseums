@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import sharp from 'sharp'
+import { rgbaToThumbHash } from 'thumbhash'
 import { repoRoot } from '../infra/env.ts'
 import { pickDerivative } from './derivatives.ts'
 import type { Storage } from './storage.ts'
@@ -13,7 +14,7 @@ const ASSETS_DIR =
 export const PX_PER_UNIT = 400
 
 // Bump whenever the rendered frame changes; frames from older versions are re-rendered by the worker.
-export const FRAME_VERSION = 5
+export const FRAME_VERSION = 6
 
 // Frames from this version on have an .avif sibling next to the .webp.
 export const FRAME_AVIF_SINCE = 4
@@ -86,6 +87,7 @@ export interface SinglePieceInput {
 export interface SinglePieceOutput {
   buffer: Buffer
   avif: Buffer
+  thumbhash: string
   width: number
   height: number
   canvas: { w: number; h: number }
@@ -141,10 +143,13 @@ export async function renderSinglePieceFrame({
     .composite(overlays)
     .png()
     .toBuffer()
-  const [buffer, avif] = await Promise.all([
+  const [buffer, avif, small] = await Promise.all([
     sharp(composed).webp({ quality: 90, alphaQuality: 100 }).toBuffer(),
     sharp(composed).avif({ quality: 70, effort: 4 }).toBuffer(),
+    // ThumbHash takes at most 100px on a side.
+    sharp(composed).resize(100, 100, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
   ])
+  const thumbhash = Buffer.from(rgbaToThumbHash(small.info.width, small.info.height, small.data)).toString('base64')
 
-  return { buffer, avif, width, height, canvas: { w: canvasW, h: canvasH } }
+  return { buffer, avif, thumbhash, width, height, canvas: { w: canvasW, h: canvasH } }
 }

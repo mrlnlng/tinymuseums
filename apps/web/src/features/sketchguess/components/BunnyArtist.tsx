@@ -4,7 +4,7 @@ import { motion, useReducedMotion, type TargetAndTransition, type Transition } f
 
 export type BunnyMood = 'idle' | 'drawing' | 'cheering' | 'sad'
 
-const SITTING = '/assets/bunny-sit.webp'
+const SITTING = '/assets/sketchguess/bunny'
 const JUMPING = '/assets/bunny-right.webp'
 
 const POSES: Record<BunnyMood, { animate: TargetAndTransition; transition: Transition }> = {
@@ -52,7 +52,14 @@ export default function BunnyArtist({ mood }: { mood: BunnyMood }) {
       animate={isStill ? undefined : pose.animate}
       transition={pose.transition}
     >
-      <img src={mood === 'cheering' ? JUMPING : SITTING} alt="" draggable={false} />
+      {mood === 'cheering' ? (
+        <img src={JUMPING} alt="" draggable={false} />
+      ) : (
+        <picture>
+          <source srcSet={`${SITTING}.avif`} type="image/avif" />
+          <img src={`${SITTING}.webp`} alt="" draggable={false} />
+        </picture>
+      )}
       {mood === 'cheering' ? null : <Pencil scribbling={mood === 'drawing'} />}
     </motion.div>
   )

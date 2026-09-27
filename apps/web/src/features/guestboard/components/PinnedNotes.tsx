@@ -14,9 +14,7 @@ export default function PinnedNotes({ notes, onOpenNote, avoidSitArea = false }:
       {notes.slice(0, NOTE_PLACES.length).map((note, index) => {
         const place = NOTE_PLACES[index]!
         if (avoidSitArea && place.behindSitArea) return null
-        const drawn = (
-          <StickyNote color={note.color} message={note.message} text={note.message} name={note.name} />
-        )
+        const drawn = <StickyNote color={note.color} message={note.message} name={note.name} />
         return (
           <li
             key={note.id}

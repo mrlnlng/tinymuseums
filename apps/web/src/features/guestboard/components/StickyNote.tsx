@@ -13,7 +13,13 @@ interface StickyNoteProps {
   className?: string
 }
 
-export default function StickyNote({ color, message, text = '', name, className }: StickyNoteProps) {
+export default function StickyNote({
+  color,
+  message,
+  text = typeof message === 'string' ? message : '',
+  name,
+  className,
+}: StickyNoteProps) {
   return (
     <div className={['sticky-note', `sticky-note--${color}`, className].filter(Boolean).join(' ')}>
       {message !== undefined ? (

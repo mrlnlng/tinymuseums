@@ -76,7 +76,6 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
                 className="guestboard-held guestboard-held--read"
                 color={note.color}
                 message={note.message}
-                text={note.message}
                 name={note.name}
               />
             </li>

@@ -1701,6 +1701,7 @@ code.token {
   list-style: none;
 }
 .guestboard-pin { position: absolute; }
+.guestboard-pin .sticky-note-message { overflow: hidden; }
 .guestboard-pin-button {
   display: block;
   width: 100%;

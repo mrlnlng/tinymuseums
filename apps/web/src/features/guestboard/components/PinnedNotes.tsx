@@ -12,7 +12,9 @@ export default function PinnedNotes({ notes, onOpenNote }: PinnedNotesProps) {
     <ul className="guestboard-pins" aria-label={onOpenNote ? 'Notes from other visitors' : undefined}>
       {notes.slice(0, NOTE_PLACES.length).map((note, index) => {
         const place = NOTE_PLACES[index]!
-        const drawn = <StickyNote color={note.color} name={note.name} />
+        const drawn = (
+          <StickyNote color={note.color} message={note.message} text={note.message} name={note.name} />
+        )
         return (
           <li
             key={note.id}

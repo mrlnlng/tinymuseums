@@ -24,7 +24,6 @@ export default async function StudioLayout({ children }: { children: React.React
                 <Link href="/studio/performance">Performance</Link>
               </>
             ) : null}
-            <Link href={`/a/${artist.slug}`}>View</Link>
             <form action={signOutAction}>
               <button type="submit" className="nav-button">
                 Sign out

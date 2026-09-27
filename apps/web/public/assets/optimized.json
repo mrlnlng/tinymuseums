@@ -51,7 +51,9 @@
     "pedestal-4",
     "pedestal-4-bare",
     "pedestal-5",
-    "ticket"
+    "pedestal-5-large",
+    "ticket",
+    "wallpaper"
   ],
   "avif": [
     "bunny",
@@ -84,7 +86,6 @@
     "frame",
     "frame-landscape",
     "gift-shop",
-    "guestboard/board",
     "guestboard/sit-area",
     "helm",
     "help-center",
@@ -102,6 +103,7 @@
     "pedestal-4",
     "pedestal-4-bare",
     "pedestal-5",
+    "pedestal-5-large",
     "rope",
     "ticket"
   ]

@@ -29,7 +29,7 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
       onClick={onClose}
     >
       <div className="coin-found-stage">
-        <img className="coin-found-urn" src="/assets/pedestal-5.webp" alt="" />
+        <img className="coin-found-urn" src="/assets/pedestal-5-large.webp" alt="" />
         <h2 className="coin-found-title">You found a coin!</h2>
         <p className="coin-found-code" onClick={(e) => e.stopPropagation()}>
           Use &quot;tinymuseum&quot;

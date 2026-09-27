@@ -8,6 +8,7 @@ export interface HallLayout {
   giftShopX: number | null
   cafeX: number | null
   guestBoardX: number | null
+  comingSoonX: number | null
 }
 
 function cafeAfterIndex(widths: number[], isComplete: boolean): number | null {
@@ -16,7 +17,12 @@ function cafeAfterIndex(widths: number[], isComplete: boolean): number | null {
   return null
 }
 
-export function computeLayout(widths: number[], isComplete = false): HallLayout {
+export function comingSoonWidth(): number {
+  return CONFIG.comingSoon.canvas.w * CONFIG.piece.scale
+}
+
+export function computeLayout(paintings: number[], isComplete = false): HallLayout {
+  const widths = isComplete ? [...paintings, comingSoonWidth()] : paintings
   const centerX: number[] = []
   const pedestalX: number[] = []
   let cafeX: number | null = null
@@ -48,14 +54,17 @@ export function computeLayout(widths: number[], isComplete = false): HallLayout 
 
   const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
 
+  const comingSoonX = isComplete ? centerX.pop()! : null
+
   return {
     centerX,
     pedestalX,
     totalLength: giftShopX ?? cursor + CONFIG.piece.gap,
-    known: widths.length,
+    known: paintings.length,
     giftShopX,
     cafeX,
     guestBoardX,
+    comingSoonX,
   }
 }
 

@@ -8,6 +8,7 @@ import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
+import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
@@ -18,6 +19,7 @@ import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
+  ComingSoonNote,
   FunZoneSign,
   GiftShopSigns,
   GuestBoardNotes,
@@ -234,6 +236,8 @@ export function useHallScene({
       let guestBoard: GuestBoard | null = null
       let guestBoardNotes: GuestBoardNotes | null = null
       let funZoneSign: FunZoneSign | null = null
+      let comingSoon: ComingSoon | null = null
+      let comingSoonNote: ComingSoonNote | null = null
       let sitting: Sitting | null = null
 
       const raiseGiftShop = (): void => {
@@ -262,6 +266,13 @@ export function useHallScene({
         const layer = hosts.guestBoardNotes.current
         if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
         onGuestBoardHungRef.current()
+      }
+
+      const raiseComingSoon = (): void => {
+        const x = hall.layout.comingSoonX
+        if (x === null || comingSoon || !scenery) return
+        comingSoon = createComingSoon(scene, scenery, x)
+        comingSoonNote = new ComingSoonNote(overlayHost, comingSoon.noteMark)
       }
 
       const raiseCafe = (): void => {
@@ -510,12 +521,14 @@ export function useHallScene({
         raiseGiftShop()
         raiseGuestBoard()
         raiseCafe()
+        raiseComingSoon()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
         giftShopSigns?.sync(rig.camera, viewport)
         cafeLink?.sync(rig.camera, viewport)
         guestBoardNotes?.sync(rig.camera, viewport)
         funZoneSign?.sync(rig.camera, viewport)
+        comingSoonNote?.sync(rig.camera, viewport)
 
         lobby.update(dt, traversal.cameraX)
         const cafeX = hall.layout.cafeX
@@ -554,12 +567,14 @@ export function useHallScene({
         cafeLink?.clear()
         guestBoardNotes?.clear()
         funZoneSign?.clear()
+        comingSoonNote?.clear()
         hall.dispose()
         lobby.dispose()
         giftShop?.dispose()
         sitting?.dispose()
         guestBoard?.dispose()
         cafe?.dispose()
+        comingSoon?.dispose()
         backdrop.dispose()
         helm?.dispose()
         matcha?.dispose()

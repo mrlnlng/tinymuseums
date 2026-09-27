@@ -66,6 +66,11 @@ export const CONFIG = {
     signText: { dx: -0.075, centerY: 2.684, width: 1.515 },
   },
 
+  comingSoon: {
+    canvas: { w: 2.0525, h: 2.9 },
+    note: { dx: -0.015, centerY: 2.618, width: 0.72 },
+  },
+
   // lead/trail: the wall reserved before and after the origin the art hangs from.
   cafe: {
     lead: 3.4,

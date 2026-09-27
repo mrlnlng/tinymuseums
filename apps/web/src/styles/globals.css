@@ -586,6 +586,22 @@ code.token {
 }
 
 .gift-shop-sign,
+.coming-soon-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-script);
+  font-weight: 700;
+  color: var(--script);
+  text-align: center;
+  line-height: 1.05;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.coming-soon-note span { display: block; transform: rotate(-4deg); }
+
 .fun-zone-sign {
   position: absolute;
   top: 0;

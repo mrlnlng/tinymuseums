@@ -709,10 +709,10 @@
     "scenery": {
       "x2": [
         {
-          "w": 1824,
-          "h": 2012,
-          "src": "atlas-scenery-avif-q62@2x.2803ffbf77.webp",
-          "avif": "atlas-scenery-avif-q62@2x.c159fc0a59.avif",
+          "w": 2184,
+          "h": 2372,
+          "src": "atlas-scenery-avif-q62@2x.6d95eabd18.webp",
+          "avif": "atlas-scenery-avif-q62@2x.97acd8c1a7.avif",
           "sprites": {
             "guestboard/sit-area": [
               18,
@@ -726,45 +726,51 @@
               1070,
               496
             ],
-            "cafe/sign-removebg": [
+            "coming-soon": [
               18,
               1314,
+              736,
+              1040
+            ],
+            "cafe/sign-removebg": [
+              1387,
+              18,
               779,
               159
             ],
             "cafe/cat-1": [
               1387,
-              18,
+              197,
               418,
               500
             ],
             "cafe/cat-2": [
               1387,
-              538,
+              717,
               418,
               500
             ],
             "cafe/cat-3": [
-              18,
-              1493,
+              774,
+              1314,
               418,
               500
             ],
             "cafe/cat-4": [
-              456,
-              1493,
+              774,
+              1834,
               418,
               500
             ],
             "cafe/thanks-board": [
-              894,
-              1314,
+              1212,
+              1237,
               350,
               420
             ],
             "cafe/menu": [
-              1264,
-              1058,
+              1582,
+              1237,
               380,
               263
             ]
@@ -805,10 +811,10 @@
       ],
       "x3": [
         {
-          "w": 2596,
-          "h": 2344,
-          "src": "atlas-scenery-avif-q62@3x.683a551389.webp",
-          "avif": "atlas-scenery-avif-q62@3x.166430e568.avif",
+          "w": 3152,
+          "h": 2756,
+          "src": "atlas-scenery-avif-q62@3x.95c9f29b70.webp",
+          "avif": "atlas-scenery-avif-q62@3x.869d592731.avif",
           "sprites": {
             "guestboard/sit-area": [
               18,
@@ -816,51 +822,57 @@
               2023,
               1140
             ],
-            "cafe/front": [
+            "coming-soon": [
               18,
               1178,
+              1104,
+              1560
+            ],
+            "cafe/front": [
+              2061,
+              18,
               1070,
               496
             ],
             "cafe/sign-removebg": [
-              1108,
-              1178,
+              2061,
+              534,
               779,
               159
             ],
             "cafe/thanks-board": [
-              18,
-              1694,
+              2061,
+              713,
               525,
               630
             ],
             "cafe/cat-1": [
-              563,
-              1694,
+              2606,
+              713,
               515,
               616
             ],
             "cafe/cat-2": [
-              1098,
-              1694,
+              2606,
+              1349,
               515,
               616
             ],
             "cafe/cat-3": [
-              2061,
-              18,
+              1142,
+              1985,
               515,
               616
             ],
             "cafe/cat-4": [
-              2061,
-              654,
+              1677,
+              1985,
               515,
               616
             ],
             "cafe/menu": [
-              1108,
-              1357,
+              1142,
+              1363,
               380,
               263
             ]
@@ -902,7 +914,7 @@
     }
   },
   "masks": {
-    "file": "atlas-masks.fccf00c608.png",
+    "file": "atlas-masks.6842b2eb42.png",
     "sprites": {
       "door": [
         0,
@@ -1054,26 +1066,32 @@
         128,
         72
       ],
-      "cafe/cat-1": [
+      "coming-soon": [
         525,
         173,
-        107,
+        91,
         128
       ],
-      "cafe/cat-2": [
+      "cafe/cat-1": [
         508,
         302,
         107,
         128
       ],
-      "cafe/cat-3": [
+      "cafe/cat-2": [
         484,
         431,
         107,
         128
       ],
-      "cafe/cat-4": [
+      "cafe/cat-3": [
         0,
+        620,
+        107,
+        128
+      ],
+      "cafe/cat-4": [
+        108,
         620,
         107,
         128

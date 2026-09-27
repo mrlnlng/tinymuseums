@@ -27,3 +27,4 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `guestboard/sit-area.png` | `sit_area.png`, trimmed, quantised |
 | `bunny-sit.png`, `bunny-sit-helm.png` | `bunny_sit.png` and `bunny_sit_hat.png` on one shared canvas so config offsets fit both |
 | `help/cat-1.png` … `help/cat-6.png` | the six frames of `cat.gif`, trimmed to their shared box, 460px tall, quantised |
+| `coming-soon.png` | `frame.png` over a drawn curtain with a blank pinned note (the hall writes "Coming soon" on it), same canvas as `frame.png`, quantised |

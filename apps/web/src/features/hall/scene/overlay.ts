@@ -289,6 +289,28 @@ export class FunZoneSign {
   }
 }
 
+export class ComingSoonNote {
+  private note = document.createElement('div')
+
+  constructor(
+    container: HTMLElement,
+    private mark: Mark,
+  ) {
+    this.note.className = 'coming-soon-note'
+    this.note.innerHTML = '<span>Coming soon</span>'
+    container.appendChild(this.note)
+  }
+
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
+    const perUnit = viewport.width / (camera.right - camera.left)
+    placeLabel(this.note, this.mark, perUnit, camera, viewport, 0.15)
+  }
+
+  clear(): void {
+    this.note.remove()
+  }
+}
+
 export class CafeLink {
   private poster = document.createElement('a')
   private isOnScreen: boolean | null = null

@@ -46,6 +46,7 @@ export default function SoundToggle() {
       <div className="sound-panel">
         <input
           className="sound-level"
+          data-track="volume"
           type="range"
           min={0}
           max={100}
@@ -64,6 +65,7 @@ export default function SoundToggle() {
       <button
         type="button"
         className="chrome-button sound-toggle"
+        data-track="music_toggle"
         onClick={() => {
           toggle()
           hold()

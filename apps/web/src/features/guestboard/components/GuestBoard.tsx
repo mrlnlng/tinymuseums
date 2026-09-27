@@ -7,6 +7,7 @@ import BoardScreen from '@/features/guestboard/components/BoardScreen'
 import ComposeScreen from '@/features/guestboard/components/ComposeScreen'
 import ReadScreen from '@/features/guestboard/components/ReadScreen'
 import { PostRejected, useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
+import { track } from '@/shared/lib/visit'
 
 type View = { screen: 'board' } | { screen: 'compose' } | { screen: 'read'; index: number }
 
@@ -42,6 +43,7 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
     toBoard()
     try {
       await post(draft)
+      track('guest_note_posted')
       setDraft(blankDraft())
     } catch (postError) {
       setPublishError(

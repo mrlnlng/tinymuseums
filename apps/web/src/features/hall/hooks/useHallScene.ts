@@ -28,6 +28,7 @@ import { HallScene } from '@/features/hall/scene/scene'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 
 const BACKDROP_LENGTH = 600
 
@@ -330,18 +331,21 @@ export function useHallScene({
         aim(event)
 
         if (lobby.hitTestDoor(raycaster)) {
+          track('leave')
           soundRef.current.play('click')
           onLeaveRef.current()
           return
         }
 
         if (lobby.hitTestCat(raycaster)) {
+          track('help')
           soundRef.current.play('click')
           onOpenHelpRef.current()
           return
         }
 
         if (hall.hitTestCoin(raycaster)) {
+          track('coin')
           soundRef.current.play('coin')
           onFindCoinRef.current()
           return
@@ -349,6 +353,7 @@ export function useHallScene({
 
         const hit = hall.hitTest(raycaster)
         if (hit) {
+          track('painting')
           soundRef.current.play('painting-open')
           onOpenPieceRef.current({
             slug: hit.mounted.display.slug,
@@ -359,35 +364,44 @@ export function useHallScene({
         }
 
         const pedestal = hall.hitTestPedestal(raycaster)
-        if (pedestal && helm?.tap(pedestal)) return
+        if (pedestal && helm?.tap(pedestal)) {
+          track('helm')
+          return
+        }
         if (pedestal?.voice) {
+          track('statue')
           soundRef.current.play(pedestal.voice)
           pedestal.chime()
           return
         }
 
         if (matcha?.tap(raycaster)) {
+          track('matcha')
           soundRef.current.play('click')
           return
         }
 
         if (cafe?.hitTestCat(raycaster)) {
+          track('cafe_cat')
           soundRef.current.play('cafe-hello')
           return
         }
 
         if (guestBoard?.hitTestDesktop(raycaster)) {
+          track('sketch_open')
           soundRef.current.play('click')
           onOpenSketchGameRef.current()
           return
         }
 
         if (sitting?.tap(raycaster)) {
+          track('beanbag')
           soundRef.current.play('click')
           return
         }
 
         if (guestBoard?.hitTest(raycaster)) {
+          track('guest_board')
           soundRef.current.play('click')
           onOpenGuestBoardRef.current()
         }
@@ -400,6 +414,14 @@ export function useHallScene({
       const viewedDisplays = new Set<number>()
       const VIEW_CHECK_MS = 250
       let lastViewCheck = 0
+
+      function recordProgress(cameraX: number): void {
+        const { cafeX, guestBoardX, giftShopX } = hall.layout
+        const reached = (x: number | null) => x !== null && cameraX >= x - VIEWED_WITHIN_UNITS
+        if (reached(cafeX)) reachLandmark('cafe')
+        if (reached(guestBoardX)) reachLandmark('guest_board')
+        if (reached(giftShopX)) reachLandmark('gift_shop')
+      }
 
       function recordDisplayView(cameraX: number): void {
         let nearest = null
@@ -415,6 +437,7 @@ export function useHallScene({
         if (viewedDisplays.has(nearest.index)) return
 
         viewedDisplays.add(nearest.index)
+        reachPainting(nearest.index + 1)
         void fetch('/api/events', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -498,6 +521,7 @@ export function useHallScene({
         if (now - lastViewCheck >= VIEW_CHECK_MS) {
           lastViewCheck = now
           recordDisplayView(traversal.cameraX)
+          recordProgress(traversal.cameraX)
         }
 
         const quiet = isSuspendedRef.current || traversal.idleSeconds > QUIET_AFTER_SECONDS

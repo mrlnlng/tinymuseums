@@ -249,10 +249,10 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             </AnimatePresence>
           </div>
 
-          <button className="wt-nav prev" onClick={() => step(-1)} aria-label="Previous work">
+          <button className="wt-nav prev" data-track="walkthrough_step" onClick={() => step(-1)} aria-label="Previous work">
             <NavArrow />
           </button>
-          <button className="wt-nav next" onClick={() => step(1)} aria-label="Next work">
+          <button className="wt-nav next" data-track="walkthrough_step" onClick={() => step(1)} aria-label="Next work">
             <NavArrow />
           </button>
 
@@ -269,6 +269,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             {piece.shopUrl ? (
               <a
                 className="button secondary wt-shop"
+                data-track="shop_link"
                 href={piece.shopUrl}
                 target="_blank"
                 rel="noreferrer"

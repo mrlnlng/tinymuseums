@@ -23,6 +23,7 @@ export default function PinnedNotes({ notes, onOpenNote }: PinnedNotesProps) {
               <button
                 type="button"
                 className="guestboard-pin-button"
+                data-track="guest_note_read"
                 onClick={() => onOpenNote(index)}
                 aria-label={`Read ${note.name}'s note`}
               >

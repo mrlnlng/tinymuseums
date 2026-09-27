@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts",
     "./guestboard": "./src/guestboard-rules.ts",
-    "./brand": "./src/brand.ts"
+    "./brand": "./src/brand.ts",
+    "./visit-features": "./src/visit-features.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

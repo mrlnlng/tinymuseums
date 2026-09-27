@@ -20,6 +20,7 @@ export default async function StudioLayout({ children }: { children: React.React
             {isHallOwner(artist) ? (
               <>
                 <Link href="/studio/guestboard">Guest board</Link>
+                <Link href="/studio/visits">Visits</Link>
                 <Link href="/studio/performance">Performance</Link>
               </>
             ) : null}

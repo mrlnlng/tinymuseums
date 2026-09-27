@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { BRAND } from '@tiny/core/brand'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { track } from '@/shared/lib/visit'
 import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
 import { pickFocus } from '../lib/focus'
 import {
@@ -328,6 +329,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     }
     setBest(saveIfHigher(bestKeyFor(mode, difficulty), total))
     setPhase('done')
+    track('sketch_finish')
   }, [roundIndex, total, mode, difficulty])
 
   const playAgain = useCallback(() => {
@@ -355,6 +357,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       url: `${window.location.origin}/museum`,
     })
     play('click')
+    track('sketch_share')
     setShareOutcome(await shareResult(text))
   }, [mode, difficulty, scores, bonus, play])
 
@@ -371,6 +374,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       setMode(chosenMode)
       setDifficulty(level)
       setStarted(true)
+      track('sketch_start')
       play('click')
     },
     [mode, play],
@@ -486,6 +490,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
             <button
               type="button"
               className="sketchbook-surprise"
+              data-track="sketch_surprise"
               onClick={rollDice}
               disabled={isRolling}
             >

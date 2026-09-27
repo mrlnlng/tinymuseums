@@ -6,6 +6,7 @@ import ScreenChrome from '@/shared/components/ScreenChrome'
 import SoundProvider from '@/features/sound/components/SoundProvider'
 import ServiceWorker from '@/shared/components/ServiceWorker'
 import VitalsReporter from '@/shared/components/VitalsReporter'
+import VisitTracker from '@/shared/components/VisitTracker'
 import '../styles/globals.css'
 
 const inspiratiq = localFont({
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ScreenChrome />
           </div>
           <VitalsReporter />
+          <VisitTracker />
           <ServiceWorker />
         </SoundProvider>
       </body>

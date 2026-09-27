@@ -35,7 +35,7 @@ export default function LandingPage() {
       </div>
 
       <div className="landing-floor">
-        <Link className="button" href="/museum">
+        <Link className="button" href="/museum" data-track="start_visit">
           Start visit
         </Link>
       </div>
@@ -44,7 +44,7 @@ export default function LandingPage() {
 
       <div className="landing-visitor">
         <img className="visitor-bunny" src="/assets/bunny-right.webp" alt="" aria-hidden="true" />
-        <Link className="visitor-ticket" href="/museum" aria-label="Start visit">
+        <Link className="visitor-ticket" href="/museum" data-track="start_visit" aria-label="Start visit">
           <img src="/assets/ticket.webp" alt="" aria-hidden="true" />
         </Link>
       </div>

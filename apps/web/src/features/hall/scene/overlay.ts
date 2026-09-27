@@ -229,6 +229,7 @@ export class GiftShopSigns {
     this.sign.textContent = 'Gift shop'
 
     this.link.className = 'gift-shop-button'
+    this.link.dataset.track = 'gift_shop'
     this.link.href = href
     this.link.target = '_blank'
     this.link.rel = 'noreferrer noopener'
@@ -297,6 +298,7 @@ export class CafeLink {
 
   constructor(container: HTMLElement, private marks: CafeMarks, href: string) {
     this.poster.className = 'cafe-poster-link'
+    this.poster.dataset.track = 'cafe_poster'
     this.poster.href = href
     this.poster.target = '_blank'
     this.poster.rel = 'noreferrer noopener'

@@ -31,10 +31,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   const sameOrigin = url.origin === self.location.origin
+  // Static files served from the CDN keep their paths under a /static prefix.
+  const staticPath = url.pathname.startsWith('/static/') ? url.pathname.slice('/static'.length) : null
 
-  if (sameOrigin && url.pathname.startsWith('/_next/static/')) {
+  if ((sameOrigin && url.pathname.startsWith('/_next/static/')) || staticPath?.startsWith('/_next/static/')) {
     event.respondWith(cacheFirst(request, STATIC_CACHE))
-  } else if (sameOrigin && url.pathname.startsWith('/immutable/')) {
+  } else if ((sameOrigin && url.pathname.startsWith('/immutable/')) || staticPath?.startsWith('/immutable/')) {
     event.respondWith(cacheFirst(request, IMMUTABLE_CACHE, IMMUTABLE_LIMIT))
   } else if (sameOrigin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/'))) {
     event.respondWith(staleWhileRevalidate(event, ASSET_CACHE))

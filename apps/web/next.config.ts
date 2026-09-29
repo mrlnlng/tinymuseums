@@ -9,6 +9,8 @@ const SECURITY_HEADERS = [
 ]
 
 const config: NextConfig = {
+  assetPrefix: process.env.NEXT_PUBLIC_STATIC_BASE_URL || undefined,
+  crossOrigin: process.env.NEXT_PUBLIC_STATIC_BASE_URL ? 'anonymous' : undefined,
   transpilePackages: ['@tiny/core'],
   serverExternalPackages: ['pg', '@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
   eslint: { ignoreDuringBuilds: true },

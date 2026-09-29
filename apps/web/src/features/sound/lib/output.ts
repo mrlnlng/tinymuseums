@@ -48,7 +48,7 @@ export function routeThroughGain(element: HTMLMediaElement, mix = 1): boolean {
   if (routed.has(element)) return true
 
   const src = element.currentSrc || element.src
-  if (!src || !isSameOrigin(src)) return false
+  if (!src || !(isSameOrigin(src) || element.crossOrigin === 'anonymous')) return false
 
   const target = ensureMaster()
   if (!target || !context) return false

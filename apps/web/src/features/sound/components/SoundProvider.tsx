@@ -60,6 +60,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
     >
       <audio
         ref={music.audioRef}
+        crossOrigin="anonymous"
         src={music.track}
         loop
         preload="metadata"

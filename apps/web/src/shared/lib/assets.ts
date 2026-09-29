@@ -1,4 +1,5 @@
 import manifest from '@/generated/asset-manifest.json'
+import { staticUrl } from '@/shared/lib/static'
 
 export interface BuiltImage {
   w: number
@@ -49,7 +50,7 @@ export function assetEntry(name: AssetName): AssetEntry {
 }
 
 export function builtUrl(file: string): string {
-  return `${manifest.base}${file}`
+  return staticUrl(`${manifest.base}${file}`)
 }
 
 export function screenDensity(): 2 | 3 {

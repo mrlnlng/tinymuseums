@@ -3,8 +3,8 @@ import { atlasSheets, builtUrl, ktx2TranscoderPath, pictureSources } from '@/sha
 // Density media queries mirror screenDensity(): 3x above a device pixel ratio of 2.
 const DENSITY_MEDIA = { 2: '(max-resolution: 2dppx)', 3: '(min-resolution: 2.01dppx)' } as const
 
-// These must name the exact files the hall loader will ask for, or they are fetched
-// twice. A typed AVIF preload is skipped by browsers that cannot decode it, which
+// These must name the exact files the hall loader will ask for, in the same CORS mode,
+// or they are fetched twice. A typed AVIF preload is skipped by browsers that cannot decode it, which
 // then simply load their own format through the loader as usual.
 export function HallPreload() {
   const bunny = pictureSources('bunny-right')
@@ -22,10 +22,11 @@ export function HallPreload() {
             type={sheet.avif ? 'image/avif' : undefined}
             media={DENSITY_MEDIA[density]}
             fetchPriority="high"
+            crossOrigin="anonymous"
           />
           )),
       )}
-      <link rel="preload" as="image" href={bunny.src} fetchPriority="high" />
+      <link rel="preload" as="image" href={bunny.src} fetchPriority="high" crossOrigin="anonymous" />
     </>
   )
 }

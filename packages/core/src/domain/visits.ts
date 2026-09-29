@@ -64,33 +64,57 @@ export function parseVisitReport(body: unknown): VisitReport | null {
 
 // Plausible's scheme: the salt is random, kept only for the day it covers, then deleted,
 // so a stored hash can never be traced back to an address once the day is over.
-async function dailySalt(): Promise<{ day: string; salt: string }> {
-  await query(`delete from visit_salts where day < current_date - 1`)
-  await query(
-    `insert into visit_salts (day, salt) values (current_date, $1) on conflict (day) do nothing`,
-    [randomBytes(32).toString('hex')],
-  )
-  const row = await queryOne<{ day: string; salt: string }>(
-    `select day::text as day, salt from visit_salts where day = current_date`,
-  )
-  if (!row) throw new Error('No visit salt for today')
-  return row
-}
-
+// The period salt works the same way over 90 days, so the range total can recognise a returning visitor.
 const SALT_PERIOD_DAYS = 90
 const CURRENT_PERIOD = `date '2000-01-01' + ((current_date - date '2000-01-01') / ${SALT_PERIOD_DAYS}) * ${SALT_PERIOD_DAYS}`
 
-async function periodSalt(): Promise<string> {
-  await query(`delete from visit_period_salts where period < ${CURRENT_PERIOD}`)
-  await query(
-    `insert into visit_period_salts (period, salt) values (${CURRENT_PERIOD}, $1) on conflict (period) do nothing`,
-    [randomBytes(32).toString('hex')],
+interface Salts {
+  day: string
+  daily: string
+  period: string
+}
+
+async function loadSalts(): Promise<Salts> {
+  // "do update" to the same value makes the insert return the existing salt when one is already there.
+  const row = await queryOne<Salts>(
+    `with old_daily as (delete from visit_salts where day < current_date - 1),
+          old_period as (delete from visit_period_salts where period < ${CURRENT_PERIOD}),
+          daily as (
+            insert into visit_salts (day, salt) values (current_date, $1)
+            on conflict (day) do update set salt = visit_salts.salt
+            returning day::text as day, salt
+          ),
+          period as (
+            insert into visit_period_salts (period, salt) values (${CURRENT_PERIOD}, $2)
+            on conflict (period) do update set salt = visit_period_salts.salt
+            returning salt
+          )
+     select daily.day, daily.salt as daily, period.salt as period from daily, period`,
+    [randomBytes(32).toString('hex'), randomBytes(32).toString('hex')],
   )
-  const row = await queryOne<{ salt: string }>(
-    `select salt from visit_period_salts where period = ${CURRENT_PERIOD}`,
-  )
-  if (!row) throw new Error('No visit salt for this period')
-  return row.salt
+  if (!row) throw new Error('No visit salts for today')
+  return row
+}
+
+let cachedSalts: { utcDay: string; salts: Promise<Salts> } | null = null
+
+// Cached per process for the UTC day; a database whose current_date disagrees is simply asked again.
+function currentSalts(): Promise<Salts> {
+  const utcDay = new Date().toISOString().slice(0, 10)
+  if (cachedSalts?.utcDay !== utcDay) {
+    const salts = loadSalts()
+    const entry = { utcDay, salts }
+    cachedSalts = entry
+    salts.then(
+      (loaded) => {
+        if (loaded.day !== utcDay && cachedSalts === entry) cachedSalts = null
+      },
+      () => {
+        if (cachedSalts === entry) cachedSalts = null
+      },
+    )
+  }
+  return cachedSalts!.salts
 }
 
 function hash(salt: string, ip: string | null, userAgent: string | null): string {
@@ -107,8 +131,8 @@ export interface Visitor {
 }
 
 export async function visitorHash(ip: string | null, userAgent: string | null): Promise<Visitor> {
-  const [{ day, salt }, longSalt] = await Promise.all([dailySalt(), periodSalt()])
-  return { day, visitor: hash(salt, ip, userAgent), periodVisitor: hash(longSalt, ip, userAgent) }
+  const { day, daily, period } = await currentSalts()
+  return { day, visitor: hash(daily, ip, userAgent), periodVisitor: hash(period, ip, userAgent) }
 }
 
 export async function recordVisit(report: VisitReport, who: Visitor): Promise<void> {

@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { gestured } from '@/features/sound/lib/gesture'
 import { applyMix, decodeClip, playClip, resumeGain, routeThroughGain } from '@/features/sound/lib/output'
+import { staticUrl } from '@/shared/lib/static'
 
 const EFFECTS = {
-  click: { file: '/audio/sfx-click.mp3', volume: 0.63 },
-  'painting-open': { file: '/audio/sfx-painting-open.mp3', volume: 1.4 },
-  harp: { file: '/audio/sfx-harp.mp3', volume: 1.4, start: 1.55, end: 5.3 },
-  owl: { file: '/audio/sfx-owl.mp3', volume: 0.59, start: 0.7, end: 3.7 },
-  'cafe-hello': { file: '/audio/sfx-cafe-hello.mp3', volume: 0.87, start: 0.48, end: 1.3 },
-  coin: { file: '/audio/sfx-coin.mp3', volume: 0.72, start: 0.06 },
-  jump: { file: '/audio/sfx-jump.mp3', volume: 2.5 },
+  click: { file: staticUrl('/audio/sfx-click.mp3'), volume: 0.63 },
+  'painting-open': { file: staticUrl('/audio/sfx-painting-open.mp3'), volume: 1.4 },
+  harp: { file: staticUrl('/audio/sfx-harp.mp3'), volume: 1.4, start: 1.55, end: 5.3 },
+  owl: { file: staticUrl('/audio/sfx-owl.mp3'), volume: 0.59, start: 0.7, end: 3.7 },
+  'cafe-hello': { file: staticUrl('/audio/sfx-cafe-hello.mp3'), volume: 0.87, start: 0.48, end: 1.3 },
+  coin: { file: staticUrl('/audio/sfx-coin.mp3'), volume: 0.72, start: 0.06 },
+  jump: { file: staticUrl('/audio/sfx-jump.mp3'), volume: 2.5 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS
@@ -23,7 +24,7 @@ interface EffectSpec {
   end?: number
 }
 
-const FOOTSTEPS = { file: '/audio/sfx-footsteps.mp3', volume: 0.3 }
+const FOOTSTEPS = { file: staticUrl('/audio/sfx-footsteps.mp3'), volume: 0.3 }
 
 const VOICES = 3
 
@@ -48,7 +49,9 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   volumeRef.current = volume
 
   const makeVoice = useCallback((file: string, mix: number, loop = false): HTMLAudioElement => {
-    const audio = new Audio(file)
+    const audio = new Audio()
+    audio.crossOrigin = 'anonymous'
+    audio.src = file
     audio.preload = 'auto'
     audio.loop = loop
     if (!routeThroughGain(audio, mix)) audio.volume = Math.min(1, mix)

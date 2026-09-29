@@ -31,6 +31,33 @@ applications:
             - (cd ../.. && npm run db:schema)
             # SSR compute does not receive build-time variables; Next.js loads .env.production at runtime.
             - (cd ../.. && env | grep -E '^(DATABASE_URL|SESSION_SECRET|MEDIA_BASE_URL|MEDIA_ORIGIN_URL|PUBLIC_BASE_URL|STORAGE_DRIVER|S3_BUCKET|AWS_REGION|MAIL_TRANSPORT|HALL_OWNER_EMAIL)=' > apps/web/.env.production && npm run build --workspace @tiny/web)
+            # With NEXT_PUBLIC_STATIC_BASE_URL set, the pages reference the CDN, so a failed upload must fail the build.
+            - |
+              (
+                if [ -z "$NEXT_PUBLIC_STATIC_BASE_URL" ]; then
+                  echo "NEXT_PUBLIC_STATIC_BASE_URL unset - static files are served by Amplify."
+                  exit 0
+                fi
+                [ -n "$S3_BUCKET" ] || { echo "NEXT_PUBLIC_STATIC_BASE_URL is set but S3_BUCKET is not."; exit 1; }
+                cd ../.. || exit 1
+                set -f
+                # s3 cp guesses content types from the build image, which lacks several of these.
+                TYPES="js:text/javascript css:text/css json:application/json wasm:application/wasm otf:font/otf ttf:font/ttf woff:font/woff woff2:font/woff2 webp:image/webp avif:image/avif png:image/png jpg:image/jpeg svg:image/svg+xml ktx2:image/ktx2 mp3:audio/mpeg"
+                push() {
+                  rest=""
+                  for pair in $TYPES; do
+                    aws s3 cp "$1" "s3://$S3_BUCKET/static/$2" --recursive --only-show-errors --cache-control "$3" \
+                      --exclude '*' --include "*.${pair%%:*}" --content-type "${pair#*:}" || return 1
+                    rest="$rest --exclude *.${pair%%:*}"
+                  done
+                  aws s3 cp "$1" "s3://$S3_BUCKET/static/$2" --recursive --only-show-errors --cache-control "$3" \
+                    $rest --exclude '*.md' || return 1
+                }
+                push apps/web/.next/static _next/static "public, max-age=31536000, immutable" || exit 1
+                push apps/web/public/immutable immutable "public, max-age=31536000, immutable" || exit 1
+                push apps/web/public/audio audio "public, max-age=86400, stale-while-revalidate=604800" || exit 1
+                echo "Static files uploaded to s3://$S3_BUCKET/static/"
+              )
       artifacts:
         baseDirectory: .next
         files:

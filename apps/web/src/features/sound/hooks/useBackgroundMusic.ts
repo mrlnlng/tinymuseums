@@ -8,8 +8,9 @@ import {
   setGainLevel,
   suspendGain,
 } from '@/features/sound/lib/output'
+import { staticUrl } from '@/shared/lib/static'
 
-const TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? '/audio/hall.mp3'
+const TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? staticUrl('/audio/hall.mp3')
 const STORAGE_KEY = 'tm_sound'
 const VOLUME_KEY = 'tm_volume'
 const DEFAULT_VOLUME = 0.32

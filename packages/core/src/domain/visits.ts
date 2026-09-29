@@ -77,20 +77,45 @@ async function dailySalt(): Promise<{ day: string; salt: string }> {
   return row
 }
 
-export async function visitorHash(ip: string | null, userAgent: string | null): Promise<{ day: string; visitor: string }> {
-  const { day, salt } = await dailySalt()
-  const visitor = createHash('sha256')
+const SALT_PERIOD_DAYS = 90
+const CURRENT_PERIOD = `date '2000-01-01' + ((current_date - date '2000-01-01') / ${SALT_PERIOD_DAYS}) * ${SALT_PERIOD_DAYS}`
+
+async function periodSalt(): Promise<string> {
+  await query(`delete from visit_period_salts where period < ${CURRENT_PERIOD}`)
+  await query(
+    `insert into visit_period_salts (period, salt) values (${CURRENT_PERIOD}, $1) on conflict (period) do nothing`,
+    [randomBytes(32).toString('hex')],
+  )
+  const row = await queryOne<{ salt: string }>(
+    `select salt from visit_period_salts where period = ${CURRENT_PERIOD}`,
+  )
+  if (!row) throw new Error('No visit salt for this period')
+  return row.salt
+}
+
+function hash(salt: string, ip: string | null, userAgent: string | null): string {
+  return createHash('sha256')
     .update(`${salt}|${ip ?? ''}|${userAgent ?? ''}`)
     .digest('base64url')
     .slice(0, 22)
-  return { day, visitor }
 }
 
-export async function recordVisit(report: VisitReport, who: { day: string; visitor: string }): Promise<void> {
+export interface Visitor {
+  day: string
+  visitor: string
+  periodVisitor: string
+}
+
+export async function visitorHash(ip: string | null, userAgent: string | null): Promise<Visitor> {
+  const [{ day, salt }, longSalt] = await Promise.all([dailySalt(), periodSalt()])
+  return { day, visitor: hash(salt, ip, userAgent), periodVisitor: hash(longSalt, ip, userAgent) }
+}
+
+export async function recordVisit(report: VisitReport, who: Visitor): Promise<void> {
   const rank = VISIT_LANDMARKS.indexOf(report.furthest)
   await query(
-    `insert into visits (id, day, visitor, page, device, duration_ms, interactions, paintings, furthest_rank, features)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `insert into visits (id, day, visitor, page, device, duration_ms, interactions, paintings, furthest_rank, features, period_visitor)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      on conflict (id) do update set
        updated_at    = now(),
        duration_ms   = greatest(visits.duration_ms, excluded.duration_ms),
@@ -116,6 +141,7 @@ export async function recordVisit(report: VisitReport, who: { day: string; visit
       report.paintings,
       rank,
       JSON.stringify(report.features),
+      who.periodVisitor,
     ],
   )
 }
@@ -140,7 +166,8 @@ export async function summarizeVisits(days: number): Promise<VisitSummary> {
   const range = [String(days)]
   const [totals, byDay, byLanding, reach, paintings, features] = await Promise.all([
     queryOne<Omit<VisitSummary, 'byDay' | 'byLanding' | 'reach' | 'paintings' | 'features'>>(
-      `select count(distinct (day, visitor))::int as visitors,
+      // Visits recorded before period_visitor existed can only be told apart per day.
+      `select count(distinct coalesce(period_visitor, day || '|' || visitor))::int as visitors,
               count(*)::int as visits,
               percentile_cont(0.5) within group (order by duration_ms) as "medianDurationMs",
               avg(duration_ms)::float as "averageDurationMs",

@@ -49,8 +49,10 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
     <>
       <h1 className="script page-title">Visits</h1>
       <p className="muted lead">
-        Unique visitors are counted once per day without cookies, from a hash that cannot be
-        traced back after the day ends. Time is how long the page was on screen.
+        Unique visitors are counted without cookies, from a hash whose salt is discarded every 90
+        days. The total counts a returning visitor once; the daily table counts them once per day.
+        A visitor whose network or browser changes is counted again. Time is how long the page
+        was on screen.
       </p>
 
       <p className="small">

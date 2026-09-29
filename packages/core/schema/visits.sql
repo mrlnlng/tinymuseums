@@ -20,5 +20,12 @@ create table if not exists visits (
   features      jsonb not null default '{}'::jsonb
 );
 
+create table if not exists visit_period_salts (
+  period date primary key,
+  salt   text not null
+);
+
+alter table visits add column if not exists period_visitor text;
+
 create index if not exists visits_recorded_at on visits (recorded_at);
 create index if not exists visits_day_visitor on visits (day, visitor);

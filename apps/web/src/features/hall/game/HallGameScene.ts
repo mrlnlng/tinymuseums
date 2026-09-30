@@ -2,6 +2,7 @@ import type Phaser from 'phaser'
 import type { HallSliceDto } from '@tiny/core'
 import type { EffectName } from '@/features/sound/hooks/useSoundEffects'
 import { CONFIG } from '@/features/hall/scene/config'
+import type { Attachment } from '@/features/hall/scene/carried'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
@@ -21,7 +22,8 @@ import type { Traversal } from '@/features/hall/scene/traversal'
 import type { OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import { addOpaqueTexture, createBackdrop, type Backdrop } from './backdrop'
-import { createOcclusion } from './occlusion'
+import { createCarriedSprite, type CarriedStats, type SpriteCarried } from './carried'
+import { createOcclusion, type OccluderRect } from './occlusion'
 import { createCafe, type Cafe } from './cafe'
 import { createSpriteCharacter, type SpriteCharacter } from './character'
 import { createComingSoon, type ComingSoon } from './comingsoon'
@@ -52,6 +54,7 @@ export interface HallRuntime {
   world: HallWorld | null
   tapWorld: TapWorld | null
   character: SpriteCharacter | null
+  carried: (() => CarriedStats[]) | null
   act: ((intent: TapIntent) => void) | null
   dispose: (() => void) | null
 }
@@ -99,6 +102,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
   return class HallGameScene extends P.Scene {
     private world!: HallWorld
     private character!: SpriteCharacter
+    private carried: SpriteCarried[] = []
     private occlusion = createOcclusion(() => [deps.overlayHost, deps.guestBoardNotesHost])
     private sliceFeed!: SliceFeed
     private lobby: Lobby | null = null
@@ -175,6 +179,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       deps.runtime.world = this.world
       deps.runtime.tapWorld = this.buildTapWorld()
       deps.runtime.character = this.character
+      deps.runtime.carried = () => this.carried.map((carried) => carried.stats())
       deps.runtime.act = (intent) => this.act(intent)
       deps.runtime.dispose = () => this.disposeAll()
     }
@@ -200,10 +205,28 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
           }
           deps.assets.registerScenery(this)
           this.scenery = loaded
-          this.helm = createHelm(loaded, deps.characterHost, this.world)
-          this.matcha = createMatcha(loaded, deps.characterHost, () => this.cafe)
+          this.helm = createHelm(loaded, deps.characterHost, this.world, (_host, image, attachment, home) =>
+            this.makeCarried('helm', image, attachment, home),
+          )
+          this.matcha = createMatcha(
+            loaded,
+            deps.characterHost,
+            () => this.cafe,
+            (_host, image, attachment, home) => this.makeCarried('matcha', image, attachment, home),
+          )
         })
         .catch(() => {})
+    }
+
+    private makeCarried(
+      name: string,
+      image: HTMLImageElement,
+      attachment: Attachment,
+      home: (out: { x: number; y: number; z: number }) => number,
+    ): SpriteCarried {
+      const carried = createCarriedSprite(this, name, image, attachment, home)
+      this.carried.push(carried)
+      return carried
     }
 
     private buildTapWorld(): TapWorld {
@@ -442,7 +465,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       this.guestBoardNotes?.sync(projector)
       this.funZoneSign?.sync(projector)
       this.comingSoonNote?.sync(projector)
-      this.occlusion.update(this.character.bunny())
+      this.occlusion.update(this.occluders())
 
       this.lobby?.update(dt, cameraX)
       const cafeX = this.world.layout.cafeX
@@ -474,12 +497,32 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       if (deps.isSuspended()) this.game.loop.sleep()
     }
 
+    private occluders(): OccluderRect[] {
+      const occluders: OccluderRect[] = [this.character.bunny()]
+      for (const carried of this.carried) {
+        const stats = carried.stats()
+        if (!stats.visible) continue
+        occluders.push({
+          x: stats.x,
+          y: stats.y,
+          width: stats.width,
+          height: stats.height,
+          src: stats.src,
+          rotation: stats.rotation,
+          flip: stats.flip,
+          flight: stats.state !== 'held',
+        })
+      }
+      return occluders
+    }
+
     private disposeAll(): void {
       this.occlusion.clear()
       this.isDisposed = true
       deps.runtime.world = null
       deps.runtime.tapWorld = null
       deps.runtime.character = null
+      deps.runtime.carried = null
       deps.runtime.act = null
       deps.runtime.dispose = null
       window.clearInterval(this.sceneryGate)

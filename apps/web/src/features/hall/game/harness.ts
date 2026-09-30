@@ -10,6 +10,15 @@ export interface HallHarnessStats {
   isIntro: boolean
   frames?: string[]
   bunny?: { x: number; y: number; width: number; height: number; src: string } | null
+  carried?: Array<{
+    name: string
+    x: number
+    y: number
+    width: number
+    height: number
+    angle: number
+    visible: boolean
+  }>
   world?: { mounted: number; loaded: number; total: number } | null
 }
 

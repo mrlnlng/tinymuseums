@@ -1,7 +1,14 @@
-import { createCarried } from './carried'
+import { createCarried, type Attachment, type Carried } from './carried'
 import type { Character } from './character'
 import { CONFIG } from './config'
 import type { Projector } from './projector'
+
+export type CarriedFactory = (
+  host: HTMLElement,
+  image: HTMLImageElement,
+  attachment: Attachment,
+  home: (out: { x: number; y: number; z: number }) => number,
+) => Carried
 
 export interface HelmScenery {
   helm: HTMLImageElement
@@ -29,11 +36,16 @@ export interface Helm {
   dispose(): void
 }
 
-export function createHelm(scenery: HelmScenery, host: HTMLElement, hall: HelmStand): Helm {
+export function createHelm(
+  scenery: HelmScenery,
+  host: HTMLElement,
+  hall: HelmStand,
+  make: CarriedFactory = createCarried,
+): Helm {
   const { worn, stand } = CONFIG.helm
   const pedestalWidth = CONFIG.pedestal.height * (stand.drawing[0] / stand.drawing[1])
   let standIndex = -1
-  const helm = createCarried(host, scenery.helm, worn, (out) => {
+  const helm = make(host, scenery.helm, worn, (out) => {
     hall.helmStandPoint(standIndex, out)
     return (stand.width / stand.drawing[0]) * pedestalWidth
   })

@@ -65,6 +65,7 @@ export function createHallGame(
     world: null,
     tapWorld: null,
     character: null,
+    carried: null,
     act: null,
     dispose: null,
   }
@@ -133,7 +134,9 @@ export function createHallGame(
     backgroundColor: bridge.assets.manifest.room.wallColor,
     banner: false,
     audio: { noAudio: true },
-    render: { antialias: true, antialiasGL: false, roundPixels: false, mipmapFilter: 'LINEAR_MIPMAP_LINEAR' },
+    // With several textures in one batch, a sprite drawn right after a sprite with a different
+    // runtime-added texture was clamped to the wrong frame size and lost a band of its image.
+    render: { antialias: true, antialiasGL: false, roundPixels: false, mipmapFilter: 'LINEAR_MIPMAP_LINEAR', maxTextures: 1 },
     input: { keyboard: false, mouse: false, touch: false, gamepad: false },
     scale: {
       mode: P.Scale.NONE,
@@ -235,6 +238,7 @@ export function createHallGame(
       slices: runtime.known,
       isIntro: traversal.isIntro,
       bunny: runtime.character?.bunny() ?? null,
+      carried: runtime.carried?.() ?? [],
       world: runtime.world?.stats() ?? null,
     }),
   })

@@ -70,6 +70,7 @@ export interface HiddenCoin {
   release(): void
   move(dx: number): void
   update(dt: number): void
+  position(): { x: number; y: number } | null
 }
 
 export function createHiddenCoin(scene: Phaser.Scene, assets: GameAssets): HiddenCoin {
@@ -124,6 +125,10 @@ export function createHiddenCoin(scene: Phaser.Scene, assets: GameAssets): Hidde
     markFound() {
       if (state !== 'hidden' || !mesh) return
       state = 'found'
+    },
+
+    position() {
+      return mesh ? { x: mesh.x, y: mesh.y } : null
     },
 
     release() {

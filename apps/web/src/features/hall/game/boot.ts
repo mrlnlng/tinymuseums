@@ -6,7 +6,9 @@ import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { routeTap } from '@/features/hall/scene/tap'
 import { Traversal } from '@/features/hall/scene/traversal'
 import type { OpenPiece } from '@/features/hall/hooks/useHallScene'
-import { installHarness } from './harness'
+import { createDemoGameScene, DEMO_KEY, type DemoGameSceneLike } from './DemoGameScene'
+import { particleEmitterCount } from './effects'
+import { installHarness, type HallDemoStats } from './harness'
 import {
   createHallGameScene,
   type HallRuntime,
@@ -14,6 +16,7 @@ import {
   type HallSound,
   type PhaserModule,
 } from './HallGameScene'
+import { activeMiniGame, launchMiniGame } from './minigame'
 import type { GameAssets } from './assets'
 import { computeView, ViewProjector } from './view'
 
@@ -73,6 +76,10 @@ export function createHallGame(
   const traversal = new Traversal()
   let game: Phaser.Game | null = null
 
+  function isSuspended(): boolean {
+    return bridge.isSuspended() || (game !== null && activeMiniGame(game) !== null)
+  }
+
   function applyResize(): void {
     const rect = host.getBoundingClientRect()
     const cssWidth = Math.max(1, Math.round(rect.width))
@@ -113,7 +120,7 @@ export function createHallGame(
     guestBoardNotesHost: bridge.guestBoardNotes,
     traversal,
     governor,
-    isSuspended: bridge.isSuspended,
+    isSuspended,
     sound: bridge.sound,
     onReady: bridge.onReady,
     onIntroDone: bridge.onIntroDone,
@@ -128,12 +135,15 @@ export function createHallGame(
   }
 
   const Scene = createHallGameScene(P, sceneDeps)
+  const scenes: Phaser.Types.Scenes.SceneType[] = [Scene]
+  if (process.env.NODE_ENV !== 'production') scenes.push(createDemoGameScene(P))
   const config: Phaser.Types.Core.GameConfig = {
     type: P.AUTO,
     parent: host,
     backgroundColor: bridge.assets.manifest.room.wallColor,
     banner: false,
     audio: { noAudio: true },
+    physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
     // With several textures in one batch, a sprite drawn right after a sprite with a different
     // runtime-added texture was clamped to the wrong frame size and lost a band of its image.
     render: { antialias: true, antialiasGL: false, roundPixels: false, mipmapFilter: 'LINEAR_MIPMAP_LINEAR', maxTextures: 1 },
@@ -147,7 +157,7 @@ export function createHallGame(
       autoCenter: P.Scale.NO_CENTER,
       autoRound: true,
     },
-    scene: [Scene],
+    scene: scenes,
   }
 
   game = new P.Game(config)
@@ -170,15 +180,17 @@ export function createHallGame(
   let pressY = 0
   let pressedAt = 0
   let isTap = false
+  let pressSuspended = false
 
   function handlePointerDown(event: PointerEvent): void {
     isTap = false
+    pressSuspended = isSuspended()
     bridge.sound().prepare('jump')
     pressX = event.clientX
     pressY = event.clientY
     pressedAt = performance.now()
 
-    if (bridge.isSuspended() || traversal.isIntro) return
+    if (pressSuspended || traversal.isIntro) return
     const world = runtime.world
     if (!world) return
     const hit = world.hitTestAt(worldPoint(event.clientX, event.clientY))
@@ -189,7 +201,7 @@ export function createHallGame(
     const moved = Math.hypot(event.clientX - pressX, event.clientY - pressY)
     const slop = event.pointerType === 'touch' ? TAP_SLOP_PX.touch : TAP_SLOP_PX.mouse
     const tooSlow = performance.now() - pressedAt > TAP_TIMEOUT_MS
-    isTap = !(moved > slop || tooSlow || bridge.isSuspended() || traversal.isIntro)
+    isTap = !(moved > slop || tooSlow || pressSuspended || isSuspended() || traversal.isIntro)
   }
 
   // Taps act on click, not pointerup: on touch screens the browser's click lands on
@@ -227,6 +239,9 @@ export function createHallGame(
       if (!tapWorld) return null
       return routeTap(worldPoint(clientX, clientY), tapWorld)?.kind ?? null
     },
+    demo: () => {
+      if (game) launchMiniGame(game, DEMO_KEY)
+    },
     stats: () => ({
       ready: runtime.ready,
       cameraX: traversal.cameraX,
@@ -237,11 +252,18 @@ export function createHallGame(
       canvasHeight: canvas.height,
       slices: runtime.known,
       isIntro: traversal.isIntro,
+      particleEmitters: particleEmitterCount(),
+      demo: demoStats(),
       bunny: runtime.character?.bunny() ?? null,
       carried: runtime.carried?.() ?? [],
       world: runtime.world?.stats() ?? null,
     }),
   })
+
+  function demoStats(): HallDemoStats | null {
+    const scene = game?.scene.getScene(DEMO_KEY) as unknown as DemoGameSceneLike | null
+    return scene?.coinStats?.() ?? null
+  }
 
   const resizeObserver = new ResizeObserver(applyResize)
   resizeObserver.observe(host)

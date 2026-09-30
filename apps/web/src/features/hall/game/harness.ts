@@ -1,3 +1,15 @@
+export interface HallDemoCoin {
+  x: number
+  y: number
+  bottom: number
+  resting: boolean
+}
+
+export interface HallDemoStats {
+  floorY: number
+  coins: HallDemoCoin[]
+}
+
 export interface HallHarnessStats {
   ready: boolean
   cameraX: number
@@ -9,6 +21,8 @@ export interface HallHarnessStats {
   slices: number
   isIntro: boolean
   frames?: string[]
+  particleEmitters?: number
+  demo?: HallDemoStats | null
   bunny?: { x: number; y: number; width: number; height: number; src: string } | null
   carried?: Array<{
     name: string
@@ -26,6 +40,7 @@ export interface HallHarness {
   engine: 'phaser'
   readonly cameraX: number
   tapIntent(clientX: number, clientY: number): string | null
+  demo(): void
   stats(): HallHarnessStats
 }
 
@@ -50,6 +65,7 @@ export function installHarness(harness: HallHarness): () => void {
       return harness.cameraX
     },
     tapIntent: (clientX, clientY) => harness.tapIntent(clientX, clientY),
+    demo: () => harness.demo(),
     stats: () => ({ ...harness.stats(), frames: entranceFrames }),
   }
   window.__hall = wrapped

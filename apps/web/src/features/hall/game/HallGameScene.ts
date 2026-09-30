@@ -27,11 +27,12 @@ import { createOcclusion, type OccluderRect } from './occlusion'
 import { createCafe, type Cafe } from './cafe'
 import { createSpriteCharacter, type SpriteCharacter } from './character'
 import { createComingSoon, type ComingSoon } from './comingsoon'
+import { effectsPlaying, coinSparkle } from './effects'
 import { createGiftShop, type GiftShop } from './giftshop'
 import { createGuestBoard, type GuestBoard } from './guestboard'
 import { createLobby, type Lobby } from './lobby'
 import { HallWorld, type MountedDisplay } from './world'
-import { phaserCamera, ViewProjector, type View } from './view'
+import { phaserCamera, PPU, toPhaser, ViewProjector, type View } from './view'
 import type { GameAssets, GameScenery } from './assets'
 import { setEntranceFrames } from './harness'
 
@@ -83,6 +84,8 @@ export interface HallSceneDeps {
 }
 
 const BACKDROP_LENGTH = 600
+const FLOOR_HEIGHT = 2.6
+const FLOOR_LEFT = BACKDROP_LENGTH / 2 - (BACKDROP_LENGTH + 120) / 2
 const WALLPAPER_KEY = 'hall-wallpaper'
 const FLOOR_KEY = 'hall-floor'
 
@@ -135,6 +138,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
     private hasMoved = false
     private readonly viewedDisplays = new Set<number>()
     private lastViewCheck = 0
+    floor!: Phaser.Physics.Arcade.StaticBody
 
     constructor() {
       super({ key: 'hall' })
@@ -148,6 +152,12 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       addOpaqueTexture(this, FLOOR_KEY, deps.assets.floor)
 
       this.backdrop = createBackdrop(this, deps.assets, BACKDROP_LENGTH)
+      this.floor = this.physics.add.staticBody(
+        toPhaser(FLOOR_LEFT, 0).x,
+        toPhaser(0, 0).y,
+        BACKDROP_LENGTH * PPU,
+        FLOOR_HEIGHT * PPU,
+      )
       this.world = new HallWorld(this, deps.assets)
       this.world.ingestSlice(deps.initialSlice)
       this.character = createSpriteCharacter(this, deps.assets)
@@ -156,6 +166,8 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       this.lobbySigns = new LobbySigns(deps.overlayHost, this.lobby.marks)
 
       deps.traversal.reset(CONFIG.lobby.startX)
+      this.events.on('pause', () => deps.traversal.setSuspended(true))
+      this.events.on('resume', () => deps.traversal.setSuspended(deps.isSuspended()))
 
       this.sliceFeed = new SliceFeed({
         sliceSize: CONFIG.loading.sliceSize,
@@ -270,12 +282,15 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
           deps.onOpenHelp()
           return
 
-        case 'coin':
+        case 'coin': {
+          const at = this.world.coinPosition()
+          if (at) coinSparkle(this, at.x, at.y)
           this.world.markCoinFound()
           track('coin')
           deps.sound().play('coin')
           deps.onFindCoin()
           return
+        }
 
         case 'painting':
           track('painting')
@@ -494,7 +509,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
         })
       }
       if (limit !== 0) this.throttledFrames = 2
-      if (deps.isSuspended()) this.game.loop.sleep()
+      if (deps.isSuspended() && !effectsPlaying()) this.game.loop.sleep()
     }
 
     private occluders(): OccluderRect[] {

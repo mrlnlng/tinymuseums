@@ -649,6 +649,10 @@ export class HallWorld {
     this.coin.markFound()
   }
 
+  coinPosition(): { x: number; y: number } | null {
+    return this.coin.position()
+  }
+
   releaseCoin(): void {
     this.coin.release()
   }

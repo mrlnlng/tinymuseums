@@ -1,4 +1,3 @@
-import type * as THREE from 'three'
 import type { Scenery } from './assets'
 import type { Character, Perch } from './character'
 import { CONFIG } from './config'
@@ -9,7 +8,8 @@ import type { Traversal } from './traversal'
 type SittingState = 'free' | 'approaching' | 'rising' | 'seated' | 'leaving'
 
 export interface Sitting {
-  tap(raycaster: THREE.Raycaster): boolean
+  readonly occupied: boolean
+  act(): void
   update(dt: number, cameraX: number, halfViewWidth: number): void
   dispose(): void
 }
@@ -61,15 +61,17 @@ export function createSitting(
   }
 
   return {
-    tap(raycaster) {
-      if (!board.hitTestBeanbag(raycaster, state !== 'free' && state !== 'approaching')) return false
+    get occupied() {
+      return state !== 'free' && state !== 'approaching'
+    },
+
+    act() {
       if (state === 'free') approach(false)
       else if (state === 'approaching') standUp()
       else if (state === 'seated') {
         state = 'leaving'
         progress = 0
       }
-      return true
     },
 
     update(dt, cameraX, halfViewWidth) {

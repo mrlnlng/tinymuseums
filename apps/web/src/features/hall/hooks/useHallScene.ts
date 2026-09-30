@@ -13,6 +13,7 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
+import type { WorldPoint } from '@/features/hall/scene/hit'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { createLobby } from '@/features/hall/scene/lobby'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
@@ -28,8 +29,8 @@ import {
   type Viewport,
 } from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
-import { installSeam } from '@/features/hall/scene/seam'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
+import { routeTap, type TapWorld } from '@/features/hall/scene/tap'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
@@ -306,18 +307,32 @@ export function useHallScene({
         requestScenery()
       }, 250)
 
-      const raycaster = new THREE.Raycaster()
-      const pointer = new THREE.Vector2()
       let pressX = 0
       let pressY = 0
       let pressedAt = 0
       let isTap = false
 
-      function aim(event: MouseEvent): void {
+      function worldPoint(event: MouseEvent): WorldPoint {
         const rect = renderer.domElement.getBoundingClientRect()
-        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-        raycaster.setFromCamera(pointer, rig.camera)
+        return rig.projector(viewport).toWorld(event.clientX - rect.left, event.clientY - rect.top)
+      }
+
+      const tapWorld: TapWorld = {
+        hitDoor: (point) => lobby.hitTestDoorAt(point),
+        hitLobbyCat: (point) => lobby.hitTestCatAt(point),
+        hitCoin: (point) => hall.hitTestCoinAt(point),
+        hitPainting: (point) => {
+          const hit = hall.hitTestAt(point)
+          if (!hit) return null
+          return { slug: hit.mounted.display.slug, artistId: hit.mounted.display.artistId, pieceId: hit.pieceId }
+        },
+        hitPedestal: (point) => hall.hitTestPedestalAt(point),
+        acceptsHelm: (pedestal) => helm?.accepts(pedestal) ?? false,
+        hitMatcha: (point) => matcha !== null && (cafe?.hitTestMatchaAt(point) ?? false),
+        hitCafeCat: (point) => cafe?.hitTestCatAt(point) ?? false,
+        hitDesktop: (point) => guestBoard?.hitTestDesktopAt(point) ?? false,
+        hitBeanbag: (point) => sitting !== null && (guestBoard?.hitTestBeanbagAt(point, sitting.occupied) ?? false),
+        hitGuestBoard: (point) => guestBoard?.hitTestAt(point) ?? false,
       }
 
       function handlePointerDown(event: PointerEvent): void {
@@ -328,8 +343,7 @@ export function useHallScene({
         pressedAt = performance.now()
 
         if (isSuspendedRef.current || traversal.isIntro) return
-        aim(event)
-        const hit = hall.hitTest(raycaster)
+        const hit = hall.hitTestAt(worldPoint(event))
         if (hit) loadArtistPieces(hit.mounted.display.slug).catch(() => {})
       }
 
@@ -347,82 +361,78 @@ export function useHallScene({
         if (!isTap) return
         isTap = false
 
-        aim(event)
+        const intent = routeTap(worldPoint(event), tapWorld)
+        if (!intent) return
 
-        if (lobby.hitTestDoor(raycaster)) {
-          track('leave')
-          soundRef.current.play('click')
-          onLeaveRef.current()
-          return
-        }
+        switch (intent.kind) {
+          case 'leave':
+            track('leave')
+            soundRef.current.play('click')
+            onLeaveRef.current()
+            return
 
-        if (lobby.hitTestCat(raycaster)) {
-          track('help')
-          soundRef.current.play('click')
-          onOpenHelpRef.current()
-          return
-        }
+          case 'help':
+            track('help')
+            soundRef.current.play('click')
+            onOpenHelpRef.current()
+            return
 
-        if (hall.hitTestCoin(raycaster)) {
-          track('coin')
-          soundRef.current.play('coin')
-          onFindCoinRef.current()
-          return
-        }
+          case 'coin':
+            hall.markCoinFound()
+            track('coin')
+            soundRef.current.play('coin')
+            onFindCoinRef.current()
+            return
 
-        const hit = hall.hitTest(raycaster)
-        if (hit) {
-          track('painting')
-          soundRef.current.play('painting-open')
-          onOpenPieceRef.current({
-            slug: hit.mounted.display.slug,
-            artistId: hit.mounted.display.artistId,
-            pieceId: hit.pieceId,
-          })
-          return
-        }
+          case 'painting':
+            track('painting')
+            soundRef.current.play('painting-open')
+            onOpenPieceRef.current({
+              slug: intent.slug,
+              artistId: intent.artistId,
+              pieceId: intent.pieceId,
+            })
+            return
 
-        const pedestal = hall.hitTestPedestal(raycaster)
-        if (pedestal && helm?.tap(pedestal)) {
-          track('helm')
-          return
-        }
-        if (pedestal?.voice) {
-          track('statue')
-          soundRef.current.play(pedestal.voice)
-          pedestal.chime()
-          return
-        }
+          case 'helm':
+            helm?.take(intent.pedestal)
+            track('helm')
+            return
 
-        if (matcha?.tap(raycaster)) {
-          track('matcha')
-          soundRef.current.play('click')
-          return
-        }
+          case 'statue':
+            track('statue')
+            if (intent.pedestal.voice) soundRef.current.play(intent.pedestal.voice)
+            intent.pedestal.chime()
+            return
 
-        if (cafe?.hitTestCat(raycaster)) {
-          track('cafe_cat')
-          soundRef.current.play('cafe-hello')
-          return
-        }
+          case 'matcha':
+            matcha?.toggle()
+            track('matcha')
+            soundRef.current.play('click')
+            return
 
-        if (guestBoard?.hitTestDesktop(raycaster)) {
-          track('sketch_open')
-          soundRef.current.play('click')
-          onOpenSketchGameRef.current()
-          return
-        }
+          case 'cafe-cat':
+            track('cafe_cat')
+            soundRef.current.play('cafe-hello')
+            return
 
-        if (sitting?.tap(raycaster)) {
-          track('beanbag')
-          soundRef.current.play('click')
-          return
-        }
+          case 'sketch':
+            track('sketch_open')
+            soundRef.current.play('click')
+            onOpenSketchGameRef.current()
+            return
 
-        if (guestBoard?.hitTest(raycaster)) {
-          track('guest_board')
-          soundRef.current.play('click')
-          onOpenGuestBoardRef.current()
+          case 'beanbag':
+            sitting?.act()
+            track('beanbag')
+            soundRef.current.play('click')
+            return
+
+          case 'guest-board':
+            track('guest_board')
+            soundRef.current.play('click')
+            onOpenGuestBoardRef.current()
+            return
         }
       }
 
@@ -555,23 +565,9 @@ export function useHallScene({
 
       frameHandle = requestAnimationFrame(renderFrame)
 
-      let removeSeam = (): void => {}
-      if (process.env.NODE_ENV !== 'production') {
-        removeSeam = installSeam({
-          canvas: renderer.domElement,
-          camera: rig.camera,
-          projector: () => rig.projector(viewport),
-          hall,
-          lobby,
-          cafe: () => cafe,
-          guestBoard: () => guestBoard,
-        })
-      }
-
       teardown = () => {
         window.clearInterval(sceneryGate)
         cancelAnimationFrame(frameHandle)
-        removeSeam()
         soundRef.current.setWalking(false)
         resizeObserver.disconnect()
         renderer.domElement.removeEventListener('pointerdown', handlePointerDown)

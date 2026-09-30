@@ -25,9 +25,8 @@ export interface HiddenCoin {
   choose(totalWalls: number): void
   attach(wall: CoinWall): void
   detach(index: number): void
-  tap(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean
-  raycastHit(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean
   hitAt(point: WorldPoint, blockers: readonly THREE.Object3D[]): boolean
+  markFound(): void
   release(): void
   update(dt: number): void
 }
@@ -55,16 +54,6 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
       new THREE.PlaneGeometry(width, width / assets.aspect.coin),
       new THREE.MeshBasicMaterial({ map: assets.textures.coin, transparent: true }),
     )
-  }
-
-  function raycastHit(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean {
-    if (state !== 'hidden' || !mesh) return false
-    const hits = raycaster.intersectObjects([mesh, ...blockers], false).map((hit) => ({
-      object: hit.object,
-      u: hit.uv?.x,
-      v: hit.uv?.y,
-    }))
-    return resolveHits(mesh, hits)
   }
 
   function hitAt(point: WorldPoint, blockers: readonly THREE.Object3D[]): boolean {
@@ -118,14 +107,11 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
       if (state === 'vanishing') state = 'gone'
     },
 
-    raycastHit,
-
     hitAt,
 
-    tap(raycaster, blockers) {
-      if (!raycastHit(raycaster, blockers)) return false
+    markFound() {
+      if (state !== 'hidden' || !mesh) return
       state = 'found'
-      return true
     },
 
     release() {

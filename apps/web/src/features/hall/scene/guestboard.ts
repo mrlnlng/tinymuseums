@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { Assets, Scenery } from './assets'
 import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
-import { hitsAt, pickAt, pickPainted, type WorldPoint } from './hit'
+import { hitsAt, pickAt, type WorldPoint } from './hit'
 import { CONFIG } from './config'
 
 export interface Seat {
@@ -15,11 +15,8 @@ export interface GuestBoard {
   mark: Mark
   signMark: Mark
   seat: Seat
-  hitTest(raycaster: THREE.Raycaster): boolean
   hitTestAt(point: WorldPoint): boolean
-  hitTestBeanbag(raycaster: THREE.Raycaster, occupied: boolean): boolean
   hitTestBeanbagAt(point: WorldPoint, occupied: boolean): boolean
-  hitTestDesktop(raycaster: THREE.Raycaster): boolean
   hitTestDesktopAt(point: WorldPoint): boolean
   dispose(): void
 }
@@ -64,45 +61,20 @@ export function createGuestBoard(scene: THREE.Scene, assets: Assets, scenery: Sc
   const { u, v, occupiedTop } = sitArea.beanbag
   const { desktop } = sitArea
 
-  function sitUv(raycaster: THREE.Raycaster): THREE.Vector2 | undefined {
-    return raycaster.intersectObject(sitMesh, false)[0]?.uv
-  }
-
   return {
     x,
     mark: { x: x + board.dx, y: board.centerY, width: board.width },
     signMark: { x: x + signText.dx, y: signText.centerY, width: signText.width },
     seat: { x: x + seat.dx, y: seat.centerY, height: seat.height },
 
-    hitTest(raycaster) {
-      return pickPainted(raycaster, [boardMesh]) !== null
-    },
-
     hitTestAt(point) {
       return pickAt(point, [boardMesh]) !== null
-    },
-
-    hitTestBeanbag(raycaster, occupied) {
-      const uv = sitUv(raycaster)
-      const top = occupied ? occupiedTop : v[1]
-      return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= top
     },
 
     hitTestBeanbagAt(point, occupied) {
       const uv = hitsAt(point, [sitMesh])[0]?.uv
       const top = occupied ? occupiedTop : v[1]
       return !!uv && uv.u >= u[0] && uv.u <= u[1] && uv.v >= v[0] && uv.v <= top
-    },
-
-    hitTestDesktop(raycaster) {
-      const uv = sitUv(raycaster)
-      return (
-        !!uv &&
-        uv.x >= desktop.u[0] &&
-        uv.x <= desktop.u[1] &&
-        uv.y >= desktop.v[0] &&
-        uv.y <= desktop.v[1]
-      )
     },
 
     hitTestDesktopAt(point) {

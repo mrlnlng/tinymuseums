@@ -9,7 +9,8 @@ import type { HallScene } from './scene'
 export interface Helm {
   readonly worn: boolean
   conceal(hidden: boolean): void
-  tap(pedestal: Pedestal): boolean
+  accepts(pedestal: Pedestal): boolean
+  take(pedestal: Pedestal): void
   update(dt: number, character: Character, projector: Projector): void
   dispose(): void
 }
@@ -30,8 +31,11 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
 
     conceal: helm.conceal,
 
-    tap(pedestal) {
-      if (!pedestal.holdsHelm) return false
+    accepts(pedestal) {
+      return pedestal.holdsHelm
+    },
+
+    take(pedestal) {
       if (helm.state === 'away') {
         standIndex = pedestal.index
         hall.setBareHelmStand(standIndex)
@@ -39,7 +43,6 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
       } else if (pedestal.index === standIndex) {
         helm.giveBack()
       }
-      return true
     },
 
     update(dt, character, projector) {

@@ -1,4 +1,3 @@
-import type * as THREE from 'three'
 import type { Scenery } from './assets'
 import type { Cafe } from './cafe'
 import { createCarried } from './carried'
@@ -7,7 +6,7 @@ import { CONFIG } from './config'
 import type { Projector } from './projector'
 
 export interface Matcha {
-  tap(raycaster: THREE.Raycaster): boolean
+  toggle(): void
   update(dt: number, character: Character, projector: Projector): void
   dispose(): void
 }
@@ -19,11 +18,9 @@ export function createMatcha(scenery: Scenery, host: HTMLElement, cafe: () => Ca
   })
 
   return {
-    tap(raycaster) {
-      if (!cafe()?.hitTestMatcha(raycaster)) return false
+    toggle() {
       if (cup.state === 'away') cup.take()
       else cup.giveBack()
-      return true
     },
 
     update: cup.update,

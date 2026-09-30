@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Assets } from './assets'
 import { disposeBoards, plane, stretchedBoard, type Mark } from './board'
 import { CONFIG } from './config'
-import { hitsAt, pickAt, pickPainted, type WorldPoint } from './hit'
+import { hitsAt, pickAt, type WorldPoint } from './hit'
 
 export interface LobbyMarks {
   sign: Mark
@@ -11,9 +11,7 @@ export interface LobbyMarks {
 
 export interface Lobby {
   marks: LobbyMarks
-  hitTestDoor(raycaster: THREE.Raycaster): boolean
   hitTestDoorAt(point: WorldPoint): boolean
-  hitTestCat(raycaster: THREE.Raycaster): boolean
   hitTestCatAt(point: WorldPoint): boolean
   update(dt: number, cameraX: number): void
   dispose(): void
@@ -124,16 +122,8 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
   return {
     marks,
 
-    hitTestDoor(raycaster) {
-      return raycaster.intersectObject(doorMesh, false).length > 0
-    },
-
     hitTestDoorAt(point) {
       return hitsAt(point, [doorMesh]).length > 0
-    },
-
-    hitTestCat(raycaster) {
-      return pickPainted(raycaster, [boothMesh, catMesh])?.object === catMesh
     },
 
     hitTestCatAt(point) {

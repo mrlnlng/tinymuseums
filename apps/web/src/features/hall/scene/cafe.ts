@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { Scenery } from './assets'
 import { disposeBoards, plane, type Mark } from './board'
-import { hitsAt, pickAt, pickPainted, type WorldPoint } from './hit'
+import { hitsAt, pickAt, type WorldPoint } from './hit'
 import { CONFIG } from './config'
 
 export interface CafeMarks {
@@ -11,9 +11,7 @@ export interface CafeMarks {
 export interface Cafe {
   x: number
   marks: CafeMarks
-  hitTestCat(raycaster: THREE.Raycaster): boolean
   hitTestCatAt(point: WorldPoint): boolean
-  hitTestMatcha(raycaster: THREE.Raycaster): boolean
   hitTestMatchaAt(point: WorldPoint): boolean
   matchaPoint(out: THREE.Vector3): THREE.Vector3
   update(dt: number, cameraX: number): void
@@ -101,17 +99,8 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
   return {
     x,
 
-    hitTestCat(raycaster: THREE.Raycaster): boolean {
-      return pickPainted(raycaster, [counterMesh, catMesh])?.object === catMesh
-    },
-
     hitTestCatAt(point) {
       return pickAt(point, [counterMesh, catMesh])?.object === catMesh
-    },
-
-    hitTestMatcha(raycaster: THREE.Raycaster): boolean {
-      const uv = raycaster.intersectObject(counterMesh, false)[0]?.uv
-      return !!uv && uv.x >= u[0] && uv.x <= u[1] && uv.y >= v[0] && uv.y <= v[1]
     },
 
     hitTestMatchaAt(point) {

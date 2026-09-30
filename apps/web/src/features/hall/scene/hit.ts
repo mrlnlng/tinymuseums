@@ -145,22 +145,6 @@ export function paintedAtObject(
   return paintedAtUv(texture, u, v, exact)
 }
 
-export function isPaintedAt(hit: THREE.Intersection, exact = false): boolean {
-  if (!hit.uv) return true
-  return paintedAtObject(hit.object, hit.uv.x, hit.uv.y, exact)
-}
-
-export function pickPainted(
-  raycaster: THREE.Raycaster,
-  meshes: readonly THREE.Object3D[],
-): THREE.Intersection | null {
-  if (meshes.length === 0) return null
-  for (const hit of raycaster.intersectObjects(meshes as THREE.Object3D[], false)) {
-    if (isPaintedAt(hit)) return hit
-  }
-  return null
-}
-
 const defaultLayers = new THREE.Layers()
 const localPoint = new THREE.Vector3()
 const worldAt = new THREE.Vector3()

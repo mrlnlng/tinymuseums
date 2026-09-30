@@ -1,8 +1,6 @@
 import type Phaser from 'phaser'
 import type { HallSliceDto } from '@tiny/core'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
-import type { Assets } from '@/features/hall/scene/assets'
-import { createCharacter } from '@/features/hall/scene/character'
 import type { WorldPoint } from '@/features/hall/scene/hit'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { routeTap } from '@/features/hall/scene/tap'
@@ -66,12 +64,12 @@ export function createHallGame(
     known: 0,
     world: null,
     tapWorld: null,
+    character: null,
     act: null,
     dispose: null,
   }
 
   const traversal = new Traversal()
-  const character = createCharacter(bridge.assets as unknown as Assets, bridge.characterHost)
   let game: Phaser.Game | null = null
 
   function applyResize(): void {
@@ -112,7 +110,6 @@ export function createHallGame(
     overlayHost: bridge.overlayHost,
     characterHost: bridge.characterHost,
     guestBoardNotesHost: bridge.guestBoardNotes,
-    character,
     traversal,
     governor,
     isSuspended: bridge.isSuspended,
@@ -150,12 +147,7 @@ export function createHallGame(
     scene: [Scene],
   }
 
-  try {
-    game = new P.Game(config)
-  } catch (error) {
-    character.dispose()
-    throw error
-  }
+  game = new P.Game(config)
 
   const canvas = game.canvas
   canvas.className = 'hall-canvas'
@@ -242,6 +234,7 @@ export function createHallGame(
       canvasHeight: canvas.height,
       slices: runtime.known,
       isIntro: traversal.isIntro,
+      bunny: runtime.character?.bunny() ?? null,
       world: runtime.world?.stats() ?? null,
     }),
   })
@@ -262,7 +255,6 @@ export function createHallGame(
       canvas.removeEventListener('wheel', wake)
       window.removeEventListener('keydown', wake)
       runtime.dispose?.()
-      character.dispose()
       game?.destroy(true)
       game = null
     },

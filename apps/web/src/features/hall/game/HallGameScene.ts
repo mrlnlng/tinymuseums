@@ -1,7 +1,6 @@
 import type Phaser from 'phaser'
 import type { HallSliceDto } from '@tiny/core'
 import type { EffectName } from '@/features/sound/hooks/useSoundEffects'
-import type { Character } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
@@ -22,7 +21,9 @@ import type { Traversal } from '@/features/hall/scene/traversal'
 import type { OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import { addOpaqueTexture, createBackdrop, type Backdrop } from './backdrop'
+import { createOcclusion } from './occlusion'
 import { createCafe, type Cafe } from './cafe'
+import { createSpriteCharacter, type SpriteCharacter } from './character'
 import { createComingSoon, type ComingSoon } from './comingsoon'
 import { createGiftShop, type GiftShop } from './giftshop'
 import { createGuestBoard, type GuestBoard } from './guestboard'
@@ -50,6 +51,7 @@ export interface HallRuntime {
   known: number
   world: HallWorld | null
   tapWorld: TapWorld | null
+  character: SpriteCharacter | null
   act: ((intent: TapIntent) => void) | null
   dispose: (() => void) | null
 }
@@ -61,7 +63,6 @@ export interface HallSceneDeps {
   overlayHost: HTMLElement
   characterHost: HTMLElement
   guestBoardNotesHost: HTMLElement | null
-  character: Character
   traversal: Traversal
   governor: { sample(frameMs: number, isSettled: boolean): void }
   isSuspended: () => boolean
@@ -97,6 +98,8 @@ const CAFE_URL = 'https://buymeacoffee.com/inspiratiq'
 export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
   return class HallGameScene extends P.Scene {
     private world!: HallWorld
+    private character!: SpriteCharacter
+    private occlusion = createOcclusion(() => [deps.overlayHost, deps.guestBoardNotesHost])
     private sliceFeed!: SliceFeed
     private lobby: Lobby | null = null
     private scenery: GameScenery | null = null
@@ -143,6 +146,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       this.backdrop = createBackdrop(this, deps.assets, BACKDROP_LENGTH)
       this.world = new HallWorld(this, deps.assets)
       this.world.ingestSlice(deps.initialSlice)
+      this.character = createSpriteCharacter(this, deps.assets)
       this.lobby = createLobby(this, deps.assets)
       this.placards = new Placards(deps.overlayHost)
       this.lobbySigns = new LobbySigns(deps.overlayHost, this.lobby.marks)
@@ -170,6 +174,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
 
       deps.runtime.world = this.world
       deps.runtime.tapWorld = this.buildTapWorld()
+      deps.runtime.character = this.character
       deps.runtime.act = (intent) => this.act(intent)
       deps.runtime.dispose = () => this.disposeAll()
     }
@@ -314,7 +319,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       const board = createGuestBoard(this, deps.assets, this.scenery, x)
       this.guestBoard = board
       this.funZoneSign = new FunZoneSign(deps.overlayHost, board.signMark)
-      this.sitting = createSitting(this.scenery, board, deps.traversal, deps.character, () => this.helm, {
+      this.sitting = createSitting(this.scenery, board, deps.traversal, this.character, () => this.helm, {
         prepare: () => deps.sound().prepare('jump'),
         hop: () => deps.sound().play('jump'),
       })
@@ -416,9 +421,9 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
 
       const projector = new ViewProjector(cameraX, deps.runtime.view, deps.runtime.viewport)
       this.sitting?.update(dt, cameraX, deps.runtime.view.viewWidth / 2)
-      deps.character.update(dt, deps.traversal.x, deps.traversal.walkVelocity, projector)
-      this.helm?.update(dt, deps.character, projector)
-      this.matcha?.update(dt, deps.character, projector)
+      this.character.update(dt, deps.traversal.x, deps.traversal.walkVelocity, projector)
+      this.helm?.update(dt, this.character, projector)
+      this.matcha?.update(dt, this.character, projector)
       deps.sound().setWalking(Math.abs(deps.traversal.walkVelocity) > WALKING_SPEED)
 
       this.world.update(time, dt, cameraX)
@@ -437,6 +442,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       this.guestBoardNotes?.sync(projector)
       this.funZoneSign?.sync(projector)
       this.comingSoonNote?.sync(projector)
+      this.occlusion.update(this.character.bunny())
 
       this.lobby?.update(dt, cameraX)
       const cafeX = this.world.layout.cafeX
@@ -458,15 +464,22 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
 
       const quiet = deps.isSuspended() || deps.traversal.idleSeconds > QUIET_AFTER_SECONDS
       const limit = quiet ? 30 : 0
-      if (this.game.loop.fpsLimit !== limit) this.game.loop.setFPSLimit(limit)
+      if (this.game.loop.fpsLimit !== limit) {
+        const loop = this.game.loop
+        queueMicrotask(() => {
+          if (!this.isDisposed) loop.setFPSLimit(limit)
+        })
+      }
       if (limit !== 0) this.throttledFrames = 2
       if (deps.isSuspended()) this.game.loop.sleep()
     }
 
     private disposeAll(): void {
+      this.occlusion.clear()
       this.isDisposed = true
       deps.runtime.world = null
       deps.runtime.tapWorld = null
+      deps.runtime.character = null
       deps.runtime.act = null
       deps.runtime.dispose = null
       window.clearInterval(this.sceneryGate)
@@ -483,6 +496,7 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
       this.lobby?.dispose()
       this.giftShop?.dispose()
       this.sitting?.dispose()
+      this.character?.dispose()
       this.guestBoard?.dispose()
       this.cafe?.dispose()
       this.comingSoon?.dispose()

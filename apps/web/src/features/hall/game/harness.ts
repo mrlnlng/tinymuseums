@@ -9,6 +9,7 @@ export interface HallHarnessStats {
   slices: number
   isIntro: boolean
   frames?: string[]
+  bunny?: { x: number; y: number; width: number; height: number; src: string } | null
   world?: { mounted: number; loaded: number; total: number } | null
 }
 

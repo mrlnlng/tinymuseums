@@ -8,6 +8,7 @@ export interface HallHarnessStats {
   canvasHeight: number
   slices: number
   isIntro: boolean
+  frames?: string[]
 }
 
 export interface HallHarness {
@@ -23,11 +24,26 @@ declare global {
   }
 }
 
+let entranceFrames: string[] = []
+
+export function setEntranceFrames(frames: readonly string[]): void {
+  entranceFrames = [...frames]
+}
+
 export function installHarness(harness: HallHarness): () => void {
   if (process.env.NODE_ENV === 'production') return () => {}
-  window.__hall = harness
+
+  const wrapped: HallHarness = {
+    engine: harness.engine,
+    get cameraX() {
+      return harness.cameraX
+    },
+    tapIntent: (clientX, clientY) => harness.tapIntent(clientX, clientY),
+    stats: () => ({ ...harness.stats(), frames: entranceFrames }),
+  }
+  window.__hall = wrapped
 
   return () => {
-    if (window.__hall === harness) delete window.__hall
+    if (window.__hall === wrapped) delete window.__hall
   }
 }

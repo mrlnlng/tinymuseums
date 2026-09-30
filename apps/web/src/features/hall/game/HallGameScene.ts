@@ -9,6 +9,7 @@ import type { Traversal } from '@/features/hall/scene/traversal'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import { createBackdrop } from './backdrop'
 import type { GameAssets } from './assets'
+import { setEntranceFrames } from './harness'
 import { phaserCamera, ViewProjector, type View } from './view'
 
 export type PhaserModule = typeof import('phaser')
@@ -76,6 +77,8 @@ export function createHallGameScene(P: PhaserModule, deps: HallSceneDeps) {
 
     create(): void {
       this.cameras.main.setOrigin(0, 0)
+      deps.assets.registerEntrance(this)
+      setEntranceFrames(deps.assets.frames)
       if (!this.textures.exists(WALLPAPER_KEY)) this.textures.addImage(WALLPAPER_KEY, deps.assets.wallpaper)
       if (!this.textures.exists(FLOOR_KEY)) this.textures.addImage(FLOOR_KEY, deps.assets.floor)
 

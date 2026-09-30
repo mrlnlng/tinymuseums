@@ -1,21 +1,7 @@
 import * as THREE from 'three'
+import { paintedAtImage, paintedAtSprite, registerSpriteMask } from '../game/hit.ts'
 
-const MAX_SIDE = 128
-
-const REACH = 3
-
-interface AlphaMap {
-  width: number
-  height: number
-  data: Uint8Array
-  exact: Uint8Array
-}
-
-const alphaMaps = new WeakMap<TexImageSource, AlphaMap | null>()
-
-// Atlas sprites share one image (and a compressed texture has none to read), so
-// their alpha comes from masks built with the assets, keyed by sprite name.
-const spriteMasks = new Map<string, AlphaMap>()
+export { paintedAtImage, paintedAtSprite, registerSpriteMask }
 
 export interface SpriteRegion {
   name: string
@@ -41,93 +27,16 @@ export interface WorldHit {
   z: number
 }
 
-export function registerSpriteMask(name: string, width: number, height: number, alpha: Uint8Array): void {
-  spriteMasks.set(name, { width, height, data: spread(alpha, width, height), exact: alpha })
-}
-
-const OPAQUE_ALPHA = 32
-
-function alphaMapFor(image: TexImageSource): AlphaMap | null {
-  const cached = alphaMaps.get(image)
-  if (cached !== undefined) return cached
-
-  const map = buildAlphaMap(image)
-  alphaMaps.set(image, map)
-  return map
-}
-
-function buildAlphaMap(image: TexImageSource): AlphaMap | null {
-  const source = image as HTMLImageElement
-  const sourceWidth = source.naturalWidth ?? source.width
-  const sourceHeight = source.naturalHeight ?? source.height
-  if (!sourceWidth || !sourceHeight) return null
-
-  const scale = Math.min(1, MAX_SIDE / Math.max(sourceWidth, sourceHeight))
-  const width = Math.max(1, Math.round(sourceWidth * scale))
-  const height = Math.max(1, Math.round(sourceHeight * scale))
-
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return null
-    ctx.drawImage(source, 0, 0, width, height)
-
-    const { data: rgba } = ctx.getImageData(0, 0, width, height)
-    const data = new Uint8Array(width * height)
-    for (let i = 0; i < data.length; i++) data[i] = rgba[i * 4 + 3]
-    return { width, height, data: spread(data, width, height), exact: data }
-  } catch {
-    // A cross-origin image taints the canvas and cannot be read back.
-    return null
-  }
-}
-
-function spread(source: Uint8Array, width: number, height: number): Uint8Array {
-  const across = new Uint8Array(source.length)
-  for (let y = 0; y < height; y++) {
-    const row = y * width
-    for (let x = 0; x < width; x++) {
-      let strongest = 0
-      const from = Math.max(0, x - REACH)
-      const to = Math.min(width - 1, x + REACH)
-      for (let k = from; k <= to; k++) strongest = Math.max(strongest, source[row + k])
-      across[row + x] = strongest
-    }
-  }
-
-  const down = new Uint8Array(source.length)
-  for (let y = 0; y < height; y++) {
-    const from = Math.max(0, y - REACH)
-    const to = Math.min(height - 1, y + REACH)
-    for (let x = 0; x < width; x++) {
-      let strongest = 0
-      for (let k = from; k <= to; k++) strongest = Math.max(strongest, across[k * width + x])
-      down[y * width + x] = strongest
-    }
-  }
-  return down
-}
-
 export function paintedAtUv(texture: THREE.Texture, u: number, v: number, exact: boolean): boolean {
-  let map: AlphaMap | null | undefined
-  let uu = u
-  let vv = v
   const region = texture.userData.sprite as SpriteRegion | undefined
   if (region) {
-    map = spriteMasks.get(region.name)
-    uu = (texture.offset.x + u * texture.repeat.x - region.u0) / region.du
-    vv = (texture.offset.y + v * texture.repeat.y - region.v0) / region.dv
-  } else {
-    const image = texture.image as TexImageSource | undefined
-    map = image ? alphaMapFor(image) : null
+    const uu = (texture.offset.x + u * texture.repeat.x - region.u0) / region.du
+    const vv = (texture.offset.y + v * texture.repeat.y - region.v0) / region.dv
+    return paintedAtSprite(region.name, uu, vv, exact)
   }
-  if (!map) return true
 
-  const x = Math.min(map.width - 1, Math.max(0, Math.floor(uu * map.width)))
-  const y = Math.min(map.height - 1, Math.max(0, Math.floor((1 - vv) * map.height)))
-  return (exact ? map.exact : map.data)[y * map.width + x] >= OPAQUE_ALPHA
+  const image = texture.image as TexImageSource | undefined
+  return image ? paintedAtImage(image, u, v, exact) : true
 }
 
 export function paintedAtObject(

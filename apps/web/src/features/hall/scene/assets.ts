@@ -27,7 +27,7 @@ function assetUrl(file: string): string {
   return builtAssetUrl(file.replace(/\.(png|svg)$/, '') as AssetName, { avif: useAvif })
 }
 
-const ENTRANCE_FILES = {
+export const ENTRANCE_FILES = {
   rope: 'rope.png',
   plaque: 'plaque.png',
   floor: 'floor.png',
@@ -39,7 +39,7 @@ const ENTRANCE_FILES = {
   coin: 'coin.png',
 } as const
 
-const SCENERY_FILES = {
+export const SCENERY_FILES = {
   giftShop: 'gift-shop.png',
   cafeFront: 'cafe/front.png',
   cafeSign: 'cafe/sign-removebg.png',
@@ -56,9 +56,9 @@ export const HELM_PEDESTAL_FILE = 'pedestal-4.png'
 export type EntranceName = keyof typeof ENTRANCE_FILES
 export type SceneryName = keyof typeof SCENERY_FILES
 
-const HELP_CAT_FRAMES = [1, 2, 3, 4, 5, 6].map((n) => `help/cat-${n}.png`)
+export const HELP_CAT_FRAMES = [1, 2, 3, 4, 5, 6].map((n) => `help/cat-${n}.png`)
 
-const CAFE_CAT_FRAMES = [
+export const CAFE_CAT_FRAMES = [
   'cafe/cat-1.png',
   'cafe/cat-2.png',
   'cafe/cat-3.png',
@@ -165,7 +165,7 @@ function toSprite(img: HTMLImageElement): Sprite {
   return { texture: toTexture(img), aspect: img.naturalWidth / img.naturalHeight }
 }
 
-function stem(file: string): string {
+export function stem(file: string): string {
   return file.replace(/\.(png|svg)$/, '')
 }
 
@@ -229,7 +229,7 @@ async function loadSheets(group: AtlasGroup): Promise<Map<string, Sprite>> {
 
 let masks: Promise<void> | null = null
 
-function loadMasks(): Promise<void> {
+export function loadMasks(): Promise<void> {
   masks ??= (async () => {
     const { url, sprites } = spriteMasks()
     const image = await loadRetrying(url)

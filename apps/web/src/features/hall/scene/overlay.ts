@@ -1,9 +1,9 @@
-import * as THREE from 'three'
 import { CONFIG } from './config'
 import type { CafeMarks } from './cafe'
 import type { Mark } from './board'
 import type { GiftShopMarks } from './giftshop'
 import type { LobbyMarks } from './lobby'
+import type { Projector, ScreenPoint } from './projector'
 import type { MountedDisplay } from './scene'
 import { assetUrl } from '@/shared/lib/assets'
 
@@ -13,8 +13,6 @@ export interface Viewport {
   left: number
   top: number
 }
-
-const projected = new THREE.Vector3()
 
 type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity'
 
@@ -31,20 +29,12 @@ function writeStyle(node: HTMLElement, property: StyledProperty, value: string):
   node.style[property] = value
 }
 
-function toScreen(
-  x: number,
-  y: number,
-  camera: THREE.OrthographicCamera,
-  viewport: Viewport,
-): { x: number; y: number } | null {
-  projected.set(x, y, 0.03)
-  projected.project(camera)
-  if (projected.x < -1.7 || projected.x > 1.7) return null
+function toScreen(x: number, y: number, projector: Projector): ScreenPoint | null {
+  const at = projector.toScreen(x, y)
+  const ndcX = ((at.x - projector.viewport.left) / projector.viewport.width) * 2 - 1
+  if (ndcX < -1.7 || ndcX > 1.7) return null
 
-  return {
-    x: viewport.left + (projected.x * 0.5 + 0.5) * viewport.width,
-    y: viewport.top + (-projected.y * 0.5 + 0.5) * viewport.height,
-  }
+  return at
 }
 
 export class Placards {
@@ -61,16 +51,11 @@ export class Placards {
 
   constructor(private container: HTMLElement) {}
 
-  sync(
-    mounted: readonly MountedDisplay[],
-    camera: THREE.OrthographicCamera,
-    viewport: Viewport,
-  ): void {
+  sync(mounted: readonly MountedDisplay[], projector: Projector): void {
     const seen = this.seen
     seen.clear()
-    const viewWidth = camera.right - camera.left
-    const plaquePx = (CONFIG.plaque.width / viewWidth) * viewport.width
-    const titlePx = (CONFIG.plaque.titleWidth / viewWidth) * viewport.width
+    const plaquePx = (CONFIG.plaque.width / projector.viewWidth) * projector.viewport.width
+    const titlePx = (CONFIG.plaque.titleWidth / projector.viewWidth) * projector.viewport.width
 
     for (const m of mounted) {
       const key = m.index
@@ -97,9 +82,9 @@ export class Placards {
         this.titles.set(key, title)
       }
 
-      this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.78, Math.max(7, plaquePx * 0.058), 'center')
+      this.place(node, m.centerX, m.plaqueY, projector, plaquePx * 0.78, Math.max(7, plaquePx * 0.058), 'center')
 
-      this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
+      this.place(title, m.centerX, m.titleY, projector, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
     }
 
     for (const map of [this.nodes, this.titles]) {
@@ -116,13 +101,12 @@ export class Placards {
     node: HTMLElement,
     x: number,
     y: number,
-    camera: THREE.OrthographicCamera,
-    viewport: Viewport,
+    projector: Projector,
     widthPx: number,
     fontSize: number,
     anchor: 'center' | 'bottom',
   ): void {
-    const at = toScreen(x, y, camera, viewport)
+    const at = toScreen(x, y, projector)
     if (!at) {
       writeStyle(node, 'opacity', '0')
       return
@@ -134,7 +118,7 @@ export class Placards {
     let screenY = at.y
     if (anchor === 'bottom') {
       const height = this.heights.get(node) ?? node.offsetHeight
-      screenY = Math.max(screenY, viewport.top + height + 4)
+      screenY = Math.max(screenY, projector.viewport.top + height + 4)
     }
 
     writeStyle(
@@ -159,11 +143,10 @@ function placeLabel(
   node: HTMLElement,
   mark: { x: number; y: number; width: number },
   perUnit: number,
-  camera: THREE.OrthographicCamera,
-  viewport: Viewport,
+  projector: Projector,
   fontRatio: number,
 ): boolean {
-  const at = toScreen(mark.x, mark.y, camera, viewport)
+  const at = toScreen(mark.x, mark.y, projector)
   if (!at) {
     writeStyle(node, 'opacity', '0')
     return false
@@ -198,12 +181,11 @@ export class LobbySigns {
     for (const node of [this.sign, this.direction]) container.appendChild(node)
   }
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const viewWidth = camera.right - camera.left
-    const perUnit = viewport.width / viewWidth
+  sync(projector: Projector): void {
+    const perUnit = projector.pxPerUnit
 
-    placeLabel(this.sign, this.marks.sign, perUnit, camera, viewport, 0.12)
-    placeLabel(this.direction, this.marks.direction, perUnit, camera, viewport, 0.136)
+    placeLabel(this.sign, this.marks.sign, perUnit, projector, 0.12)
+    placeLabel(this.direction, this.marks.direction, perUnit, projector, 0.136)
   }
 
   clear(): void {
@@ -242,14 +224,13 @@ export class GiftShopSigns {
     for (const node of [this.note, this.sign, this.link]) container.appendChild(node)
   }
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const viewWidth = camera.right - camera.left
-    const perUnit = viewport.width / viewWidth
+  sync(projector: Projector): void {
+    const perUnit = projector.pxPerUnit
 
-    placeLabel(this.note, this.marks.note, perUnit, camera, viewport, 0.065)
-    placeLabel(this.sign, this.marks.sign, perUnit, camera, viewport, 0.134)
+    placeLabel(this.note, this.marks.note, perUnit, projector, 0.065)
+    placeLabel(this.sign, this.marks.sign, perUnit, projector, 0.134)
 
-    const onScreen = placeLabel(this.link, this.marks.button, perUnit, camera, viewport, 0.09)
+    const onScreen = placeLabel(this.link, this.marks.button, perUnit, projector, 0.09)
     if (onScreen !== this.isLinkOnScreen) {
       this.isLinkOnScreen = onScreen
       this.link.style.pointerEvents = onScreen ? 'auto' : 'none'
@@ -279,9 +260,9 @@ export class FunZoneSign {
     container.appendChild(this.sign)
   }
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const perUnit = viewport.width / (camera.right - camera.left)
-    placeLabel(this.sign, this.mark, perUnit, camera, viewport, 0.134)
+  sync(projector: Projector): void {
+    const perUnit = projector.pxPerUnit
+    placeLabel(this.sign, this.mark, perUnit, projector, 0.134)
   }
 
   clear(): void {
@@ -301,9 +282,9 @@ export class ComingSoonNote {
     container.appendChild(this.note)
   }
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const perUnit = viewport.width / (camera.right - camera.left)
-    placeLabel(this.note, this.mark, perUnit, camera, viewport, 0.15)
+  sync(projector: Projector): void {
+    const perUnit = projector.pxPerUnit
+    placeLabel(this.note, this.mark, perUnit, projector, 0.15)
   }
 
   clear(): void {
@@ -329,11 +310,10 @@ export class CafeLink {
     container.appendChild(this.poster)
   }
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const viewWidth = camera.right - camera.left
-    const perUnit = viewport.width / viewWidth
+  sync(projector: Projector): void {
+    const perUnit = projector.pxPerUnit
 
-    const at = toScreen(this.marks.poster.x, this.marks.poster.y, camera, viewport)
+    const at = toScreen(this.marks.poster.x, this.marks.poster.y, projector)
     if (!at) {
       writeStyle(this.poster, 'opacity', '0')
       if (this.isOnScreen !== false) {
@@ -375,14 +355,14 @@ export class GuestBoardNotes {
     private mark: Mark,
   ) {}
 
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void {
-    const at = toScreen(this.mark.x, this.mark.y, camera, viewport)
+  sync(projector: Projector): void {
+    const at = toScreen(this.mark.x, this.mark.y, projector)
     if (!at) {
       writeStyle(this.layer, 'opacity', '0')
       return
     }
 
-    const perUnit = viewport.width / (camera.right - camera.left)
+    const perUnit = projector.pxPerUnit
     writeStyle(this.layer, 'width', `${(this.mark.width * perUnit).toFixed(1)}px`)
     writeStyle(
       this.layer,

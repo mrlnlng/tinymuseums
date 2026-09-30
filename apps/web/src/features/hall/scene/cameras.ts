@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import { CONFIG, centerYFor } from './config'
+import type { Viewport } from './overlay'
+import { OrthographicProjector, type Projector } from './projector'
 
 export class CameraRig {
   readonly camera: THREE.OrthographicCamera
@@ -27,6 +29,10 @@ export class CameraRig {
 
   get viewWidth(): number {
     return this.camera.right - this.camera.left
+  }
+
+  projector(viewport: Viewport): Projector {
+    return new OrthographicProjector(this.camera, viewport)
   }
 
   sync(x: number): void {

@@ -4,11 +4,11 @@ import type { Cafe } from './cafe'
 import { createCarried } from './carried'
 import type { Character } from './character'
 import { CONFIG } from './config'
-import type { Viewport } from './overlay'
+import type { Projector } from './projector'
 
 export interface Matcha {
   tap(raycaster: THREE.Raycaster): boolean
-  update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): void
+  update(dt: number, character: Character, projector: Projector): void
   dispose(): void
 }
 

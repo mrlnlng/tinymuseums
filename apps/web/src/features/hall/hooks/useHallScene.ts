@@ -510,10 +510,11 @@ export function useHallScene({
         }
 
         rig.sync(traversal.cameraX)
+        const projector = rig.projector(viewport)
         sitting?.update(dt, traversal.cameraX, rig.viewWidth / 2)
-        character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
-        helm?.update(dt, character, rig.camera, viewport)
-        matcha?.update(dt, character, rig.camera, viewport)
+        character.update(dt, traversal.x, traversal.walkVelocity, projector)
+        helm?.update(dt, character, projector)
+        matcha?.update(dt, character, projector)
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
 
         hall.update(now, dt, traversal.cameraX)
@@ -522,13 +523,13 @@ export function useHallScene({
         raiseGuestBoard()
         raiseCafe()
         raiseComingSoon()
-        placards.sync(hall.getMounted(), rig.camera, viewport)
-        lobbySigns.sync(rig.camera, viewport)
-        giftShopSigns?.sync(rig.camera, viewport)
-        cafeLink?.sync(rig.camera, viewport)
-        guestBoardNotes?.sync(rig.camera, viewport)
-        funZoneSign?.sync(rig.camera, viewport)
-        comingSoonNote?.sync(rig.camera, viewport)
+        placards.sync(hall.getMounted(), projector)
+        lobbySigns.sync(projector)
+        giftShopSigns?.sync(projector)
+        cafeLink?.sync(projector)
+        guestBoardNotes?.sync(projector)
+        funZoneSign?.sync(projector)
+        comingSoonNote?.sync(projector)
 
         lobby.update(dt, traversal.cameraX)
         const cafeX = hall.layout.cafeX

@@ -1,8 +1,7 @@
-import * as THREE from 'three'
 import type { Assets } from './assets'
 import type { Attachment } from './carried'
 import { CONFIG } from './config'
-import type { Viewport } from './overlay'
+import type { Projector } from './projector'
 
 export interface Pose {
   x: number
@@ -24,13 +23,7 @@ export interface Character {
   readonly idleImage: HTMLImageElement
   perch(perch: Perch | null): void
   attach(attachment: Attachment, out: Pose): Pose
-  update(
-    dt: number,
-    x: number,
-    velocity: number,
-    camera: THREE.OrthographicCamera,
-    viewport: Viewport,
-  ): void
+  update(dt: number, x: number, velocity: number, projector: Projector): void
   dispose(): void
 }
 
@@ -45,8 +38,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   sprite.setAttribute('aria-hidden', 'true')
   sprite.src = idle.right.src
   host.appendChild(sprite)
-
-  const projected = new THREE.Vector3()
 
   let distance = 0
   let facing: 'left' | 'right' = 'right'
@@ -99,7 +90,7 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       return out
     },
 
-    update(dt, x, velocity, camera, viewport) {
+    update(dt, x, velocity, projector) {
       const speed = Math.abs(velocity)
       moving = !perched && speed > 0.12
 
@@ -120,16 +111,15 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
         ? Math.sin(distance * CONFIG.character.cyclesPerUnit * Math.PI * 2) * CONFIG.character.bob
         : 0
 
-      if (perched) projected.set(perched.x, perched.y, 0)
-      else projected.set(x, CONFIG.character.centerY + float, 0)
-      projected.project(camera)
+      const at = perched
+        ? projector.toScreen(perched.x, perched.y)
+        : projector.toScreen(x, CONFIG.character.centerY + float)
 
-      screenX = (projected.x * 0.5 + 0.5) * viewport.width
-      screenY = (-projected.y * 0.5 + 0.5) * viewport.height
+      screenX = at.x
+      screenY = at.y
 
-      const frustumHeight = camera.top - camera.bottom
       const worldHeight = perched ? perched.height : CONFIG.character.height
-      const heightPx = (worldHeight / frustumHeight) * viewport.height
+      const heightPx = (worldHeight / projector.viewHeight) * projector.viewport.height
       const height = `${heightPx.toFixed(1)}px`
       if (height !== currentHeight) {
         currentHeight = height

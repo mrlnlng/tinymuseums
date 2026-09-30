@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { Character, Pose } from './character'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
+import type { Projector } from './projector'
 
 export type CarriedState = 'away' | 'to-bunny' | 'held' | 'back'
 
@@ -10,7 +11,7 @@ export interface Carried {
   conceal(hidden: boolean): void
   take(): void
   giveBack(): void
-  update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): boolean
+  update(dt: number, character: Character, projector: Projector): boolean
   dispose(): void
 }
 
@@ -102,7 +103,7 @@ export function createCarried(
       elapsed = 0
     },
 
-    update(dt, character, camera, viewport) {
+    update(dt, character, projector) {
       if (state === 'away') return false
 
       character.attach(attachment, onBunny)
@@ -114,20 +115,20 @@ export function createCarried(
       sprite.hidden = false
 
       const width = home(world)
-      world.project(camera)
-      atHome.x = (world.x * 0.5 + 0.5) * viewport.width
-      atHome.y = (-world.y * 0.5 + 0.5) * viewport.height
-      atHome.width = (width * viewport.height) / (camera.top - camera.bottom)
+      const at = projector.toScreen(world.x, world.y)
+      atHome.x = at.x
+      atHome.y = at.y
+      atHome.width = (width * projector.viewport.height) / projector.viewHeight
       elapsed += dt
       const progress = Math.min(1, elapsed / flightSeconds)
 
       if (state === 'to-bunny') {
-        place(between(atHome, onBunny, progress, viewport))
+        place(between(atHome, onBunny, progress, projector.viewport))
         if (progress >= 1) state = 'held'
         return false
       }
 
-      place(between(onBunny, atHome, progress, viewport))
+      place(between(onBunny, atHome, progress, projector.viewport))
       if (progress < 1) return false
       state = 'away'
       sprite.hidden = true

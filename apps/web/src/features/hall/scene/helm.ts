@@ -1,17 +1,16 @@
-import type * as THREE from 'three'
 import type { Scenery } from './assets'
 import { createCarried } from './carried'
 import type { Character } from './character'
 import { CONFIG } from './config'
-import type { Viewport } from './overlay'
 import type { Pedestal } from './pedestal'
+import type { Projector } from './projector'
 import type { HallScene } from './scene'
 
 export interface Helm {
   readonly worn: boolean
   conceal(hidden: boolean): void
   tap(pedestal: Pedestal): boolean
-  update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): void
+  update(dt: number, character: Character, projector: Projector): void
   dispose(): void
 }
 
@@ -43,8 +42,8 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
       return true
     },
 
-    update(dt, character, camera, viewport) {
-      if (helm.update(dt, character, camera, viewport)) hall.setBareHelmStand(null)
+    update(dt, character, projector) {
+      if (helm.update(dt, character, projector)) hall.setBareHelmStand(null)
     },
 
     dispose() {

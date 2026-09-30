@@ -428,6 +428,21 @@ export function useHallScene({
       renderer.domElement.addEventListener('pointerup', handlePointerUp)
       renderer.domElement.addEventListener('click', handleClick)
 
+      const harnessWindow = window as unknown as { __hall?: unknown }
+      const harness =
+        process.env.NODE_ENV === 'production'
+          ? null
+          : {
+              engine: 'three',
+              get cameraX() {
+                return traversal.cameraX
+              },
+              tapIntent: (clientX: number, clientY: number) =>
+                routeTap(worldPoint({ clientX, clientY } as MouseEvent), tapWorld)?.kind ?? null,
+              stats: () => ({ ...hall.stats(), cameraX: traversal.cameraX, isIntro: traversal.isIntro }),
+            }
+      if (harness) harnessWindow.__hall = harness
+
       const viewedDisplays = new Set<number>()
       const VIEW_CHECK_MS = 250
       let lastViewCheck = 0
@@ -554,6 +569,7 @@ export function useHallScene({
       frameHandle = requestAnimationFrame(renderFrame)
 
       teardown = () => {
+        if (harness && harnessWindow.__hall === harness) delete harnessWindow.__hall
         window.clearInterval(sceneryGate)
         cancelAnimationFrame(frameHandle)
         soundRef.current.setWalking(false)

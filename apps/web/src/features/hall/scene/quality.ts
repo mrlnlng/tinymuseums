@@ -1,14 +1,16 @@
-import type * as THREE from 'three'
-
 const PIXEL_RATIO_STEPS = [3, 2.5, 2, 1.5, 1.25, 1]
 const WINDOW_FRAMES = 60
 const SLOW_RATIO = 1.3
 const MIN_SLOW_FRAME_MS = 22
 const IGNORE_FRAME_MS = 100
 
+interface PixelRatioTarget {
+  setPixelRatio(ratio: number): void
+}
+
 // Judged against the fastest interval the display has delivered, so a 30fps cap
 // (iOS Low Power Mode) is not mistaken for an overloaded GPU.
-export function createPixelRatioGovernor(renderer: THREE.WebGLRenderer, devicePixelRatio: number) {
+export function createPixelRatioGovernor(renderer: PixelRatioTarget, devicePixelRatio: number) {
   let step = PIXEL_RATIO_STEPS.findIndex((ratio) => ratio <= devicePixelRatio)
   if (step === -1) step = PIXEL_RATIO_STEPS.length - 1
   renderer.setPixelRatio(Math.min(devicePixelRatio, PIXEL_RATIO_STEPS[step]))

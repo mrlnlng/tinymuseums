@@ -110,7 +110,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-async function loadRetrying(src: string): Promise<HTMLImageElement> {
+export async function loadRetrying(src: string): Promise<HTMLImageElement> {
   let failure: unknown
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
@@ -137,7 +137,7 @@ function blankImage(): Promise<HTMLImageElement> {
 
 // One unreachable sprite must not cost the visitor the whole museum, so a failed
 // image falls back to a transparent pixel and the rest of the hall still opens.
-async function loadTolerant(sources: readonly string[]): Promise<HTMLImageElement[]> {
+export async function loadTolerant(sources: readonly string[]): Promise<HTMLImageElement[]> {
   const settled = await Promise.allSettled(sources.map(loadRetrying))
   if (settled.every((result) => result.status === 'fulfilled')) {
     return settled.map((result) => result.value)

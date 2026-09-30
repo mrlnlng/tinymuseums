@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
@@ -11,6 +11,7 @@ import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
+import { useHallGame, type HallGameOptions } from '@/features/hall/hooks/useHallGame'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
 import { MUSEUM_START_MARK } from '@/shared/lib/vitals-marks'
@@ -26,6 +27,30 @@ const CoinFound = dynamic(loadCoinFound, { ssr: false })
 const HelpGuide = dynamic(loadHelpGuide, { ssr: false })
 const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
 const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
+
+type EngineHostProps = Omit<HallGameOptions, 'enabled'> & {
+  onState: (isReady: boolean, error: string | null) => void
+}
+
+function ThreeHost({ onState, ...options }: EngineHostProps) {
+  const { isReady, error } = useHallScene(options)
+
+  useEffect(() => {
+    onState(isReady, error)
+  }, [isReady, error, onState])
+
+  return null
+}
+
+function PhaserHost({ onState, ...options }: EngineHostProps) {
+  const { isReady, error } = useHallGame({ ...options, enabled: true })
+
+  useEffect(() => {
+    onState(isReady, error)
+  }, [isReady, error, onState])
+
+  return null
+}
 
 interface MuseumProps {
   initialSlice: HallSliceDto
@@ -56,10 +81,19 @@ export default function Museum({ initialSlice }: MuseumProps) {
   const { setWalking } = useSound()
   const router = useRouter()
 
+  const searchParams = useSearchParams()
+  const engine = searchParams.get('engine') === 'phaser' ? 'phaser' : 'three'
+  const [isReady, setIsReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const handleEngineState = useCallback((ready: boolean, nextError: string | null) => {
+    setIsReady(ready)
+    setError(nextError)
+  }, [])
+
   const isSuspended =
     openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || isSketchOpen
 
-  const { isReady, error } = useHallScene({
+  const hostProps = {
     hosts: {
       canvas: canvasRef,
       overlay: overlayRef,
@@ -80,7 +114,8 @@ export default function Museum({ initialSlice }: MuseumProps) {
       setSketchSession((n) => n + 1)
       setIsSketchOpen(true)
     },
-  })
+    onState: handleEngineState,
+  }
 
   useEffect(() => {
     if (!isGuestBoardHung || sketchGame || isSketchOpen) return
@@ -143,6 +178,8 @@ export default function Museum({ initialSlice }: MuseumProps) {
           <PinnedNotes notes={guestNotes} avoidSitArea />
         </div>
         <div className="hall-character" ref={characterRef} />
+
+        {engine === 'phaser' ? <PhaserHost {...hostProps} /> : <ThreeHost {...hostProps} />}
 
         <AnimatePresence>
           {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}

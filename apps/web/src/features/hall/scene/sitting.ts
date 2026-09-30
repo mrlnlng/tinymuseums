@@ -1,11 +1,18 @@
-import type { Scenery } from './assets'
 import type { Character, Perch } from './character'
 import { CONFIG } from './config'
-import type { GuestBoard } from './guestboard'
 import type { Helm } from './helm'
 import type { Traversal } from './traversal'
 
 type SittingState = 'free' | 'approaching' | 'rising' | 'seated' | 'leaving'
+
+export interface SitScenery {
+  bunnySit: { plain: HTMLImageElement; helm: HTMLImageElement }
+}
+
+export interface SitBoard {
+  x: number
+  seat: { x: number; y: number; height: number }
+}
 
 export interface Sitting {
   readonly occupied: boolean
@@ -15,8 +22,8 @@ export interface Sitting {
 }
 
 export function createSitting(
-  scenery: Scenery,
-  board: GuestBoard,
+  scenery: SitScenery,
+  board: SitBoard,
   traversal: Traversal,
   character: Character,
   helm: () => Helm | null,

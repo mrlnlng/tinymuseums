@@ -50,6 +50,8 @@ const POST_BOX = { width: 240, height: 233 }
 const POST_PANEL = { x: 120, y: 88, width: 190 }
 const POST_KEY = 'hall-lobby-post'
 
+const POST_RASTER = 512
+
 const POST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 233">
   <g fill="#c06a12" stroke="#5d3218" stroke-width="6" stroke-linejoin="round">
     <path d="M105 2h30l4 229h-38z"/>
@@ -222,7 +224,14 @@ export function createLobby(scene: Phaser.Scene, assets: GameAssets): Lobby {
     const image = new Image()
     image.onload = () => {
       if (disposed) return
-      if (!scene.textures.exists(POST_KEY)) scene.textures.addImage(POST_KEY, image)
+      if (!scene.textures.exists(POST_KEY)) {
+        // An SVG image uploaded straight to WebGL can come out blank; rasterise it first.
+        const canvas = document.createElement('canvas')
+        canvas.width = POST_RASTER
+        canvas.height = POST_RASTER
+        canvas.getContext('2d')?.drawImage(image, 0, 0, POST_RASTER, POST_RASTER)
+        scene.textures.addCanvas(POST_KEY, canvas)
+      }
       addPost()
     }
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(POST_SVG)}`

@@ -163,7 +163,10 @@ async function bitmapTexture(
   const response = await fetch(url, { mode: 'cors', credentials: 'omit' })
   if (!response.ok) throw new Error(`Could not load display image ${url}`)
 
-  const bitmap = await createImageBitmap(await response.blob(), { premultiplyAlpha: 'none' })
+  const bitmap = await createImageBitmap(await response.blob(), {
+    imageOrientation: 'flipY',
+    premultiplyAlpha: 'none',
+  })
   const texture = scene.textures.addImage(key, bitmap as unknown as HTMLImageElement)
   if (!texture) throw new Error(`Could not add display image ${url}`)
   return { key, texture, bitmap }

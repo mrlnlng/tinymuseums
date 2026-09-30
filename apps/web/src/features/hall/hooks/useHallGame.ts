@@ -19,6 +19,7 @@ export function useHallGame(options: HallGameOptions) {
     onOpenHelp,
     onFindCoin,
     onOpenGuestBoard,
+    onGuestBoardHung,
     onIntroDone,
     onFirstMove,
     onOpenSketchGame,
@@ -49,6 +50,9 @@ export function useHallGame(options: HallGameOptions) {
   const onOpenGuestBoardRef = useRef(onOpenGuestBoard)
   onOpenGuestBoardRef.current = onOpenGuestBoard
 
+  const onGuestBoardHungRef = useRef(onGuestBoardHung)
+  onGuestBoardHungRef.current = onGuestBoardHung
+
   const onIntroDoneRef = useRef(onIntroDone)
   onIntroDoneRef.current = onIntroDone
 
@@ -57,6 +61,14 @@ export function useHallGame(options: HallGameOptions) {
 
   const onOpenSketchGameRef = useRef(onOpenSketchGame)
   onOpenSketchGameRef.current = onOpenSketchGame
+
+  const handleRef = useRef<HallGameHandle | null>(null)
+
+  // A suspended game sleeps its loop, so only a fresh prop can restart it.
+  useEffect(() => {
+    if (options.enabled !== true || isSuspended) return
+    handleRef.current?.wake()
+  }, [isSuspended, options.enabled])
 
   useEffect(() => {
     if (options.enabled !== true) return
@@ -96,7 +108,9 @@ export function useHallGame(options: HallGameOptions) {
         handle = createHallGame(phaser, canvasHost, {
           assets,
           initialSlice,
+          overlayHost,
           characterHost,
+          guestBoardNotes: hosts.guestBoardNotes.current,
           isSuspended: () => isSuspendedRef.current,
           sound: () => soundRef.current,
           onOpenPiece: (piece) => onOpenPieceRef.current(piece),
@@ -105,6 +119,7 @@ export function useHallGame(options: HallGameOptions) {
           onFindCoin: () => onFindCoinRef.current(),
           onOpenGuestBoard: () => onOpenGuestBoardRef.current(),
           onOpenSketchGame: () => onOpenSketchGameRef.current(),
+          onGuestBoardHung: () => onGuestBoardHungRef.current(),
           onReady: () => setIsReady(true),
           onIntroDone: () => onIntroDoneRef.current(),
           onFirstMove: () => onFirstMoveRef.current(),
@@ -118,7 +133,11 @@ export function useHallGame(options: HallGameOptions) {
         handle.destroy()
         return
       }
-      teardown = handle.destroy
+      handleRef.current = handle
+      teardown = () => {
+        handleRef.current = null
+        handle.destroy()
+      }
     }
 
     void buildGame()

@@ -1,13 +1,13 @@
 import type Phaser from 'phaser'
 import type { HallSliceDto } from '@tiny/core'
+import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import type { Assets } from '@/features/hall/scene/assets'
 import { createCharacter } from '@/features/hall/scene/character'
 import type { WorldPoint } from '@/features/hall/scene/hit'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
-import { routeTap, type TapWorld } from '@/features/hall/scene/tap'
+import { routeTap } from '@/features/hall/scene/tap'
 import { Traversal } from '@/features/hall/scene/traversal'
 import type { OpenPiece } from '@/features/hall/hooks/useHallScene'
-import { track } from '@/shared/lib/visit'
 import { installHarness } from './harness'
 import {
   createHallGameScene,
@@ -25,7 +25,9 @@ const TAP_TIMEOUT_MS = 600
 export interface HallGameBridge {
   assets: GameAssets
   initialSlice: HallSliceDto
+  overlayHost: HTMLElement
   characterHost: HTMLElement
+  guestBoardNotes: HTMLElement | null
   isSuspended: () => boolean
   sound: () => HallSound
   onOpenPiece: (piece: OpenPiece) => void
@@ -34,12 +36,14 @@ export interface HallGameBridge {
   onFindCoin: () => void
   onOpenGuestBoard: () => void
   onOpenSketchGame: () => void
+  onGuestBoardHung: () => void
   onReady: () => void
   onIntroDone: () => void
   onFirstMove: () => void
 }
 
 export interface HallGameHandle {
+  wake(): void
   destroy(): void
 }
 
@@ -60,6 +64,10 @@ export function createHallGame(
     viewport: { width: initialCssWidth, height: initialCssHeight, left: 0, top: 0 },
     ready: false,
     known: 0,
+    world: null,
+    tapWorld: null,
+    act: null,
+    dispose: null,
   }
 
   const traversal = new Traversal()
@@ -82,6 +90,9 @@ export function createHallGame(
       Math.max(1, Math.round(cssWidth * runtime.density)),
       Math.max(1, Math.round(cssHeight * runtime.density)),
     )
+    // ScaleManager.resize skips the CSS size when it equals the backing size, leaving a stale one.
+    game.canvas.style.width = `${cssWidth}px`
+    game.canvas.style.height = `${cssHeight}px`
   }
 
   const governor = createPixelRatioGovernor(
@@ -98,6 +109,9 @@ export function createHallGame(
     runtime,
     assets: bridge.assets,
     initialSlice: bridge.initialSlice,
+    overlayHost: bridge.overlayHost,
+    characterHost: bridge.characterHost,
+    guestBoardNotesHost: bridge.guestBoardNotes,
     character,
     traversal,
     governor,
@@ -106,6 +120,13 @@ export function createHallGame(
     onReady: bridge.onReady,
     onIntroDone: bridge.onIntroDone,
     onFirstMove: bridge.onFirstMove,
+    onOpenPiece: bridge.onOpenPiece,
+    onLeave: bridge.onLeave,
+    onOpenHelp: bridge.onOpenHelp,
+    onFindCoin: bridge.onFindCoin,
+    onOpenGuestBoard: bridge.onOpenGuestBoard,
+    onOpenSketchGame: bridge.onOpenSketchGame,
+    onGuestBoardHung: bridge.onGuestBoardHung,
   }
 
   const Scene = createHallGameScene(P, sceneDeps)
@@ -115,7 +136,7 @@ export function createHallGame(
     backgroundColor: bridge.assets.manifest.room.wallColor,
     banner: false,
     audio: { noAudio: true },
-    render: { antialias: false, roundPixels: false, mipmapFilter: 'LINEAR_MIPMAP_LINEAR' },
+    render: { antialias: true, antialiasGL: false, roundPixels: false, mipmapFilter: 'LINEAR_MIPMAP_LINEAR' },
     input: { keyboard: false, mouse: false, touch: false, gamepad: false },
     scale: {
       mode: P.Scale.NONE,
@@ -124,6 +145,7 @@ export function createHallGame(
       height: Math.max(1, Math.round(initialCssHeight * runtime.density)),
       zoom: 1 / runtime.density,
       autoCenter: P.Scale.NO_CENTER,
+      autoRound: true,
     },
     scene: [Scene],
   }
@@ -140,23 +162,6 @@ export function createHallGame(
   canvas.style.display = 'block'
 
   traversal.attach(canvas)
-
-  const resizeObserver = new ResizeObserver(applyResize)
-  resizeObserver.observe(host)
-
-  const tapWorld: TapWorld = {
-    hitDoor: () => false,
-    hitLobbyCat: () => false,
-    hitCoin: () => false,
-    hitPainting: () => null,
-    hitPedestal: () => null,
-    acceptsHelm: () => false,
-    hitMatcha: () => false,
-    hitCafeCat: () => false,
-    hitDesktop: () => false,
-    hitBeanbag: () => false,
-    hitGuestBoard: () => false,
-  }
 
   function worldPoint(clientX: number, clientY: number): WorldPoint {
     const rect = canvas.getBoundingClientRect()
@@ -177,6 +182,12 @@ export function createHallGame(
     pressX = event.clientX
     pressY = event.clientY
     pressedAt = performance.now()
+
+    if (bridge.isSuspended() || traversal.isIntro) return
+    const world = runtime.world
+    if (!world) return
+    const hit = world.hitTestAt(worldPoint(event.clientX, event.clientY))
+    if (hit) loadArtistPieces(hit.mounted.display.slug).catch(() => {})
   }
 
   function handlePointerUp(event: PointerEvent): void {
@@ -186,91 +197,41 @@ export function createHallGame(
     isTap = !(moved > slop || tooSlow || bridge.isSuspended() || traversal.isIntro)
   }
 
+  // Taps act on click, not pointerup: on touch screens the browser's click lands on
+  // whatever is under the finger afterwards, so an overlay opened on pointerup would
+  // receive that click on its close-on-tap scrim and shut straight away.
   function handleClick(event: MouseEvent): void {
     if (!isTap) return
     isTap = false
 
+    const tapWorld = runtime.tapWorld
+    const act = runtime.act
+    if (!tapWorld || !act) return
     const intent = routeTap(worldPoint(event.clientX, event.clientY), tapWorld)
-    if (!intent) return
+    if (intent) act(intent)
+  }
 
-    switch (intent.kind) {
-      case 'leave':
-        track('leave')
-        bridge.sound().play('click')
-        bridge.onLeave()
-        return
-
-      case 'help':
-        track('help')
-        bridge.sound().play('click')
-        bridge.onOpenHelp()
-        return
-
-      case 'coin':
-        track('coin')
-        bridge.sound().play('coin')
-        bridge.onFindCoin()
-        return
-
-      case 'painting':
-        track('painting')
-        bridge.sound().play('painting-open')
-        bridge.onOpenPiece({
-          slug: intent.slug,
-          artistId: intent.artistId,
-          pieceId: intent.pieceId,
-        })
-        return
-
-      case 'helm':
-        track('helm')
-        return
-
-      case 'statue':
-        track('statue')
-        if (intent.pedestal.voice) bridge.sound().play(intent.pedestal.voice)
-        return
-
-      case 'matcha':
-        track('matcha')
-        bridge.sound().play('click')
-        return
-
-      case 'cafe-cat':
-        track('cafe_cat')
-        bridge.sound().play('cafe-hello')
-        return
-
-      case 'sketch':
-        track('sketch_open')
-        bridge.sound().play('click')
-        bridge.onOpenSketchGame()
-        return
-
-      case 'beanbag':
-        track('beanbag')
-        bridge.sound().play('click')
-        return
-
-      case 'guest-board':
-        track('guest_board')
-        bridge.sound().play('click')
-        bridge.onOpenGuestBoard()
-        return
-    }
+  function wake(): void {
+    game?.loop.wake()
   }
 
   canvas.addEventListener('pointerdown', handlePointerDown)
   canvas.addEventListener('pointerup', handlePointerUp)
   canvas.addEventListener('click', handleClick)
+  canvas.addEventListener('pointerdown', wake)
+  canvas.addEventListener('wheel', wake, { passive: true })
+  window.addEventListener('keydown', wake)
 
   const removeHarness = installHarness({
     engine: 'phaser',
     get cameraX() {
       return traversal.cameraX
     },
-    tapIntent: (clientX, clientY) =>
-      routeTap(worldPoint(clientX, clientY), tapWorld)?.kind ?? null,
+    tapIntent: (clientX, clientY) => {
+      const tapWorld = runtime.tapWorld
+      if (!tapWorld) return null
+      return routeTap(worldPoint(clientX, clientY), tapWorld)?.kind ?? null
+    },
     stats: () => ({
       ready: runtime.ready,
       cameraX: traversal.cameraX,
@@ -281,16 +242,26 @@ export function createHallGame(
       canvasHeight: canvas.height,
       slices: runtime.known,
       isIntro: traversal.isIntro,
+      world: runtime.world?.stats() ?? null,
     }),
   })
 
+  const resizeObserver = new ResizeObserver(applyResize)
+  resizeObserver.observe(host)
+
   return {
+    wake,
+
     destroy() {
       removeHarness()
       resizeObserver.disconnect()
       canvas.removeEventListener('pointerdown', handlePointerDown)
       canvas.removeEventListener('pointerup', handlePointerUp)
       canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('pointerdown', wake)
+      canvas.removeEventListener('wheel', wake)
+      window.removeEventListener('keydown', wake)
+      runtime.dispose?.()
       character.dispose()
       game?.destroy(true)
       game = null

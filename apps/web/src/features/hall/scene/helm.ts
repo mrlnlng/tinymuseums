@@ -1,21 +1,35 @@
-import type { Scenery } from './assets'
 import { createCarried } from './carried'
 import type { Character } from './character'
 import { CONFIG } from './config'
-import type { Pedestal } from './pedestal'
 import type { Projector } from './projector'
-import type { HallScene } from './scene'
+
+export interface HelmScenery {
+  helm: HTMLImageElement
+}
+
+export interface HelmStand {
+  setBareHelmStand(index: number | null): void
+  helmStandPoint(
+    index: number,
+    out: { x: number; y: number; z: number },
+  ): { x: number; y: number; z: number } | null
+}
+
+export interface HelmPedestal {
+  index: number
+  holdsHelm: boolean
+}
 
 export interface Helm {
   readonly worn: boolean
   conceal(hidden: boolean): void
-  accepts(pedestal: Pedestal): boolean
-  take(pedestal: Pedestal): void
+  accepts(pedestal: HelmPedestal): boolean
+  take(pedestal: HelmPedestal): void
   update(dt: number, character: Character, projector: Projector): void
   dispose(): void
 }
 
-export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene): Helm {
+export function createHelm(scenery: HelmScenery, host: HTMLElement, hall: HelmStand): Helm {
   const { worn, stand } = CONFIG.helm
   const pedestalWidth = CONFIG.pedestal.height * (stand.drawing[0] / stand.drawing[1])
   let standIndex = -1

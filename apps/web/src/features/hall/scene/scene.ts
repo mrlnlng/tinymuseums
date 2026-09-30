@@ -5,7 +5,7 @@ import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
-import { pickPainted } from './hit'
+import { hitsAt, pickAt, pickPainted, type WorldPoint } from './hit'
 import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
@@ -392,9 +392,28 @@ export class HallScene {
     return { mounted, pieceId: mounted.display.pieceId }
   }
 
+  hitTestAt(point: WorldPoint): PieceHit | null {
+    const meshes = [...this.mounted.values()].map((m) => m.mesh)
+    const hits = hitsAt(point, meshes)
+    if (hits.length === 0) return null
+
+    const hit = hits[0]
+    const mounted = this.mounted.get(hit.object.userData.slotIndex as number)
+    if (!mounted) return null
+
+    return { mounted, pieceId: mounted.display.pieceId }
+  }
+
   hitTestPedestal(raycaster: THREE.Raycaster): Pedestal | null {
     const sprites = [...this.pedestals.values()].map((p) => p.sprite)
     const hit = pickPainted(raycaster, sprites)
+    if (!hit) return null
+    return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
+  }
+
+  hitTestPedestalAt(point: WorldPoint): Pedestal | null {
+    const sprites = [...this.pedestals.values()].map((p) => p.sprite)
+    const hit = pickAt(point, sprites)
     if (!hit) return null
     return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
   }
@@ -429,6 +448,18 @@ export class HallScene {
     const wall = this.coin.index === null ? undefined : this.mounted.get(this.coin.index)
     if (!wall) return false
     return this.coin.tap(raycaster, [wall.mesh, ...[...this.pedestals.values()].map((p) => p.sprite)])
+  }
+
+  hitTestCoinRay(raycaster: THREE.Raycaster): boolean {
+    const wall = this.coin.index === null ? undefined : this.mounted.get(this.coin.index)
+    if (!wall) return false
+    return this.coin.raycastHit(raycaster, [wall.mesh, ...[...this.pedestals.values()].map((p) => p.sprite)])
+  }
+
+  hitTestCoinAt(point: WorldPoint): boolean {
+    const wall = this.coin.index === null ? undefined : this.mounted.get(this.coin.index)
+    if (!wall) return false
+    return this.coin.hitAt(point, [wall.mesh, ...[...this.pedestals.values()].map((p) => p.sprite)])
   }
 
   releaseCoin(): void {

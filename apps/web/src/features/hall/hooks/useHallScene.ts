@@ -28,6 +28,7 @@ import {
   type Viewport,
 } from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
+import { installSeam } from '@/features/hall/scene/seam'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
@@ -554,9 +555,23 @@ export function useHallScene({
 
       frameHandle = requestAnimationFrame(renderFrame)
 
+      let removeSeam = (): void => {}
+      if (process.env.NODE_ENV !== 'production') {
+        removeSeam = installSeam({
+          canvas: renderer.domElement,
+          camera: rig.camera,
+          projector: () => rig.projector(viewport),
+          hall,
+          lobby,
+          cafe: () => cafe,
+          guestBoard: () => guestBoard,
+        })
+      }
+
       teardown = () => {
         window.clearInterval(sceneryGate)
         cancelAnimationFrame(frameHandle)
+        removeSeam()
         soundRef.current.setWalking(false)
         resizeObserver.disconnect()
         renderer.domElement.removeEventListener('pointerdown', handlePointerDown)

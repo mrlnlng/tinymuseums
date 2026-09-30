@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
 import { CONFIG } from './config'
-import { isPaintedAt } from './hit'
+import { hitsAt, paintedAtObject, type WorldPoint } from './hit'
 
 type Spot = 'frame' | 'rope' | 'pedestal'
 
@@ -14,14 +14,30 @@ interface CoinWall {
   pedestalDx: number | null
 }
 
+interface Obstruction {
+  object: THREE.Object3D
+  u?: number
+  v?: number
+}
+
 export interface HiddenCoin {
   readonly index: number | null
   choose(totalWalls: number): void
   attach(wall: CoinWall): void
   detach(index: number): void
   tap(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean
+  raycastHit(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean
+  hitAt(point: WorldPoint, blockers: readonly THREE.Object3D[]): boolean
   release(): void
   update(dt: number): void
+}
+
+function resolveHits(coinMesh: THREE.Mesh, hits: readonly Obstruction[]): boolean {
+  for (const hit of hits) {
+    if (hit.object === coinMesh) return paintedAtObject(coinMesh, hit.u, hit.v)
+    if (paintedAtObject(hit.object, hit.u, hit.v, true)) return false
+  }
+  return false
 }
 
 export function createHiddenCoin(assets: Assets): HiddenCoin {
@@ -39,6 +55,26 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
       new THREE.PlaneGeometry(width, width / assets.aspect.coin),
       new THREE.MeshBasicMaterial({ map: assets.textures.coin, transparent: true }),
     )
+  }
+
+  function raycastHit(raycaster: THREE.Raycaster, blockers: readonly THREE.Object3D[]): boolean {
+    if (state !== 'hidden' || !mesh) return false
+    const hits = raycaster.intersectObjects([mesh, ...blockers], false).map((hit) => ({
+      object: hit.object,
+      u: hit.uv?.x,
+      v: hit.uv?.y,
+    }))
+    return resolveHits(mesh, hits)
+  }
+
+  function hitAt(point: WorldPoint, blockers: readonly THREE.Object3D[]): boolean {
+    if (state !== 'hidden' || !mesh) return false
+    const hits = hitsAt(point, [mesh, ...blockers]).map((hit) => ({
+      object: hit.object,
+      u: hit.uv.u,
+      v: hit.uv.v,
+    }))
+    return resolveHits(mesh, hits)
   }
 
   return {
@@ -82,17 +118,14 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
       if (state === 'vanishing') state = 'gone'
     },
 
+    raycastHit,
+
+    hitAt,
+
     tap(raycaster, blockers) {
-      if (state !== 'hidden' || !mesh) return false
-      for (const hit of raycaster.intersectObjects([mesh, ...blockers] as THREE.Object3D[], false)) {
-        if (hit.object === mesh) {
-          if (!isPaintedAt(hit)) return false
-          state = 'found'
-          return true
-        }
-        if (isPaintedAt(hit, true)) return false
-      }
-      return false
+      if (!raycastHit(raycaster, blockers)) return false
+      state = 'found'
+      return true
     },
 
     release() {

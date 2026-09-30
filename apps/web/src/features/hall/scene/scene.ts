@@ -9,18 +9,13 @@ import { hitsAt, pickAt, type WorldPoint } from './hit'
 import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
-
-interface SlotRuntime {
-  index: number
-  piece: HallPieceDto
-  status: 'idle' | 'loading' | 'ready' | 'error'
-  texture?: THREE.Texture
-  startedAt?: number
-  readyAt?: number
-  inRangeAt?: number
-  attempts?: number
-  retryAt?: number
-}
+import {
+  needsMore,
+  planStreaming,
+  type MountSnapshot,
+  type SlotRuntime,
+  type SlotSnapshot,
+} from './streaming'
 
 const MAX_TEXTURE_ATTEMPTS = 4
 const CROSSFADE_MS = 300
@@ -64,7 +59,7 @@ export class HallScene {
   nextIndex: number | null = 0
   totalSlots = 0
 
-  private slots = new Map<number, SlotRuntime>()
+  private slots = new Map<number, SlotRuntime<THREE.Texture>>()
   private mounted = new Map<number, MountedDisplay>()
   private inFlight = 0
   onTextureReady: ((texture: THREE.Texture) => void) | null = null
@@ -113,73 +108,85 @@ export class HallScene {
   }
 
   needsMore(visitorX: number): boolean {
-    if (this.nextIndex === null) return false
-    const laid = this.layout.known
-    if (laid === 0) return true
-    const lastCenter = this.layout.centerX[laid - 1] ?? 0
-    return visitorX > lastCenter - CONFIG.loading.prefetchAheadUnits
+    return needsMore({
+      nextIndex: this.nextIndex,
+      known: this.layout.known,
+      centerX: this.layout.centerX,
+      visitorX,
+      prefetchAheadUnits: CONFIG.loading.prefetchAheadUnits,
+    })
   }
 
   update(now: number, dt: number, cameraX: number): void {
     const { mountRadiusUnits, loadRadiusUnits } = CONFIG.virtualization
-    const wanted: { slot: SlotRuntime; distance: number }[] = []
-    let mountedThisFrame = false
 
+    const slots: SlotSnapshot[] = []
     for (const slot of this.slots.values()) {
-      const centerX = this.layout.centerX[slot.index]
-      if (centerX === undefined) continue
-
-      const distance = Math.abs(centerX - cameraX)
-
-      if (distance > loadRadiusUnits) {
-        // An exhausted slot is reset too, so walking back gives it fresh attempts.
-        if (this.mounted.has(slot.index) || slot.status === 'error') this.unmount(slot.index)
-        continue
-      }
-
-      const mounted = this.mounted.get(slot.index)
-      if (distance <= mountRadiusUnits && slot.status !== 'ready' && !mounted && slot.piece.image.thumbhash) {
-        if (!mountedThisFrame) {
-          this.mount(slot)
-          mountedThisFrame = true
-        }
-      } else if (mounted?.showsPlaceholder && !mounted.fade && slot.status === 'ready' && slot.texture) {
-        this.beginFade(mounted, slot.texture, now)
-      }
-
-      if (slot.status === 'idle') {
-        wanted.push({ slot, distance })
-        continue
-      }
-
-      if (slot.status === 'error') {
-        const attempts = slot.attempts ?? 0
-        if (attempts < MAX_TEXTURE_ATTEMPTS && now >= (slot.retryAt ?? 0)) {
-          wanted.push({ slot, distance })
-        }
-        continue
-      }
-
-      if (distance > mountRadiusUnits) {
-        if (this.mounted.has(slot.index)) this.unmountMesh(slot.index)
-        continue
-      }
-      if (slot.inRangeAt === undefined) slot.inRangeAt = now
-
-      if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
-        const arrivedAt = slot.inRangeAt ?? now
-        const earliest = arrivedAt + CONFIG.statue.minDwellMs
-        if (!mountedThisFrame && now >= Math.max(slot.readyAt ?? now, earliest)) {
-          this.mount(slot)
-          mountedThisFrame = true
-        }
-      }
+      slots.push({
+        index: slot.index,
+        status: slot.status,
+        hasThumbhash: Boolean(slot.piece.image.thumbhash),
+        hasTexture: Boolean(slot.texture),
+        attempts: slot.attempts ?? 0,
+        retryAt: slot.retryAt ?? 0,
+        readyAt: slot.readyAt,
+        inRangeAt: slot.inRangeAt,
+        centerX: this.layout.centerX[slot.index],
+      })
     }
 
-    wanted.sort((a, b) => a.distance - b.distance)
-    for (const { slot } of wanted) {
-      if (this.inFlight >= MAX_CONCURRENT_LOADS) break
-      this.beginLoad(slot, now)
+    const mounts: MountSnapshot[] = []
+    for (const mount of this.mounted.values()) {
+      mounts.push({
+        index: mount.index,
+        showsPlaceholder: mount.showsPlaceholder,
+        fading: Boolean(mount.fade),
+      })
+    }
+
+    const actions = planStreaming({
+      slots,
+      mounts,
+      cameraX,
+      now,
+      inFlight: this.inFlight,
+      mountRadiusUnits,
+      loadRadiusUnits,
+      minDwellMs: CONFIG.statue.minDwellMs,
+      maxConcurrentLoads: MAX_CONCURRENT_LOADS,
+      maxTextureAttempts: MAX_TEXTURE_ATTEMPTS,
+    })
+
+    for (const action of actions) {
+      switch (action.kind) {
+        case 'unmount':
+          this.unmount(action.index)
+          break
+        case 'mount': {
+          const slot = this.slots.get(action.index)
+          if (slot) this.mount(slot)
+          break
+        }
+        case 'fade': {
+          const mount = this.mounted.get(action.index)
+          const slot = this.slots.get(action.index)
+          if (mount && slot?.texture) this.beginFade(mount, slot.texture, now)
+          break
+        }
+        case 'unmountMesh':
+          this.unmountMesh(action.index)
+          break
+        case 'enterRange': {
+          const slot = this.slots.get(action.index)
+          if (slot) slot.inRangeAt = now
+          break
+        }
+        case 'load': {
+          const slot = this.slots.get(action.index)
+          if (slot) this.beginLoad(slot, now)
+          break
+        }
+      }
     }
 
     this.updateFades(now)
@@ -219,7 +226,7 @@ export class HallScene {
     }
   }
 
-  private beginLoad(slot: SlotRuntime, now: number): void {
+  private beginLoad(slot: SlotRuntime<THREE.Texture>, now: number): void {
     slot.status = 'loading'
     slot.startedAt = now
     this.inFlight += 1
@@ -244,7 +251,7 @@ export class HallScene {
       })
   }
 
-  private mount(slot: SlotRuntime): void {
+  private mount(slot: SlotRuntime<THREE.Texture>): void {
     const centerX = this.layout.centerX[slot.index]
     const map = slot.texture ?? (slot.piece.image.thumbhash ? placeholderTexture(slot.piece.image.thumbhash) : null)
     if (centerX === undefined || !map) return

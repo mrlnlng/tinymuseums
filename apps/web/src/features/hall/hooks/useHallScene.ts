@@ -29,6 +29,7 @@ import {
   type Viewport,
 } from '@/features/hall/scene/overlay'
 import { HallScene } from '@/features/hall/scene/scene'
+import { SliceFeed } from '@/features/hall/scene/streaming'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { routeTap, type TapWorld } from '@/features/hall/scene/tap'
 import { Traversal } from '@/features/hall/scene/traversal'
@@ -200,30 +201,17 @@ export function useHallScene({
       const introStart = entrance - CONFIG.lobby.introWalk
       traversal.reset(entrance)
 
-      let isFetching = false
-      let sliceFailures = 0
-      let sliceRetryAt = 0
-
       // needsMore() stays true until a slice lands, so a failure without this
       // backoff would refire the request on every frame.
-      async function fetchNextSlice(): Promise<void> {
-        if (isFetching || hall.nextIndex === null) return
-        if (performance.now() < sliceRetryAt) return
-        isFetching = true
-        try {
-          const response = await fetch(
-            `/api/hall?epoch=${hall.epochId}&after=${hall.nextIndex}&limit=${CONFIG.loading.sliceSize}`,
-          )
+      const sliceFeed = new SliceFeed({
+        sliceSize: CONFIG.loading.sliceSize,
+        fetchSlice: async (epochId, after, limit) => {
+          const response = await fetch(`/api/hall?epoch=${epochId}&after=${after}&limit=${limit}`)
           if (!response.ok) throw new Error(`hall slice ${response.status}`)
-          hall.ingestSlice((await response.json()) as HallSliceDto)
-          sliceFailures = 0
-        } catch {
-          sliceFailures += 1
-          sliceRetryAt = performance.now() + Math.min(10000, 500 * 2 ** sliceFailures)
-        } finally {
-          isFetching = false
-        }
-      }
+          return (await response.json()) as HallSliceDto
+        },
+        onSlice: (slice) => hall.ingestSlice(slice),
+      })
 
       let scenery: Scenery | null = null
       let helm: Helm | null = null
@@ -550,7 +538,7 @@ export function useHallScene({
         for (const voice of hall.nearbyVoices()) soundRef.current.prepare(voice)
         cafe?.update(dt, traversal.cameraX)
 
-        if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
+        if (hall.needsMore(traversal.cameraX)) sliceFeed.maybeFetch(hall.epochId, hall.nextIndex)
         if (now - lastViewCheck >= VIEW_CHECK_MS) {
           lastViewCheck = now
           recordDisplayView(traversal.cameraX)

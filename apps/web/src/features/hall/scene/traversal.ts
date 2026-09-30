@@ -1,4 +1,4 @@
-import { CONFIG } from './config'
+import { CONFIG } from './config.ts'
 
 export class Traversal {
   cameraX = 0

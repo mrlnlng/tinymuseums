@@ -5,6 +5,7 @@ export function sameOriginUrl(url: string): string | null {
   try {
     const parsed = new URL(url, window.location.href)
     if (parsed.origin === window.location.origin) return null
+    if (parsed.pathname.startsWith('/api/media/')) return `${parsed.pathname}${parsed.search}`
     return `/api/media${parsed.pathname}`
   } catch {
     return null

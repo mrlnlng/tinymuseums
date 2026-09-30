@@ -57,6 +57,8 @@ applications:
                 push apps/web/public/immutable immutable "public, max-age=31536000, immutable" || exit 1
                 push apps/web/public/audio audio "public, max-age=86400, stale-while-revalidate=604800" || exit 1
                 echo "Static files uploaded to s3://$S3_BUCKET/static/"
+                # Already uploaded or bundled; left in public/, Amplify would keep serving them.
+                rm -rf apps/web/public/audio apps/web/public/immutable apps/web/public/assets || exit 1
               )
       artifacts:
         baseDirectory: .next

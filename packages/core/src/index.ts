@@ -2,7 +2,7 @@
 export { BRAND } from './brand.ts'
 export { env, repoRoot } from './infra/env.ts'
 export { closePool, query, queryOne, transaction } from './infra/db.ts'
-export { hitForVisitor, type RateLimit } from './infra/rate-limit.ts'
+export { hit, hitForVisitor, type RateLimit } from './infra/rate-limit.ts'
 export { getStorage, verifyUploadSignature } from './media/storage.ts'
 export { claim, complete, fail, hasPendingJob, requeueStale } from './infra/jobs.ts'
 export {

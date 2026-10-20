@@ -5,7 +5,7 @@ import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import { firstSlice } from '@/features/hall/lib/slice'
 import AssetImage from '@/shared/components/AssetImage'
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 const GUIDELINES = [
   'Silence is not required — share your favourite pieces with your friends.',

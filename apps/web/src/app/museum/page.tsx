@@ -6,7 +6,7 @@ import Museum from '@/features/hall/components/Museum'
 import HallSkeleton, { HallPreload } from '@/features/hall/components/HallSkeleton'
 import { firstSlice } from '@/features/hall/lib/slice'
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 const FIRST_SLICE = 4
 

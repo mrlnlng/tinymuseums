@@ -12,6 +12,7 @@ export interface GalleryPiece {
   description: string
   orderIndex: number
   shopUrl: string | null
+  wallpaperUrl: string | null
   status: string | null
   error: string | null
   imageUrl: string | null
@@ -24,6 +25,7 @@ interface GalleryRow {
   description: string
   order_index: number
   shop_url: string | null
+  wallpaper_url: string | null
   status: string | null
   error: string | null
   derivatives: Derivative[] | null
@@ -34,7 +36,7 @@ export async function getGallery(
   artistId: string,
 ): Promise<{ arranged: GalleryPiece[]; storage: GalleryPiece[] }> {
   const rows = await query<GalleryRow>(
-    `select p.id, p.title, p.description, p.order_index, p.shop_url,
+    `select p.id, p.title, p.description, p.order_index, p.shop_url, p.wallpaper_url,
             a.status, a.error, a.derivatives,
             (p.flattened_key is not null) as framed
        from pieces p
@@ -52,6 +54,7 @@ export async function getGallery(
       description: row.description,
       orderIndex: row.order_index,
       shopUrl: row.shop_url,
+      wallpaperUrl: row.wallpaper_url,
       status: row.status,
       error: row.error,
       imageUrl: small ? getStorage().urlFor(small.key) : null,

@@ -45,6 +45,7 @@ export interface PieceDto {
   orderIndex: number
   imageUrl: string | null
   shopUrl: string | null
+  wallpaperUrl: string | null
   frameUrl: string | null
   frameWidth: number | null
   frameHeight: number | null

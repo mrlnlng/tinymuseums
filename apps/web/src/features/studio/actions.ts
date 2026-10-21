@@ -113,9 +113,14 @@ export async function updatePieceAction(formData: FormData): Promise<void> {
     back('/studio/gallery', 'The shop link must start with http:// or https://', 'bad')
   }
 
+  const wallpaperUrl = String(formData.get('wallpaperUrl') ?? '').trim() || null
+  if (wallpaperUrl && !isHttpUrl(wallpaperUrl)) {
+    back('/studio/gallery', 'The wallpaper link must start with http:// or https://', 'bad')
+  }
+
   await query(
     `update pieces
-        set title = $3, description = $4, shop_url = $5
+        set title = $3, description = $4, shop_url = $5, wallpaper_url = $6
       where id = $1 and artist_id = $2`,
     [
       id,
@@ -123,6 +128,7 @@ export async function updatePieceAction(formData: FormData): Promise<void> {
       title,
       String(formData.get('description') ?? '').trim(),
       shopUrl,
+      wallpaperUrl,
     ],
   )
 

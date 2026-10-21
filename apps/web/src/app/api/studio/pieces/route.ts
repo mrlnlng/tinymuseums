@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     title?: string
     description?: string
     shopUrl?: string
+    wallpaperUrl?: string
   }
   try {
     body = await request.json()
@@ -35,6 +36,14 @@ export async function POST(request: Request) {
   const shopUrl = String(body.shopUrl ?? '').trim() || null
   if (shopUrl && !isHttpUrl(shopUrl)) {
     return Response.json({ error: 'The shop link must start with http:// or https://' }, { status: 400 })
+  }
+
+  const wallpaperUrl = String(body.wallpaperUrl ?? '').trim() || null
+  if (wallpaperUrl && !isHttpUrl(wallpaperUrl)) {
+    return Response.json(
+      { error: 'The wallpaper link must start with http:// or https://' },
+      { status: 400 },
+    )
   }
 
   let assetId: string
@@ -61,8 +70,8 @@ export async function POST(request: Request) {
   )
 
   const piece = await queryOne<{ id: string }>(
-    `insert into pieces (artist_id, asset_id, title, description, order_index, shop_url)
-     values ($1, $2, $3, $4, $5, $6)
+    `insert into pieces (artist_id, asset_id, title, description, order_index, shop_url, wallpaper_url)
+     values ($1, $2, $3, $4, $5, $6, $7)
      returning id`,
     [
       artist.id,
@@ -71,6 +80,7 @@ export async function POST(request: Request) {
       String(body.description ?? '').trim(),
       next?.next ?? 0,
       shopUrl,
+      wallpaperUrl,
     ],
   )
 

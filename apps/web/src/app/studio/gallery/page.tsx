@@ -78,6 +78,15 @@ export default async function GalleryPage({
                       placeholder="https://…"
                     />
                   </div>
+                  <div className="field">
+                    <label>Wallpaper link</label>
+                    <input
+                      name="wallpaperUrl"
+                      type="url"
+                      defaultValue={work.wallpaperUrl ?? ''}
+                      placeholder="https://…"
+                    />
+                  </div>
                   <button className="button secondary" type="submit">
                     Save
                   </button>

@@ -49,6 +49,15 @@ function MoreArrow() {
   )
 }
 
+function XIcon() {
+  return (
+    <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+      <line x1="24" y1="24" x2="76" y2="76" stroke="currentColor" strokeWidth="18" strokeLinecap="round" />
+      <line x1="76" y1="24" x2="24" y2="76" stroke="currentColor" strokeWidth="18" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function Walkthrough({ slug, artistId, initialPieceId, onClose }: Props) {
   const [pieces, setPieces] = useState<PieceDto[] | null>(null)
   const [index, setIndex] = useState(0)
@@ -200,8 +209,8 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
       data-wide={wide ? '' : undefined}
     >
       <div className="wt-top">
-        <button className="wt-icon" onClick={onClose} aria-label="Back to the hall">
-          ←
+        <button className="wt-icon" onClick={onClose} aria-label="Close">
+          <XIcon />
         </button>
       </div>
 
@@ -257,23 +266,33 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             ) : null}
           </div>
 
-          <div className="wt-actions">
-            {piece.shopUrl ? (
-              <a
-                className="button secondary wt-shop"
-                data-track="shop_link"
-                href={piece.shopUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <AssetImage name="icon-basket" className="wt-shop-icon" aria-hidden="true" />
-                Shop print
-              </a>
-            ) : null}
-            <button className="button" onClick={onClose}>
-              Keep exploring
-            </button>
-          </div>
+          {piece.shopUrl || piece.wallpaperUrl ? (
+            <div className="wt-actions">
+              {piece.shopUrl ? (
+                <a
+                  className="button secondary wt-shop"
+                  data-track="shop_link"
+                  href={piece.shopUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <AssetImage name="icon-basket" className="wt-shop-icon" aria-hidden="true" />
+                  Shop print
+                </a>
+              ) : null}
+              {piece.wallpaperUrl ? (
+                <a
+                  className="button wt-wallpaper"
+                  data-track="wallpaper_link"
+                  href={piece.wallpaperUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Get wallpaper
+                </a>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="wt-rope" aria-hidden="true" />
 

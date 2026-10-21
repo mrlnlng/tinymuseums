@@ -12,6 +12,7 @@ interface PieceRow {
   dimensions: string | null
   order_index: number
   shop_url: string | null
+  wallpaper_url: string | null
   flattened_key: string | null
   flattened_width: number | null
   flattened_height: number | null
@@ -40,6 +41,7 @@ function toPieceDto(row: PieceRow): PieceDto {
     orderIndex: row.order_index,
     imageUrl: pieceImageUrl(row.derivatives),
     shopUrl: row.shop_url,
+    wallpaperUrl: row.wallpaper_url,
     frameUrl: row.flattened_key ? getStorage().urlFor(row.flattened_key) : null,
     frameWidth: row.flattened_width,
     frameHeight: row.flattened_height,
@@ -52,7 +54,7 @@ function toPieceDto(row: PieceRow): PieceDto {
 async function listPieces(artistId: string): Promise<PieceDto[]> {
   const rows = await query<PieceRow>(
     `select p.id, p.title, p.description, p.medium, p.year, p.dimensions,
-            p.order_index, p.shop_url, p.availability, p.price_cents, p.currency,
+            p.order_index, p.shop_url, p.wallpaper_url, p.availability, p.price_cents, p.currency,
             p.flattened_key, p.flattened_width, p.flattened_height,
             a.status as asset_status, a.derivatives
        from pieces p

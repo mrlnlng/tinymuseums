@@ -77,6 +77,7 @@ export default function UploadWork() {
           title: formData.get('title'),
           description: formData.get('description'),
           shopUrl: formData.get('shopUrl'),
+          wallpaperUrl: formData.get('wallpaperUrl'),
         }),
       })
       const saved = (await saveResponse.json()) as { error?: string }
@@ -154,6 +155,14 @@ export default function UploadWork() {
         <input id="shopUrl" name="shopUrl" type="url" placeholder="https://…" />
         <span className="hint">
           Where "Shop print" goes on this work. Leave empty to hide the button.
+        </span>
+      </div>
+      <div className="field">
+        <label htmlFor="wallpaperUrl">Wallpaper link (optional)</label>
+        <input id="wallpaperUrl" name="wallpaperUrl" type="url" placeholder="https://…" />
+        <span className="hint">
+          Where "Get wallpaper" goes on this work, e.g. a Buy Me a Coffee download page. Leave
+          empty to hide the button.
         </span>
       </div>
 

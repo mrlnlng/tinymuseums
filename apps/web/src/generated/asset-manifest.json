@@ -1102,6 +1102,9 @@
   "models": {
     "bunnyRig": {
       "src": "bunny-rig-v4.e35f4e2f3b.glb"
+    },
+    "bunnyRigBow": {
+      "src": "bunny-rig-bow.021c8341a1.png"
     }
   }
 }

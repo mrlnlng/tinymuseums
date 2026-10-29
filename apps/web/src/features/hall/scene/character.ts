@@ -4,6 +4,7 @@ import type { Attachment } from './carried'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 import type { BunnyRig, RigAttachmentPose } from './bunny-rig'
+import { createRigState, rigFacing, stepRigState } from './rig-motion'
 
 export interface Pose {
   x: number
@@ -56,8 +57,10 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   let disposed = false
   let rigFailed = false
   let usingRig = false
-  let rigWidth = 0
-  let rigHeight = 0
+  let rigLeft = 0
+  let rigTop = 0
+  let rigHeight = ''
+  let rigTransform = ''
   const rigPose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
 
   function loseRig(): void {
@@ -89,7 +92,7 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
   const projected = new THREE.Vector3()
 
   let distance = 0
-  let walkPhase = 0
+  const motion = createRigState()
   let facing: 'left' | 'right' = 'right'
   let currentSrc = idle.right.src
   let currentImage = idle.right
@@ -119,10 +122,10 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
 
     attach(attachment, out) {
       if (usingRig && rig && attachment.rig && rig.projectAttachment(attachment.rig, rigPose)) {
-        out.x = screenX + rigPose.x - rigWidth / 2
-        out.y = screenY + rigPose.y - rigHeight / 2
+        out.x = rigLeft + rigPose.x
+        out.y = rigTop + rigPose.y
         out.width = rigPose.width
-        out.flip = facing === attachment.facing ? 1 : -1
+        out.flip = rigFacing(motion) === attachment.facing ? 1 : -1
         out.rotation = attachment.rig.rotation + rigPose.rotation / out.flip
         return out
       }
@@ -153,10 +156,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       moving = !perched && speed > 0.12
 
       distance += speed * dt
-      // Play the approved one-second clip at its authored speed. The old sprite
-      // distance clock accelerated the rig's ears and body more than twofold.
-      walkPhase = moving && rig ? (walkPhase + dt / rig.cycleSeconds) % 1 : 0
-
       if (perched) {
         setFrame(perched.image)
       } else if (moving) {
@@ -169,6 +168,9 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       }
 
       usingRig = rig !== null && !perched
+      // Play the approved one-second clip at its authored speed. The old sprite
+      // distance clock accelerated the rig's ears and body more than twofold.
+      if (rig) stepRigState(motion, dt, moving, facing, speed / CONFIG.move.maxSpeed, rig.cycleSeconds)
       // The approved clip already supplies its own bob; do not add the old sprite bob.
       const float = moving && !usingRig
         ? Math.sin(distance * CONFIG.character.cyclesPerUnit * Math.PI * 2) * CONFIG.character.bob
@@ -188,7 +190,6 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       if (height !== currentHeight) {
         currentHeight = height
         sprite.style.height = height
-        canvas.style.height = height
       }
 
       const transform =
@@ -197,16 +198,27 @@ export function createCharacter(assets: Assets, host: HTMLElement): Character {
       if (transform !== currentTransform) {
         currentTransform = transform
         sprite.style.transform = transform
-        canvas.style.transform = transform
       }
       scale = heightPx / currentImage.naturalHeight
 
       if (usingRig && rig) {
         try {
-          rigWidth = heightPx * rig.aspect
-          rigHeight = heightPx
-          rig.render(walkPhase, facing, heightPx, window.devicePixelRatio)
-          canvas.dataset.facing = facing
+          // Size the rig so its standing bunny fills the old sprite's box, feet on its bottom edge.
+          const canvasHeight = heightPx * rig.spriteScale
+          rigLeft = screenX - (canvasHeight * rig.aspect) / 2
+          rigTop = screenY + heightPx / 2 - canvasHeight * rig.feet
+          const nextHeight = `${canvasHeight.toFixed(1)}px`
+          if (nextHeight !== rigHeight) {
+            rigHeight = nextHeight
+            canvas.style.height = nextHeight
+          }
+          const nextTransform = `translate3d(${rigLeft.toFixed(1)}px, ${rigTop.toFixed(1)}px, 0)`
+          if (nextTransform !== rigTransform) {
+            rigTransform = nextTransform
+            canvas.style.transform = nextTransform
+          }
+          rig.render(motion, dt, canvasHeight, window.devicePixelRatio)
+          canvas.dataset.facing = rigFacing(motion)
           canvas.dataset.state = moving ? 'walk' : 'idle'
         } catch (error) {
           console.warn('[hall] bunny rig render failed; using sprite fallback', error)

@@ -111,6 +111,7 @@ export const CONFIG = {
 
   helm: {
     worn: {
+      rig: { bone: 'head', x: 830, y: 470, width: 1450, rotation: 0 },
       facing: 'left' as const,
       width: 446,
       walk: { x: 262, y: 106, rotation: 0 },
@@ -122,6 +123,8 @@ export const CONFIG = {
 
   matcha: {
     held: {
+      // The approved raised arm is painted into the hips-skinned torso.
+      rig: { bone: 'hips', x: 1390, y: 1470, width: 360, rotation: 14 },
       facing: 'right' as const,
       width: 136,
       walk: { x: 399, y: 291, rotation: 14 },

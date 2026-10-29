@@ -1098,5 +1098,10 @@
       ]
     }
   },
-  "ktx2": null
+  "ktx2": null,
+  "models": {
+    "bunnyRig": {
+      "src": "bunny-rig-v4.e35f4e2f3b.glb"
+    }
+  }
 }

@@ -53,6 +53,10 @@ export function builtUrl(file: string): string {
   return staticUrl(`${manifest.base}${file}`)
 }
 
+export function modelUrl(name: keyof typeof manifest.models): string {
+  return builtUrl(manifest.models[name].src)
+}
+
 export function screenDensity(): 2 | 3 {
   return typeof window !== 'undefined' && window.devicePixelRatio > 2 ? 3 : 2
 }

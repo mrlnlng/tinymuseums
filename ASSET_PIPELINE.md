@@ -107,3 +107,20 @@ All four phases are done (KTX2 built but switched off, see phase 3).
 Follow-up noticed on the way, not part of this work: the landing page's
 "Currently showing" list keys items by artist id, which repeats now that
 the hall walks one artist's works, so React logs a duplicate-key warning.
+
+## Rigged bunny
+
+The approved v4 GLB master is `apps/web/public/assets/bunny-rig-v4.glb`.
+It is served unchanged through the content-hashed `models.bunnyRig` entry in
+`src/generated/asset-manifest.json`. After importing a new approved GLB, or after
+running an older image-only optimiser, run:
+
+```bash
+npm run assets:bunny-rig --workspace @tiny/web
+```
+
+This copies the model into `public/immutable/` and updates only its manifest entry.
+The hall loads the actual rig and `walk` clip; it retains the old sprite assets for
+load/context-loss fallback and sitting. Runtime materials use the GLB's emissive
+textures as unlit colour maps and its `draw_order` extras for stable layer ordering.
+See `docs/bunny-rig-author-handoff.md` for the author's approved motion and source.

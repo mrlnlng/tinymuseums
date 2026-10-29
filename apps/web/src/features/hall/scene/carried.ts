@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { Character, Pose } from './character'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
+import type { RigAttachment } from './bunny-rig'
 
 export type CarriedState = 'away' | 'to-bunny' | 'held' | 'back'
 
@@ -15,6 +16,7 @@ export interface Carried {
 }
 
 export interface Attachment {
+  rig?: RigAttachment
   facing: 'left' | 'right'
   width: number
   walk: { x: number; y: number; rotation: number }

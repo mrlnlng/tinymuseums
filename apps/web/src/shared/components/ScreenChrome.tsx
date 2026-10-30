@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import SoundToggle from '@/features/sound/components/SoundToggle'
 import AssetImage from '@/shared/components/AssetImage'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
+import { openAccount } from '@/features/account/lib/account'
 
 export default function ScreenChrome() {
   const pathname = usePathname()
@@ -25,6 +26,24 @@ export default function ScreenChrome() {
           title="Back to the entrance"
         >
           <AssetImage name="icon-home" />
+        </button>
+      ) : null}
+      {showReport ? (
+        <button
+          type="button"
+          className="chrome-button account-toggle"
+          onClick={openAccount}
+          aria-label="Your account"
+          title="Your account"
+        >
+          <svg viewBox="0 0 75 75" aria-hidden="true">
+            <mask id="account-toggle-cutout">
+              <rect width="75" height="75" fill="white" />
+              <circle cx="37.5" cy="26" r="11" fill="black" />
+              <rect x="16" y="41" width="43" height="34" rx="15" fill="black" />
+            </mask>
+            <circle cx="37.5" cy="37.5" r="37.5" mask="url(#account-toggle-cutout)" />
+          </svg>
         </button>
       ) : null}
       {showReport ? (

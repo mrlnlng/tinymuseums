@@ -72,5 +72,22 @@ export {
   listGuestNotes,
   postGuestNote,
 } from './domain/guestboard.ts'
+export {
+  canonicalEmail,
+  changePassword,
+  deleteMember,
+  exportMember,
+  hashToken,
+  memberForSession,
+  mergeSlot,
+  readSlots,
+  signIn,
+  signOut,
+  signUp,
+  validCredentials,
+  type Member,
+  type MergeResult,
+  type Started,
+} from './domain/members.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

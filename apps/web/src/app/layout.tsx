@@ -3,6 +3,7 @@ import { Beth_Ellen, Noto_Sans, Sniglet } from 'next/font/google'
 import localFont from 'next/font/local'
 import { BRAND } from '@tiny/core'
 import BugReportHost from '@/features/feedback/components/BugReportHost'
+import AccountHost from '@/features/account/components/AccountHost'
 import ScreenChrome from '@/shared/components/ScreenChrome'
 import SoundProvider from '@/features/sound/components/SoundProvider'
 import ServiceWorker from '@/shared/components/ServiceWorker'
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <ScreenChrome />
             <BugReportHost />
+            <AccountHost />
           </div>
           <VitalsReporter />
           <VisitTracker />

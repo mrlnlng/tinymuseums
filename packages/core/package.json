@@ -11,7 +11,8 @@
     "./guestboard": "./src/guestboard-rules.ts",
     "./bugs": "./src/bug-report-rules.ts",
     "./brand": "./src/brand.ts",
-    "./visit-features": "./src/visit-features.ts"
+    "./visit-features": "./src/visit-features.ts",
+    "./slots": "./src/slots/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

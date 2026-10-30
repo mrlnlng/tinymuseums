@@ -155,35 +155,32 @@ export const CONFIG = {
     vanishSeconds: 0.35,
   },
 
-  // One drawing serves both floors: its base stands in the lobby, its landing meets the atelier floor.
-  // One drawing serves both floors: its base stands in the lobby, its landing meets the atelier floor.
+  // Both floors share the same flight geometry.
   stairs: {
     drawing: [1027, 939],
-    unitsPerPx: 0.0058,
+    unitsPerPx: 0.0036,
     landing: { x: 753, y: 199 },
     // The tread tops, bottom step first, as [left edge, top] in drawing px.
     treads: [[0, 865], [100, 717], [192, 643], [284, 569], [376, 495], [472, 421], [564, 347], [658, 273], [753, 199]],
     // Far enough left of the door that the flight's underside clears the Visitor Center sign.
-    lobby: { postX: -2.6, baseY: -0.24, z: 0.1 },
+    lobby: { postX: -2.6, baseY: -0.3996, scale: 1.5, z: 0.1 },
     post: 563,
     climbSeconds: 2.6,
     // Fraction of the flight walked in view before the dip to the other floor's page.
     dipAt: 0.58,
     dipSeconds: 0.3,
-    // The lobby's ceiling: the flight rises into it, so its landing is never seen hanging.
-    ceiling: { thickness: 0.3, right: 4.75, z: 0.45 },
   },
 
   atelier: {
     wallTile: [1.61, 1.29],
     min: -1.0,
     max: 9.9,
-    arriveX: 0.45,
-    title: { x: 0.8, y: 3.5, width: 2.5 },
+    arriveX: 0.8,
+    title: { x: 0.8, y: 3.5, width: 2.8 },
     plaque: { x: 0.8, y: 2.4, width: 2.1, height: 1.12, z: 0.2, textWidth: 1.75 },
     columns: [1.15, 3.95, 7.95, 10.6],
     column: { height: 1.15, bottom: -0.22, z: 0.3 },
-    featured: { x: 2.6, costume: 'kiki', standX: 1.75 },
+    featured: { x: 2.6, costume: 'kiki' },
     // Each character stands on display; the visitor's own platform stands empty.
     displays: { bunny: 5.25, cat: 6.7, near: 1.3 },
     bare: { x: 9.3 },

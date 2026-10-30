@@ -1,5 +1,6 @@
 'use client'
 
+import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
 
@@ -14,6 +15,7 @@ const DELETE_FAILED = "That password doesn't match."
 const DIRTY_WARNING = "Some of your saved things haven't reached the server yet — continuing would lose them."
 
 export default function AccountSheet({ onClose }: { onClose: () => void }) {
+  const dialogRef = useModalFocus()
   const { member, refreshMember, signUp, signIn, changePassword, signOut, deleteAccount } = useMember()
   const [mode, setMode] = useState<Mode>('sign-in')
   const [view, setView] = useState<View>('menu')
@@ -148,7 +150,7 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="bug-report" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <div ref={dialogRef} className="bug-report" role="dialog" aria-modal="true" aria-labelledby="account-title">
       <button type="button" className="bug-report-scrim" onClick={onClose} aria-label="Close" />
 
       {member === null ? (

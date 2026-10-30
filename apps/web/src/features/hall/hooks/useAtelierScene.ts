@@ -15,13 +15,16 @@ import { Traversal } from '@/features/hall/scene/traversal'
 import { createWardrobe, followOutfit, lookOf, type Wardrobe } from '@/features/hall/scene/wardrobe'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { defaultStore } from '@/shared/lib/slots'
+import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
+import { atelierFloorEdge } from '@/features/hall/scene/flights'
+import { createStairForeground } from '@/features/hall/scene/stair-foreground'
 import { track } from '@/shared/lib/visit'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
 const WALKING_SPEED = 0.12
 // Long enough for the loading animation to read, even when everything is cached.
-const MIN_LOADING_MS = 1200
+const MIN_LOADING_MS = 2800
 const MAX_RIG_WAIT_MS = 8000
 const WALL_COLOR = '#3a0707'
 
@@ -63,7 +66,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       try {
         ;[art, sprites] = await Promise.all([loadAtelierArt(), loadCharacterSprites()])
       } catch (loadError) {
-        if (!isDisposed) setError((loadError as Error).message)
+        if (!isDisposed) { setError((loadError as Error).message); revealFloorTransition() }
         return
       }
       if (isDisposed) {
@@ -120,14 +123,18 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       wardrobe = createWardrobe({
         character,
         room,
-        traversal,
         outfit: outfitSlot,
-        host: characterHost,
         costume: atelier.featured.costume,
         onChange: (change) => track(change),
         onIdle: follower.sync,
       })
       const closet = wardrobe
+      const foreground = createStairForeground(canvasHost.parentElement!, room.flight, atelierFloorEdge(room.flight))
+      room.setActions({
+        onItem: (part) => { if (!quiet()) closet.tapFeatured(part) },
+        onCharacter: (kind) => { if (!quiet()) closet.tapDisplay(kind) },
+        onLeave: () => { if (!quiet()) { track('stairs'); stairway.leave(() => onLeaveRef.current()) } },
+      })
 
       let rigSettled = false
       // A saved character that fails to load falls back to the bunny; the displays follow.
@@ -155,7 +162,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         raycaster.setFromCamera(pointer, rig.camera)
       }
 
-      const quiet = () => !ready || stairway.busy || closet.busy
+      const quiet = () => !ready || stairway.busy || document.querySelector('[aria-modal="true"]') !== null
 
       function handlePointerDown(event: PointerEvent): void {
         isTap = false
@@ -175,9 +182,10 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         if (!isTap) return
         isTap = false
         aim(event)
-        if (room.hitTestFeatured(raycaster)) {
+        const part = room.hitTestFeatured(raycaster)
+        if (part) {
           soundRef.current.play('click')
-          closet.tapFeatured()
+          closet.tapFeatured(part)
           return
         }
         const kind = room.hitTestDisplay(raycaster)
@@ -223,11 +231,12 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
             readyAt = now
             closet.reflect()
             setIsReady(true)
+            revealFloorTransition()
             track('atelier')
             stairway.arrive()
           }
         } else {
-          traversal.setSuspended(stairway.locked)
+          traversal.setSuspended(stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
           traversal.update(dt, atelier.min, atelier.max)
         }
 
@@ -235,9 +244,9 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         const cameraX = moving?.x ?? traversal.cameraX
         rig.sync(cameraX, moving?.rise ?? 0)
         character.update(dt, moving?.x ?? traversal.x, moving?.velocity ?? traversal.walkVelocity, rig.camera, viewport, moving?.centerY)
-        closet.update(dt, rig.camera, viewport)
+        foreground.sync(rig.camera, viewport, moving !== null)
         room.update(dt, traversal.x)
-        room.sync(rig.camera, viewport)
+        room.sync(rig.camera, viewport, !quiet())
         soundRef.current.setWalking(Math.abs(moving?.velocity ?? traversal.walkVelocity) > WALKING_SPEED)
         renderer.render(scene, rig.camera)
       }
@@ -255,14 +264,18 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         follower.dispose()
         closet.dispose()
         stairway.dispose()
+        foreground.dispose()
         room.dispose()
         character.dispose()
         renderer.dispose()
+        renderer.forceContextLoss()
         renderer.domElement.remove()
       }
     }
 
-    void build()
+    void build().catch((error) => {
+      if (!isDisposed) { setError(String(error)); revealFloorTransition() }
+    })
 
     return () => {
       isDisposed = true

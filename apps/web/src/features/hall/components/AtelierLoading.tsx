@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
 import { motion } from 'motion/react'
 
 // The stitched outline the needle travels: bodice and skirt of a dress form.
@@ -7,6 +9,8 @@ const SEAM =
   'M 96 74 C 84 96 82 122 96 150 C 101 160 101 168 94 178 L 70 238 Q 120 252 170 238 L 146 178 C 139 168 139 160 144 150 C 158 122 156 96 144 74 Q 120 66 96 74 Z'
 
 export default function AtelierLoading() {
+  // The maroon loading screen is ready to replace the cover before the room is loaded.
+  useEffect(() => { revealFloorTransition() }, [])
   return (
     <motion.div
       className="atelier-loading"

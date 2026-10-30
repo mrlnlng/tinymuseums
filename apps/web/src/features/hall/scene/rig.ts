@@ -1,3 +1,4 @@
+import { setCostumeVisibility } from './costume-visibility'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { modelUrl } from '@/shared/lib/assets'
@@ -78,7 +79,7 @@ export interface Rig {
   readonly feet: number
   readonly cycleSeconds: number
   readonly costumes: readonly string[]
-  setCostume(id: string | null): void
+  setCostume(id: string | null, bow?: string | null): void
   render(state: RigState, dt: number, height: number, pixelRatio: number): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
   dispose(): void
@@ -104,6 +105,7 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
     [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl(spec.model)), bowLoad])
   } catch (error) {
     renderer.dispose()
+    renderer.forceContextLoss()
     void bowLoad.then((texture) => texture?.dispose())
     throw error
   }
@@ -141,14 +143,10 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
   }
 
   const costumeParts = new Map<string, THREE.Object3D[]>()
-  const costumeHides = new Map<string, Set<string>>()
   model.traverse((node) => {
     if (node.userData.layer === 'costume') {
       const id = String(node.userData.costume)
       costumeParts.set(id, [...(costumeParts.get(id) ?? []), node])
-      const hides = costumeHides.get(id) ?? new Set<string>()
-      for (const name of String(node.userData.hides ?? '').split(',')) if (name.trim()) hides.add(name.trim())
-      costumeHides.set(id, hides)
       node.visible = false
     }
     if (!(node instanceof THREE.Mesh)) return
@@ -298,20 +296,8 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
   }
 
   const baseHidden = new Set<THREE.Object3D>()
-  function setCostume(id: string | null): void {
-    for (const node of baseHidden) node.visible = true
-    baseHidden.clear()
-    for (const [costume, parts] of costumeParts) {
-      for (const part of parts) part.visible = costume === id
-    }
-    if (id === null) return
-    for (const name of costumeHides.get(id) ?? []) {
-      const node = model.getObjectByName(name)
-      if (node && node.visible) {
-        node.visible = false
-        baseHidden.add(node)
-      }
-    }
+  function setCostume(id: string | null, bow: string | null = id): void {
+    setCostumeVisibility(costumeParts, baseHidden, name => model.getObjectByName(name), id, bow)
   }
 
   const shadowCanvas = document.createElement('canvas')
@@ -392,6 +378,7 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
     for (const skeleton of skeletons) skeleton.dispose()
     for (const texture of textures) releaseTexture(texture)
     renderer.dispose()
+    renderer.forceContextLoss()
   }
 
   if (!clip || !walkAction || !restAction) {

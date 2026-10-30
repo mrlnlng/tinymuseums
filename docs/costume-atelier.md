@@ -1,7 +1,7 @@
 # The Costume Atelier
 
 A second floor, reached by the staircase behind the entrance door. Visitors try on the
-featured costume from its mannequin and can walk as the cat instead of the bunny. Both
+bow and dress independently from the mannequin and can walk as the cat instead of the bunny. All
 choices persist through the `outfit` slot, so they come back on the next visit, and they
 sync across devices when the visitor has an account.
 
@@ -11,29 +11,28 @@ Mocks (the owner's source of truth): `costume_atelier_mock_scene/7.png`, `8.png`
 ## How it plays
 
 - **Two pages.** The atelier is its own page, `/museum/atelier`, with its own scene, so each
-  floor loads only its own art. The lobby carries just the staircase and a glimpse of the
-  floor above.
-- **The lobby.** The staircase stands left of the door. It climbs into the lobby's ceiling,
-  drawn as a cut-away: the slab is the upstairs floor, level with the landing, and the
-  atelier's damask shows above it with the banister rising into it. The ceiling ends with
-  the lobby. Tap the stairs and the character walks to the bottom step and climbs. Partway
-  up, the screen dips to maroon and the atelier page opens.
+  floor loads only its own art. The first floor does not preview the room above.
+- **The lobby.** A full-height wooden flight stands on the floor left of the entrance and
+  continues offscreen through the ceiling, following `file3.png`. There is no upstairs
+  preview or added doorway. Tap the stairs or the “Costume atelier” sign to climb.
+  The maroon transition cover survives navigation until the sewing loader is mounted.
+  Both directions show that animation for at least 2.8 seconds.
 - **Loading.** The atelier opens on a loading screen in its own maroon: a dress form whose
   outline is being sewn with running stitches and a travelling needle, and Kiki's bow
-  bobbing at its neck. It shows for at least 1.2 s, then until the art, the fonts and the
+  bobbing at its neck. It shows for at least 2.8 s, then until the art, the fonts and the
   visitor's rig are ready. Then the character crests the stairs onto the landing.
 - **Upstairs**, left to right: the landing, the title and plaque, a column, the spotlit form
   wearing Kiki, a column, the two character displays, a column, the bare unlit form, and a
-  column. The floor is drawn in front of the stair art, so the landing sits flush and only
-  the open stairwell shows.
-- **Trying on.** Tap the form. There are no buttons. The character walks up, the costume
-  lifts off and settles on, and the form stands bare. Tap it again to give the costume back.
-- **Changing character.** The bunny and the cat stand on display on spotlit platforms. The
-  visitor's own platform stands empty, as the form does while its costume is worn. Tap the
-  other figure: the visitor walks up in front of it, the two dissolve, and the visitor takes
-  its place while their old self appears back on its own platform. Switching back is the
-  same tap. Figures hop as the visitor comes near, and under a mouse the cursor becomes a
-  pointer over anything that answers a tap.
+  column. The floor extends to the banister post, covering the wedge under the landing.
+  The floor hides the railing below its surface; only the rail above the floor and the open stairwell show.
+- **Trying on.** Tap the bow or dress directly. Each gently jiggles occasionally as an
+  invitation, with no visible boxes, pills or instructions. Either can be worn alone or both together. A worn item remains as a faint guide
+  on the form so its return target stays clear. Clothes change while the visitor keeps
+  moving; trying on never holds traversal or walks the visitor to a fixed point.
+- **Changing character.** Tap a figure directly. The current rig stays visible
+  while the replacement loads into a separate canvas; a failed load keeps the previous
+  character and outfit. Changes are queued in click order. Both clothing choices carry
+  over between characters. The active character's platform stands empty.
 - **Back down.** Tap the stairs. The character descends into the stairwell, the screen dips,
   and the hall opens with the character stepping off the bottom of the lobby staircase
   (`/museum?from=atelier`) rather than walking in at the door.
@@ -52,9 +51,10 @@ Mocks (the owner's source of truth): `costume_atelier_mock_scene/7.png`, `8.png`
 | `scene/wardrobe.ts` | Try on and return, changing character at the displays, and `followOutfit`, which keeps both pages in the saved outfit. |
 | `scene/stairway.ts` | Leaving a floor by its stairs (approach, climb, dip, then the page change) and arriving by them. |
 | `scene/flights.ts` | Staircase geometry shared by both floors. Tested in `flights.test.ts`. |
-| `scene/stairs.ts` | The lobby staircase and the cut-away ceiling. |
+| `scene/stairs.ts`, `lobby-stair-art.ts`, `stair-foreground.ts` | The full-height lobby staircase and the foreground railing during climbs. |
+| `features/hall/lib/floor-transition.ts` | The transition cover retained across page changes. |
 | `scene/rig.ts`, `scene/character.ts` | One rig renderer for either character, with costumes; the visitor's `wear(look)` and `ready`. |
-| `packages/core/src/slots/outfit.ts` | The `outfit` slot: `character` and `costume` as two last-write-wins registers. |
+| `packages/core/src/slots/outfit.ts` | The `outfit` slot: `character`, dress (`costume`), and `bow` as three last-write-wins registers. |
 | `apps/web/src/app/dev/rig` | Development-only rig preview: either character, any costume, facing, walk pose, and the helmet and cup on the hall's anchors. |
 
 All positions are in `CONFIG.stairs` and `CONFIG.atelier` (`scene/config.ts`),
@@ -83,11 +83,13 @@ and cup anchors in `config.ts` and check them in `/dev/rig`. Give it a display i
 
 ## Not done
 
-- The banister does not occlude the character during the crest; the character is
-  drawn on its own canvas above the room.
 - No label yet links Kiki to a work in the collection. That relationship is the owner's
   to state.
 - The mannequin master is 173 x 525 px, upscaled for the screen; a larger master would
   be sharper.
 - The figures on display are still sprites with breathing and a greeting hop, not live
   rigs, to avoid extra WebGL contexts.
+
+The outfit slot is version 2. Its version 1 migration preserves an existing Kiki outfit as
+both bow and dress. Each piece merges independently across devices. The rig uses costume
+mesh `part` metadata: `bow` follows the bow register; body, paw and broom follow the dress.

@@ -1,5 +1,8 @@
 'use client'
 
+import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
+import { createStairForeground } from '@/features/hall/scene/stair-foreground'
+
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { HallSliceDto } from '@tiny/core'
@@ -163,11 +166,13 @@ export function useHallScene({
         assets = await loadAssets(renderer)
       } catch (loadError) {
         renderer.dispose()
-        if (!isDisposed) setError((loadError as Error).message)
+        renderer.forceContextLoss()
+        if (!isDisposed) { setError((loadError as Error).message); revealFloorTransition() }
         return
       }
       if (isDisposed) {
         renderer.dispose()
+        renderer.forceContextLoss()
         return
       }
 
@@ -219,6 +224,7 @@ export function useHallScene({
 
       let lobbyStairs: LobbyStairs | null = null
       let stairsSettled = false
+      const stairForeground = createStairForeground(canvasHost.parentElement!, lobbyFlight)
       const stairway = createStairway({
         traversal,
         flight: lobbyFlight,
@@ -234,24 +240,17 @@ export function useHallScene({
         stairway.leave(() => onGoUpstairsRef.current())
       }
 
-      // The staircase and the glimpse of the floor above are small, and part of the opening view.
-      void Promise.all(
-        [manifest.atelier.staircase.src, manifest.atelier.wallpaper.src].map((src) =>
-          new THREE.TextureLoader().loadAsync(builtUrl(src)),
-        ),
-      )
-        .then(([stairsMap, upstairsWall]) => {
+      // The first floor loads only its own flight, without an upstairs preview.
+      void Promise.all([new THREE.TextureLoader().loadAsync(builtUrl(manifest.atelier.staircase.src))])
+        .then(([stairsMap]) => {
           if (isDisposed) {
             stairsMap.dispose()
-            upstairsWall.dispose()
             return
           }
           lobbyStairs = createLobbyStairs(scene, {
             stairs: stairsMap,
-            upstairsWall,
-            floor: assets.textures.floor,
-            floorAspect: assets.aspect.floor,
-          })
+          }, overlayHost, climb)
+          stairForeground.setSource(lobbyStairs.railing)
         })
         .catch(() => {})
         .finally(() => {
@@ -540,6 +539,7 @@ export function useHallScene({
 
       // OPENING_MAX_WAIT_MS keeps a slow painting from holding the curtain down.
       function openingReady(now: number): boolean {
+        if (arrival === 'stairs' && now - openingStart < 2800) return false
         if (now - openingStart > OPENING_MAX_WAIT_MS) return true
         const { loaded, total } = hall.stats()
         return fontsReady && stairsSettled && loaded >= Math.min(1, total)
@@ -563,11 +563,12 @@ export function useHallScene({
             isReadyRef.current = true
             readyAt = now
             setIsReady(true)
+            revealFloorTransition()
             if (arrival === 'stairs' && lobbyStairs) stairway.arrive()
             else traversal.playIntro(introStart, entrance)
           }
         } else {
-          traversal.setSuspended(isSuspendedRef.current || stairway.locked)
+          traversal.setSuspended(isSuspendedRef.current || stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
           // Without its staircase the lobby keeps its old left edge.
           traversal.update(dt, lobbyStairs ? climbSpan(lobbyFlight).from : 0, hall.layout.totalLength)
         }
@@ -604,6 +605,8 @@ export function useHallScene({
         raiseComingSoon()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
+        lobbyStairs?.sync(rig.camera, viewport, !stairway.busy && !traversal.isIntro)
+        stairForeground.sync(rig.camera, viewport, moving !== null)
         giftShopSigns?.sync(rig.camera, viewport)
         cafeLink?.sync(rig.camera, viewport)
         guestBoardNotes?.sync(rig.camera, viewport)
@@ -652,6 +655,7 @@ export function useHallScene({
         outfitFollower.dispose()
         hall.dispose()
         lobby.dispose()
+        stairForeground.dispose()
         lobbyStairs?.dispose()
         stairway.dispose()
         giftShop?.dispose()
@@ -665,6 +669,7 @@ export function useHallScene({
         scenery?.dispose()
         character.dispose()
         renderer.dispose()
+        renderer.forceContextLoss()
         renderer.domElement.remove()
       }
     }

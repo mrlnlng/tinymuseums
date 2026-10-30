@@ -31,6 +31,8 @@ export class Traversal {
 
   attach(element: HTMLElement): void {
     const keydown = (e: KeyboardEvent) => {
+      const target = e.target instanceof Element ? e.target : null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('[aria-modal="true"]')) return
       this.idleSeconds = 0
       if (e.repeat) return
       this.keys.add(e.key.toLowerCase())

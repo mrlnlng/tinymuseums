@@ -25,6 +25,7 @@ export interface Perch {
 export interface Look {
   kind: CharacterKind
   costume: string | null
+  bow: string | null
 }
 
 export interface Character {
@@ -64,7 +65,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   sprite.src = idle.right.src
   host.appendChild(sprite)
 
-  const canvas = document.createElement('canvas')
+  let canvas = document.createElement('canvas')
   canvas.className = 'hall-bunny hall-bunny-rig'
   canvas.setAttribute('aria-hidden', 'true')
   canvas.hidden = true
@@ -87,7 +88,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
     usingRig = false
     rig?.dispose()
     rig = null
-    look = { kind: 'bunny', costume: null }
+    look = { kind: 'bunny', costume: null, bow: null }
     canvas.hidden = true
     sprite.hidden = false
   }
@@ -98,29 +99,44 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   }
   canvas.addEventListener('webglcontextlost', contextLost)
 
-  // One canvas holds one rig at a time; changing character replaces it.
-  function loadKind(kind: CharacterKind): Promise<boolean> {
-    rig?.dispose()
-    rig = null
-    return import('./rig')
-      .then(({ loadRig }) => loadRig(canvas, kind))
-      .then((loaded) => {
-        if (disposed || rigFailed) {
-          loaded.dispose()
-          return false
-        }
-        rig = loaded
-        rig.setCostume(look.costume)
-        return true
-      })
-      .catch((error) => {
-        if (!disposed) console.warn(`[hall] ${kind} rig unavailable; using the bunny sprites`, error)
+  // Build the replacement separately; a failed or slow load keeps the working character.
+  async function loadKind(kind: CharacterKind, next: Look = look): Promise<boolean> {
+    const nextCanvas = document.createElement('canvas')
+    nextCanvas.className = canvas.className
+    nextCanvas.setAttribute('aria-hidden', 'true')
+    nextCanvas.hidden = true
+    host.appendChild(nextCanvas)
+    try {
+      const { loadRig } = await import('./rig')
+      const loaded = await loadRig(nextCanvas, kind)
+      if (disposed || rigFailed) {
+        loaded.dispose()
+        nextCanvas.remove()
         return false
-      })
+      }
+      loaded.setCostume(next.costume, next.bow)
+      const previous = rig
+      const previousCanvas = canvas
+      previousCanvas.removeEventListener('webglcontextlost', contextLost)
+      rig = loaded
+      canvas = nextCanvas
+      look = { ...next }
+      canvas.style.opacity = opacity
+      canvas.addEventListener('webglcontextlost', contextLost)
+      rigHeight = ''
+      rigTransform = ''
+      previous?.dispose()
+      previousCanvas.remove()
+      return true
+    } catch (error) {
+      nextCanvas.remove()
+      if (!disposed) console.warn(`[hall] ${kind} rig unavailable; keeping the current character`, error)
+      return false
+    }
   }
 
   loading = loadKind(look.kind).then((ok) => {
-    if (!ok && look.kind !== 'bunny') look = { kind: 'bunny', costume: null }
+    if (!ok && look.kind !== 'bunny') look = { kind: 'bunny', costume: null, bow: null }
     return ok
   })
 
@@ -156,7 +172,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
     },
 
     get canSit() {
-      return look.kind === 'bunny' && look.costume === null
+      return look.kind === 'bunny' && look.costume === null && look.bow === null
     },
 
     get ready() {
@@ -168,17 +184,10 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         if (disposed || rigFailed) return false
         if (next.kind === look.kind && rig) {
           look = { ...next }
-          rig.setCostume(next.costume)
+          rig.setCostume(next.costume, next.bow)
           return true
         }
-        // Read at the moment this change applies, so a queued change restores what is on screen.
-        const previous = look
-        look = { ...next }
-        if (await loadKind(next.kind)) return true
-        // Keep the character that worked rather than leaving nobody on screen.
-        look = previous
-        if (!disposed && !rigFailed && !(await loadKind(previous.kind))) look = { kind: 'bunny', costume: null }
-        return false
+        return loadKind(next.kind, next)
       })
       return loading
     },
@@ -298,6 +307,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
           canvas.dataset.state = moving ? 'walk' : 'idle'
           canvas.dataset.kind = rig.kind
           canvas.dataset.costume = look.costume ?? ''
+          canvas.dataset.bow = look.bow ?? ''
         } catch (error) {
           console.warn('[hall] rig render failed; using sprite fallback', error)
           loseRig()

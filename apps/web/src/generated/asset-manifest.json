@@ -1126,6 +1126,21 @@
       "width": 789,
       "height": 1710
     },
+    "mannequinDress": {
+      "src": "atelier-mannequin-dress.b19faf725f.webp",
+      "width": 789,
+      "height": 1710
+    },
+    "mannequinBow": {
+      "src": "atelier-mannequin-bow.e205ce5931.webp",
+      "width": 789,
+      "height": 1710
+    },
+    "railing": {
+      "src": "atelier-railing.a64dc36f7d.webp",
+      "width": 1027,
+      "height": 939
+    },
     "platform": {
       "src": "atelier-platform.c2505f7d9c.webp",
       "width": 397,

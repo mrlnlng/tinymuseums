@@ -4,7 +4,7 @@ import { assetUrl, builtUrl } from '@/shared/lib/assets'
 import type { CharacterSprites } from './assets'
 import { plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
-import { atelierFlight, flightHeight, flightWidth, stairX, type Flight } from './flights'
+import { atelierFlight, flightHeight, flightWidth, atelierFloorEdge, type Flight } from './flights'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { CharacterKind } from './rig'
@@ -55,21 +55,28 @@ export async function loadAtelierArt(): Promise<AtelierArt> {
   }
 }
 
+export type ClothingPart = 'bow' | 'dress'
+
+export interface AtelierActions {
+  onItem(part: ClothingPart): void
+  onCharacter(kind: CharacterKind): void
+  onLeave(): void
+}
+
 export interface AtelierRoom {
+  setActions(actions: AtelierActions): void
   readonly flight: Flight
   hitTestStairs(raycaster: THREE.Raycaster): boolean
-  hitTestFeatured(raycaster: THREE.Raycaster): boolean
+  hitTestFeatured(raycaster: THREE.Raycaster): ClothingPart | null
   /** The character on display under the pointer, if any. */
   hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
   /** Whether the featured form wears its costume; it stands bare while the visitor wears it. */
-  setDressed(dressed: boolean): void
+  setDressed(dress: boolean, bow: boolean): void
   /** The visitor's own platform stands empty. */
   setVisitor(kind: CharacterKind): void
   setFigureOpacity(kind: CharacterKind, opacity: number): void
   displayX(kind: CharacterKind): number
-  /** Where the costume sits on the form, and its width there. */
-  costumePoint(out: THREE.Vector3): number
-  sync(camera: THREE.OrthographicCamera, viewport: Viewport): void
+  sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean): void
   update(dt: number, visitorX: number): void
   dispose(): void
 }
@@ -109,7 +116,7 @@ export function createAtelierRoom(
 
   // The floor lies in front of the flight from the landing on, so the landing sits flush with it
   // and only the open stairwell to its left shows the steps below.
-  const floorLeft = stairX(flight, CONFIG.stairs.landing.x)
+  const floorLeft = atelierFloorEdge(flight)
   const floorHeight = 2.6
   const floorMap = art.floor
   floorMap.wrapS = THREE.RepeatWrapping
@@ -145,10 +152,19 @@ export function createAtelierRoom(
     group.add(light)
   }
 
-  const featuredMaterial = new THREE.MeshBasicMaterial({ map: maps.mannequinDressed, transparent: true })
+  const featuredMaterial = new THREE.MeshBasicMaterial({ map: maps.mannequin, transparent: true })
   const featured = new THREE.Mesh(new THREE.PlaneGeometry(canvasWidth, canvasHeight), featuredMaterial)
   featured.position.set(atelier.featured.x, formY, mannequin.z)
   group.add(featured)
+  const clothes = {} as Record<ClothingPart, THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>>
+  for (const part of ['bow', 'dress'] as const) {
+    const material = new THREE.MeshBasicMaterial({ map: part === 'bow' ? maps.mannequinBow : maps.mannequinDress, transparent: true, depthWrite: false })
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvasWidth, canvasHeight), material)
+    mesh.position.copy(featured.position)
+    mesh.position.z += 0.01
+    group.add(mesh)
+    clothes[part] = mesh
+  }
   stage(atelier.featured.x)
 
   const bare = plane(canvasWidth, canvasHeight, maps.mannequin, atelier.bare.x, formY, mannequin.z)
@@ -183,6 +199,27 @@ export function createAtelierRoom(
 
   scene.add(group)
 
+  let actions: AtelierActions | null = null
+  const controls: { node: HTMLButtonElement; mark: { x: number; y: number; width: number } }[] = []
+  function control(label: string, className: string, mark: { x: number; y: number; width: number }, click: () => void) {
+    const node = document.createElement('button')
+    node.type = 'button'
+    node.className = className
+    node.setAttribute('aria-label', label)
+    if (className === 'stairs-cue atelier-exit') node.textContent = label
+    node.addEventListener('click', click)
+    host.append(node)
+    controls.push({ node, mark })
+    return node
+  }
+  const itemButtons = {
+    bow: control('Try bow', 'atelier-item atelier-item-bow', { x: atelier.featured.x, y: 2.33, width: 0.85 }, () => actions?.onItem('bow')),
+    dress: control('Try dress', 'atelier-item atelier-item-dress', { x: atelier.featured.x, y: 0.91, width: 1.0 }, () => actions?.onItem('dress')),
+  }
+  const characterButtons = Object.fromEntries(KINDS.map((kind) => [kind,
+    control(`Walk as the ${kind}`, 'atelier-choice', { x: atelier.displays[kind], y: 0.6, width: 1.2 }, () => actions?.onCharacter(kind)),
+  ])) as Record<CharacterKind, HTMLButtonElement>
+  control('↓ Back to museum', 'stairs-cue atelier-exit', { x: -0.15, y: 1.55, width: 1.4 }, () => actions?.onLeave())
   const title = document.createElement('div')
   title.className = 'atelier-title'
   title.textContent = 'The Costume Atelier'
@@ -193,16 +230,25 @@ export function createAtelierRoom(
   host.append(title, plaqueText)
 
   let clock = 0
+  let jiggle = -1
+  let nextJiggle = 3.2
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return {
     flight,
+    setActions(next) { actions = next },
 
     hitTestStairs(raycaster) {
-      return pickPainted(raycaster, [stairs]) !== null
+      const hit = pickPainted(raycaster, [stairs])
+      // The floor occludes the lower stair art: covered pixels cannot be an exit.
+      return hit !== null && (hit.point.y > 0 || hit.point.x < floorLeft - 0.04)
     },
 
     hitTestFeatured(raycaster) {
-      return pickPainted(raycaster, [featured]) !== null
+      for (const part of ['bow', 'dress'] as const) {
+        if (pickPainted(raycaster, [clothes[part]])) return part
+      }
+      return null
     },
 
     hitTestDisplay(raycaster) {
@@ -213,15 +259,23 @@ export function createAtelierRoom(
       return null
     },
 
-    setDressed(dressed) {
-      featuredMaterial.map = dressed ? maps.mannequinDressed : maps.mannequin
-      featuredMaterial.needsUpdate = true
+    setDressed(dress, bow) {
+      for (const part of ['dress', 'bow'] as const) {
+        const available = part === 'dress' ? dress : bow
+        clothes[part].material.opacity = available ? 1 : 0.22
+        const node = itemButtons[part]
+        node.setAttribute('aria-label', `${available ? 'Try on' : 'Return'} Kiki's ${part}`)
+        node.setAttribute('aria-pressed', String(!available))
+      }
     },
 
     setVisitor(kind) {
       for (const other of KINDS) {
         figures[other].empty = other === kind
         showFigure(other)
+        const button = characterButtons[other]
+        button.setAttribute('aria-pressed', String(other === kind))
+        button.disabled = other === kind
       }
     },
 
@@ -234,20 +288,35 @@ export function createAtelierRoom(
       return atelier.displays[kind]
     },
 
-    costumePoint(out) {
-      // The flying bundle (bow over dress) is centred 297.5 form px above the feet on the form's canvas.
-      out.set(atelier.featured.x, mannequin.feetY + 297.5 * unit, mannequin.z)
-      return 215 * unit
-    },
-
-    sync(camera, viewport) {
+    sync(camera, viewport, enabled) {
       const perUnit = viewport.width / (camera.right - camera.left)
-      placeLabel(title, atelier.title, perUnit, camera, viewport, 0.1)
+      placeLabel(title, atelier.title, perUnit, camera, viewport, 0.075)
+      for (const { node, mark } of controls) {
+        node.disabled = !enabled || (node.classList.contains('atelier-choice') && node.getAttribute('aria-pressed') === 'true')
+        const visible = placeLabel(node, mark, perUnit, camera, viewport, 0.09)
+        const at = new THREE.Vector3(mark.x, mark.y, 0).project(camera)
+        node.hidden = !visible || at.x < -0.9 || at.x > 0.9
+      }
       placeLabel(plaqueText, { x: plaque.x, y: plaque.y, width: plaque.textWidth }, perUnit, camera, viewport, 0.068)
     },
 
     update(dt, visitorX) {
       clock += dt
+      if (!reducedMotion && clock >= nextJiggle) {
+        jiggle = 0
+        nextJiggle = clock + 6.5
+      }
+      if (jiggle >= 0) {
+        jiggle += dt
+        if (jiggle > 0.8) jiggle = -1
+      }
+      for (const part of ['bow', 'dress'] as const) {
+        const mesh = clothes[part]
+        const t = jiggle < 0 ? 1 : jiggle / 0.8
+        const wobble = reducedMotion || t >= 1 ? 0 : Math.sin(t * Math.PI * 6) * Math.sin(t * Math.PI)
+        mesh.scale.x = 1 + 0.035 * wobble
+        mesh.position.x = featured.position.x + 0.022 * wobble * (part === 'bow' ? 1 : -1)
+      }
       for (const kind of KINDS) {
         const figure = figures[kind]
         // Each figure greets the visitor with a small hop as they come near.
@@ -279,6 +348,7 @@ export function createAtelierRoom(
       for (const texture of [...Object.values(maps), art.floor, art.plaque, ...owned]) texture.dispose()
       title.remove()
       plaqueText.remove()
+      for (const { node } of controls) node.remove()
     },
   }
 }

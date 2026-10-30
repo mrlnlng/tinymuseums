@@ -30,15 +30,24 @@ const bow = await resized('costumes/kiki/bow.png', bowWidth)
 const bowMeta = await sharp(bow).metadata()
 
 await compose('mannequin-bare', [body])
-await compose('mannequin-kiki', [
-  body,
-  { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 175) * scale },
-  {
-    input: bow,
-    left: Math.round(centerX - bowWidth / 2 + 6),
-    top: Math.round((padTop + 8) * scale - bowMeta.height / 2 + 10),
-  },
-])
+const dressLayer = { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 175) * scale }
+const bowLayer = {
+  input: bow,
+  left: Math.round(centerX - bowWidth / 2 + 6),
+  top: Math.round((padTop + 8) * scale - bowMeta.height / 2 + 10),
+}
+await compose('mannequin-kiki', [body, dressLayer, bowLayer])
+await compose('mannequin-dress', [dressLayer])
+await compose('mannequin-bow', [bowLayer])
+
+// Isolate the existing golden railing for the foreground pass during a climb.
+const stairSource = sharp(new URL('atelier/staircase.png', root).pathname)
+const { data: rail, info } = await stairSource.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+for (let i = 0; i < rail.length; i += 4) {
+  if (!(rail[i] > 140 && rail[i + 1] > 70 && rail[i + 2] < 35)) rail[i + 3] = 0
+}
+await sharp(rail, { raw: info }).png().toFile(new URL('atelier/railing.png', root).pathname)
+
 
 
 // The atelier's bare Ionic column is the helmet pedestal cut below the stand's plate.

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import type { HallSliceDto } from '@tiny/core'
 import PinnedNotes from '@/features/guestboard/components/PinnedNotes'
 import { useGuestNotes } from '@/features/guestboard/hooks/useGuestNotes'
+import AtelierLoading from '@/features/hall/components/AtelierLoading'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
@@ -197,7 +198,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45 }}
           >
-            <HallSkeleton preload={false} />
+            {arrival === 'stairs' ? <AtelierLoading /> : <HallSkeleton preload={false} />}
           </motion.div>
         )}
       </AnimatePresence>

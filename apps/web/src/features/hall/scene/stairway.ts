@@ -1,3 +1,4 @@
+import { coverFloorTransition } from '../lib/floor-transition'
 import { CONFIG } from './config'
 import { FLOOR_FEET, climbSpan, feetOn, type Flight } from './flights'
 import type { Traversal } from './traversal'
@@ -134,6 +135,7 @@ export function createStairway({ traversal, flight, end, clearX, dip }: Options)
         if (t >= 1 && dipOpacity >= 1) {
           const done = covered
           covered = null
+          coverFloorTransition()
           done()
         }
       }

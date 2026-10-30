@@ -1,5 +1,6 @@
 'use client'
 
+import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { MAX_BUG_CONTACT, MAX_BUG_MESSAGE } from '@tiny/core/bugs'
@@ -10,6 +11,7 @@ type Status = 'editing' | 'sending' | 'sent'
 const SEND_FAILED = 'Could not send that — try again in a moment.'
 
 export default function BugReportSheet({ onClose }: { onClose: () => void }) {
+  const dialogRef = useModalFocus()
   const pathname = usePathname()
   const [message, setMessage] = useState('')
   const [contact, setContact] = useState('')
@@ -48,7 +50,7 @@ export default function BugReportSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="bug-report" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
+    <div ref={dialogRef} className="bug-report" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
       <button type="button" className="bug-report-scrim" onClick={onClose} aria-label="Close" />
 
       {status === 'sent' ? (

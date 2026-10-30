@@ -45,8 +45,8 @@ test('the test fixture obeys the merge laws in an injected registry', () => {
   checkRegistry('injected', FIXTURE_REGISTRY)
 })
 
-test('the production SLOTS registry is empty and holds no test fixture', () => {
-  assert.deepEqual(SLOTS, {})
+test('the production SLOTS registry holds the outfit and no test fixture', () => {
+  assert.deepEqual(Object.keys(SLOTS), ['outfit'])
   assert.equal(slotDef('test-fixture'), null)
   assert.equal(slotDef('constructor'), null)
 })

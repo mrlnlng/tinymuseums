@@ -27,14 +27,25 @@ export class Traversal {
 
   private worldPerPixel = 0.0084
 
+  private detachWindow = () => {}
+
   attach(element: HTMLElement): void {
-    window.addEventListener('keydown', (e) => {
+    const keydown = (e: KeyboardEvent) => {
       this.idleSeconds = 0
       if (e.repeat) return
       this.keys.add(e.key.toLowerCase())
-    })
-    window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()))
-    window.addEventListener('blur', () => this.keys.clear())
+    }
+    const keyup = (e: KeyboardEvent) => this.keys.delete(e.key.toLowerCase())
+    const blur = () => this.keys.clear()
+    window.addEventListener('keydown', keydown)
+    window.addEventListener('keyup', keyup)
+    window.addEventListener('blur', blur)
+    // The element goes with its page; the window does not, so its listeners are removed.
+    this.detachWindow = () => {
+      window.removeEventListener('keydown', keydown)
+      window.removeEventListener('keyup', keyup)
+      window.removeEventListener('blur', blur)
+    }
 
     element.addEventListener('pointerdown', (e) => {
       this.idleSeconds = 0
@@ -88,6 +99,11 @@ export class Traversal {
     )
   }
 
+  detach(): void {
+    this.detachWindow()
+    this.keys.clear()
+  }
+
   private get locked(): boolean {
     return this.suspended || this.introducing
   }
@@ -111,6 +127,10 @@ export class Traversal {
     return this.heldAt !== null && this.x === this.heldAt && !this.walking
   }
 
+  get isFollowing(): boolean {
+    return this.following
+  }
+
   get isIntro(): boolean {
     return this.introducing
   }
@@ -127,6 +147,9 @@ export class Traversal {
     this.lastFootX = x
     this.walking = false
     this.introducing = false
+    this.heldAt = null
+    this.following = false
+    this.dragging = false
   }
 
   playIntro(startX: number, targetX: number): void {
@@ -139,8 +162,8 @@ export class Traversal {
     this.introducing = true
   }
 
-  update(dt: number, totalLength: number): void {
-    if (!this.locked) this.moveCamera(dt, totalLength)
+  update(dt: number, min: number, max: number): void {
+    if (!this.locked) this.moveCamera(dt, min, max)
     this.walkToward(dt)
     this.enforceLeash()
     if (this.following) {
@@ -162,7 +185,7 @@ export class Traversal {
     this.idleSeconds = resting ? this.idleSeconds + dt : 0
   }
 
-  private moveCamera(dt: number, totalLength: number): void {
+  private moveCamera(dt: number, min: number, max: number): void {
     const left = this.keys.has('arrowleft') || this.keys.has('a')
     const right = this.keys.has('arrowright') || this.keys.has('d')
     const input = (right ? 1 : 0) - (left ? 1 : 0)
@@ -177,11 +200,11 @@ export class Traversal {
     this.velocity = clamp(this.velocity, -CONFIG.move.maxScrollSpeed, CONFIG.move.maxScrollSpeed)
     if (!this.dragging) this.cameraX += this.velocity * dt
 
-    if (this.cameraX < 0) {
-      this.cameraX = 0
+    if (this.cameraX < min) {
+      this.cameraX = min
       this.velocity = 0
-    } else if (this.cameraX > totalLength) {
-      this.cameraX = totalLength
+    } else if (this.cameraX > max) {
+      this.cameraX = max
       this.velocity = 0
     }
   }

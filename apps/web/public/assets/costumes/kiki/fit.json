@@ -1,0 +1,105 @@
+{
+  "costume": "kiki",
+  "canvas_px": [
+    1668,
+    2388
+  ],
+  "note": "art/ = cropped to bbox_px (use for runtime). source/ = full-canvas 1668x2388 cleaned originals (stray specks removed). Positions below are canvas px, y down.",
+  "parts": {
+    "bow": {
+      "art": "art/costume_kiki__bow.png",
+      "bbox_px": [
+        155,
+        289,
+        1117,
+        1029
+      ],
+      "bone": "head",
+      "draw_order": 17,
+      "hides": []
+    },
+    "broom": {
+      "art": "art/costume_kiki__broom.png",
+      "bbox_px": [
+        15,
+        935,
+        769,
+        1821
+      ],
+      "bone": "chest",
+      "draw_order": 0,
+      "note": "drawn BEHIND the character; cat only"
+    },
+    "body_cat": {
+      "art": "art/costume_kiki__body__cat.png",
+      "bbox_px": [
+        447,
+        1195,
+        1447,
+        1942
+      ],
+      "skinned": true,
+      "groups": [
+        "hips",
+        "leg_L",
+        "leg_R",
+        "tail"
+      ],
+      "draw_order": 5,
+      "hides": [
+        "cat_ribbon"
+      ]
+    },
+    "body_bunny": {
+      "art": "art/costume_kiki__body__bunny.png",
+      "bbox_px": [
+        335,
+        1068,
+        1546,
+        1940
+      ],
+      "skinned": true,
+      "groups": [
+        "hips",
+        "leg_L",
+        "leg_R"
+      ],
+      "draw_order": 9,
+      "hides": [
+        "bowtie"
+      ]
+    },
+    "bunny_paw": {
+      "note": "bunny only: the existing bunny_arm_L layer is shown ABOVE the dress at its original place, bbox_px [651,1435,913,1704], draw_order 10"
+    }
+  },
+  "per_character": {
+    "cat": {
+      "parts": [
+        "broom",
+        "bow",
+        "body_cat"
+      ],
+      "hides": [
+        "cat_ribbon"
+      ],
+      "rig": "cat/cat_rig_kiki_full.blend"
+    },
+    "bunny": {
+      "parts": [
+        "bow",
+        "body_bunny",
+        "bunny_paw"
+      ],
+      "no_broom": true,
+      "hides": [
+        "bowtie"
+      ],
+      "rig": "bunny/bunny_rig_kiki_full.blend"
+    }
+  },
+  "gotchas": [
+    "Skinned parts (the dresses) sort by object origin, so their object origin depth must equal their draw-order depth; offset the mesh, not just the vertices.",
+    "Transparent planes are coplanar: set renderOrder from draw_order at runtime."
+  ]
+}

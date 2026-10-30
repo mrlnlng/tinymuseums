@@ -32,6 +32,14 @@ import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
+import { outfit } from '@tiny/core/slots'
+import manifest from '@/generated/asset-manifest.json'
+import { builtUrl } from '@/shared/lib/assets'
+import { defaultStore } from '@/shared/lib/slots'
+import { lobbyFlight, climbSpan } from '@/features/hall/scene/flights'
+import { createStairway } from '@/features/hall/scene/stairway'
+import { createLobbyStairs, type LobbyStairs } from '@/features/hall/scene/stairs'
+import { followOutfit, lookOf } from '@/features/hall/scene/wardrobe'
 
 const BACKDROP_LENGTH = 600
 
@@ -65,6 +73,9 @@ export interface HallHosts {
 
 interface Options {
   hosts: HallHosts
+  /** Through the front door, or back down the stairs from the atelier. */
+  arrival: 'door' | 'stairs'
+  onGoUpstairs: () => void
   initialSlice: HallSliceDto
   isSuspended: boolean
   onOpenPiece: (piece: OpenPiece) => void
@@ -80,6 +91,8 @@ interface Options {
 
 export function useHallScene({
   hosts,
+  arrival,
+  onGoUpstairs,
   initialSlice,
   isSuspended,
   onOpenPiece,
@@ -121,6 +134,9 @@ export function useHallScene({
 
   const onGuestBoardHungRef = useRef(onGuestBoardHung)
   onGuestBoardHungRef.current = onGuestBoardHung
+
+  const onGoUpstairsRef = useRef(onGoUpstairs)
+  onGoUpstairsRef.current = onGoUpstairs
 
   const onIntroDoneRef = useRef(onIntroDone)
   onIntroDoneRef.current = onIntroDone
@@ -167,7 +183,9 @@ export function useHallScene({
       hall.ingestSlice(initialSlice)
       hall.onTextureReady = (texture) => renderer.initTexture(texture)
 
-      const character = createCharacter(assets, characterHost)
+      const outfitSlot = defaultStore().getSlot(outfit)
+      const character = createCharacter(assets, characterHost, lookOf(outfitSlot.snapshot()))
+      const outfitFollower = followOutfit(character, outfitSlot, () => false, () => {})
       const placards = new Placards(overlayHost)
       const lobbySigns = new LobbySigns(overlayHost, lobby.marks)
       const traversal = new Traversal()
@@ -193,6 +211,52 @@ export function useHallScene({
       applyViewport()
       const resizeObserver = new ResizeObserver(applyViewport)
       resizeObserver.observe(canvasHost)
+
+      const dip = document.createElement('div')
+      dip.className = 'floor-dip'
+      dip.hidden = true
+      canvasHost.parentElement?.appendChild(dip)
+
+      let lobbyStairs: LobbyStairs | null = null
+      let stairsSettled = false
+      const stairway = createStairway({
+        traversal,
+        flight: lobbyFlight,
+        end: 'foot',
+        clearX: climbSpan(lobbyFlight).from + 0.7,
+        dip,
+      })
+
+      function climb(): void {
+        if (stairway.busy || traversal.isIntro || isSuspendedRef.current) return
+        track('stairs')
+        soundRef.current.play('click')
+        stairway.leave(() => onGoUpstairsRef.current())
+      }
+
+      // The staircase and the glimpse of the floor above are small, and part of the opening view.
+      void Promise.all(
+        [manifest.atelier.staircase.src, manifest.atelier.wallpaper.src].map((src) =>
+          new THREE.TextureLoader().loadAsync(builtUrl(src)),
+        ),
+      )
+        .then(([stairsMap, upstairsWall]) => {
+          if (isDisposed) {
+            stairsMap.dispose()
+            upstairsWall.dispose()
+            return
+          }
+          lobbyStairs = createLobbyStairs(scene, {
+            stairs: stairsMap,
+            upstairsWall,
+            floor: assets.textures.floor,
+            floorAspect: assets.aspect.floor,
+          })
+        })
+        .catch(() => {})
+        .finally(() => {
+          stairsSettled = true
+        })
 
       const entrance = CONFIG.lobby.startX
       const introStart = entrance - CONFIG.lobby.introWalk
@@ -336,7 +400,7 @@ export function useHallScene({
         const moved = Math.hypot(event.clientX - pressX, event.clientY - pressY)
         const slop = event.pointerType === 'touch' ? TAP_SLOP_PX.touch : TAP_SLOP_PX.mouse
         const tooSlow = performance.now() - pressedAt > TAP_TIMEOUT_MS
-        isTap = !(moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro)
+        isTap = !(moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro || stairway.busy)
       }
 
       // Taps act on click, not pointerup: on touch screens the browser's click lands on
@@ -347,6 +411,11 @@ export function useHallScene({
         isTap = false
 
         aim(event)
+
+        if (lobbyStairs?.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
+          climb()
+          return
+        }
 
         if (lobby.hitTestDoor(raycaster)) {
           track('leave')
@@ -473,7 +542,7 @@ export function useHallScene({
       function openingReady(now: number): boolean {
         if (now - openingStart > OPENING_MAX_WAIT_MS) return true
         const { loaded, total } = hall.stats()
-        return fontsReady && loaded >= Math.min(1, total)
+        return fontsReady && stairsSettled && loaded >= Math.min(1, total)
       }
 
       let frameHandle = 0
@@ -494,12 +563,16 @@ export function useHallScene({
             isReadyRef.current = true
             readyAt = now
             setIsReady(true)
-            traversal.playIntro(introStart, entrance)
+            if (arrival === 'stairs' && lobbyStairs) stairway.arrive()
+            else traversal.playIntro(introStart, entrance)
           }
         } else {
-          traversal.setSuspended(isSuspendedRef.current)
-          traversal.update(dt, hall.layout.totalLength)
+          traversal.setSuspended(isSuspendedRef.current || stairway.locked)
+          // Without its staircase the lobby keeps its old left edge.
+          traversal.update(dt, lobbyStairs ? climbSpan(lobbyFlight).from : 0, hall.layout.totalLength)
         }
+        const moving = stairway.update(dt)
+        const cameraX = moving?.x ?? traversal.cameraX
 
         if (restX === null && !traversal.isIntro) {
           restX = traversal.cameraX
@@ -509,14 +582,21 @@ export function useHallScene({
           onFirstMoveRef.current()
         }
 
-        rig.sync(traversal.cameraX)
-        sitting?.update(dt, traversal.cameraX, rig.viewWidth / 2)
-        character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+        rig.sync(cameraX, moving?.rise ?? 0)
+        sitting?.update(dt, cameraX, rig.viewWidth / 2)
+        character.update(
+          dt,
+          moving?.x ?? traversal.x,
+          moving?.velocity ?? traversal.walkVelocity,
+          rig.camera,
+          viewport,
+          moving?.centerY,
+        )
         helm?.update(dt, character, rig.camera, viewport)
         matcha?.update(dt, character, rig.camera, viewport)
-        soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
+        soundRef.current.setWalking(Math.abs(moving?.velocity ?? traversal.walkVelocity) > WALKING_SPEED)
 
-        hall.update(now, dt, traversal.cameraX)
+        hall.update(now, dt, cameraX)
         if (!isSuspendedRef.current) hall.releaseCoin()
         raiseGiftShop()
         raiseGuestBoard()
@@ -530,7 +610,7 @@ export function useHallScene({
         funZoneSign?.sync(rig.camera, viewport)
         comingSoonNote?.sync(rig.camera, viewport)
 
-        lobby.update(dt, traversal.cameraX)
+        lobby.update(dt, cameraX)
         const cafeX = hall.layout.cafeX
         const nearCafe =
           cafeX !== null && Math.abs(cafeX - traversal.cameraX) < CONFIG.virtualization.loadRadiusUnits
@@ -568,8 +648,12 @@ export function useHallScene({
         guestBoardNotes?.clear()
         funZoneSign?.clear()
         comingSoonNote?.clear()
+        traversal.detach()
+        outfitFollower.dispose()
         hall.dispose()
         lobby.dispose()
+        lobbyStairs?.dispose()
+        stairway.dispose()
         giftShop?.dispose()
         sitting?.dispose()
         guestBoard?.dispose()

@@ -65,3 +65,15 @@ export const stamp = (set: TombSet): number => {
   for (const entry of Object.values(set)) if (entry.at > highest) highest = entry.at
   return Math.max(Date.now(), highest + 1)
 }
+
+export type Latest<V> = { v: V; at: number }
+
+const encoded = (value: unknown): string => JSON.stringify(value) ?? ''
+
+// The later choice wins; equal stamps fall back to the encoded value, so every device agrees.
+export const latest = <V>(a: Latest<V>, b: Latest<V>): Latest<V> => {
+  if (a.at !== b.at) return a.at > b.at ? a : b
+  return encoded(a.v) >= encoded(b.v) ? a : b
+}
+
+export const restamp = <V>(current: Latest<V>, v: V): Latest<V> => ({ v, at: Math.max(Date.now(), current.at + 1) })

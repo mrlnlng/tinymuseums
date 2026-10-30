@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { startVisit } from '@/shared/lib/visit'
 
 function isPublicPage(path: string): boolean {
-  return path === '/' || path === '/museum' || path.startsWith('/a/')
+  return path === '/' || path === '/museum' || path === '/museum/atelier' || path.startsWith('/a/')
 }
 
 export default function VisitTracker() {

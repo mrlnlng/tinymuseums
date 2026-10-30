@@ -24,6 +24,11 @@ export const VISIT_FEATURES = {
   volume: 'Volume changed',
   leave: 'Left through the door',
   bug_report: 'Report a problem opened',
+  stairs: 'Stairs to the Costume Atelier',
+  atelier: 'Reached the Costume Atelier',
+  costume_on: 'Costume tried on',
+  costume_off: 'Costume returned',
+  character: 'Changed character',
 } as const
 
 export type VisitFeature = keyof typeof VISIT_FEATURES

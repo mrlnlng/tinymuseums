@@ -63,6 +63,8 @@ export function createSitting(
   return {
     tap(raycaster) {
       if (!board.hitTestBeanbag(raycaster, state !== 'free' && state !== 'approaching')) return false
+      // Sitting is painted for the plain bunny only.
+      if (state === 'free' && !character.canSit) return false
       if (state === 'free') approach(false)
       else if (state === 'approaching') standUp()
       else if (state === 'seated') {
@@ -75,7 +77,7 @@ export function createSitting(
     update(dt, cameraX, halfViewWidth) {
       if (state === 'free') {
         const near = Math.abs(traversal.x - board.x) <= nearDistance
-        if (near && traversal.idleSeconds >= idleSeconds) approach(true)
+        if (near && character.canSit && traversal.idleSeconds >= idleSeconds) approach(true)
         return
       }
 
@@ -88,6 +90,12 @@ export function createSitting(
 
       if (state === 'seated') {
         hop(1)
+        // A look without sitting art (a costume arriving from another device) stands up.
+        if (!character.canSit) {
+          state = 'leaving'
+          progress = 0
+          return
+        }
         if (Math.abs(cameraX - seat.x) > halfViewWidth + seatHalfWidth) {
           state = 'leaving'
           progress = 0

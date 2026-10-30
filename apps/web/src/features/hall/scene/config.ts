@@ -111,7 +111,10 @@ export const CONFIG = {
 
   helm: {
     worn: {
-      rig: { bone: 'head', x: 830, y: 470, width: 1450, rotation: 0 },
+      rig: {
+        bunny: { bone: 'head', x: 830, y: 470, width: 1450, rotation: 0 },
+        cat: { bone: 'head', x: 790, y: 600, width: 1250, rotation: 0 },
+      },
       facing: 'left' as const,
       width: 446,
       walk: { x: 262, y: 106, rotation: 0 },
@@ -123,8 +126,11 @@ export const CONFIG = {
 
   matcha: {
     held: {
-      // The approved raised arm is painted into the hips-skinned torso.
-      rig: { bone: 'hips', x: 1390, y: 1470, width: 360, rotation: 14 },
+      rig: {
+        // The approved raised arm is painted into the hips-skinned torso.
+        bunny: { bone: 'hips', x: 1390, y: 1470, width: 360, rotation: 14 },
+        cat: { bone: 'arm_R', x: 1430, y: 1250, width: 330, rotation: 14 },
+      },
       facing: 'right' as const,
       width: 136,
       walk: { x: 399, y: 291, rotation: 14 },
@@ -147,6 +153,43 @@ export const CONFIG = {
     pedestal: { dx: 0.2, y: 0.02, z: 0.25 },
     wiggleEverySeconds: 3.2,
     vanishSeconds: 0.35,
+  },
+
+  // One drawing serves both floors: its base stands in the lobby, its landing meets the atelier floor.
+  // One drawing serves both floors: its base stands in the lobby, its landing meets the atelier floor.
+  stairs: {
+    drawing: [1027, 939],
+    unitsPerPx: 0.0058,
+    landing: { x: 753, y: 199 },
+    // The tread tops, bottom step first, as [left edge, top] in drawing px.
+    treads: [[0, 865], [100, 717], [192, 643], [284, 569], [376, 495], [472, 421], [564, 347], [658, 273], [753, 199]],
+    // Far enough left of the door that the flight's underside clears the Visitor Center sign.
+    lobby: { postX: -2.6, baseY: -0.24, z: 0.1 },
+    post: 563,
+    climbSeconds: 2.6,
+    // Fraction of the flight walked in view before the dip to the other floor's page.
+    dipAt: 0.58,
+    dipSeconds: 0.3,
+    // The lobby's ceiling: the flight rises into it, so its landing is never seen hanging.
+    ceiling: { thickness: 0.3, right: 4.75, z: 0.45 },
+  },
+
+  atelier: {
+    wallTile: [1.61, 1.29],
+    min: -1.0,
+    max: 9.9,
+    arriveX: 0.45,
+    title: { x: 0.8, y: 3.5, width: 2.5 },
+    plaque: { x: 0.8, y: 2.4, width: 2.1, height: 1.12, z: 0.2, textWidth: 1.75 },
+    columns: [1.15, 3.95, 7.95, 10.6],
+    column: { height: 1.15, bottom: -0.22, z: 0.3 },
+    featured: { x: 2.6, costume: 'kiki', standX: 1.75 },
+    // Each character stands on display; the visitor's own platform stands empty.
+    displays: { bunny: 5.25, cat: 6.7, near: 1.3 },
+    bare: { x: 9.3 },
+    mannequin: { height: 2.37, feetY: -0.12, z: 0.35, canvas: { padX: 45, padTop: 45, form: [173, 525] } },
+    platform: { width: 1.6, centerY: -0.27, z: 0.32 },
+    spotlight: { height: 4.6, top: 5.4, z: 0.05 },
   },
 
   statue: { minDwellMs: 180 },

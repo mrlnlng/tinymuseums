@@ -20,7 +20,7 @@ export interface Lobby {
 const POST_BOX = { width: 240, height: 233 }
 const POST_PANEL = { x: 120, y: 88, width: 190 }
 
-const POST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 233">
+const POST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="233" viewBox="0 0 240 233">
   <g fill="#c06a12" stroke="#5d3218" stroke-width="6" stroke-linejoin="round">
     <path d="M105 2h30l4 229h-38z"/>
     <g transform="rotate(-1.6 120 88)">

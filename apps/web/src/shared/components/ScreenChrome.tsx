@@ -13,7 +13,7 @@ export default function ScreenChrome() {
   if (pathname.startsWith('/studio')) return null
 
   const showHome = pathname !== '/'
-  const showReport = pathname === '/' || pathname === '/museum'
+  const showReport = pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier'
 
   return (
     <div className="screen-chrome">

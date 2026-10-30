@@ -20,7 +20,7 @@ export interface VitalRow {
 
 export function normalizePage(path: unknown): string {
   if (typeof path !== 'string') return 'other'
-  if (path === '/' || path === '/museum') return path
+  if (path === '/' || path === '/museum' || path === '/museum/atelier') return path
   if (path.startsWith('/a/')) return '/a/[slug]'
   if (path.startsWith('/studio')) return '/studio'
   return 'other'

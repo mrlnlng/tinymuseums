@@ -3,18 +3,52 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { modelUrl } from '@/shared/lib/assets'
 import type { RigState } from './rig-motion'
 
-// A fixed frame in layer-canvas px, rather than reframing each animated pose. The standing
-// bunny spans spriteTop to feet, which callers size like the old sprite's full box; the rest
-// leaves room for ear twitches, the turn hop and the shadow. centerX is the body's middle.
-export const BUNNY_RIG_FRAME = { width: 1520, top: 48, bottom: 2262, spriteTop: 248, feet: 2162, centerX: 872 } as const
-const SQUASH_Y = 2143
+export type CharacterKind = 'bunny' | 'cat'
 
-// The bow is painted on the 1668 × 2388 layer canvas; this is its crop and knot.
-const BOW = { bone: 'chest', x: 809, y: 1146, width: 469, height: 581, knotX: 1005, knotY: 1262, drawOrder: 12 } as const
-// Each eye's box on the eyes layer, so the two can blink about their own centres.
-const EYES = [{ x: 753, y: 1005, width: 80, height: 122 }, { x: 1069, y: 805, width: 80, height: 121 }] as const
-const FEET = [{ bone: 'leg_L', x: 620, y: 2110 }, { bone: 'leg_R', x: 1180, y: 2110 }] as const
-const SHADOW = { x: 900, y: 2128, width: 820, height: 110 } as const
+interface Frame {
+  width: number
+  top: number
+  bottom: number
+  spriteTop: number
+  feet: number
+  centerX: number
+}
+
+interface RigSpec {
+  model: 'bunnyRig' | 'catRig'
+  // A fixed frame in layer-canvas px, rather than reframing each animated pose. The standing
+  // character spans spriteTop to feet, which callers size like the old sprite's full box; the
+  // rest leaves room for ear twitches, the turn hop, the shadow and costumes. centerX is the
+  // body's middle.
+  frame: Frame
+  squashY: number
+  // The bunny's chest bow lives on the 1668 × 2388 layer canvas outside the export; costumes
+  // hide it by this name.
+  chestBow?: { name: string; bone: string; x: number; y: number; width: number; height: number; knotX: number; knotY: number; drawOrder: number }
+  blink: { split: string; eyes: readonly { x: number; y: number; width: number; height: number }[] } | { groups: readonly (readonly string[])[] }
+  feet: readonly { bone: string; x: number; y: number }[]
+  shadow: { x: number; y: number; width: number; height: number }
+}
+
+const SPECS: Record<CharacterKind, RigSpec> = {
+  bunny: {
+    model: 'bunnyRig',
+    frame: { width: 1520, top: 48, bottom: 2262, spriteTop: 248, feet: 2162, centerX: 872 },
+    squashY: 2143,
+    chestBow: { name: 'bowtie', bone: 'chest', x: 809, y: 1146, width: 469, height: 581, knotX: 1005, knotY: 1262, drawOrder: 12 },
+    blink: { split: 'bunny_eyes', eyes: [{ x: 753, y: 1005, width: 80, height: 122 }, { x: 1069, y: 805, width: 80, height: 121 }] },
+    feet: [{ bone: 'leg_L', x: 620, y: 2110 }, { bone: 'leg_R', x: 1180, y: 2110 }],
+    shadow: { x: 900, y: 2128, width: 820, height: 110 },
+  },
+  cat: {
+    model: 'catRig',
+    frame: { width: 1740, top: 100, bottom: 2245, spriteTop: 225, feet: 2145, centerX: 840 },
+    squashY: 2125,
+    blink: { groups: [['cat_eye_L', 'cat_pupil_L'], ['cat_eye_R', 'cat_pupil_R']] },
+    feet: [{ bone: 'leg_L', x: 720, y: 2120 }, { bone: 'leg_R', x: 1150, y: 2110 }],
+    shadow: { x: 935, y: 2128, width: 860, height: 110 },
+  },
+}
 
 const canvasToModel = (x: number, y: number) => new THREE.Vector3((x - 834) / 1000, (1194 - y) / 1000, 0)
 
@@ -34,33 +68,40 @@ export interface RigAttachmentPose {
   rotation: number
 }
 
-export interface BunnyRig {
+export interface Rig {
+  readonly kind: CharacterKind
   /** Canvas width over height. */
   readonly aspect: number
-  /** Canvas height for a standing bunny one unit tall, as the old sprite was drawn. */
+  /** Canvas height for a standing character one unit tall, as the old sprite was drawn. */
   readonly spriteScale: number
   /** Where the feet sit, as a fraction of the canvas height from its top. */
   readonly feet: number
   readonly cycleSeconds: number
+  readonly costumes: readonly string[]
+  setCostume(id: string | null): void
   render(state: RigState, dt: number, height: number, pixelRatio: number): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
   dispose(): void
 }
 
-export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig> {
+export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): Promise<Rig> {
+  const spec = SPECS[kind]
+  const { frame } = spec
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
   renderer.setClearColor(0, 0)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.NoToneMapping
 
-  const bowLoad = new THREE.TextureLoader().loadAsync(modelUrl('bunnyRigBow')).catch((error) => {
-    console.warn('[hall] bunny bow unavailable', error)
-    return null
-  })
+  const bowLoad = spec.chestBow
+    ? new THREE.TextureLoader().loadAsync(modelUrl('bunnyRigBow')).catch((error) => {
+        console.warn('[hall] bunny bow unavailable', error)
+        return null
+      })
+    : Promise.resolve(null)
   let gltf
   let bowMap
   try {
-    [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl('bunnyRig')), bowLoad])
+    [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl(spec.model)), bowLoad])
   } catch (error) {
     renderer.dispose()
     void bowLoad.then((texture) => texture?.dispose())
@@ -99,7 +140,17 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
     return material
   }
 
+  const costumeParts = new Map<string, THREE.Object3D[]>()
+  const costumeHides = new Map<string, Set<string>>()
   model.traverse((node) => {
+    if (node.userData.layer === 'costume') {
+      const id = String(node.userData.costume)
+      costumeParts.set(id, [...(costumeParts.get(id) ?? []), node])
+      const hides = costumeHides.get(id) ?? new Set<string>()
+      for (const name of String(node.userData.hides ?? '').split(',')) if (name.trim()) hides.add(name.trim())
+      costumeHides.set(id, hides)
+      node.visible = false
+    }
     if (!(node instanceof THREE.Mesh)) return
     geometries.add(node.geometry)
     const original = (Array.isArray(node.material) ? node.material : [node.material]) as THREE.MeshStandardMaterial[]
@@ -125,20 +176,19 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
     image?.close?.()
   }
 
-  // The export embeds separate base-colour copies that this unlit renderer does not use.
   for (const texture of unusedTextures) {
     if (!textures.has(texture)) releaseTexture(texture)
   }
 
   const scene = new THREE.Scene()
   scene.add(model)
-  const frameHeight = BUNNY_RIG_FRAME.bottom - BUNNY_RIG_FRAME.top
+  const frameHeight = frame.bottom - frame.top
   const halfHeight = frameHeight / 2000
-  const halfWidth = BUNNY_RIG_FRAME.width / 2000
-  const bodyX = canvasToModel(BUNNY_RIG_FRAME.centerX, 0).x
+  const halfWidth = frame.width / 2000
+  const bodyX = canvasToModel(frame.centerX, 0).x
   const camera = new THREE.OrthographicCamera(-halfWidth, halfWidth, halfHeight, -halfHeight, 0.1, 100)
-  const squashY = canvasToModel(0, SQUASH_Y).y
-  camera.position.set(bodyX, canvasToModel(0, (BUNNY_RIG_FRAME.top + BUNNY_RIG_FRAME.bottom) / 2).y, 10)
+  const squashY = canvasToModel(0, spec.squashY).y
+  camera.position.set(bodyX, canvasToModel(0, (frame.top + frame.bottom) / 2).y, 10)
   camera.updateProjectionMatrix()
   camera.updateMatrixWorld()
   const mixer = new THREE.AnimationMixer(model)
@@ -161,68 +211,107 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
   })
 
   const bowPivot = new THREE.Object3D()
-  const bowBone = model.getObjectByName(BOW.bone)
-  const bowInverse = restInverse.get(BOW.bone)
-  if (bowMap && bowBone && bowInverse) {
-    const geometry = new THREE.PlaneGeometry(BOW.width / 1000, BOW.height / 1000)
+  const bowSpec = spec.chestBow
+  const bowBone = bowSpec ? model.getObjectByName(bowSpec.bone) : undefined
+  const bowInverse = bowSpec ? restInverse.get(bowSpec.bone) : undefined
+  let chestBow: THREE.Mesh | null = null
+  if (bowSpec && bowMap && bowBone && bowInverse) {
+    const geometry = new THREE.PlaneGeometry(bowSpec.width / 1000, bowSpec.height / 1000)
     geometries.add(geometry)
-    const bow = new THREE.Mesh(geometry, paintedMaterial(bowMap))
-    bow.name = 'bunny_bow'
-    bow.renderOrder = BOW.drawOrder
-    bow.frustumCulled = false
-    bow.position.copy(canvasToModel(BOW.x + BOW.width / 2, BOW.y + BOW.height / 2))
-    bow.applyMatrix4(bowInverse)
-    bowBone.add(bow)
-    bowPivot.position.copy(canvasToModel(BOW.knotX, BOW.knotY)).applyMatrix4(bowInverse)
+    chestBow = new THREE.Mesh(geometry, paintedMaterial(bowMap))
+    chestBow.name = bowSpec.name
+    chestBow.renderOrder = bowSpec.drawOrder
+    chestBow.frustumCulled = false
+    chestBow.position.copy(canvasToModel(bowSpec.x + bowSpec.width / 2, bowSpec.y + bowSpec.height / 2))
+    chestBow.applyMatrix4(bowInverse)
+    bowBone.add(chestBow)
+    bowPivot.position.copy(canvasToModel(bowSpec.knotX, bowSpec.knotY)).applyMatrix4(bowInverse)
     bowBone.add(bowPivot)
     model.updateMatrixWorld(true)
-    bowPivot.attach(bow)
+    bowPivot.attach(chestBow)
   } else if (bowMap) {
     bowMap.dispose()
   }
 
-  // Split the shared eyes layer into one quad per eye, reusing its texture coordinates.
-  const eyeLayer = model.getObjectByName('bunny_eyes')
-  const blinkers: THREE.Mesh[] = []
-  if (eyeLayer instanceof THREE.Mesh && eyeLayer.parent) {
-    const position = eyeLayer.geometry.getAttribute('position')
-    const uv = eyeLayer.geometry.getAttribute('uv')
-    let left = 0, right = 0, bottom = 0, top = 0
-    for (let i = 0; i < position.count; i++) {
-      if (position.getX(i) < position.getX(left)) left = i
-      if (position.getX(i) > position.getX(right)) right = i
-      if (position.getY(i) < position.getY(bottom)) bottom = i
-      if (position.getY(i) > position.getY(top)) top = i
-    }
-    const lerp = (value: number, a: number, b: number, from: number, to: number) =>
-      from + ((value - a) / (b - a)) * (to - from)
-    const toLocal = eyeLayer.matrixWorld.clone().invert()
-    for (const eye of EYES) {
-      const min = canvasToModel(eye.x, eye.y + eye.height).applyMatrix4(toLocal)
-      const max = canvasToModel(eye.x + eye.width, eye.y).applyMatrix4(toLocal)
-      const center = min.clone().add(max).multiplyScalar(0.5)
-      const geometry = new THREE.PlaneGeometry(max.x - min.x, max.y - min.y)
-      const corners = geometry.getAttribute('position')
-      const uvs = geometry.getAttribute('uv')
-      for (let i = 0; i < corners.count; i++) {
-        const x = center.x + corners.getX(i)
-        const y = center.y + corners.getY(i)
-        uvs.setXY(
-          i,
-          lerp(x, position.getX(left), position.getX(right), uv.getX(left), uv.getX(right)),
-          lerp(y, position.getY(bottom), position.getY(top), uv.getY(bottom), uv.getY(top)),
-        )
+  // Each blinker scales about its own centre.
+  const blinkers: THREE.Object3D[] = []
+  if ('split' in spec.blink) {
+    // Split the shared eyes layer into one quad per eye, reusing its texture coordinates.
+    const eyeLayer = model.getObjectByName(spec.blink.split)
+    if (eyeLayer instanceof THREE.Mesh && eyeLayer.parent) {
+      const position = eyeLayer.geometry.getAttribute('position')
+      const uv = eyeLayer.geometry.getAttribute('uv')
+      let left = 0, right = 0, bottom = 0, top = 0
+      for (let i = 0; i < position.count; i++) {
+        if (position.getX(i) < position.getX(left)) left = i
+        if (position.getX(i) > position.getX(right)) right = i
+        if (position.getY(i) < position.getY(bottom)) bottom = i
+        if (position.getY(i) > position.getY(top)) top = i
       }
-      geometries.add(geometry)
-      const mesh = new THREE.Mesh(geometry, eyeLayer.material)
-      mesh.renderOrder = eyeLayer.renderOrder
-      mesh.frustumCulled = false
-      mesh.position.copy(center).applyMatrix4(eyeLayer.matrix)
-      mesh.quaternion.copy(eyeLayer.quaternion)
-      eyeLayer.parent.add(mesh)
-      blinkers.push(mesh)
+      const lerp = (value: number, a: number, b: number, from: number, to: number) =>
+        from + ((value - a) / (b - a)) * (to - from)
+      const toLocal = eyeLayer.matrixWorld.clone().invert()
+      for (const eye of spec.blink.eyes) {
+        const min = canvasToModel(eye.x, eye.y + eye.height).applyMatrix4(toLocal)
+        const max = canvasToModel(eye.x + eye.width, eye.y).applyMatrix4(toLocal)
+        const center = min.clone().add(max).multiplyScalar(0.5)
+        const geometry = new THREE.PlaneGeometry(max.x - min.x, max.y - min.y)
+        const corners = geometry.getAttribute('position')
+        const uvs = geometry.getAttribute('uv')
+        for (let i = 0; i < corners.count; i++) {
+          const x = center.x + corners.getX(i)
+          const y = center.y + corners.getY(i)
+          uvs.setXY(
+            i,
+            lerp(x, position.getX(left), position.getX(right), uv.getX(left), uv.getX(right)),
+            lerp(y, position.getY(bottom), position.getY(top), uv.getY(bottom), uv.getY(top)),
+          )
+        }
+        geometries.add(geometry)
+        const mesh = new THREE.Mesh(geometry, eyeLayer.material)
+        mesh.renderOrder = eyeLayer.renderOrder
+        mesh.frustumCulled = false
+        mesh.position.copy(center).applyMatrix4(eyeLayer.matrix)
+        mesh.quaternion.copy(eyeLayer.quaternion)
+        eyeLayer.parent.add(mesh)
+        blinkers.push(mesh)
+      }
+      eyeLayer.visible = false
     }
-    eyeLayer.visible = false
+  } else {
+    const box = new THREE.Box3()
+    for (const names of spec.blink.groups) {
+      const meshes = names.flatMap((name) => {
+        const mesh = model.getObjectByName(name)
+        return mesh instanceof THREE.Mesh && mesh.parent ? [mesh] : []
+      })
+      if (meshes.length === 0) continue
+      box.makeEmpty()
+      for (const mesh of meshes) box.expandByObject(mesh)
+      const pivot = new THREE.Object3D()
+      meshes[0].parent!.add(pivot)
+      pivot.position.copy(meshes[0].parent!.worldToLocal(box.getCenter(a)))
+      model.updateMatrixWorld(true)
+      for (const mesh of meshes) pivot.attach(mesh)
+      blinkers.push(pivot)
+    }
+  }
+
+  const baseHidden = new Set<THREE.Object3D>()
+  function setCostume(id: string | null): void {
+    for (const node of baseHidden) node.visible = true
+    baseHidden.clear()
+    for (const [costume, parts] of costumeParts) {
+      for (const part of parts) part.visible = costume === id
+    }
+    if (id === null) return
+    for (const name of costumeHides.get(id) ?? []) {
+      const node = model.getObjectByName(name)
+      if (node && node.visible) {
+        node.visible = false
+        baseHidden.add(node)
+      }
+    }
   }
 
   const shadowCanvas = document.createElement('canvas')
@@ -238,17 +327,18 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
     shadowPaint.fillStyle = gradient
     shadowPaint.fillRect(0, 0, 128, 128)
   }
-  const shadowGeometry = new THREE.PlaneGeometry(SHADOW.width / 1000, SHADOW.height / 1000)
+  const shadowGeometry = new THREE.PlaneGeometry(spec.shadow.width / 1000, spec.shadow.height / 1000)
   geometries.add(shadowGeometry)
   const shadowMaterial = paintedMaterial(new THREE.CanvasTexture(shadowCanvas))
   const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial)
-  const shadowAt = canvasToModel(SHADOW.x, SHADOW.y)
+  const shadowAt = canvasToModel(spec.shadow.x, spec.shadow.y)
   shadow.position.copy(shadowAt)
+  // Above the broom, which is drawn behind everything at order 0.
   shadow.renderOrder = 1
   shadow.frustumCulled = false
   scene.add(shadow)
 
-  const feet = FEET.flatMap((foot) => {
+  const feet = spec.feet.flatMap((foot) => {
     const bone = model.getObjectByName(foot.bone)
     const inverse = restInverse.get(foot.bone)
     if (!bone || !inverse) return []
@@ -306,17 +396,20 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
 
   if (!clip || !walkAction || !restAction) {
     dispose()
-    throw new Error('The bunny rig has no walk clip')
+    throw new Error(`The ${kind} rig has no walk clip`)
   }
 
   return {
-    aspect: BUNNY_RIG_FRAME.width / frameHeight,
-    spriteScale: frameHeight / (BUNNY_RIG_FRAME.feet - BUNNY_RIG_FRAME.spriteTop),
-    feet: (BUNNY_RIG_FRAME.feet - BUNNY_RIG_FRAME.top) / frameHeight,
+    kind,
+    aspect: frame.width / frameHeight,
+    spriteScale: frameHeight / (frame.feet - frame.spriteTop),
+    feet: (frame.feet - frame.top) / frameHeight,
     cycleSeconds: clip.duration,
+    costumes: [...costumeParts.keys()],
+    setCostume,
     render(state, dt, nextHeight, pixelRatio) {
       const nextRatio = Math.min(3, Math.max(2, pixelRatio))
-      const nextWidth = nextHeight * BUNNY_RIG_FRAME.width / frameHeight
+      const nextWidth = nextHeight * frame.width / frameHeight
       const resized = height !== nextHeight || ratio !== nextRatio
       if (resized) {
         width = nextWidth
@@ -345,7 +438,7 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
         bone.quaternion.copy(bone.node.quaternion)
       }
 
-      // Turning squeezes the bunny through edge-on with a small hop.
+      // Turning squeezes the character through edge-on with a small hop.
       const across = Math.sin((state.turn * Math.PI) / 2)
       const sign = across >= 0 ? 1 : -1
       const hop = 1 - across * across
@@ -384,7 +477,7 @@ export async function loadBunnyRig(canvas: HTMLCanvasElement): Promise<BunnyRig>
       model.updateMatrixWorld(true)
 
       // The bow hangs from its knot and trails the chest's sway, starts, stops and turns.
-      if (dt > 0 && chest) {
+      if (dt > 0 && chest && chestBow?.visible) {
         const body = planeAngle(chest)
         // Keep the spring stable through long frames, such as after a background tab.
         const step = Math.min(dt, 1 / 30)

@@ -280,24 +280,34 @@ function spriteFrom(sheets: Map<string, Sprite>, file: string): Sprite {
   return sprite
 }
 
-export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets> {
-  useAvif = await supportsAvif()
-  await prepareKtx2(renderer).catch((error) => console.warn('[hall] KTX2 unavailable', error))
-  const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
-  const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
+export type CharacterSprites = Pick<Assets, 'walk' | 'bunnyIdle'>
 
-  const packed = inSheets('entrance')
-  const [sheets, standalone, walkRight, idleLeft, idleRight] = await Promise.all([
-    loadSheets('entrance'),
-    loadStandalone(names.map((n) => ENTRANCE_FILES[n]).filter((f) => !packed.has(stem(f)))),
+/** The bunny's sprites: its fallback when no rig can draw, and its sitting and display poses. */
+export async function loadCharacterSprites(): Promise<CharacterSprites> {
+  useAvif = await supportsAvif()
+  const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
+  const [walkRight, idleLeft, idleRight] = await Promise.all([
     loadTolerant(rightFiles.map((f) => assetUrl(f))),
     loadRetrying(assetUrl('bunny-left.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
     loadRetrying(assetUrl('bunny-right.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
   ])
-  void loadMasks()
-
   const walkLeft: HTMLImageElement[] = []
   void loadTolerant(leftFiles.map((f) => assetUrl(f))).then((images) => walkLeft.push(...images))
+  return { walk: { left: walkLeft, right: walkRight }, bunnyIdle: { left: idleLeft, right: idleRight } }
+}
+
+export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets> {
+  useAvif = await supportsAvif()
+  await prepareKtx2(renderer).catch((error) => console.warn('[hall] KTX2 unavailable', error))
+  const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
+
+  const packed = inSheets('entrance')
+  const [sheets, standalone, sprites] = await Promise.all([
+    loadSheets('entrance'),
+    loadStandalone(names.map((n) => ENTRANCE_FILES[n]).filter((f) => !packed.has(stem(f)))),
+    loadCharacterSprites(),
+  ])
+  void loadMasks()
 
   const { textures, aspect } = pick(names, ENTRANCE_FILES, sheets, standalone)
 
@@ -308,8 +318,7 @@ export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets>
     manifest,
     textures,
     aspect,
-    walk: { left: walkLeft, right: walkRight },
-    bunnyIdle: { left: idleLeft, right: idleRight },
+    ...sprites,
     pedestals: manifest.pedestals.map((p) => ({ ...spriteFrom(sheets, p.file), file: p.file })),
     helpCat: HELP_CAT_FRAMES.map((f) => spriteFrom(sheets, f)),
   }

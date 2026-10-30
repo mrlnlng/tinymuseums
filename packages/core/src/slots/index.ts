@@ -1,9 +1,13 @@
 import { defineSlot, docBytes, type SlotDef } from './define.ts'
+import { outfit } from './outfit.ts'
 
 export { defineSlot, docBytes, type SlotDef }
 export * from './merge.ts'
+export { CHARACTERS, outfit, type CharacterChoice, type Outfit } from './outfit.ts'
 
-export const SLOTS: Record<string, SlotDef<unknown>> = {}
+export const SLOTS: Record<string, SlotDef<unknown>> = {
+  [outfit.name]: outfit as SlotDef<unknown>,
+}
 
 export function slotDef(
   name: string,

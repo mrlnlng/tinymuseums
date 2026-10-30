@@ -20,7 +20,7 @@ type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity'
 
 const written = new WeakMap<HTMLElement, Partial<Record<StyledProperty, string>>>()
 
-function writeStyle(node: HTMLElement, property: StyledProperty, value: string): void {
+export function writeStyle(node: HTMLElement, property: StyledProperty, value: string): void {
   let last = written.get(node)
   if (!last) {
     last = {}
@@ -155,7 +155,7 @@ export class Placards {
 }
 
 // Pins a text label to a point in the world, sized to its width in world units.
-function placeLabel(
+export function placeLabel(
   node: HTMLElement,
   mark: { x: number; y: number; width: number },
   perUnit: number,

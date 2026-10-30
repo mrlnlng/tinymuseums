@@ -2277,3 +2277,103 @@ code.token {
   justify-content: center;
   gap: 10px;
 }
+
+.floor-dip {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #3a0707;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.atelier-title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-title);
+  font-weight: 400;
+  color: #f7a8c4;
+  text-align: center;
+  line-height: 1.05;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.atelier-plaque {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  font-family: var(--font-button);
+  color: var(--plaque-ink);
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.hall-costume { z-index: 3; }
+
+.museum.atelier { background: #3a0707; }
+
+.atelier-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  background:
+    radial-gradient(ellipse 55% 45% at 50% 18%, rgb(255 236 226 / 16%), transparent 70%),
+    #3a0707;
+  color: #f7a8c4;
+  text-align: center;
+}
+
+.atelier-loading-art { width: min(52%, 220px); overflow: visible; }
+
+.atelier-loading-form { fill: #fbe3d3; stroke: #e8c4ad; stroke-width: 1.5; }
+.atelier-loading-form path:last-child { fill: none; stroke: #c9905f; stroke-width: 5; stroke-linecap: round; }
+
+.atelier-loading-stitches {
+  fill: none;
+  stroke: #f7a8c4;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 7 6;
+  animation: atelier-stitch 1.4s linear infinite;
+}
+
+.atelier-loading-bow { fill: #d7322f; transform-origin: 120px 62px; animation: atelier-bow 2.8s ease-in-out infinite; }
+
+.atelier-loading-needle {
+  fill: #e7e7ef;
+  offset-rotate: auto;
+  animation: atelier-needle 3.2s linear infinite;
+}
+.atelier-loading-needle ellipse { fill: #3a0707; }
+
+.atelier-loading-title {
+  margin: 0.2em 0 0;
+  font-family: var(--font-title);
+  font-size: clamp(26px, calc(var(--screen-width, 390px) * 0.08), 38px);
+}
+
+.atelier-loading-note {
+  margin: 0;
+  font-family: var(--font-button);
+  font-size: clamp(11px, calc(var(--screen-width, 390px) * 0.03), 14px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e9c9b8;
+  opacity: 0.85;
+}
+
+@keyframes atelier-stitch { to { stroke-dashoffset: -26; } }
+@keyframes atelier-needle { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes atelier-bow { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }

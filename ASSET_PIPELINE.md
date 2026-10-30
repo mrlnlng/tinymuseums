@@ -108,19 +108,27 @@ Follow-up noticed on the way, not part of this work: the landing page's
 "Currently showing" list keys items by artist id, which repeats now that
 the hall walks one artist's works, so React logs a duplicate-key warning.
 
-## Rigged bunny
+## Character rigs and the Costume Atelier
 
-The approved v4 GLB master is `apps/web/public/assets/bunny-rig-v4.glb`.
-It is served unchanged through the content-hashed `models.bunnyRig` entry in
-`src/generated/asset-manifest.json`. After importing a new approved GLB, or after
-running an older image-only optimiser, run:
+The rig masters are `apps/web/public/assets/bunny-rig-kiki.glb` and `cat-rig-kiki.glb`,
+byte-identical to the costume handoff: the approved bunny (v4) and cat rigs plus the
+"kiki" costume meshes. Their skeletons, walk clips and base parts match the plain rigs
+exactly. The atelier's art lives in `public/assets/atelier/` and the costume art in
+`public/assets/costumes/`. After importing any of these, run:
 
 ```bash
-npm run assets:bunny-rig --workspace @tiny/web
+npm run assets:models --workspace @tiny/web
 ```
 
-This copies the model into `public/immutable/` and updates only its manifest entry.
-The hall loads the actual rig and `walk` clip; it retains the old sprite assets for
-load/context-loss fallback and sitting. Runtime materials use the GLB's emissive
-textures as unlit colour maps and its `draw_order` extras for stable layer ordering.
-See `docs/bunny-rig-author-handoff.md` for the author's approved motion and source.
+`tooling/compose-atelier.mjs` builds the derived art (the bare and dressed mannequins on
+one shared canvas, the bare column cut from the helmet pedestal, the flying costume, the
+waiting cat). `tooling/prepare-models.mjs` then writes `public/immutable/` copies and the
+`models` and `atelier` manifest entries. Each GLB is slimmed on the way: the export
+carries every painting twice (an emissive map and a base-colour map multiplied by
+black), so the base-colour copies are dropped (bunny 2.13 MB -> 1.38 MB, cat
+1.39 MB -> 1.04 MB). Run it after the image optimiser, which rewrites the manifest.
+
+The atelier's damask wallpaper is a seamless 318 x 256 px tile cut from the owner's mock
+(`costume_atelier_mock_scene/8.png`, x 560-878, y 0-256) and scaled 2x; no wallpaper tile
+was supplied. Replace `public/assets/atelier/wallpaper.png` with a real tile when one exists.
+See `docs/costume-atelier.md` for the floor itself.

@@ -6,7 +6,7 @@ The model is the author's unchanged `rig_export/bunny_rig.glb` from
 
 ## Rendering and movement
 
-- `scene/bunny-rig.ts` loads the actual skin, bones, and `walk` action with
+- `scene/rig.ts` (formerly `bunny-rig.ts`, now shared with the cat) loads the actual skin, bones, and `walk` action with
   `GLTFLoader` / `AnimationMixer`. The skinned torso remains intact.
 - Its transparent canvas occupies the existing character overlay and uses the same
   world-to-screen placement as the former sprite. The camera matches the supplied
@@ -41,8 +41,9 @@ base-colour texture copies in this export are released after material replacemen
 
 ## Assets
 
-The master GLB lives at `apps/web/public/assets/bunny-rig-v4.glb`. Run
-`npm run assets:bunny-rig --workspace @tiny/web` after replacing it, or after an
+The bunny now loads from `apps/web/public/assets/bunny-rig-kiki.glb`, the same v4 rig plus
+the kiki costume; see `ASSET_PIPELINE.md`. Run
+`npm run assets:models --workspace @tiny/web` after replacing it, or after an
 image-only optimisation run. The tracked helper fingerprints it into
 `public/immutable/` and updates `models.bunnyRig` in the generated asset manifest.
 The current model is 1,427,168 bytes and is byte-identical to the supplied file.
@@ -50,7 +51,7 @@ The current model is 1,427,168 bytes and is byte-identical to the supplied file.
 ## Local review and checks
 
 - Museum: `http://localhost:3000/museum`.
-- Isolated rig: `http://localhost:3000/dev/bunny-rig` (development only). Its pose
+- Isolated rig: `http://localhost:3000/dev/rig` (development only). Its pose
   slider and facing toggle use the same renderer as the hall.
 - `npm run typecheck --workspace @tiny/web` passes. A production build is deliberately
   not run alongside the development server because both write `.next`.

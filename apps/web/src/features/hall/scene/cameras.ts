@@ -29,8 +29,8 @@ export class CameraRig {
     return this.camera.right - this.camera.left
   }
 
-  sync(x: number): void {
-    this.camera.position.set(x, centerYFor(this.frustumHeight), 24)
+  sync(x: number, rise = 0): void {
+    this.camera.position.set(x, centerYFor(this.frustumHeight) + rise, 24)
     this.camera.updateMatrixWorld()
   }
 }

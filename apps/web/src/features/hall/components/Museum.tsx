@@ -29,9 +29,10 @@ const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
+  arrival: 'door' | 'stairs'
 }
 
-export default function Museum({ initialSlice }: MuseumProps) {
+export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const characterRef = useRef<HTMLDivElement>(null)
@@ -67,6 +68,8 @@ export default function Museum({ initialSlice }: MuseumProps) {
       guestBoardNotes: guestBoardNotesRef,
     },
     initialSlice,
+    arrival,
+    onGoUpstairs: () => router.push('/museum/atelier'),
     isSuspended,
     onOpenPiece: setOpenPiece,
     onLeave: () => router.push('/'),

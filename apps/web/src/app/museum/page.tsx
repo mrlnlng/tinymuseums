@@ -10,24 +10,26 @@ export const dynamic = 'force-dynamic'
 
 const FIRST_SLICE = 4
 
-export default function MuseumPage() {
+export default async function MuseumPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  // Coming down from the atelier, the visitor steps off the stairs instead of in at the door.
+  const arrival = (await searchParams).from === 'atelier' ? 'stairs' : 'door'
   return (
     <>
       <MediaPreconnect />
       <HallPreload />
       <Suspense fallback={<HallSkeleton />}>
-        <Hall />
+        <Hall arrival={arrival} />
       </Suspense>
     </>
   )
 }
 
-async function Hall() {
+async function Hall({ arrival }: { arrival: 'door' | 'stairs' }) {
   const slice = await firstSlice(FIRST_SLICE)
 
   return (
     <>
-      <Museum initialSlice={slice} />
+      <Museum initialSlice={slice} arrival={arrival} />
 
       <nav className="hall-index" aria-label="Artists in the museum">
         <h1>{BRAND}</h1>

@@ -1101,10 +1101,60 @@
   "ktx2": null,
   "models": {
     "bunnyRig": {
-      "src": "bunny-rig-v4.e35f4e2f3b.glb"
+      "src": "bunny-rig-kiki.9c4313558a.glb"
     },
     "bunnyRigBow": {
       "src": "bunny-rig-bow.021c8341a1.png"
+    },
+    "catRig": {
+      "src": "cat-rig-kiki.72623b4b32.glb"
+    }
+  },
+  "atelier": {
+    "staircase": {
+      "src": "atelier-staircase.dc1f0a7f2d.webp",
+      "width": 1027,
+      "height": 939
+    },
+    "mannequin": {
+      "src": "atelier-mannequin-bare.d623f7011f.webp",
+      "width": 789,
+      "height": 1710
+    },
+    "mannequinDressed": {
+      "src": "atelier-mannequin-kiki.e29c76f342.webp",
+      "width": 789,
+      "height": 1710
+    },
+    "platform": {
+      "src": "atelier-platform.c2505f7d9c.webp",
+      "width": 397,
+      "height": 100
+    },
+    "spotlight": {
+      "src": "atelier-spotlight.66ee716e6d.webp",
+      "width": 717,
+      "height": 692
+    },
+    "wallpaper": {
+      "src": "atelier-wallpaper.6eab15a1ae.webp",
+      "width": 636,
+      "height": 512
+    },
+    "column": {
+      "src": "atelier-column.d0e2882614.webp",
+      "width": 549,
+      "height": 629
+    },
+    "costumeKiki": {
+      "src": "atelier-costume-kiki.aaae2c62ab.webp",
+      "width": 645,
+      "height": 651
+    },
+    "catStanding": {
+      "src": "atelier-cat-standing.ffabd19e7e.webp",
+      "width": 669,
+      "height": 914
     }
   }
 }

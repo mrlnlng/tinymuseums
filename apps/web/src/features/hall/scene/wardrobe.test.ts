@@ -6,6 +6,10 @@ import type { Character, Look } from './character.ts'
 import type { AtelierRoom } from './atelier.ts'
 import type { SlotHandle } from '@/shared/lib/slots'
 
+const dress = { slot: 'costume', id: 'kiki' } as const
+const bow = { slot: 'bow', id: 'kiki' } as const
+const navy = { slot: 'costume', id: 'cardigan-navy-blue' } as const
+
 function setup() {
   let doc = definition.empty()
   const listeners = new Set<() => void>()
@@ -23,20 +27,24 @@ function setup() {
     async wear(next: Look) { attempts++; if (fail) return false; look = next; return true },
     setOpacity(value: number) { opacity = value },
   } as unknown as Character
-  const room = { setDressed() {}, setVisitor() {} } as unknown as AtelierRoom
+  const worn: (string | null)[][] = []
+  const room = { setWorn(costume: string | null, bow: string | null) { worn.push([costume, bow]) }, setVisitor() {} } as unknown as AtelierRoom
+  const misfits: string[] = []
   let idle: (() => void) | null = null
-  const wardrobe = createWardrobe({ character, room, outfit: slot, costume: 'kiki', onChange() {}, onIdle() { idle?.() } })
+  const wardrobe = createWardrobe({
+    character, room, outfit: slot, onChange() {}, onMisfit(item, kind) { misfits.push(`${item.id}:${kind}`) }, onIdle() { idle?.() },
+  })
   const settled = async () => { for (let i = 0; i < 25 && wardrobe.busy; i++) await new Promise(resolve => setTimeout(resolve, 0)); assert.equal(wardrobe.busy, false) }
-  return { slot, character, wardrobe, settled, fail() { fail = true }, get attempts() { return attempts }, get opacity() { return opacity }, onIdle(fn: () => void) { idle = fn } }
+  return { slot, character, wardrobe, settled, worn, misfits, fail() { fail = true }, get attempts() { return attempts }, get opacity() { return opacity }, onIdle(fn: () => void) { idle = fn } }
 }
 
 test('bow and dress toggle independently and rapid actions retain their order', async () => {
   const s = setup()
-  s.wardrobe.tapFeatured('bow')
+  s.wardrobe.tapItem(bow)
   await s.settled()
   assert.deepEqual(s.character.look, { kind: 'bunny', costume: null, bow: 'kiki' })
-  s.wardrobe.tapFeatured('dress')
-  s.wardrobe.tapFeatured('bow')
+  s.wardrobe.tapItem(dress)
+  s.wardrobe.tapItem(bow)
   s.wardrobe.tapDisplay('cat')
   await s.settled()
   assert.deepEqual(s.character.look, { kind: 'cat', costume: 'kiki', bow: null })
@@ -46,7 +54,7 @@ test('bow and dress toggle independently and rapid actions retain their order', 
 
 test('failed character change preserves the saved and visible outfit', async () => {
   const s = setup()
-  s.wardrobe.tapFeatured('dress')
+  s.wardrobe.tapItem(dress)
   await s.settled()
   s.fail()
   s.wardrobe.tapDisplay('cat')
@@ -65,4 +73,34 @@ test('a saved character whose model fails does not retry in an infinite loop', a
   follower.sync()
   assert.equal(s.attempts, 1)
   follower.dispose()
+})
+
+test('a cardigan replaces the dress, and changing colour swaps it', async () => {
+  const s = setup()
+  s.wardrobe.tapItem(dress)
+  s.wardrobe.tapItem(navy)
+  await s.settled()
+  assert.deepEqual(s.character.look, { kind: 'bunny', costume: 'cardigan-navy-blue', bow: null })
+  s.wardrobe.tapItem({ slot: 'costume', id: 'cardigan-red' })
+  await s.settled()
+  assert.equal(s.character.look.costume, 'cardigan-red')
+  s.wardrobe.tapItem({ slot: 'costume', id: 'cardigan-red' })
+  await s.settled()
+  assert.equal(lookOf(s.slot.snapshot()).costume, null)
+})
+
+test('a costume that does not fit stays on its stand and keeps the saved outfit', async () => {
+  const s = setup()
+  s.wardrobe.tapItem(navy)
+  s.wardrobe.tapDisplay('otter')
+  await s.settled()
+  assert.deepEqual(s.character.look, { kind: 'otter', costume: 'cardigan-navy-blue', bow: null })
+  assert.deepEqual(s.worn.at(-1), [null, null])
+  s.wardrobe.tapItem(dress)
+  await s.settled()
+  assert.deepEqual(s.misfits, ['kiki:otter'])
+  assert.equal(lookOf(s.slot.snapshot()).costume, 'cardigan-navy-blue')
+  s.wardrobe.tapDisplay('bunny')
+  await s.settled()
+  assert.deepEqual(s.worn.at(-1), ['cardigan-navy-blue', null])
 })

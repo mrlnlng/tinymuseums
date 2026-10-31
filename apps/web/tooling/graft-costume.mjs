@@ -71,9 +71,10 @@ function worldMatrices(json) {
 /**
  * Copies every costume mesh from `source` into `target`. Skinned layers bind to the target's
  * skin (same joints in the same order); rigid layers hang from the same-named bone, keeping
- * their place on the canvas. `paws` names target base layers repeated above the costume.
+ * their place on the canvas. `paws` names target base layers repeated above the costume, and
+ * `relabel` rewrites each copied layer's extras.
  */
-export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [] } = {}) {
+export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relabel = (extras) => extras } = {}) {
   const target = parse(targetGlb)
   const source = parse(sourceGlb)
   const t = target.json
@@ -162,7 +163,9 @@ export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [] } = {}
 
   s.nodes.forEach((node, i) => {
     if (node.mesh === undefined || node.extras?.layer !== 'costume' || skip.includes(node.extras.part)) return
-    const copy = { name: node.name, mesh: copyMesh(node.mesh), extras: node.extras }
+    const extras = relabel(node.extras)
+    const name = extras.costume === node.extras.costume ? node.name : `${node.name}_${extras.costume}`
+    const copy = { name, mesh: copyMesh(node.mesh), extras }
     if (node.skin !== undefined) {
       copy.skin = 0
       t.nodes.push(copy)

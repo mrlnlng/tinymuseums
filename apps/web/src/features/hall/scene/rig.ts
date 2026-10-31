@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { modelUrl } from '@/shared/lib/assets'
 import type { RigState } from './rig-motion'
 
-export type CharacterKind = 'bunny' | 'cat'
+export type CharacterKind = 'bunny' | 'cat' | 'otter'
 
 interface Frame {
   width: number
@@ -16,7 +16,7 @@ interface Frame {
 }
 
 interface RigSpec {
-  model: 'bunnyRig' | 'catRig'
+  model: 'bunnyRig' | 'catRig' | 'otterRig'
   // A fixed frame in layer-canvas px, rather than reframing each animated pose. The standing
   // character spans spriteTop to feet, which callers size like the old sprite's full box; the
   // rest leaves room for ear twitches, the turn hop, the shadow and costumes. centerX is the
@@ -48,6 +48,15 @@ const SPECS: Record<CharacterKind, RigSpec> = {
     blink: { groups: [['cat_eye_L', 'cat_pupil_L'], ['cat_eye_R', 'cat_pupil_R']] },
     feet: [{ bone: 'leg_L', x: 720, y: 2120 }, { bone: 'leg_R', x: 1150, y: 2110 }],
     shadow: { x: 935, y: 2128, width: 860, height: 110 },
+  },
+  // Drawn on the same canvas scale as the bunny, so the otter stands a little shorter.
+  otter: {
+    model: 'otterRig',
+    frame: { width: 1640, top: 100, bottom: 2280, spriteTop: 266, feet: 2170, centerX: 800 },
+    squashY: 2150,
+    blink: { groups: [['otter_eye_L'], ['otter_eye_R']] },
+    feet: [{ bone: 'leg_L', x: 705, y: 2150 }, { bone: 'leg_R', x: 1200, y: 2116 }],
+    shadow: { x: 900, y: 2150, width: 880, height: 110 },
   },
 }
 

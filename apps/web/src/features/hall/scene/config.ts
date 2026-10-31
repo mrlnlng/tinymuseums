@@ -115,6 +115,7 @@ export const CONFIG = {
       rig: {
         bunny: { bone: 'head', x: 830, y: 470, width: 1450, rotation: 0 },
         cat: { bone: 'head', x: 790, y: 600, width: 1250, rotation: 0 },
+        otter: { bone: 'head', x: 830, y: 500, width: 1180, rotation: 10 },
       },
       facing: 'left' as const,
       width: 446,
@@ -130,6 +131,7 @@ export const CONFIG = {
       rig: {
         bunny: { bone: 'arm_R', x: 1400, y: 1400, width: 360, rotation: 14 },
         cat: { bone: 'arm_R', x: 1430, y: 1250, width: 330, rotation: 14 },
+        otter: { bone: 'arm_R', x: 1420, y: 1370, width: 330, rotation: 14 },
       },
       facing: 'right' as const,
       width: 136,
@@ -174,12 +176,18 @@ export const CONFIG = {
     portraitBunny: { x: 650, y: 339, width: 110, z: 0.2 },
     ribbon: { x: 650, y: 407, width: 64, z: 0.21 },
     collection: { x: 1170, y: 132, width: 170 },
-    // The character the visitor can become hangs here; it shows whichever one they are not.
-    portrait: { x: 1173, y: 246, width: 107, z: 0.2 },
-    featured: { x: 910, costume: 'kiki' },
+    // The characters the visitor can become hang in these frames, each showing the bunny
+    // while the visitor is its own character.
+    portraits: [
+      { own: 'cat' as const, image: 'portraitJiji' as const, x: 1173, y: 246, width: 107, z: 0.2 },
+      { own: 'otter' as const, image: 'portraitOtter' as const, x: 2083, y: 262, width: 107, z: 0.2 },
+    ],
+    featured: { x: 910 },
     broom: { x: 987, y: 522, width: 115, z: 0.42 },
     bowPillar: { x: 1192, pillow: { y: 445, width: 210 }, bow: { x: 1185, y: 377, width: 160 } },
     painting: { x: 1487, y: 344, width: 381, z: 0.2 },
+    // The cardigan hangs on the first spare form; its colours are swatches on the platform.
+    cardigans: { label: { x: 1830, y: 132, width: 190 }, swatches: { y: 652, gap: 50, width: 34 } },
     // Spare forms further along: one spotlit on its platform, one standing on the carpet.
     forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 685, platform: false }],
     redPillar: { x: 2083, pillow: { y: 440, width: 210 } },

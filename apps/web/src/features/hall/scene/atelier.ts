@@ -7,6 +7,7 @@ import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { CharacterKind } from './rig'
+import { CARDIGANS } from './wardrobe'
 
 const { atelier } = CONFIG
 const { mock } = atelier
@@ -43,10 +44,35 @@ export function disposeAtelierArt(art: AtelierArt): void {
   for (const texture of Object.values(art)) texture.dispose()
 }
 
-export type ClothingPart = 'bow' | 'dress'
+/** A costume id worn in one of the outfit's two places. */
+export interface ClothingItem {
+  slot: 'costume' | 'bow'
+  id: string
+}
+
+type Cardigan = (typeof CARDIGANS)[number]
+const CARDIGAN_ART: Record<Cardigan, AtelierImage> = {
+  'cardigan-red': 'cardiganRed',
+  'cardigan-forest-green': 'cardiganForestGreen',
+  'cardigan-navy-blue': 'cardiganNavyBlue',
+  'cardigan-butter-yellow': 'cardiganButterYellow',
+}
+const CARDIGAN_NAMES: Record<Cardigan, string> = {
+  'cardigan-red': 'red',
+  'cardigan-forest-green': 'forest green',
+  'cardigan-navy-blue': 'navy blue',
+  'cardigan-butter-yellow': 'butter yellow',
+}
+const isCardigan = (id: string | null): id is Cardigan => (CARDIGANS as readonly (string | null)[]).includes(id)
+const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter' }
+
+function itemName({ slot, id }: ClothingItem): string {
+  if (isCardigan(id)) return `The ${CARDIGAN_NAMES[id]} cardigan`
+  return slot === 'bow' ? "Kiki's bow" : "Kiki's dress"
+}
 
 export interface AtelierActions {
-  onItem(part: ClothingPart): void
+  onItem(item: ClothingItem): void
   onCharacter(kind: CharacterKind): void
   onLeave(): void
 }
@@ -54,13 +80,15 @@ export interface AtelierActions {
 export interface AtelierRoom {
   setActions(actions: AtelierActions): void
   hitTestDoor(raycaster: THREE.Raycaster): boolean
-  hitTestFeatured(raycaster: THREE.Raycaster): ClothingPart | null
-  /** The character the portrait offers, if it is under the pointer. */
+  hitTestItem(raycaster: THREE.Raycaster): ClothingItem | null
+  /** The character a portrait offers, if it is under the pointer. */
   hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
-  /** Whether each piece is on display; a worn piece leaves its stand bare. */
-  setDressed(dress: boolean, bow: boolean): void
-  /** The portrait shows the character the visitor is not. */
+  /** What the visitor wears; a worn piece leaves its stand bare. */
+  setWorn(costume: string | null, bow: string | null): void
+  /** The portraits show the characters the visitor is not. */
   setVisitor(kind: CharacterKind): void
+  /** Says by the piece that it does not fit this character. */
+  showMisfit(item: ClothingItem, kind: CharacterKind): void
   sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean): void
   update(dt: number, visitorX: number): void
   dispose(): void
@@ -163,14 +191,27 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   dress.position.z += 0.01
   group.add(dress)
   const broom = picture('broom', atelier.broom)
-  for (const spare of atelier.forms) form(spare.x, spare.feetY, spare.platform, spare.platform)
+  const [cardiganStand, ...spares] = atelier.forms
+  const cardiganForm = form(cardiganStand.x, cardiganStand.feetY, cardiganStand.platform, cardiganStand.platform)
+  for (const spare of spares) form(spare.x, spare.feetY, spare.platform, spare.platform)
+  const cardigan = new THREE.Mesh(
+    new THREE.PlaneGeometry(canvasWidth, canvasHeight),
+    new THREE.MeshBasicMaterial({ map: art.cardiganRed, transparent: true, depthWrite: false }),
+  )
+  cardigan.position.copy(cardiganForm.position)
+  cardigan.position.z += 0.01
+  group.add(cardigan)
+  // The colour on the form: the last one chosen, shown again once it is given back.
+  let onForm: Cardigan = 'cardigan-red'
 
-  const portraits: Record<CharacterKind, Painted> = {
-    cat: picture('portraitJiji', atelier.portrait),
-    bunny: picture('portraitBunny', { ...atelier.portrait, width: atelier.portrait.width * 0.92 }),
-  }
-  let offered: CharacterKind = 'cat'
-  portraits.bunny.visible = false
+  // Each frame offers its own character, or the bunny while the visitor is that character.
+  const frames = atelier.portraits.map(({ own, image, ...spot }) => {
+    const mine = picture(image, spot)
+    const bunny = picture('portraitBunny', { ...spot, width: spot.width * 0.92 })
+    bunny.visible = false
+    const shows: Partial<Record<CharacterKind, Painted>> = { [own]: mine, bunny }
+    return { own: own as CharacterKind, spot, shows, offered: own as CharacterKind, rest: mine.position.clone(), near: false, hop: -1 }
+  })
 
   scene.add(group)
 
@@ -198,11 +239,31 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   text('div', 'atelier-title', 'The Costume Atelier', atelier.title, 0.088)
   text('p', 'atelier-plaque', "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn.", atelier.plaque, 0.058)
   text('div', 'atelier-collection', 'The Kiki Collection', atelier.collection, 0.2)
+  text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.2)
+  const kikiDress: ClothingItem = { slot: 'costume', id: 'kiki' }
+  const kikiBow: ClothingItem = { slot: 'bow', id: 'kiki' }
   const itemButtons = {
-    dress: control("Try on Kiki's dress", 'atelier-item atelier-item-dress', { x: featuredX, y: 330, width: 200 }, () => actions?.onItem('dress')),
-    bow: control("Try on Kiki's bow", 'atelier-item atelier-item-bow', atelier.bowPillar.bow, () => actions?.onItem('bow')),
+    dress: control("Try on Kiki's dress", 'atelier-item atelier-item-dress', { x: featuredX, y: 330, width: 200 }, () => actions?.onItem(kikiDress)),
+    bow: control("Try on Kiki's bow", 'atelier-item atelier-item-bow', atelier.bowPillar.bow, () => actions?.onItem(kikiBow)),
+    cardigan: control('Try on the red cardigan', 'atelier-item atelier-item-dress', { x: cardiganStand.x, y: 330, width: 200 }, () => actions?.onItem(cardiganItem())),
   }
-  const portraitButton = control('Walk as Jiji', 'atelier-choice', atelier.portrait, () => actions?.onCharacter(offered))
+  const { swatches } = atelier.cardigans
+  const swatchButtons = CARDIGANS.map((id, i) => {
+    const node = control(`Try on the ${CARDIGAN_NAMES[id]} cardigan`, `atelier-swatch atelier-swatch-${id}`, {
+      x: cardiganStand.x + (i - (CARDIGANS.length - 1) / 2) * swatches.gap,
+      y: swatches.y,
+      width: swatches.width,
+    }, () => actions?.onItem({ slot: 'costume', id }))
+    return node
+  })
+  const portraitButtons = frames.map((frame) =>
+    control(`Walk as ${CHARACTER_NAMES[frame.own]}`, 'atelier-choice', frame.spot, () => actions?.onCharacter(frame.offered)))
+  const note = document.createElement('p')
+  note.className = 'atelier-note'
+  note.setAttribute('role', 'status')
+  place(note, { x: 0, y: 0, width: 260 }, 0.075)
+  const noteSpot = controls[controls.length - 1].mark
+  let noteFor = 0
   const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
     x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
     y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
@@ -214,17 +275,21 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   let clock = 0
   let jiggle = -1
   let nextJiggle = 3.2
-  let portraitNear = false
-  let portraitHop = -1
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const rest = {
     dress: dress.position.clone(),
     bow: bow.position.clone(),
-    portrait: portraits.cat.position.clone(),
+    cardigan: cardigan.position.clone(),
   }
-  const shown = { dress: 1, bow: 1 }
+  const shown = { dress: 1, bow: 1, cardigan: 1 }
   let reflected = false
-  const target = { dress: 1, bow: 1 }
+  const target = { dress: 1, bow: 1, cardigan: 1 }
+  let worn: string | null = null
+
+  // The form offers its colour; once worn, the bare form gives it back.
+  function cardiganItem(): ClothingItem {
+    return { slot: 'costume', id: isCardigan(worn) ? worn : onForm }
+  }
 
 
   return {
@@ -234,19 +299,29 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       return door.hitTest(raycaster)
     },
 
-    hitTestFeatured(raycaster) {
-      if (pickPainted(raycaster, target.bow > 0 ? [bow] : [bow, bowPillow])) return 'bow'
-      if (pickPainted(raycaster, target.dress > 0 ? [dress, broom] : [featured])) return 'dress'
+    hitTestItem(raycaster) {
+      if (pickPainted(raycaster, target.bow > 0 ? [bow] : [bow, bowPillow])) return kikiBow
+      if (pickPainted(raycaster, target.dress > 0 ? [dress, broom] : [featured])) return kikiDress
+      if (pickPainted(raycaster, [target.cardigan > 0 ? cardigan : cardiganForm])) return cardiganItem()
       return null
     },
 
     hitTestDisplay(raycaster) {
-      return pickPainted(raycaster, [portraits[offered]]) ? offered : null
+      for (const frame of frames) {
+        if (pickPainted(raycaster, [frame.shows[frame.offered]!])) return frame.offered
+      }
+      return null
     },
 
-    setDressed(dressOn, bowOn) {
-      target.dress = dressOn ? 1 : 0
-      target.bow = bowOn ? 1 : 0
+    setWorn(costume, bowId) {
+      worn = costume
+      if (isCardigan(costume) && costume !== onForm) {
+        onForm = costume
+        cardigan.material.map = art[CARDIGAN_ART[costume]]
+      }
+      target.dress = costume === 'kiki' ? 0 : 1
+      target.bow = bowId === 'kiki' ? 0 : 1
+      target.cardigan = isCardigan(costume) ? 0 : 1
       // The first reflection is how the room opens, not a change to animate.
       if (!reflected) Object.assign(shown, target)
       reflected = true
@@ -256,18 +331,38 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
         node.setAttribute('aria-label', `${available ? 'Try on' : 'Return'} Kiki's ${part}`)
         node.setAttribute('aria-pressed', String(!available))
       }
+      const offer = cardiganItem()
+      itemButtons.cardigan.setAttribute('aria-label', `${target.cardigan > 0 ? 'Try on' : 'Return'} ${itemName(offer).toLowerCase()}`)
+      itemButtons.cardigan.setAttribute('aria-pressed', String(target.cardigan === 0))
+      CARDIGANS.forEach((id, i) => {
+        swatchButtons[i].setAttribute('aria-pressed', String(costume === id))
+        swatchButtons[i].setAttribute('aria-label', `${costume === id ? 'Return' : 'Try on'} the ${CARDIGAN_NAMES[id]} cardigan`)
+      })
     },
 
     setVisitor(kind) {
-      offered = kind === 'bunny' ? 'cat' : 'bunny'
-      portraits.cat.visible = offered === 'cat'
-      portraits.bunny.visible = offered === 'bunny'
-      portraitButton.setAttribute('aria-label', offered === 'cat' ? 'Walk as Jiji' : 'Walk as the bunny')
+      frames.forEach((frame, i) => {
+        frame.offered = kind === frame.own ? 'bunny' : frame.own
+        for (const [shown, mesh] of Object.entries(frame.shows)) mesh!.visible = shown === frame.offered
+        portraitButtons[i].setAttribute('aria-label', `Walk as ${CHARACTER_NAMES[frame.offered]}`)
+      })
+    },
+
+    showMisfit(item, kind) {
+      note.textContent = `${itemName(item)} doesn't fit ${CHARACTER_NAMES[kind]} yet`
+      const spot = item.id === 'kiki'
+        ? item.slot === 'bow' ? atelier.bowPillar.bow : { x: featuredX, y: 250 }
+        : { x: cardiganStand.x, y: 250 }
+      noteSpot.x = wx(spot.x)
+      noteSpot.y = wy(spot.y - 70)
+      noteFor = 2.6
     },
 
     sync(camera, viewport, enabled) {
       const perUnit = viewport.width / (camera.right - camera.left)
+      note.hidden = noteFor <= 0
       for (const { node, mark, font } of controls) {
+        if (node === note && note.hidden) continue
         const visible = placeLabel(node, mark, perUnit, camera, viewport, font)
         if (node instanceof HTMLButtonElement) {
           node.disabled = !enabled
@@ -292,7 +387,13 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
 
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
-      for (const part of ['dress', 'bow'] as const) shown[part] += (target[part] - shown[part]) * fade
+      for (const part of ['dress', 'bow', 'cardigan'] as const) shown[part] += (target[part] - shown[part]) * fade
+      noteFor = Math.max(0, noteFor - dt)
+      note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
+      cardigan.material.opacity = shown.cardigan
+      cardigan.visible = shown.cardigan > 0.01
+      cardigan.scale.x = 1 + 0.035 * wobble
+      cardigan.position.x = rest.cardigan.x - 0.022 * wobble
       dress.material.opacity = shown.dress
       dress.visible = shown.dress > 0.01
       broom.material.opacity = shown.dress
@@ -306,20 +407,22 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       bow.scale.x = 1 + 0.05 * wobble
       bow.position.y = rest.bow.y + 0.02 * Math.abs(wobble)
 
-      // The portrait hops as the visitor comes near, an invitation to step into it.
-      const near = Math.abs(visitorX - wx(atelier.portrait.x)) < 1.1
-      if (near && !portraitNear && !reducedMotion) portraitHop = 0
-      portraitNear = near
-      let lift = 0
-      if (portraitHop >= 0) {
-        portraitHop += dt
-        const p = portraitHop / 0.42
-        lift = p < 1 ? 0.08 * Math.sin(Math.PI * p) : 0
-        if (p >= 1) portraitHop = -1
-      }
-      for (const kind of ['cat', 'bunny'] as const) {
-        portraits[kind].position.y = rest.portrait.y + lift
-        portraits[kind].rotation.z = 0.05 * Math.sin(Math.PI * Math.max(0, Math.min(1, portraitHop / 0.42)) * 2)
+      // A portrait hops as the visitor comes near, an invitation to step into it.
+      for (const frame of frames) {
+        const near = Math.abs(visitorX - wx(frame.spot.x)) < 1.1
+        if (near && !frame.near && !reducedMotion) frame.hop = 0
+        frame.near = near
+        let lift = 0
+        if (frame.hop >= 0) {
+          frame.hop += dt
+          const p = frame.hop / 0.42
+          lift = p < 1 ? 0.08 * Math.sin(Math.PI * p) : 0
+          if (p >= 1) frame.hop = -1
+        }
+        for (const mesh of Object.values(frame.shows)) {
+          mesh!.position.y = frame.rest.y + lift
+          mesh!.rotation.z = 0.05 * Math.sin(Math.PI * Math.max(0, Math.min(1, frame.hop / 0.42)) * 2)
+        }
       }
     },
 

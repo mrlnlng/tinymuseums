@@ -2407,9 +2407,45 @@ code.token {
 .atelier-item-dress { aspect-ratio: 1; }
 .atelier-choice { aspect-ratio: 0.85; }
 .atelier-choice:disabled { pointer-events: none; }
+.atelier-swatch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0.14em solid #fbd99a;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0.08em 0.2em rgb(30 4 4 / 0.55);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.atelier-swatch[aria-pressed="true"] { border-color: #fff4dc; outline: 0.12em solid #f7a8c4; outline-offset: 0.08em; }
+.atelier-swatch:disabled { pointer-events: none; }
+.atelier-swatch-cardigan-red { --swatch: #d03a2c; }
+.atelier-swatch-cardigan-forest-green { --swatch: #269648; }
+.atelier-swatch-cardigan-navy-blue { --swatch: #2442a8; }
+.atelier-swatch-cardigan-butter-yellow { --swatch: #fac034; }
+.atelier-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0.45em 0.8em;
+  border-radius: 999px;
+  background: #fbe8c8;
+  color: #4b2311;
+  font-family: var(--font-button);
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 0.15em 0.5em rgb(30 4 4 / 0.45);
+  opacity: var(--fade, 1) !important;
+  pointer-events: none;
+}
 .gallery-door-cue:focus-visible,
 .atelier-exit:focus-visible,
 .atelier-item:focus-visible,
+.atelier-swatch:focus-visible,
 .atelier-choice:focus-visible {
   outline: 2px solid #f7a8c4;
   outline-offset: 5px;
@@ -2425,4 +2461,4 @@ code.token {
   opacity: 1;
   transition: opacity 220ms ease-out;
 }
-.gallery-door-cue[hidden], .atelier-exit[hidden], .atelier-choice[hidden], .atelier-item[hidden] { display: none; }
+.gallery-door-cue[hidden], .atelier-exit[hidden], .atelier-choice[hidden], .atelier-item[hidden], .atelier-swatch[hidden], .atelier-note[hidden] { display: none; }

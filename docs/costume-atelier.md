@@ -1,7 +1,8 @@
 # The Costume Atelier
 
 A costume gallery room, reached through the fashion-themed archway to the left of the visitor centre. Visitors try on the
-bow and dress independently from the mannequin and can walk as the cat instead of the bunny. All
+bow and dress from the mannequin, or a cardigan in one of four colours, and can walk as the
+cat or the otter instead of the bunny. All
 choices persist through the `outfit` slot, so they come back on the next visit, and they
 sync across devices when the visitor has an account.
 
@@ -28,14 +29,20 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 - **In the atelier**, left to right: the doorway and "Back to museum", the red
   curtains, the title on its gilt shelf with the plaque text, the cabinet with the jewellery box
   and perfume, two bunny portraits; then **The Kiki Collection**: the spotlit form wearing the
-  dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then a
-  spotlit bare form, an empty red pillow, a mirror and a last bare form.
+  dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then
+  **The Cardigan Collection**: the spotlit form in a cardigan with four colour swatches on its
+  platform, the otter portrait above an empty red pillow, a mirror and a last bare form.
 - **Trying on.** Tap the dress (or the broom) or the bow. Each jiggles now and then as an
   invitation. A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
-  pillow to give it back. Either can be worn alone or both together.
-- **Changing character.** The portrait in the Kiki Collection shows the character the visitor is
-  not: Jiji while walking as the bunny, the bunny while walking as Jiji. Tap it to change. It hops
-  as the visitor comes near. Both clothing choices carry over between characters.
+  pillow to give it back. Either can be worn alone or both together. A swatch puts on that
+  colour of cardigan; the form keeps the last colour chosen. A cardigan replaces the dress, and
+  the dress replaces a cardigan, since both are the outfit's `costume`.
+- **What fits.** The bunny wears everything, the cat only the kiki pieces, and the otter nothing
+  yet (`FITS` in `wardrobe.ts`). Tapping a piece that does not fit shows a short note by it. A
+  saved costume that does not fit stays on its stand, and comes back on the next character it fits.
+- **Changing character.** Two portraits offer characters: Jiji in the Kiki Collection and the
+  otter in the Cardigan Collection. A frame shows the bunny instead while the visitor is its own
+  character. Tap one to change. Each hops as the visitor comes near. Clothing choices carry over.
 - **Back in the museum** the outfit stays on. Sitting is painted only for the plain bunny, so the
   beanbag ignores other looks. The helmet and cup have anchors for both characters.
 
@@ -88,6 +95,20 @@ The bunny is the repainted v2 rig (`public/assets/bunny-rig-v2.glb`, from
 build time (`npm run assets:models`), with v2's own hanging paw repeated above the dress. The
 red chest bow is still added at runtime (`bunny-rig-bow.png`). Its eyes are separate layers and
 blink independently.
+
+The cardigans come from `bunny_cardigan_rigs` (one bunny v2 export per colour,
+`public/assets/bunny-rig-v2-cardigan-<colour>.glb`). The same graft adds each as its own costume
+`cardigan-<colour>`, hiding the chest bow under the collar; `slimGlb` stores their shared
+geometry once. Only the walk was fitted, which is all the rig plays. The cardigans on the form
+(`atelier/mannequin-cardigan-<colour>.png`) are the handoff's source layers scaled onto the
+form.
+
+## The otter
+
+`public/assets/otter-rig.glb` from `otter_rig_handoff`: the same skeleton, canvas and walk clip
+as the others, drawn at the bunny's canvas scale so it stands a little shorter. It has no
+costumes yet. Its portrait (`atelier/portrait-otter.png`) is the Jiji frame with the otter's head
+layers painted in. Helmet and cup anchors are in `config.ts`.
 
 ## Art not supplied as files
 

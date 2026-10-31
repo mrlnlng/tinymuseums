@@ -12,6 +12,8 @@ const PROPS = [
   { name: 'matcha' as const, attachment: CONFIG.matcha.held },
 ]
 
+const NEXT: Record<CharacterKind, CharacterKind> = { bunny: 'cat', cat: 'otter', otter: 'bunny' }
+
 export default function RigPreview() {
   const host = useRef<HTMLDivElement>(null)
   const playback = useRef({ scrub: null as number | null, playing: true, facing: 'right' as 'left' | 'right' })
@@ -110,8 +112,8 @@ export default function RigPreview() {
       <p>{error || 'Loaded from the supplied GLBs'}</p>
       <div ref={host} data-testid="rig-preview" style={{ position: 'relative' }} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', padding: 16 }}>
-        <button onClick={() => setKind(kind === 'bunny' ? 'cat' : 'bunny')}>
-          Show {kind === 'bunny' ? 'cat' : 'bunny'}
+        <button onClick={() => setKind(NEXT[kind])}>
+          Show {NEXT[kind]}
         </button>
         <select aria-label="Costume" value={costume ?? ''} onChange={(event) => setCostume(event.target.value || null)}>
           <option value="">No costume</option>

@@ -1,10 +1,18 @@
 import { restamp, type Outfit } from '@tiny/core/slots'
 import type { SlotHandle } from '@/shared/lib/slots'
-import type { AtelierRoom, ClothingPart } from './atelier'
+import type { AtelierRoom, ClothingItem } from './atelier'
 import type { Character, Look } from './character'
 import type { CharacterKind } from './rig'
 
-export const COSTUMES = ['kiki'] as const
+export const CARDIGANS = ['cardigan-red', 'cardigan-forest-green', 'cardigan-navy-blue', 'cardigan-butter-yellow'] as const
+export const COSTUMES = ['kiki', ...CARDIGANS] as const
+
+/** The costumes fitted to each character's rig; the others stay on their stands. */
+export const FITS: Record<CharacterKind, readonly string[]> = {
+  bunny: COSTUMES,
+  cat: ['kiki'],
+  otter: [],
+}
 
 export function lookOf(outfit: Outfit): Look {
   const known = (id: string | null) => id !== null && (COSTUMES as readonly string[]).includes(id) ? id : null
@@ -41,7 +49,7 @@ export function followOutfit(
 export interface Wardrobe {
   readonly busy: boolean
   reflect(): void
-  tapFeatured(part: ClothingPart): void
+  tapItem(item: ClothingItem): void
   tapDisplay(kind: CharacterKind): void
   dispose(): void
 }
@@ -50,19 +58,21 @@ interface Options {
   character: Character
   room: AtelierRoom
   outfit: SlotHandle<Outfit>
-  costume: string
   onChange: (change: 'costume_on' | 'costume_off' | 'character') => void
+  onMisfit: (item: ClothingItem, kind: CharacterKind) => void
   onIdle: () => void
 }
 
 /** Outfit changes never hold traversal or fade the working character out. */
-export function createWardrobe({ character, room, outfit, costume, onChange, onIdle }: Options): Wardrobe {
+export function createWardrobe({ character, room, outfit, onChange, onMisfit, onIdle }: Options): Wardrobe {
   let queue = Promise.resolve()
   let pending = 0
   let disposed = false
   function reflect(): void {
-    room.setDressed(character.look.costume !== costume, character.look.bow !== costume)
-    room.setVisitor(character.look.kind)
+    const { kind, costume, bow } = character.look
+    const fitted = (id: string | null) => id !== null && FITS[kind].includes(id) ? id : null
+    room.setWorn(fitted(costume), fitted(bow))
+    room.setVisitor(kind)
   }
   function enqueue(change: () => Promise<void>): void {
     pending++
@@ -80,11 +90,15 @@ export function createWardrobe({ character, room, outfit, costume, onChange, onI
   return {
     get busy() { return pending > 0 },
     reflect,
-    tapFeatured(part) {
+    tapItem({ slot: key, id }) {
       enqueue(async () => {
-        const key = part === 'dress' ? 'costume' : 'bow'
-        const wearing = character.look[key] === costume
-        const value = wearing ? null : costume
+        const { kind } = character.look
+        if (!FITS[kind].includes(id)) {
+          onMisfit({ slot: key, id }, kind)
+          return
+        }
+        const wearing = character.look[key] === id
+        const value = wearing ? null : id
         if (!await character.wear({ ...character.look, [key]: value })) return
         if (disposed) return
         outfit.update((o) => ({ ...o, [key]: restamp(o[key], value) }))

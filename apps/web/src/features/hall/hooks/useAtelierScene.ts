@@ -124,13 +124,13 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         character,
         room,
         outfit: outfitSlot,
-        costume: atelier.featured.costume,
         onChange: (change) => track(change),
+        onMisfit: (item, kind) => room.showMisfit(item, kind),
         onIdle: follower.sync,
       })
       const closet = wardrobe
       room.setActions({
-        onItem: (part) => { if (!quiet()) closet.tapFeatured(part) },
+        onItem: (item) => { if (!quiet()) closet.tapItem(item) },
         onCharacter: (kind) => { if (!quiet()) closet.tapDisplay(kind) },
         onLeave: () => { if (!quiet()) { track('stairs'); passage.leave(() => onLeaveRef.current()) } },
       })
@@ -181,10 +181,10 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         if (!isTap) return
         isTap = false
         aim(event)
-        const part = room.hitTestFeatured(raycaster)
-        if (part) {
+        const item = room.hitTestItem(raycaster)
+        if (item) {
           soundRef.current.play('click')
-          closet.tapFeatured(part)
+          closet.tapItem(item)
           return
         }
         const kind = room.hitTestDisplay(raycaster)
@@ -204,7 +204,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       function handlePointerMove(event: PointerEvent): void {
         if (event.pointerType !== 'mouse' || event.buttons !== 0) return
         aim(event)
-        const live = !quiet() && (room.hitTestFeatured(raycaster) || room.hitTestDisplay(raycaster) !== null || room.hitTestDoor(raycaster))
+        const live = !quiet() && (room.hitTestItem(raycaster) || room.hitTestDisplay(raycaster) !== null || room.hitTestDoor(raycaster))
         renderer.domElement.style.cursor = live ? 'pointer' : ''
       }
 

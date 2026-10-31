@@ -1,7 +1,7 @@
 import { defineSlot } from './define.ts'
 import { latest, record, type Latest } from './merge.ts'
 
-export const CHARACTERS = ['bunny', 'cat'] as const
+export const CHARACTERS = ['bunny', 'cat', 'otter'] as const
 export type CharacterChoice = (typeof CHARACTERS)[number]
 
 export interface Outfit {
@@ -55,5 +55,6 @@ export const outfit = defineSlot<Outfit>({
     { character: { v: 'cat', at: 5 }, costume: { v: 'kiki', at: 7 }, bow: { v: 'kiki', at: 8 } },
     { character: { v: 'bunny', at: 5 }, costume: { v: null, at: 7 }, bow: { v: 'kiki', at: 9 } },
     { character: { v: 'cat', at: 9 }, costume: { v: 'some-future-costume', at: 3 }, bow: { v: null, at: 4 } },
+    { character: { v: 'otter', at: 4 }, costume: { v: 'cardigan-navy-blue', at: 6 }, bow: { v: null, at: 0 } },
   ],
 })

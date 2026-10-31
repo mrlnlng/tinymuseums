@@ -74,8 +74,17 @@ function slimGlb(glb) {
       usedViews.add(accessor.sparse.values.bufferView)
     }
   }
-  const viewOrder = [...usedViews].sort((a, b) => a - b)
-  const viewIndex = new Map(viewOrder.map((old, i) => [old, i]))
+  // Grafted colourways repeat the same geometry; identical views are stored once.
+  const sameView = new Map()
+  const firstView = new Map()
+  for (const old of [...usedViews].sort((a, b) => a - b)) {
+    const { byteStride, target } = json.bufferViews[old]
+    const key = `${byteStride}:${target}:${createHash('sha256').update(view(old)).digest('hex')}`
+    if (!firstView.has(key)) firstView.set(key, old)
+    sameView.set(old, firstView.get(key))
+  }
+  const viewOrder = [...new Set(sameView.values())]
+  const viewIndex = new Map([...sameView].map(([old, kept]) => [old, viewOrder.indexOf(kept)]))
   const chunks = []
   let offset = 0
   json.bufferViews = viewOrder.map((old) => {
@@ -133,14 +142,23 @@ async function image(name, options = {}) {
   return { src: await write(`atelier-${name}`, 'webp', body), width, height }
 }
 
+// The repainted bunny wears the kiki costume fitted to the first bunny: same skeleton and
+// canvas. Its own hanging paw is repeated above the dress, as the first export did. Each
+// cardigan colourway is its own costume, and hides the runtime chest bow under its collar.
+let bunny = graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-rig-kiki.glb'), {
+  skip: ['paw'],
+  paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
+})
+for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
+  bunny = graftCostume(bunny, await master(`bunny-rig-v2-cardigan-${colour}.glb`), {
+    relabel: (extras) => ({ ...extras, costume: `cardigan-${colour}`, hides: 'bowtie' }),
+  })
+}
+
 const models = {
-  // The repainted bunny wears the kiki costume fitted to the first bunny: same skeleton and
-  // canvas. Its own hanging paw is repeated above the dress, as the first export did.
-  bunnyRig: await rig('bunny-rig-v2-kiki', graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-rig-kiki.glb'), {
-    skip: ['paw'],
-    paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
-  })),
+  bunnyRig: await rig('bunny-rig-v2-dressed', bunny),
   catRig: await rig('cat-rig-kiki'),
+  otterRig: await rig('otter-rig'),
   bunnyRigBow: { src: await write('bunny-rig-bow', 'png', await master('bunny-rig-bow.png')) },
 }
 
@@ -156,9 +174,14 @@ const atelier = {
   portraitWink: await image('portrait-wink'),
   portraitBunny: await image('portrait-bunny'),
   portraitJiji: await image('portrait-jiji'),
+  portraitOtter: await image('portrait-otter'),
   ribbon: await image('ribbon'),
   mannequin: await image('mannequin-bare', { lossless: true }),
   mannequinDress: await image('mannequin-dress', { lossless: true }),
+  cardiganRed: await image('mannequin-cardigan-red'),
+  cardiganForestGreen: await image('mannequin-cardigan-forest-green'),
+  cardiganNavyBlue: await image('mannequin-cardigan-navy-blue'),
+  cardiganButterYellow: await image('mannequin-cardigan-butter-yellow'),
   broom: await image('broom'),
   platform: await image('platform', { lossless: true }),
   spotlight: await image('spotlight'),

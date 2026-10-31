@@ -53,9 +53,11 @@ test('state messages are validated and stripped of anything extra', () => {
   assert.equal(parseClientMessage(JSON.stringify({ ...state, seq: -1 })), null)
 })
 
-test('only the four emotes, hello, and leave are accepted besides state', () => {
-  assert.deepEqual(parseClientMessage('{"t":"emote","e":"wave","seq":1}'), { t: 'emote', e: 'wave', seq: 1 })
-  assert.equal(parseClientMessage('{"t":"emote","e":"rude","seq":1}'), null)
+test('messages, claims, hello and leave are accepted besides state', () => {
+  assert.deepEqual(parseClientMessage('{"t":"say","text":"hello!","seq":1}'), { t: 'say', text: 'hello!', seq: 1 })
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'say', text: 'x'.repeat(401), seq: 1 })), null)
+  assert.equal(parseClientMessage('{"t":"say","text":7,"seq":1}'), null)
+  assert.equal(parseClientMessage('{"t":"emote","e":"wave","seq":1}'), null)
   assert.deepEqual(parseClientMessage('{"t":"hello","v":1,"ticket":"a.b"}'), { t: 'hello', v: 1, ticket: 'a.b' })
   assert.deepEqual(parseClientMessage('{"t":"leave"}'), { t: 'leave' })
   assert.deepEqual(parseClientMessage('{"t":"claim","item":"seat"}'), { t: 'claim', item: 'seat' })
@@ -77,5 +79,8 @@ test('server messages are checked on the client too', async () => {
   assert.equal(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [{ ...peer, x: 'far' }] })), null)
   assert.deepEqual(parseServerMessage('{"t":"full"}'), { t: 'full' })
   assert.deepEqual(parseServerMessage('{"t":"leave","pid":"abcdEFGH1234"}'), { t: 'leave', pid: 'abcdEFGH1234' })
-  assert.equal(parseServerMessage('{"t":"emote","pid":"abcdEFGH1234","e":"rude"}'), null)
+  assert.deepEqual(parseServerMessage('{"t":"said","pid":"abcdEFGH1234","text":"hi there"}'), { t: 'said', pid: 'abcdEFGH1234', text: 'hi there' })
+  assert.equal(parseServerMessage('{"t":"said","pid":"abcdEFGH1234","text":""}'), null)
+  assert.deepEqual(parseServerMessage('{"t":"refused","reason":"contact"}'), { t: 'refused', reason: 'contact' })
+  assert.equal(parseServerMessage('{"t":"refused","reason":"because"}'), null)
 })

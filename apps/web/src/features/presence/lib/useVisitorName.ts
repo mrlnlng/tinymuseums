@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { nameFromSeed, randomSeed, type NameCheck } from '@tiny/core/presence'
 import { presence } from '@tiny/core/slots'
 import { useMember, useSlot } from '@/shared/lib/slots'
-import { announceNameChange } from './emote-events'
+import { announceNameChange } from './room-events'
 
 export type NameError = Extract<NameCheck, { ok: false }>['reason'] | 'failed'
 

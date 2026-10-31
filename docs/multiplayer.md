@@ -1,7 +1,7 @@
 # Other visitors
 
 Visitors in the same room see each other walk, in their own character and outfit, with a name
-tag. They can send one of four emotes. Nothing about where anyone walks is stored. The design
+tag, and can say short things to each other in speech bubbles. Nothing they walk or say is stored. The design
 and its decisions are in `docs/multiplayer-plan.md`; this page is how it works now.
 
 ## How it plays
@@ -16,12 +16,19 @@ and its decisions are in `docs/multiplayer-plan.md`; this page is how it works n
   pick another generated one in the account sheet. Chosen names are 2–20 characters, with no
   web addresses, phone numbers, reserved words (curator, staff, admin, tiny museum, …) or
   profanity (the `obscenity` list).
-- **Emotes.** The heart button in the top bar shows while you share a room. It and keys 1–4
-  send hi! / ♥ / ✦ / ooh!. Each pops a bubble over the sender for 2 s with a small hop, on
-  everyone's screen including the sender's (no hop under reduced motion). One every 1.5 s. The bubbles are text placeholders until painted art
-  arrives.
+- **Messages.** The two-bubble button in the top bar shows while you share a room; Enter opens
+  it too. A message is one line of up to 100 characters.
+  - It shows in a bubble over the sender, with a small hop, for 3–8 s depending on length,
+    then it is gone. There is no log and nothing is stored.
+  - The room allows one every 1.5 s per visitor and decides what goes out (`messages.ts`,
+    the same check the browser makes first for an instant answer). Profanity (the `obscenity`
+    list, look-alikes included), links, emails and phone numbers are refused, and only the
+    sender is told why.
+  - Screen readers hear "Name says: …".
+- **Mute.** The message panel lists who's here, each with Mute. A muted visitor still walks
+  about, but their messages don't show or get read out. It lasts until the page closes.
 - **Walk alone.** A switch in the account sheet, kept on this device. It leaves the room: you
-  see nobody and nobody sees you, and the emote button hides.
+  see nobody and nobody sees you, and the message button hides.
 - **Screen readers** hear "Another visitor is here" when someone arrives, at most every 30 s.
 - **Sharing the hall.** The room decides who has the one beanbag and each pedestal's helmet,
   first claim wins:

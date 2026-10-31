@@ -1,4 +1,4 @@
-import type { Emote, Look, Peer } from '@tiny/core/presence/wire'
+import type { Look, Peer } from '@tiny/core/presence/wire'
 
 /** How far behind the latest update other visitors are drawn, so motion stays smooth. */
 export const INTERPOLATION_DELAY_MS = 200
@@ -26,7 +26,7 @@ interface Entry {
   seq: number
   heardAt: number
   samples: Sample[]
-  emote: { e: Emote; at: number } | null
+  said: { text: string; at: number } | null
 }
 
 export interface RemoteVisitor {
@@ -41,7 +41,7 @@ export interface RemoteVisitor {
   x: number
   /** Their walking speed, for the walk cycle. */
   vx: number
-  emote: { e: Emote; at: number } | null
+  said: { text: string; at: number } | null
 }
 
 export class PeerTable {
@@ -68,7 +68,7 @@ export class PeerTable {
       this.entries.set(peer.pid, {
         pid: peer.pid, name: peer.name, look: peer.look, facing: peer.facing,
         sit: peer.sit, helm: peer.helm, cup: peer.cup, seq: peer.seq,
-        heardAt: now, samples: [sample], emote: null,
+        heardAt: now, samples: [sample], said: null,
       })
       return
     }
@@ -88,11 +88,16 @@ export class PeerTable {
     while (entry.samples.length > SAMPLES) entry.samples.shift()
   }
 
-  emoted(pid: string, e: Emote, now: number): boolean {
+  /** Their latest message; false when they are not (yet) known here. */
+  said(pid: string, text: string, now: number): boolean {
     const entry = this.entries.get(pid)
     if (!entry) return false
-    entry.emote = { e, at: now }
+    entry.said = { text, at: now }
     return true
+  }
+
+  nameOf(pid: string): string | null {
+    return this.entries.get(pid)?.name ?? null
   }
 
   left(pid: string): void {
@@ -110,7 +115,7 @@ export class PeerTable {
       const { x, vx } = positionAt(entry.samples, at)
       return {
         pid: entry.pid, name: entry.name, look: entry.look, facing: entry.facing,
-        sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, emote: entry.emote,
+        sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, said: entry.said,
       }
     })
   }

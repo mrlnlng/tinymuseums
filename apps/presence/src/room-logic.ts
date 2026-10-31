@@ -1,3 +1,4 @@
+import { checkMessage } from '@tiny/core/presence/messages'
 import { MAX_HOLDS, type ClientMessage, type Item, type Motion, type Peer, type ServerMessage, type Ticket } from '@tiny/core/presence/wire'
 
 export const HELLO_TIMEOUT_MS = 5000
@@ -8,7 +9,8 @@ export const SWEEP_MS = 10_000
 export const MAX_WAITING_PER_IP = 4
 const STATE_BURST = 10
 const STATES_PER_SECOND = 6
-const EMOTE_GAP_MS = 1500
+/** At most one message this often, so speech bubbles stay readable. */
+export const SAY_GAP_MS = 1500
 const STRIKES_TO_CLOSE = 40
 
 /** Kept on each socket with serializeAttachment, so it survives the room hibernating. */
@@ -25,7 +27,7 @@ export interface Attachment {
   holds: Item[]
   tokens: number
   refilledAt: number
-  emoteAt: number
+  saidAt: number
   strikes: number
   /** Closing, or replaced by a newer socket with the same pid: no longer in the room. */
   gone: boolean
@@ -34,7 +36,7 @@ export interface Attachment {
 export function newAttachment(room: string, now: number, ip = ''): Attachment {
   return {
     room, ip, joinedAt: now, heardAt: now, pid: null, name: null, last: null, holds: [],
-    tokens: STATE_BURST, refilledAt: now, emoteAt: 0, strikes: 0, gone: false,
+    tokens: STATE_BURST, refilledAt: now, saidAt: 0, strikes: 0, gone: false,
   }
 }
 
@@ -113,9 +115,15 @@ export function onMessage(attachment: Attachment, message: ClientMessage | null,
       return strike(heard)
     case 'leave':
       return { attachment: heard, close: { code: 1000, reason: 'left' } }
-    case 'emote':
-      if (now - heard.emoteAt < EMOTE_GAP_MS) return strike(heard)
-      return { attachment: { ...heard, emoteAt: now }, send: { to: 'others', message: { t: 'emote', pid, e: message.e } } }
+    case 'say': {
+      const paid = spend(heard, now)
+      if (!paid) return strike({ ...heard, tokens: 0, refilledAt: now })
+      if (now - paid.saidAt < SAY_GAP_MS) return { attachment: paid, send: { to: 'self', message: { t: 'refused', reason: 'too-soon' } } }
+      // A refused message is a mistake more often than abuse, so it costs no strike.
+      const check = checkMessage(message.text)
+      if (!check.ok) return { attachment: paid, send: { to: 'self', message: { t: 'refused', reason: check.reason } } }
+      return { attachment: { ...paid, saidAt: now }, send: { to: 'others', message: { t: 'said', pid, text: check.text } } }
+    }
     case 'state': {
       const paid = spend(heard, now)
       if (!paid) return strike({ ...heard, tokens: 0, refilledAt: now })

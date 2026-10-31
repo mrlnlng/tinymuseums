@@ -4,8 +4,11 @@ export const PROTOCOL_VERSION = 1
 export const ROOM_CAPACITY = 8
 export const MAX_MESSAGE_BYTES = 1024
 
-export const EMOTES = ['wave', 'heart', 'sparkle', 'ooh'] as const
-export type Emote = (typeof EMOTES)[number]
+/** Why the room turned a message down (messages.ts); only its sender hears. */
+export const REFUSALS = ['empty', 'long', 'contact', 'blocked', 'too-soon'] as const
+export type Refusal = (typeof REFUSALS)[number]
+/** Raw text accepted on the wire; the room's check then allows 100 characters. */
+const MAX_RAW_TEXT = 400
 
 export interface Look {
   kind: CharacterChoice
@@ -47,7 +50,7 @@ export interface Peer extends Motion {
 export type ClientMessage =
   | { t: 'hello'; v: number; ticket: string }
   | ({ t: 'state' } & Motion)
-  | { t: 'emote'; e: Emote; seq: number }
+  | { t: 'say'; text: string; seq: number }
   | { t: 'claim'; item: Item }
   | { t: 'release'; item: Item }
   | { t: 'leave' }
@@ -57,7 +60,8 @@ export type ServerMessage =
   /** Who holds an item now, or null when it is free; also the answer to a claim. */
   | { t: 'held'; item: Item; pid: string | null }
   | ({ t: 'state' } & Peer)
-  | { t: 'emote'; pid: string; e: Emote }
+  | { t: 'said'; pid: string; text: string }
+  | { t: 'refused'; reason: Refusal }
   | { t: 'leave'; pid: string }
   | { t: 'full' }
   | { t: 'denied' }
@@ -132,8 +136,8 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
       const motion = parseMotion(m)
       return motion ? { t: 'state', ...motion } : null
     }
-    case 'emote':
-      return (EMOTES as readonly unknown[]).includes(m.e) && isSeq(m.seq) ? { t: 'emote', e: m.e as Emote, seq: m.seq } : null
+    case 'say':
+      return typeof m.text === 'string' && m.text.length <= MAX_RAW_TEXT && isSeq(m.seq) ? { t: 'say', text: m.text, seq: m.seq } : null
     case 'claim':
     case 'release':
       return isItem(m.item) ? { t: m.t, item: m.item } : null
@@ -181,8 +185,12 @@ export function parseServerMessage(raw: unknown): ServerMessage | null {
       const peer = parsePeer(m)
       return peer ? { t: 'state', ...peer } : null
     }
-    case 'emote':
-      return isPid(m.pid) && (EMOTES as readonly unknown[]).includes(m.e) ? { t: 'emote', pid: m.pid, e: m.e as Emote } : null
+    case 'said':
+      return isPid(m.pid) && typeof m.text === 'string' && m.text.length > 0 && m.text.length <= MAX_RAW_TEXT
+        ? { t: 'said', pid: m.pid, text: m.text }
+        : null
+    case 'refused':
+      return (REFUSALS as readonly unknown[]).includes(m.reason) ? { t: 'refused', reason: m.reason as Refusal } : null
     case 'leave':
       return isPid(m.pid) ? { t: 'leave', pid: m.pid } : null
     case 'full':

@@ -65,11 +65,34 @@ test('a steady 5 Hz never trips the limit', () => {
   }
 })
 
-test('emotes are spaced at least 1.5 s apart', () => {
-  const first = onMessage(joined(), { t: 'emote', e: 'wave', seq: 1 }, 10_000, [])
-  assert.deepEqual(first.send, { to: 'others', message: { t: 'emote', pid: ticket.pid, e: 'wave' } })
-  assert.equal(onMessage(first.attachment, { t: 'emote', e: 'heart', seq: 2 }, 11_000, []).send, undefined)
-  assert.ok(onMessage(first.attachment, { t: 'emote', e: 'heart', seq: 2 }, 11_500, []).send)
+test('a message goes to the others, tidied and stamped with the sender', () => {
+  const outcome = onMessage(joined(), { t: 'say', text: '  hello   there ', seq: 1 }, 10_000, [])
+  assert.deepEqual(outcome.send, { to: 'others', message: { t: 'said', pid: ticket.pid, text: 'hello there' } })
+})
+
+test('messages are spaced at least 1.5 s apart; the sender hears why one is held back', () => {
+  const first = onMessage(joined(), { t: 'say', text: 'hi', seq: 1 }, 10_000, [])
+  assert.deepEqual(onMessage(first.attachment, { t: 'say', text: 'again', seq: 2 }, 11_000, []).send, { to: 'self', message: { t: 'refused', reason: 'too-soon' } })
+  assert.equal(onMessage(first.attachment, { t: 'say', text: 'again', seq: 2 }, 11_500, []).send?.to, 'others')
+})
+
+test('links, profanity and empty messages reach nobody but their sender, without a strike', () => {
+  for (const [text, reason] of [['visit example.com', 'contact'], ['fuck this', 'blocked'], ['   ', 'empty'], ['x'.repeat(101), 'long']] as const) {
+    const outcome = onMessage(joined(), { t: 'say', text, seq: 1 }, 10_000, [])
+    assert.deepEqual(outcome.send, { to: 'self', message: { t: 'refused', reason } }, text)
+    assert.equal(outcome.attachment.strikes, 0)
+  }
+})
+
+test('a flood of messages is cut off like any other', () => {
+  let attachment = joined()
+  let closed = false
+  for (let i = 1; i <= 200 && !closed; i++) {
+    const outcome = onMessage(attachment, { t: 'say', text: 'spam', seq: i }, 10_000 + i, [])
+    attachment = outcome.attachment
+    closed = !!outcome.close
+  }
+  assert.ok(closed)
 })
 
 test('a free item goes to the first claim, and everyone hears who has it', () => {

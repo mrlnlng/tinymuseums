@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { EMOTES, type Emote } from '@tiny/core/presence/wire'
 import { presence as presenceSlot } from '@tiny/core/slots'
 import { useVisitorName } from '../lib/useVisitorName'
 import { createPresence, type Presence, type Self } from '../lib/presence'
@@ -16,6 +15,7 @@ export default function PresencePreview() {
   const { name } = useVisitorName()
   const [view, setView] = useState<{ status: string; instance: number; x: number; others: RemoteVisitor[] }>({ status: 'idle', instance: 0, x: 0, others: [] })
   const [heard, setHeard] = useState<string[]>([])
+  const [draft, setDraft] = useState('')
   const presenceRef = useRef<Presence | null>(null)
   const [room, setRoom] = useState<string | null>(null)
 
@@ -34,7 +34,8 @@ export default function PresencePreview() {
       seed: prefs.seed,
       self: () => self,
       visible: () => document.visibilityState === 'visible',
-      onEmote: (pid, e) => setHeard((list) => [`${pid.slice(0, 6)} ${e}`, ...list].slice(0, 5)),
+      onSaid: (_pid, name, text) => setHeard((list) => [`${name}: ${text}`, ...list].slice(0, 5)),
+      onRefused: (reason) => setHeard((list) => [`(refused: ${reason})`, ...list].slice(0, 5)),
     })
     presenceRef.current = presence
     let previous = performance.now()
@@ -69,15 +70,23 @@ export default function PresencePreview() {
         </div>
         {view.others.map((other) => (
           <div key={other.pid} data-testid="other" data-name={other.name} data-x={other.x.toFixed(2)} style={{ position: 'absolute', left: at(other.x), bottom: 24, transform: 'translateX(-50%)', textAlign: 'center' }}>
-            <div>{other.name}{other.emote ? ` ${other.emote.e}` : ''}</div>
+            <div>{other.name}{other.said ? ` “${other.said.text}”` : ''}</div>
             <div style={{ width: 16, height: 16, borderRadius: 8, background: '#3a6ea5', margin: 'auto' }} />
           </div>
         ))}
       </div>
       <p>
-        {EMOTES.map((e: Emote) => (
-          <button key={e} type="button" onClick={() => presenceRef.current?.emote(e)} style={{ marginRight: 8 }}>{e}</button>
-        ))}
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Say something" aria-label="Say something" />{' '}
+        <button
+          type="button"
+          onClick={() => {
+            const result = presenceRef.current?.say(draft)
+            if (result?.ok) setDraft('')
+            else if (result) setHeard((list) => [`(not sent: ${result.reason})`, ...list].slice(0, 5))
+          }}
+        >
+          Say
+        </button>
       </p>
       <p data-testid="heard">{heard.join(' · ')}</p>
       <p>Hold ← → to walk. Open this page in a second window to meet yourself. ?room=hall-e1 for another room.</p>

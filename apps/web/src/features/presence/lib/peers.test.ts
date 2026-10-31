@@ -40,12 +40,13 @@ test('silent visitors are forgotten; leaving removes them at once', () => {
   assert.equal(table.size, 0)
 })
 
-test('an emote is kept on its visitor with the time it arrived', () => {
+test('a message is kept on its visitor with the time it arrived', () => {
   const table = new PeerTable()
-  assert.equal(table.emoted('abcdEFGH1234', 'wave', 0), false)
+  assert.equal(table.said('abcdEFGH1234', 'hello', 0), false)
   table.heard(peer(1, 0), 0)
-  assert.equal(table.emoted('abcdEFGH1234', 'wave', 50), true)
-  assert.deepEqual(table.visitors(100)[0].emote, { e: 'wave', at: 50 })
+  assert.equal(table.said('abcdEFGH1234', 'hello', 50), true)
+  assert.deepEqual(table.visitors(100)[0].said, { text: 'hello', at: 50 })
+  assert.equal(table.nameOf('abcdEFGH1234'), 'Velvet Easel')
 })
 
 test('after standing still, a visitor eases off from where they stood', () => {

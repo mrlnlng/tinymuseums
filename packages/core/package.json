@@ -14,7 +14,8 @@
     "./visit-features": "./src/visit-features.ts",
     "./slots": "./src/slots/index.ts",
     "./presence": "./src/presence/index.ts",
-    "./presence/wire": "./src/presence/wire.ts"
+    "./presence/wire": "./src/presence/wire.ts",
+    "./presence/messages": "./src/presence/messages.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

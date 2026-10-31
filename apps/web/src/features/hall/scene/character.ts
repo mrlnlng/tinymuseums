@@ -40,7 +40,7 @@ export interface Character {
   wear(look: Look): Promise<boolean>
   /** 0 hides the character, 1 shows it; used to dissolve through a change of character. */
   setOpacity(opacity: number): void
-  /** A little hop, as other visitors see when this one sends an emote. */
+  /** A little hop, as other visitors see when this one says something. */
   bounce(): void
   perch(perch: Perch | null): void
   attach(attachment: Attachment, out: Pose): Pose
@@ -281,7 +281,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       const frustumHeight = camera.top - camera.bottom
       const worldHeight = perched ? perched.height : CONFIG.character.height
       const heightPx = (worldHeight / frustumHeight) * viewport.height
-      // The same hop as remote-visitors.ts draws for others' emotes.
+      // The same hop as remote-visitors.ts draws when others say something.
       const bounce = performance.now() - bouncedAt
       if (bounce < BOUNCE_MS) screenY -= Math.sin((Math.PI * bounce) / BOUNCE_MS) * heightPx * 0.08
       const height = `${heightPx.toFixed(1)}px`

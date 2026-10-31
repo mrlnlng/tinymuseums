@@ -71,7 +71,7 @@ class Conn {
       this.rooms.sentStates.set(this.pid, (this.rooms.sentStates.get(this.pid) ?? 0) + 1)
       for (const other of this.others()) other.deliver({ t: 'state', ...this.last })
     }
-    if (message.t === 'emote') for (const other of this.others()) other.deliver({ t: 'emote', pid: this.pid, e: message.e })
+    if (message.t === 'say') for (const other of this.others()) other.deliver({ t: 'said', pid: this.pid, text: message.text })
     if (message.t === 'claim') {
       const holder = this.others().find((c) => c.holds.has(message.item))
       if (holder) return this.deliver({ t: 'held', item: message.item, pid: holder.pid })
@@ -127,13 +127,13 @@ function visitor(rooms: MemoryRooms, clock: Clock, pid: string, extra: Partial<P
   const self: Self = { x: 0, vx: 0, facing: 1, look, sit: false, helm: false, cup: false }
   let away = false
   let tickets = 0
-  const emotes: string[] = []
+  const said: string[] = []
   const presence = createPresence({
     room: 'atelier',
     seed: 1,
     self: () => self,
     walkAlone: () => away,
-    onEmote: (from, e) => emotes.push(`${from}:${e}`),
+    onSaid: (_pid, name, text) => said.push(`${name}: ${text}`),
     fetchTicket: async () => {
       tickets++
       return { ticket: `${pid}:Name ${pid.slice(0, 4)}`, exp: Date.now() + 600_000, url: 'ws://test' }
@@ -144,7 +144,7 @@ function visitor(rooms: MemoryRooms, clock: Clock, pid: string, extra: Partial<P
     clearTimer: clock.clearTimer,
     ...extra,
   })
-  return { presence, self, emotes, setAway: (value: boolean) => (away = value), tickets: () => tickets }
+  return { presence, self, said, setAway: (value: boolean) => (away = value), tickets: () => tickets }
 }
 
 test('two visitors meet, and each sees the other walk', async () => {
@@ -267,20 +267,21 @@ test('with presence turned off, the client goes quiet and stays quiet', async ()
   assert.equal(fetched, 1)
 })
 
-test('emotes reach the others, at most one each 1.5 s', async () => {
+test('messages reach the others, at most one each 1.5 s, and bad ones never leave', async () => {
   const rooms = new MemoryRooms()
   const clock = new Clock()
   const a = visitor(rooms, clock, 'pidAAAA00008')
   const b = visitor(rooms, clock, 'pidBBBB00008')
   const ticks = [a.presence.tick, b.presence.tick]
   await clock.advance(500, 16, ticks)
-  assert.equal(a.presence.emote('wave'), true)
-  assert.equal(a.presence.emote('heart'), false)
+  assert.deepEqual(a.presence.say('  hello  there '), { ok: true, text: 'hello there' })
+  assert.deepEqual(a.presence.say('again'), { ok: false, reason: 'too-soon' })
   await clock.advance(1600, 16, ticks)
-  assert.equal(a.presence.emote('heart'), true)
+  assert.deepEqual(a.presence.say('see example.com'), { ok: false, reason: 'contact' })
+  assert.deepEqual(a.presence.say('lovely blues'), { ok: true, text: 'lovely blues' })
   await clock.advance(50, 16, ticks)
-  assert.deepEqual(b.emotes, ['pidAAAA00008:wave', 'pidAAAA00008:heart'])
-  assert.equal(b.presence.visitors()[0].emote?.e, 'heart')
+  assert.deepEqual(b.said, ['Name pidA: hello there', 'Name pidA: lovely blues'])
+  assert.equal(b.presence.visitors()[0].said?.text, 'lovely blues')
 })
 
 test('two visitors claiming the beanbag at once: exactly one gets it', async () => {

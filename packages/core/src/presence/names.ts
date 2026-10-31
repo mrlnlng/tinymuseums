@@ -1,4 +1,4 @@
-import { englishDataset, englishRecommendedTransformers, RegExpMatcher } from 'obscenity'
+import { hasProfanity } from './profanity.ts'
 
 // 64 × 64 names. Adjectives stay within 9 letters and nouns within 10, so every name fits
 // the 20-character limit a chosen name has.
@@ -48,8 +48,6 @@ export type NameCheck =
 
 const RESERVED = ['curator', 'staff', 'admin', 'moderator', 'tinymuseum', 'inspiratiq', 'official', 'support']
 
-const matcher = new RegExpMatcher({ ...englishDataset.build(), ...englishRecommendedTransformers })
-
 export function normalizeDisplayName(raw: string): string {
   return raw.normalize('NFKC').trim().replace(/\s+/gu, ' ')
 }
@@ -65,6 +63,6 @@ export function checkDisplayName(raw: string): NameCheck {
   }
   const squashed = name.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
   if (RESERVED.some((word) => squashed.includes(word))) return { ok: false, reason: 'reserved' }
-  if (matcher.hasMatch(name)) return { ok: false, reason: 'blocked' }
+  if (hasProfanity(name)) return { ok: false, reason: 'blocked' }
   return { ok: true, name }
 }

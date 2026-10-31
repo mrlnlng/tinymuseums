@@ -4,18 +4,20 @@ import {
   parseServerMessage,
   roomName,
   type ClientMessage,
-  type Emote,
   type Item,
   type Look,
+  type Refusal,
   type ServerMessage,
 } from '@tiny/core/presence/wire'
+import { checkMessage } from '@tiny/core/presence'
 import { PeerTable, type RemoteVisitor } from './peers.ts'
 
 /** While someone else is here and we are moving. */
 export const STATE_INTERVAL_MS = 200
 /** Otherwise, and always while alone: enough for others to keep us and for newcomers to find us. */
 export const HEARTBEAT_MS = 4000
-export const EMOTE_GAP_MS = 1500
+/** As the room enforces (room-logic.ts). */
+export const SAY_GAP_MS = 1500
 /** A tab hidden this long lets go of its place in the room. */
 export const HIDDEN_LIMIT_MS = 60 * 1000
 /** Hidden tabs get no animation frames; this keeps their heartbeat going until they leave. */
@@ -92,7 +94,10 @@ export interface PresenceOptions {
   visible?(): boolean
   /** This tab has the device's turn in the room (tab-turn.ts). */
   active?(): boolean
-  onEmote?(pid: string, e: Emote): void
+  /** Another visitor's message. */
+  onSaid?(pid: string, name: string, text: string): void
+  /** The room turned down one of ours (normally caught here first). */
+  onRefused?(reason: Refusal): void
   fetchTicket?: FetchTicket
   connect?: Connect
   now?(): number
@@ -107,8 +112,8 @@ export interface Presence {
   /** Call once a frame. */
   tick(): void
   visitors(): RemoteVisitor[]
-  /** False when not connected, or too soon after the last one. */
-  emote(e: Emote): boolean
+  /** The tidied text when sent, or why not. */
+  say(text: string): { ok: true; text: string } | { ok: false; reason: Refusal | 'closed' }
   /** Asks the room for an item, or lets it go; claims are made again after reconnecting. */
   want(item: Item, on: boolean): void
   /** Someone else holds it. Alone, offline or walking alone, nothing is ever blocked. */
@@ -142,7 +147,7 @@ export function createPresence(options: PresenceOptions): Presence {
   let retry: unknown = null
   let seq = 0
   let lastSent: (Self & { at: number }) | null = null
-  let lastEmoteAt = -Infinity
+  let lastSaidAt = -Infinity
   let hadCompany = false
   let hiddenSince: number | null = null
   let disposed = false
@@ -239,8 +244,11 @@ export function createPresence(options: PresenceOptions): Presence {
       case 'state':
         peers.heard(message, at)
         break
-      case 'emote':
-        if (peers.emoted(message.pid, message.e, at)) options.onEmote?.(message.pid, message.e)
+      case 'said':
+        if (peers.said(message.pid, message.text, at)) options.onSaid?.(message.pid, peers.nameOf(message.pid) ?? '', message.text)
+        break
+      case 'refused':
+        options.onRefused?.(message.reason)
         break
       case 'leave':
         peers.left(message.pid)
@@ -338,12 +346,15 @@ export function createPresence(options: PresenceOptions): Presence {
       return status === 'open' ? peers.visitors(now()) : []
     },
 
-    emote(e) {
+    say(raw) {
       const at = now()
-      if (status !== 'open' || at - lastEmoteAt < EMOTE_GAP_MS) return false
-      lastEmoteAt = at
-      send({ t: 'emote', e, seq: ++seq })
-      return true
+      if (status !== 'open') return { ok: false, reason: 'closed' }
+      if (at - lastSaidAt < SAY_GAP_MS) return { ok: false, reason: 'too-soon' }
+      const check = checkMessage(raw)
+      if (!check.ok) return check
+      lastSaidAt = at
+      send({ t: 'say', text: check.text, seq: ++seq })
+      return check
     },
 
     want(item, on) {

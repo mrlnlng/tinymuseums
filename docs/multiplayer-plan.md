@@ -27,7 +27,8 @@ The "restraint over engagement" tiebreaker sets these limits:
 - No chat, no follower counts, no "N people online" banners.
 - A visitor can **walk alone**, which hides others and stops broadcasting. One toggle, kept in
   a device-only slot.
-- A fixed set of four emotes ships in v1 (§5.1). Free text never.
+- A fixed set of four emotes ships in v1 (§5.1). Free text never. *(Reversed 2026-10-31: free-form
+  messages replace the emotes; see §10 and `docs/multiplayer.md`.)*
 
 ## 2. What already exists that this builds on
 
@@ -422,6 +423,13 @@ Decided 2026-10-31:
 - Anonymous visitors **cannot** change their generated name; members choose or reroll.
 - At most **8** other visitors shown. **Rooms of 8**, overflowing to the next instance.
 - **Emotes in v1**: wave, heart, sparkle, ooh.
+- **Free-form messages replace the emotes** (2026-10-31, owner):
+  - Everyone can send; refused messages (profanity, links, contact details) reach only the
+    sender, with the reason.
+  - Speech bubbles only: no log, nothing stored.
+  - A per-visitor mute.
+  - If abuse gets past the word list, the next step is a model check in the room (e.g. Llama
+    Guard on Workers AI).
 
 Sources:
 - [Cloudflare Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)

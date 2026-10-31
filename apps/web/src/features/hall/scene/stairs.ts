@@ -1,34 +1,26 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
 import { lobbyFlight } from './flights'
-import { extendLobbyStairArt } from './lobby-stair-art'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
+import { drawStairs, type StairArt } from './stair-art'
 
 export interface LobbyStairs {
-  readonly railing: string
+  readonly art: StairArt
   hitTest(raycaster: THREE.Raycaster): boolean
   sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean): void
   dispose(): void
 }
 
-/** The mock's full-height flight: wooden steps rise out through the ceiling. */
-export function createLobbyStairs(
-  scene: THREE.Scene,
-  textures: { stairs: THREE.Texture },
-  host: HTMLElement,
-  onClimb: () => void,
-): LobbyStairs {
-  const group = new THREE.Group()
-  const art = extendLobbyStairArt(textures.stairs.image)
-  const map = art.texture
+/** The lobby's flight rises leftwards from its newel post beside the door, out through the ceiling. */
+export function createLobbyStairs(scene: THREE.Scene, host: HTMLElement, onClimb: () => void): LobbyStairs {
+  const art = drawStairs(lobbyFlight)
+  const map = new THREE.CanvasTexture(art.art)
   map.colorSpace = THREE.SRGBColorSpace
   map.anisotropy = 4
-  const { width, height } = lobbyFlight
-  const flight = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map, transparent: true}))
-  flight.position.set(lobbyFlight.left + width / 2, lobbyFlight.base + height / 2, CONFIG.stairs.lobby.z)
-  group.add(flight)
-  scene.add(group)
+  const flight = new THREE.Mesh(new THREE.PlaneGeometry(art.width, art.height), new THREE.MeshBasicMaterial({ map, transparent: true }))
+  flight.position.set(art.left + art.width / 2, art.base + art.height / 2, CONFIG.stairs.z)
+  scene.add(flight)
 
   const cue = document.createElement('button')
   cue.className = 'stairs-cue'
@@ -38,24 +30,20 @@ export function createLobbyStairs(
   host.append(cue)
 
   return {
-    railing: art.railing,
+    art,
     hitTest: (raycaster) => pickPainted(raycaster, [flight]) !== null,
     sync(camera, viewport, enabled) {
       cue.disabled = !enabled
       const perUnit = viewport.width / (camera.right - camera.left)
-      const visible = placeLabel(cue, { x: -0.9, y: 3.65, width: 1.65 }, perUnit, camera, viewport, 0.075)
+      const visible = placeLabel(cue, { x: lobbyFlight.foot - 1.3, y: 2.9, width: 1.5 }, perUnit, camera, viewport, 0.075)
       cue.hidden = !visible
     },
     dispose() {
       cue.remove()
-      scene.remove(group)
-      group.traverse((node) => {
-        if (!(node instanceof THREE.Mesh)) return
-        node.geometry.dispose()
-        ;(node.material as THREE.Material).dispose()
-      })
+      scene.remove(flight)
+      flight.geometry.dispose()
+      flight.material.dispose()
       map.dispose()
-      textures.stairs.dispose()
     },
   }
 }

@@ -13,14 +13,14 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 
 - **Two pages.** The atelier is its own page, `/museum/atelier`, with its own scene, so each
   floor loads only its own art.
-- **The stairs are two hops.** In the lobby the flight rises rightwards from its foot to its post
-  beside the door, and its rail curves on up over the doorway (3.png). Tapping the stairs or the
-  "Costume atelier" cue walks the character to the foot; it hops up two steps while the camera
-  rises with it, and the screen dips into the atelier's loading screen. Upstairs the top of the
-  same flight comes up through a stairwell left of the carpet, its landing level with the floor:
-  the character walks onto the landing and hops down two steps behind the gold rail, the camera
-  sinking with it. Arriving runs the same two hops the other way. Reduced motion skips the hops
-  and only dips.
+- **The stairs are two hops.** Both floors draw one staircase in code (`scene/stair-art.ts`): a
+  wooden flight with tread highlights, a gold handrail, balusters and a newel post, built from
+  the same step size the hops use, so every hop lands on a tread. In the lobby the flight stands
+  on the floor and rises leftwards from its newel just left of the door, out through the
+  ceiling. Upstairs the carpet ends at a stairwell and the flight goes down into it. Tapping the
+  stairs (or the cue, or "Back to first floor") walks the character to the newel; it hops two
+  steps up or down, the camera following, and the screen dips into the other floor's loading
+  screen. Arriving runs the same two hops the other way. Reduced motion skips the hops and only dips.
 - **Loading.** The atelier opens on a maroon loading screen: a dress form being sewn, with Kiki's
   bow. It shows for at least 2.8 s, then until the art, the fonts and the visitor's rig are ready.
 - **Upstairs**, left to right: the stairwell and "Back to first floor", the red
@@ -47,8 +47,8 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 | `scene/atelier.ts` | The room: its art loader, the meshes, the displays, the title and plaque text, hit tests. |
 | `scene/wardrobe.ts` | Try on and return, changing character at the displays, and `followOutfit`, which keeps both pages in the saved outfit. |
 | `scene/stairway.ts` | Leaving a floor by its stairs (approach, two hops, dip, then the page change) and arriving by them. |
-| `scene/flights.ts` | Where the flight stands on each floor and its hop steps. Tested in `flights.test.ts`. |
-| `scene/stairs.ts`, `lobby-stair-art.ts`, `stair-foreground.ts` | The lobby staircase, and the railing drawn in front of the character on the stairs. |
+| `scene/flights.ts` | The flight on each floor (step size, foot, direction) and its hop steps. Tested in `flights.test.ts`. |
+| `scene/stair-art.ts`, `scene/stairs.ts`, `stair-foreground.ts` | The drawn staircase, the lobby's flight, and its railing drawn in front of the character on the stairs. |
 | `features/hall/lib/floor-transition.ts` | The transition cover retained across page changes. |
 | `scene/rig.ts`, `scene/character.ts` | One rig renderer for either character, with costumes; the visitor's `wear(look)` and `ready`. |
 | `packages/core/src/slots/outfit.ts` | The `outfit` slot: `character`, dress (`costume`), and `bow` as three last-write-wins registers. |

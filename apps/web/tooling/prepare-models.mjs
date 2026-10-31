@@ -144,10 +144,6 @@ const models = {
   bunnyRigBow: { src: await write('bunny-rig-bow', 'png', await master('bunny-rig-bow.png')) },
 }
 
-const stairs = {
-  staircase: await image('staircase', { lossless: true }),
-  railing: await image('railing', { lossless: true }),
-}
 
 const atelier = {
   wallpaper: await image('wallpaper'),
@@ -178,7 +174,7 @@ const path = new URL('src/generated/asset-manifest.json', root)
 const before = await readFile(path, 'utf8')
 const manifest = JSON.parse(before)
 manifest.models = { ...manifest.models, ...models }
-manifest.stairs = stairs
+delete manifest.stairs
 manifest.atelier = atelier
 const after = JSON.stringify(manifest, null, 2) + '\n'
 if (after !== before) await writeFile(path, after)

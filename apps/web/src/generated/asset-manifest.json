@@ -1221,17 +1221,5 @@
       "width": 190,
       "height": 474
     }
-  },
-  "stairs": {
-    "staircase": {
-      "src": "atelier-staircase.dc1f0a7f2d.webp",
-      "width": 1027,
-      "height": 939
-    },
-    "railing": {
-      "src": "atelier-railing.a64dc36f7d.webp",
-      "width": 1027,
-      "height": 939
-    }
   }
 }

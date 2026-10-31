@@ -18,8 +18,6 @@ import { defaultStore } from '@/shared/lib/slots'
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
 import { createStairForeground } from '@/features/hall/scene/stair-foreground'
 import { track } from '@/shared/lib/visit'
-import manifest from '@/generated/asset-manifest.json'
-import { builtUrl } from '@/shared/lib/assets'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
@@ -130,8 +128,8 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         onIdle: follower.sync,
       })
       const closet = wardrobe
-      const foreground = createStairForeground(canvasHost.parentElement!, room.flight)
-      foreground.setSource(builtUrl(manifest.stairs.railing.src))
+      const foreground = createStairForeground(canvasHost.parentElement!, room.stairs)
+      foreground.setSource(room.stairs.rail.toDataURL())
       room.setActions({
         onItem: (part) => { if (!quiet()) closet.tapFeatured(part) },
         onCharacter: (kind) => { if (!quiet()) closet.tapDisplay(kind) },

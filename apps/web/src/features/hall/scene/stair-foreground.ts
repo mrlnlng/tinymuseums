@@ -1,9 +1,8 @@
 import * as THREE from 'three'
-import type { Flight } from './flights'
 import type { Viewport } from './overlay'
 
 /** A foreground railing crosses the visitor only while they are on the stairs. */
-export function createStairForeground(host: HTMLElement, flight: Flight) {
+export function createStairForeground(host: HTMLElement, flight: { left: number; base: number; width: number; height: number }) {
   const image = document.createElement('img')
   image.className = 'hall-stair-foreground'
   image.alt = ''

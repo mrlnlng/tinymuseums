@@ -154,17 +154,15 @@ export const CONFIG = {
     vanishSeconds: 0.35,
   },
 
-  // The lobby flight, and the two hops that take the character between floors.
+  // Both floors draw the same flight: steps of `rise` by `run`, taken two hops at a time.
   stairs: {
-    drawing: [1027, 939],
-    unitsPerPx: 0.0036,
-    landing: { x: 753, y: 199 },
-    // The tread tops, bottom step first, as [left edge, top] in drawing px.
-    treads: [[0, 865], [100, 717], [192, 643], [284, 569], [376, 495], [472, 421], [564, 347], [658, 273], [753, 199]],
-    scale: 1.5,
-    // The newel post, in drawing px; in the lobby it stands left of the door, clear of the sign.
-    post: 563,
-    lobby: { postX: -2.6, baseY: -0.3996, z: 0.1 },
+    rise: 0.36,
+    run: 0.5,
+    // The lobby's newel post stands just left of the door; the flight rises leftwards from it.
+    lobbyFoot: -1.4,
+    // How far from the foot the character stands before the first hop.
+    clear: 0.38,
+    z: 0.1,
     // The camera follows a hop up or down by this share of the climb.
     cameraRise: 0.6,
     hopSeconds: 0.4,
@@ -180,10 +178,10 @@ export const CONFIG = {
     max: 12.3,
     clearX: 0.2,
     // The landing's right edge, where the carpet begins; the stairwell opens to its left.
-    stairwell: { right: -1.0, z: 0.12 },
+    stairwell: { right: -1.0, width: 4, z: 0.12 },
     wall: { left: -7, right: 15, tile: 2.2 },
     carpet: { height: 1.25 },
-    exit: { x: -150, y: 745, width: 268 },
+    exit: { x: -100, y: 400, width: 268 },
     curtains: { left: -40, width: 520, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },
     shelf: { x: 330, y: 207, width: 424, z: 0.2 },

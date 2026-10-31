@@ -3,7 +3,8 @@ import manifest from '@/generated/asset-manifest.json'
 import { builtUrl } from '@/shared/lib/assets'
 import { plane } from './board'
 import { CONFIG } from './config'
-import { atelierFlight, atelierSteps, type Flight } from './flights'
+import { atelierFlight, hopSteps } from './flights'
+import { drawStairs, type StairArt } from './stair-art'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { CharacterKind } from './rig'
@@ -12,7 +13,7 @@ import type { StairStep } from './stairway'
 const { atelier } = CONFIG
 const { mock } = atelier
 type AtelierImage = keyof typeof manifest.atelier
-export type AtelierArt = Record<AtelierImage | 'staircase', THREE.Texture>
+export type AtelierArt = Record<AtelierImage, THREE.Texture>
 
 /** Mock pixels to world units. */
 const wx = (px: number) => (px - mock.originX) / mock.unit
@@ -31,14 +32,13 @@ function load(url: string): Promise<THREE.Texture> {
 /** Everything the atelier draws; a failure frees whatever did load. */
 export async function loadAtelierArt(): Promise<AtelierArt> {
   const names = Object.keys(manifest.atelier) as AtelierImage[]
-  const urls = [...names.map((name) => manifest.atelier[name].src), manifest.stairs.staircase.src]
-  const settled = await Promise.allSettled(urls.map((src) => load(builtUrl(src))))
+  const settled = await Promise.allSettled(names.map((name) => load(builtUrl(manifest.atelier[name].src))))
   const failed = settled.find((result) => result.status === 'rejected')
   if (failed) {
     for (const result of settled) if (result.status === 'fulfilled') result.value.dispose()
     throw failed.reason
   }
-  return Object.fromEntries([...names, 'staircase'].map((name, i) => [name, (settled[i] as PromiseFulfilledResult<THREE.Texture>).value])) as AtelierArt
+  return Object.fromEntries(names.map((name, i) => [name, (settled[i] as PromiseFulfilledResult<THREE.Texture>).value])) as AtelierArt
 }
 
 export function disposeAtelierArt(art: AtelierArt): void {
@@ -57,8 +57,8 @@ export interface AtelierRoom {
   setActions(actions: AtelierActions): void
   /** The floor at the stairwell's edge, then each hop down. */
   readonly steps: readonly StairStep[]
-  /** The flight up from the lobby, whose railing crosses in front of the visitor on the stairs. */
-  readonly flight: Flight
+  /** The stairwell's drawing; its railing crosses in front of the visitor on the stairs. */
+  readonly stairs: StairArt
   hitTestStairs(raycaster: THREE.Raycaster): boolean
   hitTestFeatured(raycaster: THREE.Raycaster): ClothingPart | null
   /** The character the portrait offers, if it is under the pointer. */
@@ -112,14 +112,12 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   carpet.position.set((stairwell.right + wall.right) / 2, mock.floorWorld - carpetHeight / 2, 0.15)
   group.add(carpet)
 
-  // Left of the carpet the floor opens onto the stairwell, and the top of the flight comes up
-  // through it to a landing level with the carpet.
-  const flight = atelierFlight(stairwell.right, mock.floorWorld)
-  const wellDepth = 4
-  const well = new THREE.Mesh(new THREE.PlaneGeometry(stairwell.right - wall.left, wellDepth), new THREE.MeshBasicMaterial({ color: '#1c0202' }))
-  well.position.set((wall.left + stairwell.right) / 2, mock.floorWorld - wellDepth / 2, 0.1)
-  group.add(well)
-  const stairs = plane(flight.width, flight.height, art.staircase, flight.left + flight.width / 2, flight.base + flight.height / 2, stairwell.z) as Painted
+  // Left of the carpet the floor opens onto a stairwell, and the flight goes down into it.
+  const flight = atelierFlight(stairwell.right)
+  const stairArt = drawStairs(flight, { top: mock.floorWorld, width: stairwell.width })
+  const stairMap = new THREE.CanvasTexture(stairArt.art)
+  stairMap.colorSpace = THREE.SRGBColorSpace
+  const stairs = plane(stairArt.width, stairArt.height, stairMap, stairArt.left + stairArt.width / 2, stairArt.base + stairArt.height / 2, stairwell.z) as Painted
   group.add(stairs)
 
   const spotlightWidth = atelier.spotlight.height * aspectOf('spotlight')
@@ -234,8 +232,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
 
 
   return {
-    steps: atelierSteps(flight),
-    flight,
+    steps: hopSteps(flight),
+    stairs: stairArt,
     setActions(next) { actions = next },
 
     hitTestStairs(raycaster) {
@@ -339,6 +337,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
         ;(node.material as THREE.Material).dispose()
       })
       disposeAtelierArt(art)
+      stairMap.dispose()
       for (const { node } of controls) node.remove()
     },
   }

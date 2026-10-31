@@ -39,14 +39,6 @@ await sharp(column)
   .png({ compressionLevel: 9 })
   .toFile(new URL('atelier/column.png', root).pathname)
 
-// The staircase's golden railing alone, drawn over the character on the stairs.
-const stairSource = sharp(new URL('atelier/staircase.png', root).pathname)
-const { data: rail, info } = await stairSource.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-for (let i = 0; i < rail.length; i += 4) {
-  if (!(rail[i] > 140 && rail[i + 1] > 70 && rail[i + 2] < 35)) rail[i + 3] = 0
-}
-await sharp(rail, { raw: info }).png().toFile(new URL('atelier/railing.png', root).pathname)
-
 // The supplied damask is line work on transparency; the room's wall colour goes behind it.
 await sharp(new URL('atelier/wallpaper-lines.png', root).pathname)
   .flatten({ background: '#370505' })

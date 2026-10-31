@@ -124,7 +124,7 @@ npm run assets:models --workspace @tiny/web
 
 `tooling/compose-atelier.mjs` builds the derived art (the bare and dressed mannequins on
 one shared canvas, the bare column cut from the helmet pedestal, the wallpaper flattened
-onto the wall colour, the staircase's railing alone). `tooling/prepare-models.mjs` then writes `public/immutable/` copies
+onto the wall colour). The staircase is drawn in code, not an image. `tooling/prepare-models.mjs` then writes `public/immutable/` copies
 and the `models`, `stairs` and `atelier` manifest entries. Each GLB is slimmed on the way:
 the export carries every painting twice (an emissive map and a base-colour map multiplied
 by black), so the base-colour copies are dropped. Run it after the image optimiser, which

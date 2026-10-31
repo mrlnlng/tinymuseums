@@ -1,24 +1,27 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { CONFIG } from './config.ts'
-import { FLOOR_FEET, atelierFlight, atelierSteps, lobbyFlight, lobbySteps } from './flights.ts'
+import { FLOOR_FEET, atelierFlight, hopSteps, lobbyFlight, lobbySteps, stepBox } from './flights.ts'
 
-test('the lobby flight rises rightwards to its post left of the door', () => {
-  const doorLeft = CONFIG.lobby.door.x - 1.03
-  assert.ok(CONFIG.stairs.lobby.postX < doorLeft)
-  assert.ok(lobbyFlight.left < lobbySteps[0].x && lobbySteps[0].x < lobbySteps[1].x && lobbySteps[1].x < lobbySteps[2].x)
+test('the lobby flight rises leftwards from its foot left of the door', () => {
+  assert.ok(lobbyFlight.foot < CONFIG.lobby.door.x - 1.03)
+  assert.ok(stepBox(lobbyFlight, 2).top > stepBox(lobbyFlight, 1).top)
+  assert.ok(stepBox(lobbyFlight, 2).right <= stepBox(lobbyFlight, 1).left + 1e-9)
 })
 
-test('the lobby hops start on the floor and climb a step each', () => {
-  assert.equal(lobbySteps[0].feet, FLOOR_FEET)
-  assert.ok(lobbySteps[1].feet > lobbySteps[0].feet + 0.2)
-  assert.ok(lobbySteps[2].feet > lobbySteps[1].feet + 0.2)
+test('each hop lands on the middle of the next step, one riser apart', () => {
+  for (const [flight, steps] of [[lobbyFlight, lobbySteps], [atelierFlight(-1), hopSteps(atelierFlight(-1))]] as const) {
+    assert.equal(steps[0].feet, FLOOR_FEET)
+    for (const i of [1, 2]) {
+      const box = stepBox(flight, i)
+      assert.ok(steps[i].x > box.left && steps[i].x < box.right)
+      assert.ok(Math.abs(Math.abs(steps[i].feet - steps[i - 1].feet) - CONFIG.stairs.rise) < 1e-9)
+    }
+  }
 })
 
-test('upstairs the hops go down and left from the landing, which ends at the stairwell edge', () => {
-  const flight = atelierFlight(-1, -0.25)
-  const steps = atelierSteps(flight)
-  assert.equal(steps[0].feet, FLOOR_FEET)
-  assert.ok(steps[0].x < -1 && steps[1].x < steps[0].x && steps[2].x < steps[1].x)
+test('upstairs the steps go down into the stairwell', () => {
+  const steps = hopSteps(atelierFlight(-1))
   assert.ok(steps[1].feet < steps[0].feet && steps[2].feet < steps[1].feet)
+  assert.ok(steps[0].x > -1 && steps[1].x < -1)
 })

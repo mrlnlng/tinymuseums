@@ -1180,7 +1180,7 @@
       "height": 1710
     },
     "mannequinDress": {
-      "src": "atelier-mannequin-dress.b19faf725f.webp",
+      "src": "atelier-mannequin-dress.02d3bdf640.webp",
       "width": 789,
       "height": 1710
     },
@@ -1235,9 +1235,9 @@
       "height": 118
     },
     "bow": {
-      "src": "atelier-bow.295095db35.webp",
-      "width": 962,
-      "height": 740
+      "src": "atelier-bow.f75f4b433f.webp",
+      "width": 212,
+      "height": 191
     },
     "painting": {
       "src": "atelier-painting.896f38be08.webp",

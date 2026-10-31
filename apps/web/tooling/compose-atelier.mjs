@@ -22,11 +22,12 @@ async function compose(name, layers) {
 
 const body = { input: await resized('atelier/mannequin.png', form.width * scale), left: padX * scale, top: padTop * scale }
 
-const dressWidth = 215 * scale
-const dress = await resized('costumes/kiki/dress.png', dressWidth)
+// The display dress from the mocks (mannequin_kiki/kiki_costume.png), its neckline at the form's.
+const dressWidth = 230 * scale
+const dress = await resized('atelier/kiki-dress-display.png', dressWidth)
 
 await compose('mannequin-bare', [body])
-const dressLayer = { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 175) * scale }
+const dressLayer = { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 68) * scale }
 await compose('mannequin-dress', [dressLayer])
 
 // The atelier's bare Ionic column is the helmet pedestal cut below the stand's plate.

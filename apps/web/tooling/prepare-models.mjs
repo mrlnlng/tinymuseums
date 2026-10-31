@@ -150,11 +150,12 @@ let bunny = graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-r
   paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
 })
 // The cat and otter wear the bunny's clothes too, fitted on the layer canvas: the cat's ribbon
-// hides under the cardigan; on the otter the clothes sit lower, under its head, and Kiki's bow
-// takes the place of its star.
+// hides under the cardigan; on the otter the clothes tuck under its head, its outstretched arm
+// is repeated over the dress, and Kiki's bow takes the place of its star.
 let cat = await master('cat-rig-kiki.glb')
 let otter = graftCostume(await master('otter-rig.glb'), await master('bunny-rig-kiki.glb'), {
   skip: ['paw'],
+  paws: [{ layer: 'otter_arm_R', costume: 'kiki', part: 'paw', draw_order: 9 }],
   relabel: (extras) => extras.part === 'bow' ? { ...extras, hides: 'otter_star' } : { ...extras, draw_order: 7.5 },
   fit: { body: { dy: 40 }, bow: { dx: 60, dy: 60, scale: 0.85, pivot: [636, 659] } },
 })
@@ -165,7 +166,7 @@ for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
   cat = graftCostume(cat, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'cat_ribbon' }) })
   otter = graftCostume(otter, cardigan, {
     relabel: (extras) => ({ ...extras, costume, ...(extras.part === 'body' && { draw_order: 7.5 }) }),
-    fit: { body: { dy: 90, scale: 1.12, pivot: [903, 1500] }, sleeve_R: { dx: 30, dy: 70 }, sleeve_L: { dx: 40, dy: 60 } },
+    fit: { body: { dx: 30, dy: 20, scale: 1.15, pivot: [903, 1300] }, sleeve_R: { dx: 30, dy: 30 }, sleeve_L: { dx: 60, dy: 30 } },
   })
 }
 

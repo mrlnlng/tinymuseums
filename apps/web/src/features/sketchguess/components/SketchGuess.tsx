@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { BRAND } from '@tiny/core/brand'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { track } from '@/shared/lib/visit'
 import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
 import { pickFocus } from '../lib/focus'
@@ -188,13 +189,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     }
   }, [])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useEscapeKey(onClose)
 
   const requestPlayable = useCallback(
     async (round: number): Promise<LoadedRound> => {

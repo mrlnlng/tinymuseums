@@ -68,6 +68,9 @@ const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat
 
 function itemName({ slot, id }: ClothingItem): string {
   if (isCardigan(id)) return `The ${CARDIGAN_NAMES[id]} cardigan`
+  if (id === 'blue-floral') return 'The blue floral dress'
+  if (id === 'floral-cardigan') return 'The floral dress and cardigan'
+  if (id === 'flower-crown') return 'The flower crown'
   return slot === 'bow' ? "Kiki's bow" : "Kiki's dress"
 }
 
@@ -193,7 +196,25 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const broom = picture('broom', atelier.broom)
   const [cardiganStand, ...spares] = atelier.forms
   const cardiganForm = form(cardiganStand.x, cardiganStand.feetY, cardiganStand.platform, cardiganStand.platform)
-  for (const spare of spares) form(spare.x, spare.feetY, spare.platform, spare.platform)
+  const floralPieces = spares.map((spare) => {
+    const bare = form(spare.x, spare.feetY, spare.platform, spare.platform)
+    bare.material.map = art.floralMannequin
+    const mesh = plane(canvasWidth, canvasHeight, art.blueFloral, bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
+    mesh.material.depthWrite = false
+    group.add(mesh)
+    return { item: { slot: 'costume', id: 'blue-floral' } as ClothingItem, mesh, bare, x: spare.x, y: 330, shown: 1, target: 1 }
+  })
+  const floralBare = form(atelier.floralDisplay.x, atelier.floralDisplay.feetY, true, true)
+  floralBare.material.map = art.floralMannequin
+  const floralCardigan = plane(canvasWidth, canvasHeight, art.floralCardigan, floralBare.position.x, floralBare.position.y, mannequin.z + 0.01) as Painted
+  floralCardigan.material.depthWrite = false
+  group.add(floralCardigan)
+  floralPieces.push({ item: { slot: 'costume', id: 'floral-cardigan' }, mesh: floralCardigan, bare: floralBare, x: atelier.floralDisplay.x, y: 330, shown: 1, target: 1 })
+  pillar(atelier.crownPillar.x)
+  const crownPillow = picture('pillowBlue', { x: atelier.crownPillar.x, ...atelier.crownPillar.pillow, z: 0.34 })
+  const crown = picture('flowerCrown', atelier.flowerCrown)
+  crown.rotation.z = atelier.flowerCrown.rotation
+  floralPieces.push({ item: { slot: 'bow', id: 'flower-crown' }, mesh: crown, bare: crownPillow, x: atelier.flowerCrown.x, y: atelier.flowerCrown.y, shown: 1, target: 1 })
   const cardigan = new THREE.Mesh(
     new THREE.PlaneGeometry(canvasWidth, canvasHeight),
     new THREE.MeshBasicMaterial({ map: art.cardiganRed, transparent: true, depthWrite: false }),
@@ -240,7 +261,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   text('p', 'atelier-plaque', "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn.", atelier.plaque, 0.058)
   text('div', 'atelier-collection', 'The Kiki Collection', atelier.collection, 0.2)
   text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.12)
-  text('div', 'atelier-collection', 'More costumes coming soon', atelier.comingSoon, 0.17)
+  text('div', 'atelier-collection', 'The Floral Collection', atelier.floralCollection, 0.2)
   const kikiDress: ClothingItem = { slot: 'costume', id: 'kiki' }
   const kikiBow: ClothingItem = { slot: 'bow', id: 'kiki' }
   const itemButtons = {
@@ -248,6 +269,12 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     bow: control("Try on Kiki's bow", 'atelier-item atelier-item-bow', atelier.bowPillar.bow, () => actions?.onItem(kikiBow)),
     cardigan: control('Try on the red cardigan', 'atelier-item atelier-item-dress', { x: cardiganStand.x, y: 330, width: 200 }, () => actions?.onItem(cardiganItem())),
   }
+  const floralButtons = floralPieces.map((piece) => control(
+    `Try on ${itemName(piece.item).toLowerCase()}`,
+    piece.item.slot === 'bow' ? 'atelier-item atelier-item-bow' : 'atelier-item atelier-item-dress',
+    { x: piece.x, y: piece.y, width: piece.item.slot === 'bow' ? 190 : 220 },
+    () => actions?.onItem(piece.item),
+  ))
   const { swatches } = atelier.cardigans
   const swatchButtons = CARDIGANS.map((id, i) => {
     const node = control(`Try on the ${CARDIGAN_NAMES[id]} cardigan`, `atelier-swatch atelier-swatch-${id}`, {
@@ -327,6 +354,9 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       if (pickPainted(raycaster, target.bow > 0 ? [bow] : [bow, bowPillow])) return kikiBow
       if (pickPainted(raycaster, target.dress > 0 ? [dress, broom] : [featured])) return kikiDress
       if (pickPainted(raycaster, [target.cardigan > 0 ? cardigan : cardiganForm])) return cardiganItem()
+      for (const piece of floralPieces) {
+        if (pickPainted(raycaster, [piece.target > 0 ? piece.mesh : piece.bare])) return piece.item
+      }
       return null
     },
 
@@ -351,6 +381,13 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       target.dress = costume === 'kiki' ? 0 : 1
       target.bow = bowId === 'kiki' ? 0 : 1
       target.cardigan = isCardigan(costume) ? 0 : 1
+      floralPieces.forEach((piece, i) => {
+        const wearing = (piece.item.slot === 'bow' ? bowId : costume) === piece.item.id
+        piece.target = wearing ? 0 : 1
+        if (!reflected) piece.shown = piece.target
+        floralButtons[i].setAttribute('aria-pressed', String(wearing))
+        floralButtons[i].setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName(piece.item).toLowerCase()}`)
+      })
       // The first reflection is how the room opens, not a change to animate.
       if (!reflected) Object.assign(shown, target)
       reflected = true
@@ -381,7 +418,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
 
     showMisfit(item, kind) {
       note.textContent = `${itemName(item)} doesn't fit ${CHARACTER_NAMES[kind]} yet`
-      const spot = item.id === 'kiki'
+      const floral = floralPieces.find(piece => piece.item.id === item.id)
+      const spot = floral ? { x: floral.x, y: floral.y } : item.id === 'kiki'
         ? item.slot === 'bow' ? atelier.bowPillar.bow : { x: featuredX, y: 250 }
         : { x: cardiganStand.x, y: 250 }
       noteSpot.x = wx(spot.x)
@@ -419,6 +457,11 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
       for (const part of ['dress', 'bow', 'cardigan'] as const) shown[part] += (target[part] - shown[part]) * fade
+      for (const piece of floralPieces) {
+        piece.shown += (piece.target - piece.shown) * fade
+        piece.mesh.material.opacity = piece.shown
+        piece.mesh.visible = piece.shown > 0.01
+      }
       noteFor = Math.max(0, noteFor - dt)
       let nearest: { key: HintKey; x: number; y: number } | null = null
       for (const spot of hintSpots) {
@@ -431,7 +474,15 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
         hintSpot.x = wx(nearest.x)
         hintSpot.y = wy(nearest.y)
       }
-      hint.style.setProperty('--show', nearest && noteFor <= 0 ? '1' : '0')
+      const nearbyFloral = floralPieces.find(piece => Math.abs(visitorX - wx(piece.x)) < 1.25)
+      if (nearbyFloral && !nearest) {
+        hint.textContent = nearbyFloral.target > 0
+          ? `Tap to try on ${itemName(nearbyFloral.item).toLowerCase()}`
+          : nearbyFloral.item.slot === 'bow' ? 'Tap the cushion to give it back' : 'Tap the form to give it back'
+        hintSpot.x = wx(nearbyFloral.x)
+        hintSpot.y = wy(nearbyFloral.item.slot === 'bow' ? 310 : 160)
+      }
+      hint.style.setProperty('--show', (nearest || nearbyFloral) && noteFor <= 0 ? '1' : '0')
       note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
       cardigan.material.opacity = shown.cardigan
       cardigan.visible = shown.cardigan > 0.01

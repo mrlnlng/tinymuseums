@@ -5,7 +5,7 @@ import { useSound } from './SoundProvider'
 
 const OPEN_MS = 4000
 
-export default function SoundToggle() {
+export default function SoundToggle({ inSettings = false }: { inSettings?: boolean }) {
   const { isEnabled, isSounding, isAvailable, volume, setVolume, toggle } = useSound()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -40,6 +40,28 @@ export default function SoundToggle() {
   const label = isSounding ? 'Turn the music off' : 'Turn the music on'
   // Not isSounding: the track may not be playing yet, and the slider would snap back to 0.
   const shown = isEnabled ? volume : 0
+
+  if (inSettings) return (
+    <div className="settings-audio">
+      <button type="button" className="settings-row" data-track="music_toggle"
+        onClick={toggle} aria-pressed={isEnabled} aria-label={label}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+          <path d="M11 4 5 9H2v6h3l6 5V4Z" fill="currentColor" />
+          <path d={isEnabled ? 'M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14' : 'm16 9 5 6m0-6-5 6'}
+            fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        </svg>
+        <span>Audio</span>
+        <span className="settings-state">{isEnabled ? 'On' : 'Off'}</span>
+      </button>
+      <label className="settings-volume">
+        <span>Volume</span>
+        <input type="range" min={0} max={100} step={1}
+          data-track="volume" value={Math.round(shown * 100)}
+          onChange={event => setVolume(Number(event.target.value) / 100)}
+          aria-label="Volume" aria-valuetext={`${Math.round(shown * 100)}%`} />
+      </label>
+    </div>
+  )
 
   return (
     <div className="sound" data-open={isOpen ? 'true' : 'false'}>

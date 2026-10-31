@@ -128,8 +128,8 @@ export default function ChatButton() {
               Send
             </button>
           </form>
-          <p className="chat-note" role="status">
-            {note ?? 'Shown over your head for a few seconds. Nothing is kept.'}
+          <p className="chat-note" role="status" hidden={note === null}>
+            {note}
           </p>
           {people.length > 0 ? (
             <ul className="chat-people" aria-label="Here with you">

@@ -45,3 +45,31 @@ await sharp(new URL('atelier/wallpaper-lines.png', root).pathname)
   .flatten({ background: '#370505' })
   .png({ compressionLevel: 9 })
   .toFile(new URL('atelier/wallpaper.png', root).pathname)
+
+
+// The floral exports share a canvas and their own, slimmer mannequin. Keep that
+// alignment, including its neck and stand, instead of stretching clothes over Kiki's form.
+const floralSource = new URL('atelier/floral-cardigan-mannequin.png', root).pathname
+const sourceSize = { width: 1668, height: 2388 }
+const mask = Buffer.from(`<svg width="1668" height="2388"><path fill="white" d="M0 0H1668V490H0Z M0 1504H1668V2388H0Z"/></svg>`)
+const neckAndStand = await sharp(floralSource).composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer()
+const torso = Buffer.from(`<svg width="1668" height="2388">
+<path fill="#bf8a5b" d="M809 1300H864V1560H809Z"/>
+<path fill="#f4d9ba" d="M750 380H916Q912 455 1000 520Q1030 570 1010 690L970 950Q1020 1250 980 1320Q840 1390 680 1320Q640 1250 690 950L650 690Q630 570 665 520Q750 455 750 380Z"/>
+<path d="M760 463Q834 510 910 463" fill="none" stroke="#edc3a2" stroke-width="7"/>
+</svg>`)
+const blank = () => sharp({ create: { ...sourceSize, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+const bare = await blank().composite([{ input: torso }, { input: neckAndStand }]).png().toBuffer()
+const blue = await sharp(bare).composite([{ input: await sharp(new URL('atelier/blue-floral-dress-display.png', root).pathname).toBuffer() }]).png().toBuffer()
+async function floralForm(name, input) {
+  await sharp(input).extract({ left: 345, top: 74, width: 974, height: 2110 })
+    .resize(width, height, { fit: 'fill' }).png({ compressionLevel: 9 })
+    .toFile(new URL(`atelier/${name}.png`, root).pathname)
+}
+await floralForm('mannequin-floral-bare', bare)
+await floralForm('mannequin-blue-floral', blue)
+await floralForm('mannequin-floral-cardigan', floralSource)
+for (const name of ['flower-crown']) {
+  await sharp(new URL(`atelier/${name}.png`, root).pathname).trim()
+    .png({ compressionLevel: 9 }).toFile(new URL(`atelier/${name}-trimmed.png`, root).pathname)
+}

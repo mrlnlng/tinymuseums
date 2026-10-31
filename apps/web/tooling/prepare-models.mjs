@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { graftCostume } from './graft-costume.mjs'
+import { paintedCostume } from './painted-costume.mjs'
 
 const root = new URL('../', import.meta.url)
 await mkdir(new URL('public/immutable/', root), { recursive: true })
@@ -150,14 +151,36 @@ let bunny = graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-r
   paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
 })
 // The cat and otter wear the bunny's clothes too. The otter's arms sit where the bunny's do, so
-// its clothes keep their place but draw under its lower chin; both arms are repeated over the
-// dress, and a smaller Kiki bow sits on its head in place of the star.
+// the cardigan sleeves can follow those bones. Its shorter torso needs a lower neckline
+// and a narrower dress; the paws sit under the chin, and the bow replaces its star.
 let cat = await master('cat-rig-kiki.glb')
 let otter = graftCostume(await master('otter-rig.glb'), await master('bunny-rig-kiki.glb'), {
   skip: ['paw'],
-  paws: ['otter_arm_R', 'otter_arm_L'].map((layer) => ({ layer, costume: 'kiki', part: 'paw', draw_order: 9 })),
+  paws: ['otter_arm_R', 'otter_arm_L'].map((layer) => ({ layer, costume: 'kiki', part: 'paw', draw_order: 7.8 })),
   relabel: (extras) => extras.part === 'bow' ? { ...extras, hides: 'otter_star' } : { ...extras, draw_order: 7.5 },
-  fit: { bow: { dx: 120, dy: -10, scale: 0.66, pivot: [636, 659] } },
+  fit: {
+    body: {
+      scaleX: 0.88, scaleY: 0.85, pivot: [1000, 1940],
+      // Lift the scooped neckline independently of the hem. Pull the flared
+      // right side toward the waist and let that hem fall around the hip.
+      warp(x, y) {
+        const clamp = value => Math.max(0, Math.min(1, value))
+        const bodice = clamp((1940 - y) / 420)
+        const right = clamp((x - 1000) / 450)
+        const skirt = clamp((y - 1500) / 260)
+        // Tuck the pointed shoulder/strap below the arm, without lowering
+        // the centre neckline. Ease the side inward at the waist, then out
+        // toward the hip so it does not end in a straight, boxy edge.
+        const shoulder = clamp((x - 1050) / 200) * clamp((1450 - y) / 220)
+        const waist = clamp((x - 1100) / 300) * Math.exp(-(((y - 1550) / 200) ** 2))
+        return [
+          x - 145 * right * skirt - 55 * shoulder - 70 * waist,
+          y - 115 * bodice + 145 * right * skirt + 150 * shoulder,
+        ]
+      },
+    },
+    bow: { dx: 120, dy: -10, scale: 0.66, pivot: [636, 659] },
+  },
 })
 for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
   const cardigan = await master(`bunny-rig-v2-cardigan-${colour}.glb`)
@@ -166,8 +189,49 @@ for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
   cat = graftCostume(cat, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'cat_ribbon' }) })
   otter = graftCostume(otter, cardigan, {
     relabel: (extras) => ({ ...extras, costume, draw_order: { body: 7.5, sleeve_R: 7.6, sleeve_L: 7.7 }[extras.part] }),
+    fit: {
+      body: { scaleX: 0.94, scaleY: 1.14, pivot: [930, 1400], dx: -10, dy: 35 },
+      sleeve_L: { scale: 0.90, pivot: [511, 1529], dx: -5, dy: 35 },
+      sleeve_R: { scale: 0.86, pivot: [1287, 1349], dx: -8, dy: 28 },
+    },
   })
 }
+
+
+// The new artist layers use the same 1668 × 2388 canvas as the rigs.
+async function floralOutfits(rig, kind) {
+  const hides = { bunny: 'bowtie', cat: 'cat_ribbon', otter: '' }[kind]
+  const order = kind === 'otter' ? 7.5 : kind === 'cat' ? 5 : 9
+  for (const costume of ['blue-floral', 'floral-cardigan']) {
+    rig = await paintedCostume(rig, await master('atelier/blue-floral-dress.png'), {
+      costume, drawOrder: order, hides,
+    })
+  }
+  // Fit the supplied cardigan to the tilted torso, and hang each sleeve from its
+  // arm bone. Masks follow the artist's underarm seams with a small shared join.
+  const transform = { xx: 1.36, x: 945, yy: 0.75, yx: -0.48, y: 1280 }
+  const cardigan = await master('atelier/red-cardigan-display.png')
+  const pieces = [
+    { part: 'body', mask: 'M650 0H1040L1000 690L1015 835L1080 950V2388H620V950L690 835L705 690Z' },
+    { part: 'sleeve_L', bone: 'arm_L', mask: 'M0 0H670L720 690L705 850L650 950H0Z' },
+    { part: 'sleeve_R', bone: 'arm_R', mask: 'M1020 0H1668V950H1070L1000 850L990 690Z' },
+  ]
+  for (const [i, piece] of pieces.entries()) {
+    rig = await paintedCostume(rig, cardigan, {
+      costume: 'floral-cardigan', ...piece, transform, hides,
+      drawOrder: kind === 'otter' ? 7.6 + i * 0.05 : kind === 'cat' ? 5.1 + i * 0.1 : 13 + i,
+    })
+  }
+  rig = await paintedCostume(rig, await master('atelier/flower-crown.png'), {
+    costume: 'flower-crown', part: 'bow', bone: 'head', drawOrder: 18,
+    hides: kind === 'otter' ? 'otter_star' : '',
+    ...(kind === 'otter' ? { dx: 110, dy: 10, scale: 0.85 } : {}),
+  })
+  return rig
+}
+bunny = await floralOutfits(bunny, 'bunny')
+cat = await floralOutfits(cat, 'cat')
+otter = await floralOutfits(otter, 'otter')
 
 const models = {
   bunnyRig: await rig('bunny-rig-v2-dressed', bunny),
@@ -196,6 +260,10 @@ const atelier = {
   cardiganForestGreen: await image('mannequin-cardigan-forest-green'),
   cardiganNavyBlue: await image('mannequin-cardigan-navy-blue'),
   cardiganButterYellow: await image('mannequin-cardigan-butter-yellow'),
+  floralMannequin: await image('mannequin-floral-bare'),
+  blueFloral: await image('mannequin-blue-floral'),
+  floralCardigan: await image('mannequin-floral-cardigan'),
+  flowerCrown: await image('flower-crown-trimmed'),
   broom: await image('broom'),
   platform: await image('platform', { lossless: true }),
   spotlight: await image('spotlight'),

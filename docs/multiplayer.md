@@ -16,8 +16,8 @@ and its decisions are in `docs/multiplayer-plan.md`; this page is how it works n
   pick another generated one in the account sheet. Chosen names are 2–20 characters, with no
   web addresses, phone numbers, reserved words (curator, staff, admin, tiny museum, …) or
   profanity (the `obscenity` list).
-- **Messages.** The two-bubble button in the top bar shows while you share a room; Enter opens
-  it too. A message is one line of up to 100 characters.
+- **Messages.** The large two-bubble button at the bottom right shows while you share a room;
+  Enter opens it too. A message is one line of up to 100 characters.
   - It shows in a bubble over the sender, with a small hop, for 3–8 s depending on length,
     then it is gone. There is no log and nothing is stored.
   - The room allows one every 1.5 s per visitor and decides what goes out (`messages.ts`,

@@ -162,8 +162,8 @@ export const CONFIG = {
   atelier: {
     mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
     ceiling: 4.97,
-    max: 12.3,
-    wall: { left: -7, right: 15, tile: 2.2 },
+    max: 15.2,
+    wall: { left: -7, right: 18.5, tile: 2.2 },
     carpet: { height: 1.25 },
     curtains: { left: -40, width: 520, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },
@@ -188,9 +188,12 @@ export const CONFIG = {
     painting: { x: 1487, y: 344, width: 381, z: 0.2 },
     // The cardigan hangs on the first spare form; its colours are swatches on the red cushion.
     cardigans: { label: { x: 1830, y: 122, width: 320 }, swatches: { x: 2083, y: 412, gap: 54, width: 44 } },
-    comingSoon: { x: 2653, y: 150, width: 170 },
-    // Spare forms further along: one spotlit on its platform, one standing on the carpet.
-    forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 685, platform: false }],
+    floralCollection: { x: 2940, y: 132, width: 340 },
+    floralDisplay: { x: 3250, feetY: 610 },
+    flowerCrown: { x: 2940, y: 405, width: 165, z: 0.36, rotation: -Math.PI / 10 },
+    crownPillar: { x: 2940, pillow: { y: 445, width: 210 } },
+    // The cardigan and blue floral dress each have a spotlit form.
+    forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 610, platform: true }],
     redPillar: { x: 2083, pillow: { y: 440, width: 210 } },
     mirror: { x: 2393, y: 332, width: 190, z: 0.2 },
     column: { bottomY: 680, height: 225, z: 0.3 },

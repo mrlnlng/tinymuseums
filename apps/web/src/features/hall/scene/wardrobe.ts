@@ -5,7 +5,7 @@ import type { Character, Look } from './character'
 import type { CharacterKind } from './rig'
 
 export const CARDIGANS = ['cardigan-red', 'cardigan-forest-green', 'cardigan-navy-blue', 'cardigan-butter-yellow'] as const
-export const COSTUMES = ['kiki', ...CARDIGANS] as const
+export const COSTUMES = ['kiki', ...CARDIGANS, 'blue-floral', 'floral-cardigan', 'flower-crown'] as const
 
 /** The costumes fitted to each character's rig; the others stay on their stands. */
 export const FITS: Record<CharacterKind, readonly string[]> = {

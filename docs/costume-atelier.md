@@ -1,7 +1,7 @@
 # The Costume Atelier
 
 A costume gallery room, reached through the fashion-themed archway to the left of the visitor centre. Visitors try on the
-bow and dress from the mannequin, or a cardigan in one of four colours, and can walk as the
+bow and dress from the mannequin, a cardigan in one of four colours, the blue floral dress, the floral dress with its red cardigan, or the flower crown, and can walk as the
 cat or the otter instead of the bunny. All
 choices persist through the `outfit` slot, so they come back on the next visit, and they
 sync across devices when the visitor has an account.
@@ -32,13 +32,14 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   and perfume, two bunny portraits; then **The Kiki Collection**: the spotlit form wearing the
   dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then
   **The Cardigan Collection**: the spotlit form in a cardigan, the otter portrait above a red
-  cushion holding four colour swatches, a mirror, and a last bare form under "More costumes
-  coming soon".
+  cushion holding four colour swatches, a mirror, then **The Floral Collection**: two spotlit mannequins, one in the blue dress
+  and one in the dress with its red cardigan, with the flower crown on a cushion between them.
 - **Hints.** Near a piece or portrait not yet tried, one pill says what a tap does. A change
   of outfit or character bursts sparkles over the visitor (not with reduced motion).
 - **Trying on.** Tap the dress (or the broom) or the bow. Each jiggles now and then as an
   invitation. A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
-  pillow to give it back. Either can be worn alone or both together. A swatch puts on that
+  pillow to give it back. Either can be worn alone or both together. The floral dresses use the same try-on/return
+  behavior; the flower crown shares the headwear slot with Kiki's bow and can accompany any dress. A swatch puts on that
   colour of cardigan; the form keeps the last colour chosen. A cardigan replaces the dress, and
   the dress replaces a cardigan, since both are the outfit's `costume`.
 - **What fits.** Every character wears every piece (`FITS` in `wardrobe.ts`). A piece missing
@@ -121,10 +122,15 @@ body. The numbers in `prepare-models.mjs` were matched by overlaying the layer m
 
 - **Cat:** the cardigans as drawn, hiding Jiji's ribbon. Its Kiki outfit is the artist's cat
   version, broom included.
-- **Otter:** its arm bones sit within 30 px of the bunny's, so the bunny's clothes keep their
-  place; they draw under its head (order 7.5–7.7) because its chin hangs lower. Both arms are
-  repeated over Kiki's dress, and the bow is two-thirds size on top of its head, in place of the
-  star.
+- **Otter:** Kiki's dress has an otter-specific vertex fit: after establishing the
+  torso width, a separate bodice adjustment lifts the scooped neckline to the chin.
+  The right skirt edge pulls inward and its hem drops around the hip, removing the
+  sideways flare without shifting the entire dress. A local shoulder adjustment tucks
+  the strap endpoint under the arm, and a smooth waist inset rounds the side seam. Its paws
+  draw above the dress but below the head (order 7.8). The four cardigans share a fit:
+  a slightly narrower, longer body and smaller sleeves fitted individually to its arms.
+  The bow is two-thirds size on top of its head, in place of the star. The blue floral dress
+  retains its original canvas fit, which already follows this torso well.
 
 They hold through the walk, but they are refits of bunny art; drawings made for each body would
 sit better.
@@ -140,3 +146,36 @@ pillow is the blue pillow dyed. Larger masters of these would be sharper.
 
 - The mirror is a picture; it does not reflect the visitor.
 - The mannequin master is 173 × 525 px, upscaled for the screen.
+
+## Floral collection
+
+The artist's new 1668 × 2388 exports are retained in `public/assets/atelier/`:
+`blue-floral-dress.png` is the character layer; `blue-floral-dress-display.png`
+is the mannequin layer; `floral-cardigan-mannequin.png` supplies the dressed
+display, `red-cardigan-display.png` the cardigan painting, and `flower-crown.png`
+the headwear. Source names were dressA, dressAMannequin, file4, file7, and file6.
+
+`compose-atelier.mjs` retains the supplied floral mannequin's neck and stand and
+reconstructs a matching bare torso. Bare, blue-dressed, and cardigan-dressed forms
+share one canvas and floor position, so equipping a piece exposes its bare stand.
+
+`painted-costume.mjs` adds the flat artist layers to each existing GLB skeleton.
+The floral skirt blends chest and hip weights. The cardigan is fitted to the torso
+angle; its sleeves follow the arm bones with overlapping joins along the painted
+underarm seams. The crown follows the head bone and replaces the otter's star.
+All three rigs contain `blue-floral`, `floral-cardigan`, and `flower-crown`.
+The existing outfit slot persists and shares them in both museum rooms.
+
+Browser review screenshots are in `output/floral-review/`, covering all three
+characters, the real atelier displays, equipping/returning, and reload persistence.
+
+### Costume fit review
+
+The review captures every costume on bunny, cat, and otter at the start and two
+points of the walk cycle, plus the opposite facing. A second pass equips each
+piece through the actual atelier controls and walks away from and back toward its
+stand. Screenshots and comparison sheets are under `output/fit-review/`.
+
+The crown on the cushion uses a room-only rotation and lower centre to rest both
+rose ends on the fabric; the character-worn crown keeps its original artwork and
+head attachment.

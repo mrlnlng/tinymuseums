@@ -101,3 +101,28 @@ test('every character wears the same cardigan, and an unfitted piece only says s
   assert.deepEqual(s.misfits, ['cape:otter'])
   assert.equal(lookOf(s.slot.snapshot()).costume, 'cardigan-navy-blue')
 })
+
+test('floral outfits and crown equip, persist, carry across characters, and return independently', async () => {
+  const s = setup()
+  const floral = { slot: 'costume', id: 'blue-floral' } as const
+  const layered = { slot: 'costume', id: 'floral-cardigan' } as const
+  const crown = { slot: 'bow', id: 'flower-crown' } as const
+  s.wardrobe.tapItem(floral)
+  s.wardrobe.tapItem(crown)
+  await s.settled()
+  assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: 'blue-floral', bow: 'flower-crown' })
+  s.wardrobe.tapItem(layered)
+  for (const kind of ['cat', 'otter', 'bunny'] as const) {
+    s.wardrobe.tapDisplay(kind)
+    await s.settled()
+    assert.deepEqual(s.character.look, { kind, costume: 'floral-cardigan', bow: 'flower-crown' })
+    assert.deepEqual(s.worn.at(-1), ['floral-cardigan', 'flower-crown'])
+  }
+  s.wardrobe.tapItem(crown)
+  await s.settled()
+  assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: 'floral-cardigan', bow: null })
+  s.wardrobe.tapItem(layered)
+  await s.settled()
+  assert.deepEqual(s.worn.at(-1), [null, null])
+  assert.deepEqual(s.misfits, [])
+})

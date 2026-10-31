@@ -2,9 +2,8 @@ import { randomBytes } from 'node:crypto'
 import { env, hitForVisitor, memberName } from '@tiny/core'
 import { TICKET_TTL_MS, nameFromSeed, signTicket, validRoomBase, validSeed } from '@tiny/core/presence'
 import { clientIp } from '@/shared/lib/client-ip'
-import { checkMutation, empty, json, limited } from '@/shared/lib/member-route'
+import { checkMutation, json, limited, readMemberBody } from '@/shared/lib/member-route'
 import { currentMember } from '@/shared/lib/member-session'
-import { readJsonBody } from '@/shared/lib/read-json-body'
 
 const MAX_BODY_BYTES = 1024
 const PER_IP = { limit: 120, windowSeconds: 60 * 60 }
@@ -28,8 +27,8 @@ export async function POST(request: Request) {
   const perIp = await hitForVisitor('presence-ticket', clientIp(request.headers), PER_IP)
   if (!perIp.allowed) return limited(perIp)
 
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'invalid' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES)
+  if (!body.ok) return body.response
   const { room, seed } = (body.body ?? {}) as { room?: unknown; seed?: unknown }
   if (!validRoomBase(room) || !validSeed(seed)) return json({ error: 'invalid' }, 400)
 

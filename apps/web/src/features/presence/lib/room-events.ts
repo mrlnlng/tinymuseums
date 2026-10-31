@@ -45,9 +45,10 @@ export const isInRoom = () => inRoom
 export const onInRoomChange = (listener: () => void) => on(ROOM, listener)
 
 /** Who else is in the room, for the panel's list. */
-export function setPeople(next: Person[]): void {
+export function setPeople(next: readonly Person[]): void {
   if (next.length === people.length && next.every((p, i) => p.pid === people[i].pid && p.name === people[i].name)) return
-  people = next
+  // Publish a stable snapshot only when names or membership change, not on every walk frame.
+  people = next.map(({ pid, name }) => ({ pid, name }))
   emit(PEOPLE)
 }
 export const getPeople = () => people

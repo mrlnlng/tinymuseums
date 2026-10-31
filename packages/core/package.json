@@ -11,6 +11,7 @@
     "./guestboard": "./src/guestboard-rules.ts",
     "./bugs": "./src/bug-report-rules.ts",
     "./brand": "./src/brand.ts",
+    "./random": "./src/infra/random.ts",
     "./visit-features": "./src/visit-features.ts",
     "./slots": "./src/slots/index.ts",
     "./presence": "./src/presence/index.ts",

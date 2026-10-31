@@ -40,7 +40,6 @@ interface Shown {
   pid: string
   kind: RemoteVisitor['look']['kind']
   rig: Rig | null
-  failed: boolean
   costume: string | null
   bow: string | null
   motion: RigState
@@ -86,16 +85,27 @@ function bubbleFor(host: HTMLElement): HTMLDivElement {
 
 /** Other visitors, drawn into one WebGL layer behind the local visitor, with name tags. */
 export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
-  const layer = createRigLayer()
-  layer.domElement.className = 'visitor-layer'
-  layer.domElement.setAttribute('aria-hidden', 'true')
-  host.prepend(layer.domElement)
+  // Most visits start alone. Chat bubbles need DOM, but a WebGL context is only needed
+  // once another visitor arrives; an empty room also needs no canvas clears or resizes.
+  let layer: ReturnType<typeof createRigLayer> | null = null
+  function ensureLayer(): ReturnType<typeof createRigLayer> {
+    if (!layer) {
+      layer = createRigLayer()
+      layer.domElement.className = 'visitor-layer'
+      layer.domElement.setAttribute('aria-hidden', 'true')
+      host.prepend(layer.domElement)
+    }
+    return layer
+  }
   const announcer = document.createElement('div')
   announcer.className = 'visitor-announcer'
   announcer.setAttribute('aria-live', 'polite')
   host.appendChild(announcer)
 
   const shown = new Map<string, Shown>()
+  const nearest: RemoteVisitor[] = []
+  const keep = new Set<string>()
+  const names = new Map<string, number>()
   const projected = new THREE.Vector3()
   const pose: Pose = { x: 0, y: 0, width: 0, rotation: 0, flip: 1 }
 
@@ -106,7 +116,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     element.alt = ''
     element.setAttribute('aria-hidden', 'true')
     element.hidden = true
-    layer.domElement.after(element)
+    ensureLayer().domElement.after(element)
     return { element, transform: '', size: '' }
   }
 
@@ -171,14 +181,13 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     entry.rig?.dispose()
     entry.rig = null
     const kind = entry.kind
-    void loadRig(null, kind, layer).then(
+    void loadRig(null, kind, ensureLayer()).then(
       (rig) => {
         if (disposed || shown.get(entry.pid) !== entry || entry.kind !== kind) return rig.dispose()
         rig.setCostume(entry.costume, entry.bow)
         entry.rig = rig
       },
       (error) => {
-        entry.failed = true
         console.warn(`[presence] ${kind} rig unavailable`, error)
       },
     )
@@ -206,20 +215,27 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     update(dt, visitors, selfX, camera, viewport, scenery) {
       const now = performance.now()
       placeOwn()
+      nearest.length = 0
+      for (const visitor of visitors) nearest.push(visitor)
+      nearest.sort((a, b) => Math.abs(a.x - selfX) - Math.abs(b.x - selfX))
+      nearest.length = Math.min(nearest.length, MAX_SHOWN)
+      arrivals(nearest.length, now)
+      keep.clear()
+      for (const visitor of nearest) keep.add(visitor.pid)
+      for (const entry of shown.values()) if (!keep.has(entry.pid)) forget(entry)
+      if (layer) layer.domElement.hidden = nearest.length === 0
+      if (nearest.length === 0) return
+
+      const renderer = ensureLayer()
       const ratio = Math.min(2, window.devicePixelRatio)
       if (viewport.width !== size.width || viewport.height !== size.height || ratio !== size.ratio) {
         size = { width: viewport.width, height: viewport.height, ratio }
-        layer.setPixelRatio(ratio)
-        layer.setSize(viewport.width, viewport.height)
+        renderer.setPixelRatio(ratio)
+        renderer.setSize(viewport.width, viewport.height)
       }
 
-      const nearest = [...visitors].sort((a, b) => Math.abs(a.x - selfX) - Math.abs(b.x - selfX)).slice(0, MAX_SHOWN)
-      arrivals(nearest.length, now)
-      const keep = new Set(nearest.map((visitor) => visitor.pid))
-      for (const entry of [...shown.values()]) if (!keep.has(entry.pid)) forget(entry)
-
-      const names = new Map<string, number>()
-      clearRigLayer(layer)
+      names.clear()
+      clearRigLayer(renderer)
       const frustumHeight = camera.top - camera.bottom
       const heightPx = (CONFIG.character.height / frustumHeight) * viewport.height
 
@@ -231,7 +247,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           tag.setAttribute('aria-hidden', 'true')
           host.appendChild(tag)
           entry = {
-            pid: visitor.pid, kind: visitor.look.kind, rig: null, failed: false,
+            pid: visitor.pid, kind: visitor.look.kind, rig: null,
             costume: visitor.look.costume, bow: visitor.look.bow,
             motion: createRigState(visitor.facing > 0 ? 'right' : 'left'), tag, bubble: bubbleFor(host), bubbleAt: -Infinity, bubbleWidth: 0,
             perch: sprite('visitor-perch'), helm: sprite('hall-carried'), cup: sprite('hall-carried'),
@@ -241,7 +257,6 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
         }
         if (visitor.look.kind !== entry.kind) {
           entry.kind = visitor.look.kind
-          entry.failed = false
           load(entry)
         }
         if (visitor.look.costume !== entry.costume || visitor.look.bow !== entry.bow) {
@@ -372,10 +387,12 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     dispose() {
       disposed = true
       own?.bubble.remove()
-      for (const entry of [...shown.values()]) forget(entry)
+      for (const entry of shown.values()) forget(entry)
       announcer.remove()
-      disposeRigLayer(layer)
-      layer.domElement.remove()
+      if (layer) {
+        disposeRigLayer(layer)
+        layer.domElement.remove()
+      }
     },
   }
 }

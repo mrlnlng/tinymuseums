@@ -111,13 +111,15 @@ export class PeerTable {
 
   visitors(now: number): RemoteVisitor[] {
     const at = now - INTERPOLATION_DELAY_MS
-    return [...this.entries.values()].map((entry) => {
+    const visitors: RemoteVisitor[] = []
+    for (const entry of this.entries.values()) {
       const { x, vx } = positionAt(entry.samples, at)
-      return {
+      visitors.push({
         pid: entry.pid, name: entry.name, look: entry.look, facing: entry.facing,
         sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, said: entry.said,
-      }
-    })
+      })
+    }
+    return visitors
   }
 }
 

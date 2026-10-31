@@ -1,7 +1,6 @@
 import { chooseName, hit, memberName, rerollName } from '@tiny/core'
 import { validSeed } from '@tiny/core/presence'
-import { checkMutation, empty, json, limited, memberFromRequest } from '@/shared/lib/member-route'
-import { readJsonBody } from '@/shared/lib/read-json-body'
+import { json, limited, memberMutation, readMemberBody } from '@/shared/lib/member-route'
 
 const MAX_BODY_BYTES = 1024
 const PER_MEMBER = { limit: 30, windowSeconds: 60 * 60 }
@@ -9,14 +8,11 @@ const PER_MEMBER = { limit: 30, windowSeconds: 60 * 60 }
 // One of: { device } reads the name, giving the account this device's seed if it has none;
 // { name } chooses one; { seed } rolls a new generated name.
 export async function PUT(request: Request) {
-  const guard = await memberFromRequest(request)
+  const guard = await memberMutation(request)
   if (!guard.ok) return guard.response
 
-  const denied = checkMutation(request, true)
-  if (denied) return denied
-
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'invalid' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES)
+  if (!body.ok) return body.response
   const input = (body.body ?? {}) as { device?: unknown; name?: unknown; seed?: unknown }
 
   if ('device' in input) {

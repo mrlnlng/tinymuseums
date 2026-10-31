@@ -5,9 +5,14 @@ export function pickDerivative(
   minWidth: number,
   format = 'jpg',
 ): Derivative | null {
-  const candidates = derivatives
-    .filter((d) => d.format === format)
-    .sort((a, b) => a.width - b.width)
-  if (candidates.length === 0) return null
-  return candidates.find((d) => d.width >= minWidth) ?? candidates[candidates.length - 1]
+  let suitable: Derivative | null = null
+  let largest: Derivative | null = null
+  for (const derivative of derivatives) {
+    if (derivative.format !== format) continue
+    if (!largest || derivative.width >= largest.width) largest = derivative
+    if (derivative.width >= minWidth && (!suitable || derivative.width < suitable.width)) {
+      suitable = derivative
+    }
+  }
+  return suitable ?? largest
 }

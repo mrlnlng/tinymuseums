@@ -1,8 +1,7 @@
 import { canonicalEmail, hit, hitForVisitor, signUp } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
 import { setMemberCookie } from '@/shared/lib/member-session'
-import { checkMutation, empty, json, limited } from '@/shared/lib/member-route'
-import { readJsonBody } from '@/shared/lib/read-json-body'
+import { checkMutation, json, limited, readMemberBody } from '@/shared/lib/member-route'
 
 const MAX_BODY_BYTES = 56 * 1024
 const PER_IP = { limit: 10, windowSeconds: 60 * 60 }
@@ -17,8 +16,8 @@ export async function POST(request: Request) {
   if (!all.allowed) return limited(all)
   if (!perIp.allowed) return limited(perIp)
 
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'invalid' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES)
+  if (!body.ok) return body.response
 
   const input = (body.body ?? {}) as { email?: unknown; password?: unknown }
   const email = canonicalEmail(typeof input.email === 'string' ? input.email : '')

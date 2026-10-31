@@ -46,12 +46,12 @@ export async function generateDerivatives(
         .rotate()
         .resize({ width: targetWidth, withoutEnlargement: true })
 
-      const buffer =
+      const encoded =
         format === 'webp'
-          ? await pipeline.webp({ quality: 82 }).toBuffer()
-          : await pipeline.jpeg({ quality: 84, mozjpeg: true }).toBuffer()
+          ? pipeline.webp({ quality: 82 })
+          : pipeline.jpeg({ quality: 84, mozjpeg: true })
+      const { data: buffer, info } = await encoded.toBuffer({ resolveWithObject: true })
 
-      const info = await sharp(buffer).metadata()
       const variant = `w${targetWidth}`
       const key = derivativeKey(artistId, assetId, variant, ext)
       await storage.put(key, buffer, format === 'webp' ? 'image/webp' : 'image/jpeg')
@@ -59,8 +59,8 @@ export async function generateDerivatives(
       derivatives.push({
         variant,
         key,
-        width: info.width ?? targetWidth,
-        height: info.height ?? 0,
+        width: info.width,
+        height: info.height,
         format: ext,
         bytes: buffer.length,
       })

@@ -1,6 +1,5 @@
 import { hit, mergeSlot } from '@tiny/core'
-import { checkMutation, empty, json, limited, memberFromRequest } from '@/shared/lib/member-route'
-import { readJsonBody } from '@/shared/lib/read-json-body'
+import { empty, json, limited, memberMutation, readMemberBody } from '@/shared/lib/member-route'
 
 const MAX_BODY_BYTES = 56 * 1024
 const PER_MEMBER = { limit: 60, windowSeconds: 60 }
@@ -9,19 +8,16 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ name: string }> },
 ) {
-  const guard = await memberFromRequest(request)
+  const guard = await memberMutation(request)
   if (!guard.ok) return guard.response
-
-  const denied = checkMutation(request, true)
-  if (denied) return denied
 
   const perMember = await hit(`member-slots:${guard.member.id}`, PER_MEMBER)
   if (!perMember.allowed) return limited(perMember)
 
   const { name } = await params
 
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'invalid' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES)
+  if (!body.ok) return body.response
 
   if (typeof body.body !== 'object' || body.body === null) return json({ error: 'invalid' }, 400)
   const { version, doc } = body.body as { version?: unknown; doc?: unknown }

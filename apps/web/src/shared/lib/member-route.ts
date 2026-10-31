@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
-import { env, type Member } from '@tiny/core'
+import { env, hit, type Member } from '@tiny/core'
 import { currentMember, setMemberCookie } from './member-session'
+import { readJsonBody } from './read-json-body'
 
 const NO_STORE = 'private, no-store'
 
@@ -16,8 +17,20 @@ export function limited(result: { retryAfterSeconds: number }): Response {
   return json({ error: 'rate_limited' }, 429, { 'retry-after': String(result.retryAfterSeconds) })
 }
 
-export function emailBucketKey(email: string): string {
-  return createHmac('sha256', env.sessionSecret).update(email).digest('base64url').slice(0, 22)
+// Sign-in, password changes, and deletion share one password-attempt budget.
+export async function checkPasswordRateLimit(email: string): Promise<Response | null> {
+  const key = createHmac('sha256', env.sessionSecret).update(email).digest('base64url').slice(0, 22)
+  const result = await hit(`member-sign-in:email:${key}`, { limit: 10, windowSeconds: 15 * 60 })
+  return result.allowed ? null : limited(result)
+}
+
+export async function readMemberBody(request: Request, maxBytes: number, invalidError = 'invalid') {
+  const result = await readJsonBody(request, maxBytes)
+  if (result.ok) return result
+  return {
+    ok: false as const,
+    response: result.error === 'too_large' ? empty(413) : json({ error: invalidError }, 400),
+  }
 }
 
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
@@ -65,4 +78,11 @@ export async function memberFromRequest(request: Request): Promise<MemberRequest
   }
   if (session.renewed) await setMemberCookie(session.token, session.expiresAt)
   return { ok: true, member: session.member, token: session.token }
+}
+
+export async function memberMutation(request: Request, requireJson = true): Promise<MemberRequest> {
+  const guard = await memberFromRequest(request)
+  if (!guard.ok) return guard
+  const denied = checkMutation(request, requireJson)
+  return denied ? { ok: false, response: denied } : guard
 }

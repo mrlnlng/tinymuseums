@@ -415,15 +415,11 @@ export class SyncStore {
         const stored = parseStored(readStored(this.storage, `${scope.prefix}${def.name}`))
         const base = stored === null ? def.empty() : (upgrade(def, stored.version, stored.doc) ?? def.empty())
         state.memory = def.merge(def.merge(base, state.memory), replyDoc)
-        state.dirty = !unchanged
-        writeStored(this.storage, `${scope.prefix}${def.name}`, encodeStored(def.version, state.memory, state.dirty))
-        this.notify(state)
-      } else {
-        // reply newer than our def: ignore the doc, still clear dirty under the generation rule
-        state.dirty = !unchanged
-        writeStored(this.storage, `${scope.prefix}${def.name}`, encodeStored(def.version, state.memory, state.dirty))
-        this.notify(state)
       }
+      // Even a reply from a newer slot version acknowledges this generation of our write.
+      state.dirty = !unchanged
+      writeStored(this.storage, `${scope.prefix}${def.name}`, encodeStored(def.version, state.memory, state.dirty))
+      this.notify(state)
       if (!unchanged) {
         if (keepalive) return
         generation = state.generation

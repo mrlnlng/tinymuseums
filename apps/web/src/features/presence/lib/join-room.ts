@@ -100,7 +100,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
       presence.tick()
       setInRoom(presence.status === 'open')
       const visitors = presence.visitors()
-      setPeople(visitors.map(({ pid, name }) => ({ pid, name })))
+      setPeople(visitors)
       remote.update(dt, visitors, traversal.x, camera, viewport, scenery())
     },
     want: presence.want,

@@ -1,5 +1,5 @@
 import { query, queryOne } from '../infra/db.ts'
-import { mulberry32 } from '../infra/random.ts'
+import { mulberry32, shuffle } from '../infra/random.ts'
 import { pickDerivative } from '../media/derivatives.ts'
 import { SKETCH_COLOR_WIDTH, SKETCH_DETAIL_WIDTH, SKETCH_VERSION } from '../media/sketch.ts'
 import { getStorage } from '../media/storage.ts'
@@ -17,14 +17,6 @@ export interface SketchRoundPlan {
   answerId: string
   choiceIds: string[]
   poolSize: number
-}
-
-function shuffle<T>(items: T[], random: () => number): T[] {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1))
-    ;[items[i], items[j]] = [items[j], items[i]]
-  }
-  return items
 }
 
 // Must stay deterministic: the CDN shares one response per epoch and round.

@@ -7,3 +7,12 @@ export function mulberry32(seed: number): () => number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
+
+/** Fisher–Yates, in place. Inject a seeded source when the order must be reproducible. */
+export function shuffle<T>(items: T[], random: () => number = Math.random): T[] {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[items[i], items[j]] = [items[j], items[i]]
+  }
+  return items
+}

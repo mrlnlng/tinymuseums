@@ -372,8 +372,11 @@ export function createPresence(options: PresenceOptions): Presence {
     },
 
     heldByOthers() {
-      if (status !== 'open') return []
-      return [...holds].filter(([, holder]) => holder !== pid).map(([item]) => item)
+      const items: Item[] = []
+      if (status === 'open') {
+        for (const [item, holder] of holds) if (holder !== pid) items.push(item)
+      }
+      return items
     },
 
     reconnect() {

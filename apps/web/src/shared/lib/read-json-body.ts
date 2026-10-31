@@ -8,23 +8,24 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
 
   if (!request.body) return { ok: false, error: 'invalid_json' }
   const reader = request.body.getReader()
-  const chunks: Uint8Array[] = []
-  let total = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    total += value.byteLength
-    if (total > maxBytes) {
-      await reader.cancel()
-      return { ok: false, error: 'too_large' }
-    }
-    chunks.push(value)
-  }
-
   const decoder = new TextDecoder()
   let text = ''
-  for (const chunk of chunks) text += decoder.decode(chunk, { stream: true })
-  text += decoder.decode()
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel()
+        return { ok: false, error: 'too_large' }
+      }
+      text += decoder.decode(value, { stream: true })
+    }
+    text += decoder.decode()
+  } finally {
+    reader.releaseLock()
+  }
 
   try {
     return { ok: true, body: JSON.parse(text) }

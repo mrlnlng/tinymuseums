@@ -1,4 +1,5 @@
 import type { InkMap } from './api'
+import { shuffle } from '@tiny/core/random'
 
 const PENCIL = [74, 52, 40] as const
 const SEED_STRIDE = 3
@@ -9,14 +10,6 @@ const INK_OPACITY = 0.92
 export interface SketchReveal {
   draw(progress: number): void
   finish(): void
-}
-
-function shuffle<T>(items: T[]): T[] {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[items[i], items[j]] = [items[j], items[i]]
-  }
-  return items
 }
 
 export function createReveal(canvas: HTMLCanvasElement, map: InkMap): SketchReveal {

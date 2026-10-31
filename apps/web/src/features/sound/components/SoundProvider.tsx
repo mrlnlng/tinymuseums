@@ -3,15 +3,12 @@
 import { createContext, useContext } from 'react'
 import { usePathname } from 'next/navigation'
 import { staticUrl } from '@/shared/lib/static'
+import { isPublicPage } from '@/shared/lib/public-page'
 import { useBackgroundMusic } from '@/features/sound/hooks/useBackgroundMusic'
 import { useSoundEffects, type EffectName } from '@/features/sound/hooks/useSoundEffects'
 
 const HALL_TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? staticUrl('/audio/hall.mp3')
 const ATELIER_TRACK = process.env.NEXT_PUBLIC_ATELIER_MUSIC_URL ?? staticUrl('/audio/atelier.mp3')
-
-function hasMusic(pathname: string): boolean {
-  return pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier' || pathname.startsWith('/a/')
-}
 
 interface SoundState {
   isEnabled: boolean
@@ -43,7 +40,7 @@ export function useSound(): SoundState {
 
 export default function SoundProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isInMuseum = hasMusic(pathname)
+  const isInMuseum = isPublicPage(pathname)
 
   const track = pathname === '/museum/atelier' ? ATELIER_TRACK : HALL_TRACK
   const music = useBackgroundMusic({ isAllowed: isInMuseum, track })

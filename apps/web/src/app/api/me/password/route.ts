@@ -1,22 +1,17 @@
-import { changePassword, hit, validCredentials } from '@tiny/core'
-import { checkMutation, emailBucketKey, empty, json, limited, memberFromRequest } from '@/shared/lib/member-route'
-import { readJsonBody } from '@/shared/lib/read-json-body'
+import { changePassword, validCredentials } from '@tiny/core'
+import { checkPasswordRateLimit, empty, json, memberMutation, readMemberBody } from '@/shared/lib/member-route'
 
 const MAX_BODY_BYTES = 56 * 1024
-const PER_EMAIL = { limit: 10, windowSeconds: 15 * 60 }
 
 export async function POST(request: Request) {
-  const guard = await memberFromRequest(request)
+  const guard = await memberMutation(request)
   if (!guard.ok) return guard.response
 
-  const denied = checkMutation(request, true)
-  if (denied) return denied
+  const passwordLimited = await checkPasswordRateLimit(guard.member.email)
+  if (passwordLimited) return passwordLimited
 
-  const perEmail = await hit(`member-sign-in:email:${emailBucketKey(guard.member.email)}`, PER_EMAIL)
-  if (!perEmail.allowed) return limited(perEmail)
-
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'invalid' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES)
+  if (!body.ok) return body.response
 
   const input = (body.body ?? {}) as { current?: unknown; next?: unknown }
   const current = typeof input.current === 'string' ? input.current : ''

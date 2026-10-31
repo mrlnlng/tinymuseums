@@ -1,11 +1,9 @@
 import { canonicalEmail, hit, hitForVisitor, signIn } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
 import { setMemberCookie } from '@/shared/lib/member-session'
-import { checkMutation, emailBucketKey, empty, json, limited } from '@/shared/lib/member-route'
-import { readJsonBody } from '@/shared/lib/read-json-body'
+import { checkMutation, checkPasswordRateLimit, json, limited, readMemberBody } from '@/shared/lib/member-route'
 
 const MAX_BODY_BYTES = 56 * 1024
-const PER_EMAIL = { limit: 10, windowSeconds: 15 * 60 }
 const PER_IP = { limit: 10, windowSeconds: 15 * 60 }
 const GLOBAL = { limit: 500, windowSeconds: 60 * 60 }
 
@@ -18,15 +16,15 @@ export async function POST(request: Request) {
   if (!all.allowed) return limited(all)
   if (!perIp.allowed) return limited(perIp)
 
-  const body = await readJsonBody(request, MAX_BODY_BYTES)
-  if (!body.ok) return body.error === 'too_large' ? empty(413) : json({ error: 'bad_credentials' }, 400)
+  const body = await readMemberBody(request, MAX_BODY_BYTES, 'bad_credentials')
+  if (!body.ok) return body.response
 
   const input = (body.body ?? {}) as { email?: unknown; password?: unknown }
   const email = canonicalEmail(typeof input.email === 'string' ? input.email : '')
   const password = typeof input.password === 'string' ? input.password : ''
 
-  const perEmail = await hit(`member-sign-in:email:${emailBucketKey(email)}`, PER_EMAIL)
-  if (!perEmail.allowed) return limited(perEmail)
+  const passwordLimited = await checkPasswordRateLimit(email)
+  if (passwordLimited) return passwordLimited
 
   const started = await signIn(email, password)
   if (!started) return json({ error: 'bad_credentials' }, 400)

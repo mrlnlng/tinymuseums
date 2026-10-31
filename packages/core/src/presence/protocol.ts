@@ -19,7 +19,24 @@ export interface Motion {
   vx: number
   facing: 1 | -1
   look: Look
+  /** Seated on the beanbag; x is then the seat's. */
+  sit: boolean
+  /** Wearing a helmet from a pedestal, or holding a cup from the café. */
+  helm: boolean
+  cup: boolean
   seq: number
+}
+
+/**
+ * Things only one visitor at a time may have: the beanbag and each pedestal's helmet. The
+ * room decides who holds them; the café's cups are not here, since it serves everyone.
+ */
+export type Item = 'seat' | `helm-${number}`
+const ITEM = /^(seat|helm-\d{1,4})$/
+export const MAX_HOLDS = 2
+
+export function isItem(value: unknown): value is Item {
+  return typeof value === 'string' && ITEM.test(value)
 }
 
 export interface Peer extends Motion {
@@ -31,10 +48,14 @@ export type ClientMessage =
   | { t: 'hello'; v: number; ticket: string }
   | ({ t: 'state' } & Motion)
   | { t: 'emote'; e: Emote; seq: number }
+  | { t: 'claim'; item: Item }
+  | { t: 'release'; item: Item }
   | { t: 'leave' }
 
 export type ServerMessage =
-  | { t: 'welcome'; pid: string; peers: Peer[] }
+  | { t: 'welcome'; pid: string; peers: Peer[]; holds: Partial<Record<Item, string>> }
+  /** Who holds an item now, or null when it is free; also the answer to a claim. */
+  | { t: 'held'; item: Item; pid: string | null }
   | ({ t: 'state' } & Peer)
   | { t: 'emote'; pid: string; e: Emote }
   | { t: 'leave'; pid: string }
@@ -84,7 +105,13 @@ function parseMotion(m: Record<string, unknown>): Motion | null {
   if (facing !== 1 && facing !== -1) return null
   const look = parseLook(m.look)
   if (!look || !isSeq(seq)) return null
-  return { x, vx, facing, look, seq }
+  // Absent from clients older than these fields.
+  const flag = (value: unknown) => (value === undefined ? false : value === true ? true : value === false ? false : null)
+  const sit = flag(m.sit)
+  const helm = flag(m.helm)
+  const cup = flag(m.cup)
+  if (sit === null || helm === null || cup === null) return null
+  return { x, vx, facing, look, sit, helm, cup, seq }
 }
 
 /** Unknown fields are dropped, so whatever a client adds never reaches other visitors. */
@@ -107,6 +134,9 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     }
     case 'emote':
       return (EMOTES as readonly unknown[]).includes(m.e) && isSeq(m.seq) ? { t: 'emote', e: m.e as Emote, seq: m.seq } : null
+    case 'claim':
+    case 'release':
+      return isItem(m.item) ? { t: m.t, item: m.item } : null
     case 'leave':
       return { t: 'leave' }
     default:
@@ -139,8 +169,14 @@ export function parseServerMessage(raw: unknown): ServerMessage | null {
     case 'welcome': {
       if (!isPid(m.pid) || !Array.isArray(m.peers)) return null
       const peers = m.peers.map(parsePeer)
-      return peers.every((peer) => peer !== null) ? { t: 'welcome', pid: m.pid, peers: peers as Peer[] } : null
+      const holds = record(m.holds ?? {})
+      if (!holds || !Object.entries(holds).every(([item, pid]) => isItem(item) && isPid(pid))) return null
+      return peers.every((peer) => peer !== null)
+        ? { t: 'welcome', pid: m.pid, peers: peers as Peer[], holds: holds as Partial<Record<Item, string>> }
+        : null
     }
+    case 'held':
+      return isItem(m.item) && (m.pid === null || isPid(m.pid)) ? { t: 'held', item: m.item, pid: m.pid } : null
     case 'state': {
       const peer = parsePeer(m)
       return peer ? { t: 'state', ...peer } : null

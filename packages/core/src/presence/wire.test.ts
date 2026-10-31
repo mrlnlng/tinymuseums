@@ -41,8 +41,11 @@ test('room names are a known base plus an instance', () => {
 const look = { kind: 'otter', costume: 'cardigan-red', bow: null }
 
 test('state messages are validated and stripped of anything extra', () => {
-  const state = { t: 'state', x: 12.5, vx: -3, facing: -1, look, seq: 4 }
+  const state = { t: 'state', x: 12.5, vx: -3, facing: -1, look, sit: false, helm: true, cup: false, seq: 4 }
   assert.deepEqual(parseClientMessage(JSON.stringify({ ...state, pid: 'someone', name: 'Admin' })), state)
+  const { sit: _s, helm: _h, cup: _c, ...older } = state
+  assert.deepEqual(parseClientMessage(JSON.stringify(older)), { ...older, sit: false, helm: false, cup: false })
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, sit: 'yes' })), null)
   assert.equal(parseClientMessage(JSON.stringify({ ...state, x: Number.MAX_VALUE })), null)
   assert.equal(parseClientMessage(JSON.stringify({ ...state, facing: 0 })), null)
   assert.equal(parseClientMessage(JSON.stringify({ ...state, look: { ...look, kind: 'dog' } })), null)
@@ -55,13 +58,20 @@ test('only the four emotes, hello, and leave are accepted besides state', () => 
   assert.equal(parseClientMessage('{"t":"emote","e":"rude","seq":1}'), null)
   assert.deepEqual(parseClientMessage('{"t":"hello","v":1,"ticket":"a.b"}'), { t: 'hello', v: 1, ticket: 'a.b' })
   assert.deepEqual(parseClientMessage('{"t":"leave"}'), { t: 'leave' })
+  assert.deepEqual(parseClientMessage('{"t":"claim","item":"seat"}'), { t: 'claim', item: 'seat' })
+  assert.deepEqual(parseClientMessage('{"t":"release","item":"helm-12"}'), { t: 'release', item: 'helm-12' })
+  for (const item of ['cup', 'helm-', 'helm-x', 'helm-12345', '__proto__']) assert.equal(parseClientMessage(JSON.stringify({ t: 'claim', item })), null, item)
   for (const bad of ['', 'nope', '[]', '{"t":"chat","text":"hi"}', 'x'.repeat(2000)]) assert.equal(parseClientMessage(bad), null)
 })
 
 test('server messages are checked on the client too', async () => {
   const { parseServerMessage } = await import('./protocol.ts')
-  const peer = { pid: 'abcdEFGH1234', name: 'Velvet Easel', x: 1, vx: 0, facing: 1, look, seq: 2 }
-  assert.deepEqual(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [peer] })), { t: 'welcome', pid: 'abcdEFGH5678', peers: [peer] })
+  const peer = { pid: 'abcdEFGH1234', name: 'Velvet Easel', x: 1, vx: 0, facing: 1, look, sit: true, helm: false, cup: false, seq: 2 }
+  const holds = { seat: 'abcdEFGH1234' }
+  assert.deepEqual(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [peer], holds })), { t: 'welcome', pid: 'abcdEFGH5678', peers: [peer], holds })
+  assert.equal(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [], holds: { cup: 'abcdEFGH1234' } })), null)
+  assert.deepEqual(parseServerMessage('{"t":"held","item":"seat","pid":null}'), { t: 'held', item: 'seat', pid: null })
+  assert.deepEqual(parseServerMessage('{"t":"held","item":"helm-3","pid":"abcdEFGH1234"}'), { t: 'held', item: 'helm-3', pid: 'abcdEFGH1234' })
   assert.deepEqual(parseServerMessage(JSON.stringify({ t: 'state', ...peer })), { t: 'state', ...peer })
   assert.equal(parseServerMessage(JSON.stringify({ t: 'state', ...peer, name: '' })), null)
   assert.equal(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [{ ...peer, x: 'far' }] })), null)

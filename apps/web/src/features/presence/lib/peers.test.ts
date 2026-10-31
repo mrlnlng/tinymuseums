@@ -4,7 +4,7 @@ import type { Peer } from '@tiny/core/presence/wire'
 import { INTERPOLATION_DELAY_MS, PEER_TIMEOUT_MS, PeerTable } from './peers.ts'
 
 const look = { kind: 'bunny', costume: null, bow: null } as const
-const peer = (seq: number, x: number, vx = 0, pid = 'abcdEFGH1234'): Peer => ({ pid, name: 'Velvet Easel', x, vx, facing: 1, look, seq })
+const peer = (seq: number, x: number, vx = 0, pid = 'abcdEFGH1234'): Peer => ({ pid, name: 'Velvet Easel', x, vx, facing: 1, look, sit: false, helm: false, cup: false, seq })
 
 test('visitors are drawn between their last two updates, a moment behind', () => {
   const table = new PeerTable()
@@ -46,4 +46,21 @@ test('an emote is kept on its visitor with the time it arrived', () => {
   table.heard(peer(1, 0), 0)
   assert.equal(table.emoted('abcdEFGH1234', 'wave', 50), true)
   assert.deepEqual(table.visitors(100)[0].emote, { e: 'wave', at: 50 })
+})
+
+test('after standing still, a visitor eases off from where they stood', () => {
+  const table = new PeerTable()
+  table.heard(peer(1, 5, 0), 0)
+  table.heard(peer(2, 5.4, 2), 4000)
+  // Drawn 200 ms behind: at 4000 they are still at 5, not most of the way to 5.4.
+  assert.equal(table.visitors(4000)[0].x, 5)
+  const halfway = table.visitors(4100)[0].x
+  assert.ok(halfway > 5 && halfway < 5.4, String(halfway))
+})
+
+test('pose flags come through to the drawn visitor', () => {
+  const table = new PeerTable()
+  table.heard({ ...peer(1, 0), sit: true, helm: true }, 0)
+  const [visitor] = table.visitors(100)
+  assert.deepEqual([visitor.sit, visitor.helm, visitor.cup], [true, true, false])
 })

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { nameFromSeed, randomSeed, type NameCheck } from '@tiny/core/presence'
 import { presence } from '@tiny/core/slots'
 import { useMember, useSlot } from '@/shared/lib/slots'
+import { announceNameChange } from './emote-events'
 
 export type NameError = Extract<NameCheck, { ok: false }>['reason'] | 'failed'
 
@@ -63,7 +64,15 @@ export function useVisitorName(): VisitorName {
   return {
     name: current?.name ?? null,
     chosen: current?.chosen ?? false,
-    choose: (name) => send(memberId, { name }),
-    reroll: () => send(memberId, { seed: randomSeed() }),
+    choose: async (name) => {
+      const failed = await send(memberId, { name })
+      if (!failed) announceNameChange()
+      return failed
+    },
+    reroll: async () => {
+      const failed = await send(memberId, { seed: randomSeed() })
+      if (!failed) announceNameChange()
+      return failed
+    },
   }
 }

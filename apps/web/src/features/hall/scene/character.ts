@@ -40,6 +40,8 @@ export interface Character {
   wear(look: Look): Promise<boolean>
   /** 0 hides the character, 1 shows it; used to dissolve through a change of character. */
   setOpacity(opacity: number): void
+  /** A little hop, as other visitors see when this one sends an emote. */
+  bounce(): void
   perch(perch: Perch | null): void
   attach(attachment: Attachment, out: Pose): Pose
   update(
@@ -52,6 +54,8 @@ export interface Character {
   ): void
   dispose(): void
 }
+
+const BOUNCE_MS = 360
 
 export function createCharacter(assets: CharacterSprites, host: HTMLElement, initial: Look): Character {
   const idle = assets.bunnyIdle
@@ -154,6 +158,8 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let currentHeight = ''
   let currentTransform = ''
   let perched: Perch | null = null
+  let bouncedAt = -Infinity
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   function setFrame(image: HTMLImageElement): void {
     currentImage = image
@@ -202,6 +208,10 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
 
     perch(perch) {
       perched = perch
+    },
+
+    bounce() {
+      if (!reducedMotion) bouncedAt = performance.now()
     },
 
     attach(attachment, out) {
@@ -271,6 +281,9 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       const frustumHeight = camera.top - camera.bottom
       const worldHeight = perched ? perched.height : CONFIG.character.height
       const heightPx = (worldHeight / frustumHeight) * viewport.height
+      // The same hop as remote-visitors.ts draws for others' emotes.
+      const bounce = performance.now() - bouncedAt
+      if (bounce < BOUNCE_MS) screenY -= Math.sin((Math.PI * bounce) / BOUNCE_MS) * heightPx * 0.08
       const height = `${heightPx.toFixed(1)}px`
       if (height !== currentHeight) {
         currentHeight = height

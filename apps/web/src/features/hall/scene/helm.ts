@@ -15,7 +15,18 @@ export interface Helm {
   dispose(): void
 }
 
-export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene): Helm {
+/** The room's say over each pedestal's helmet; without a room, every helmet is ours to take. */
+export interface HelmShare {
+  taken(stand: number): boolean
+  claim(stand: number, on: boolean): void
+}
+
+export function createHelm(
+  scenery: Scenery,
+  host: HTMLElement,
+  hall: HallScene,
+  share: HelmShare = { taken: () => false, claim: () => {} },
+): Helm {
   const { worn, stand } = CONFIG.helm
   const pedestalWidth = CONFIG.pedestal.height * (stand.drawing[0] / stand.drawing[1])
   let standIndex = -1
@@ -34,7 +45,10 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
     tap(pedestal) {
       if (!pedestal.holdsHelm) return false
       if (helm.state === 'away') {
+        // Someone else is wearing this one.
+        if (share.taken(pedestal.index)) return true
         standIndex = pedestal.index
+        share.claim(standIndex, true)
         hall.setBareHelmStand(standIndex)
         helm.take()
       } else if (pedestal.index === standIndex) {
@@ -44,7 +58,12 @@ export function createHelm(scenery: Scenery, host: HTMLElement, hall: HallScene)
     },
 
     update(dt, character, camera, viewport) {
-      if (helm.update(dt, character, camera, viewport)) hall.setBareHelmStand(null)
+      // Another visitor claimed it first: it goes back to its stand.
+      if (helm.state === 'held' && share.taken(standIndex)) helm.giveBack()
+      if (helm.update(dt, character, camera, viewport)) {
+        hall.setBareHelmStand(null)
+        share.claim(standIndex, false)
+      }
     },
 
     dispose() {

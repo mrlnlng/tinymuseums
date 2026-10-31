@@ -12,6 +12,7 @@ import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
 import { joinRoom, type Room } from '@/features/presence/lib/join-room'
+import type { Item } from '@tiny/core/presence/wire'
 import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
@@ -88,6 +89,13 @@ interface Options {
   onIntroDone: () => void
   onFirstMove: () => void
   onOpenSketchGame: () => void
+}
+
+/** The pedestals whose helmet another visitor is wearing. */
+function takenStands(items: Item[]): Set<number> {
+  const stands = new Set<number>()
+  for (const item of items) if (item.startsWith('helm-')) stands.add(Number(item.slice(5)))
+  return stands
 }
 
 export function useHallScene({
@@ -307,6 +315,7 @@ export function useHallScene({
             prepare: () => soundRef.current.prepare('jump'),
             hop: () => soundRef.current.play('jump'),
           },
+          { taken: () => room?.taken('seat') ?? false, claim: (on) => room?.want('seat', on) },
         )
         const layer = hosts.guestBoardNotes.current
         if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
@@ -335,7 +344,10 @@ export function useHallScene({
               return
             }
             scenery = loaded
-            helm = createHelm(loaded, characterHost, hall)
+            helm = createHelm(loaded, characterHost, hall, {
+              taken: (stand) => room?.taken(`helm-${stand}`) ?? false,
+              claim: (stand, on) => room?.want(`helm-${stand}`, on),
+            })
             matcha = createMatcha(loaded, characterHost, () => cafe)
           })
           .catch(() => {})
@@ -547,7 +559,19 @@ export function useHallScene({
             readyAt = now
             setIsReady(true)
             revealFloorTransition()
-            room = joinRoom({ room: `hall-e${initialSlice.epochId}`, host: visitorHost, character, traversal })
+            room = joinRoom({
+              room: `hall-e${initialSlice.epochId}`,
+              host: visitorHost,
+              character,
+              traversal,
+              pose: () => ({ sit: sitting?.seated ?? false, helm: helm?.worn ?? false, cup: matcha?.held ?? false }),
+              scenery: () =>
+                scenery && {
+                  seat: guestBoard ? { ...guestBoard.seat, plain: scenery.bunnySit.plain, helm: scenery.bunnySit.helm } : undefined,
+                  helm: { image: scenery.helm, attachment: CONFIG.helm.worn },
+                  cup: { image: scenery.matcha, attachment: CONFIG.matcha.held },
+                },
+            })
             if (arrival === 'stairs') passage.arrive()
             else traversal.playIntro(introStart, entrance)
           }
@@ -576,6 +600,7 @@ export function useHallScene({
           viewport,
         )
         room?.update(dt, rig.camera, viewport)
+        if (room) hall.setTakenHelmStands(takenStands(room.heldByOthers()))
         helm?.update(dt, character, rig.camera, viewport)
         matcha?.update(dt, character, rig.camera, viewport)
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)

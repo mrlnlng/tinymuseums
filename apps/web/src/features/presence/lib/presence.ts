@@ -5,6 +5,7 @@ import {
   roomName,
   type ClientMessage,
   type Emote,
+  type Item,
   type Look,
   type ServerMessage,
 } from '@tiny/core/presence/wire'
@@ -16,7 +17,9 @@ export const STATE_INTERVAL_MS = 200
 export const HEARTBEAT_MS = 4000
 export const EMOTE_GAP_MS = 1500
 /** A tab hidden this long lets go of its place in the room. */
-export const HIDDEN_LIMIT_MS = 5 * 60 * 1000
+export const HIDDEN_LIMIT_MS = 60 * 1000
+/** Hidden tabs get no animation frames; this keeps their heartbeat going until they leave. */
+const BEAT_MS = 1000
 const RETRY_MS = [1000, 2000, 4000, 8000, 15_000, 30_000]
 const TICKET_MARGIN_MS = 60_000
 const MOVING = 0.05
@@ -74,6 +77,9 @@ export interface Self {
   vx: number
   facing: 1 | -1
   look: Look
+  sit: boolean
+  helm: boolean
+  cup: boolean
 }
 
 export interface PresenceOptions {
@@ -84,6 +90,8 @@ export interface PresenceOptions {
   self(): Self | null
   walkAlone?(): boolean
   visible?(): boolean
+  /** This tab has the device's turn in the room (tab-turn.ts). */
+  active?(): boolean
   onEmote?(pid: string, e: Emote): void
   fetchTicket?: FetchTicket
   connect?: Connect
@@ -101,10 +109,19 @@ export interface Presence {
   visitors(): RemoteVisitor[]
   /** False when not connected, or too soon after the last one. */
   emote(e: Emote): boolean
+  /** Asks the room for an item, or lets it go; claims are made again after reconnecting. */
+  want(item: Item, on: boolean): void
+  /** Someone else holds it. Alone, offline or walking alone, nothing is ever blocked. */
+  blocked(item: Item): boolean
+  /** Items held by other visitors in the room. */
+  heldByOthers(): Item[]
+  /** A fresh ticket, so a changed name reaches the others now. */
+  reconnect(): void
   dispose(): void
 }
 
 const sameLook = (a: Look, b: Look) => a.kind === b.kind && a.costume === b.costume && a.bow === b.bow
+const samePose = (a: Self, b: Self) => a.sit === b.sit && a.helm === b.helm && a.cup === b.cup
 
 export function createPresence(options: PresenceOptions): Presence {
   const now = options.now ?? (() => performance.now())
@@ -129,6 +146,9 @@ export function createPresence(options: PresenceOptions): Presence {
   let hadCompany = false
   let hiddenSince: number | null = null
   let disposed = false
+  let lastStepAt = -Infinity
+  const holds = new Map<Item, string>()
+  const wants = new Set<Item>()
 
   function send(message: ClientMessage): void {
     socket?.send(JSON.stringify(message))
@@ -141,6 +161,7 @@ export function createPresence(options: PresenceOptions): Presence {
     lastSent = null
     hadCompany = false
     peers.clear()
+    holds.clear()
     closing?.close(1000)
   }
 
@@ -206,6 +227,14 @@ export function createPresence(options: PresenceOptions): Presence {
         pid = message.pid
         attempts = 0
         for (const peer of message.peers) peers.heard(peer, at)
+        for (const [item, holder] of Object.entries(message.holds) as [Item, string][]) holds.set(item, holder)
+        for (const item of wants) if (holds.get(item) !== pid) send({ t: 'claim', item })
+        break
+      case 'held':
+        if (message.pid) holds.set(message.item, message.pid)
+        else holds.delete(message.item)
+        // Something wanted came free (its holder left): try again.
+        if (!message.pid && wants.has(message.item)) send({ t: 'claim', item: message.item })
         break
       case 'state':
         peers.heard(message, at)
@@ -224,8 +253,8 @@ export function createPresence(options: PresenceOptions): Presence {
 
   function sendState(self: Self, at: number): void {
     seq = Math.max(seq + 1, Math.floor(wallClock()))
-    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, seq })
-    lastSent = { ...self, at }
+    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, sit: self.sit, helm: self.helm, cup: self.cup, seq })
+    lastSent = { ...self, look: { ...self.look }, at }
   }
 
   function maybeSend(at: number): void {
@@ -235,7 +264,7 @@ export function createPresence(options: PresenceOptions): Presence {
     const arrived = company && !hadCompany
     hadCompany = company
     const since = lastSent ? at - lastSent.at : Infinity
-    const lookChanged = !lastSent || !sameLook(lastSent.look, self.look)
+    const lookChanged = !lastSent || !sameLook(lastSent.look, self.look) || !samePose(lastSent, self)
     const moved = !lastSent || Math.abs(self.x - lastSent.x) > 0.01 || lastSent.facing !== self.facing ||
       (Math.abs(self.vx) > MOVING) !== (Math.abs(lastSent.vx) > MOVING)
     const due =
@@ -251,6 +280,45 @@ export function createPresence(options: PresenceOptions): Presence {
   }
   if (typeof window !== 'undefined') window.addEventListener('pagehide', onPageHide)
 
+  function step(at: number): void {
+    lastStepAt = at
+    if (disposed || status === 'off') return
+    const visible = options.visible?.() ?? true
+    if (visible) hiddenSince = null
+    else hiddenSince ??= at
+    const away =
+      (options.walkAlone?.() ?? false) ||
+      !(options.active?.() ?? true) ||
+      (hiddenSince !== null && at - hiddenSince > HIDDEN_LIMIT_MS)
+
+    if (away) {
+      if (status !== 'idle') {
+        send({ t: 'leave' })
+        status = 'idle'
+        if (retry !== null) clearTimer(retry)
+        retry = null
+        drop()
+      }
+      return
+    }
+    if (status === 'idle') {
+      attempts = 0
+      void start()
+      return
+    }
+    if (status !== 'open') return
+    peers.expire(at)
+    maybeSend(at)
+  }
+
+  let beat: unknown = null
+  function heartbeat(): void {
+    beat = setTimer(heartbeat, BEAT_MS)
+    const at = now()
+    if (at - lastStepAt >= BEAT_MS) step(at)
+  }
+  beat = setTimer(heartbeat, BEAT_MS)
+
   return {
     get status() {
       return status
@@ -263,31 +331,7 @@ export function createPresence(options: PresenceOptions): Presence {
     },
 
     tick() {
-      if (disposed || status === 'off') return
-      const at = now()
-      const visible = options.visible?.() ?? true
-      if (visible) hiddenSince = null
-      else hiddenSince ??= at
-      const away = (options.walkAlone?.() ?? false) || (hiddenSince !== null && at - hiddenSince > HIDDEN_LIMIT_MS)
-
-      if (away) {
-        if (status !== 'idle') {
-          send({ t: 'leave' })
-          status = 'idle'
-          if (retry !== null) clearTimer(retry)
-          retry = null
-          drop()
-        }
-        return
-      }
-      if (status === 'idle') {
-        attempts = 0
-        void start()
-        return
-      }
-      if (status !== 'open') return
-      peers.expire(at)
-      maybeSend(at)
+      step(now())
     },
 
     visitors() {
@@ -302,11 +346,38 @@ export function createPresence(options: PresenceOptions): Presence {
       return true
     },
 
+    want(item, on) {
+      if (on === wants.has(item)) return
+      if (on) wants.add(item)
+      else wants.delete(item)
+      if (status !== 'open') return
+      if (on && holds.get(item) !== pid) send({ t: 'claim', item })
+      if (!on && holds.get(item) === pid) send({ t: 'release', item })
+    },
+
+    blocked(item) {
+      const holder = status === 'open' ? holds.get(item) : undefined
+      return holder !== undefined && holder !== pid
+    },
+
+    heldByOthers() {
+      if (status !== 'open') return []
+      return [...holds].filter(([, holder]) => holder !== pid).map(([item]) => item)
+    },
+
+    reconnect() {
+      grant = null
+      if (status !== 'open' && status !== 'connecting') return
+      drop()
+      void start()
+    },
+
     dispose() {
       if (disposed) return
       send({ t: 'leave' })
       disposed = true
       if (retry !== null) clearTimer(retry)
+      if (beat !== null) clearTimer(beat)
       if (typeof window !== 'undefined') window.removeEventListener('pagehide', onPageHide)
       drop()
     },

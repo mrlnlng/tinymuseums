@@ -9,6 +9,8 @@ import type { Traversal } from './traversal'
 type SittingState = 'free' | 'approaching' | 'rising' | 'seated' | 'leaving'
 
 export interface Sitting {
+  /** On the beanbag, for the other visitors to draw. */
+  readonly seated: boolean
   tap(raycaster: THREE.Raycaster): boolean
   update(dt: number, cameraX: number, halfViewWidth: number): void
   dispose(): void
@@ -21,6 +23,8 @@ export function createSitting(
   character: Character,
   helm: () => Helm | null,
   sound: { prepare(): void; hop(): void },
+  /** The room's say over the one seat; without a room, it is always ours to take. */
+  seatShare: { taken(): boolean; claim(on: boolean): void } = { taken: () => false, claim: () => {} },
 ): Sitting {
   const { hopSeconds, hopLift, idleSeconds, nearDistance } = CONFIG.sit
   const stand = CONFIG.character
@@ -34,6 +38,7 @@ export function createSitting(
 
   function approach(follow: boolean): void {
     state = 'approaching'
+    seatShare.claim(true)
     sound.prepare()
     traversal.hold(seat.x, follow)
   }
@@ -55,16 +60,23 @@ export function createSitting(
 
   function standUp(): void {
     state = 'free'
+    seatShare.claim(false)
     character.perch(null)
     helm()?.conceal(false)
     traversal.hold(null)
   }
 
   return {
+    get seated() {
+      return perch.seated && state !== 'free' && state !== 'approaching'
+    },
+
     tap(raycaster) {
       if (!board.hitTestBeanbag(raycaster, state !== 'free' && state !== 'approaching')) return false
       // Sitting is painted for the plain bunny only.
       if (state === 'free' && !character.canSit) return false
+      // Someone else is on it.
+      if (state === 'free' && seatShare.taken()) return true
       if (state === 'free') approach(false)
       else if (state === 'approaching') standUp()
       else if (state === 'seated') {
@@ -77,8 +89,18 @@ export function createSitting(
     update(dt, cameraX, halfViewWidth) {
       if (state === 'free') {
         const near = Math.abs(traversal.x - board.x) <= nearDistance
-        if (near && character.canSit && traversal.idleSeconds >= idleSeconds) approach(true)
+        if (near && character.canSit && traversal.idleSeconds >= idleSeconds && !seatShare.taken()) approach(true)
         return
+      }
+
+      // Someone else reached the room's say first: step back, or get up.
+      if (seatShare.taken() && state !== 'leaving') {
+        if (state === 'approaching') {
+          standUp()
+          return
+        }
+        progress = state === 'rising' ? 1 - progress : 0
+        state = 'leaving'
       }
 
       if (state === 'approaching') {

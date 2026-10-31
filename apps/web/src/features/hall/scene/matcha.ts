@@ -7,6 +7,8 @@ import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 
 export interface Matcha {
+  /** In paw, for the other visitors to draw. */
+  readonly held: boolean
   tap(raycaster: THREE.Raycaster): boolean
   update(dt: number, character: Character, camera: THREE.OrthographicCamera, viewport: Viewport): void
   dispose(): void
@@ -19,6 +21,10 @@ export function createMatcha(scenery: Scenery, host: HTMLElement, cafe: () => Ca
   })
 
   return {
+    get held() {
+      return cup.state === 'held'
+    },
+
     tap(raycaster) {
       if (!cafe()?.hitTestMatcha(raycaster)) return false
       if (cup.state === 'away') cup.take()

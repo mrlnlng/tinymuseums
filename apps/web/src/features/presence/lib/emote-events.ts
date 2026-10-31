@@ -34,3 +34,15 @@ export function onInRoomChange(listener: () => void): () => void {
   window.addEventListener(PRESENCE_EVENT, listener)
   return () => window.removeEventListener(PRESENCE_EVENT, listener)
 }
+
+const NAME_EVENT = 'tiny:name-changed'
+
+/** The visitor's own name changed; the room reconnects so the others see the new one. */
+export function announceNameChange(): void {
+  window.dispatchEvent(new Event(NAME_EVENT))
+}
+
+export function onNameChange(listener: () => void): () => void {
+  window.addEventListener(NAME_EVENT, listener)
+  return () => window.removeEventListener(NAME_EVENT, listener)
+}

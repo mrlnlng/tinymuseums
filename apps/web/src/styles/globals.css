@@ -2708,3 +2708,12 @@ form > .account-switch {
   .walk-alone-track,
   .walk-alone-knob { transition: none; }
 }
+
+.visitor-perch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  pointer-events: none;
+  will-change: transform;
+}

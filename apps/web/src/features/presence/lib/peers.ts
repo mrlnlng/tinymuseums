@@ -5,6 +5,9 @@ export const INTERPOLATION_DELAY_MS = 200
 const MAX_EXTRAPOLATION_MS = 300
 export const PEER_TIMEOUT_MS = 12_000
 const SAMPLES = 4
+/** Updates further apart than this mean the visitor was standing still in between. */
+const QUIET_GAP_MS = 600
+const RESUME_MS = 200
 
 interface Sample {
   at: number
@@ -17,6 +20,9 @@ interface Entry {
   name: string
   look: Look
   facing: 1 | -1
+  sit: boolean
+  helm: boolean
+  cup: boolean
   seq: number
   heardAt: number
   samples: Sample[]
@@ -28,6 +34,9 @@ export interface RemoteVisitor {
   name: string
   look: Look
   facing: 1 | -1
+  sit: boolean
+  helm: boolean
+  cup: boolean
   /** Where to draw them now. */
   x: number
   /** Their walking speed, for the walk cycle. */
@@ -57,7 +66,8 @@ export class PeerTable {
     const sample = { at: now, x: peer.x, vx: peer.vx }
     if (!entry) {
       this.entries.set(peer.pid, {
-        pid: peer.pid, name: peer.name, look: peer.look, facing: peer.facing, seq: peer.seq,
+        pid: peer.pid, name: peer.name, look: peer.look, facing: peer.facing,
+        sit: peer.sit, helm: peer.helm, cup: peer.cup, seq: peer.seq,
         heardAt: now, samples: [sample], emote: null,
       })
       return
@@ -65,10 +75,17 @@ export class PeerTable {
     entry.name = peer.name
     entry.look = peer.look
     entry.facing = peer.facing
+    entry.sit = peer.sit
+    entry.helm = peer.helm
+    entry.cup = peer.cup
     entry.seq = peer.seq
     entry.heardAt = now
+    // After a quiet spell, they were standing where they were until just before this update;
+    // without this the walk would start from a point seconds back and lurch forward.
+    const last = entry.samples[entry.samples.length - 1]
+    if (now - last.at > QUIET_GAP_MS) entry.samples.push({ at: now - RESUME_MS, x: last.x, vx: 0 })
     entry.samples.push(sample)
-    if (entry.samples.length > SAMPLES) entry.samples.shift()
+    while (entry.samples.length > SAMPLES) entry.samples.shift()
   }
 
   emoted(pid: string, e: Emote, now: number): boolean {
@@ -91,7 +108,10 @@ export class PeerTable {
     const at = now - INTERPOLATION_DELAY_MS
     return [...this.entries.values()].map((entry) => {
       const { x, vx } = positionAt(entry.samples, at)
-      return { pid: entry.pid, name: entry.name, look: entry.look, facing: entry.facing, x, vx, emote: entry.emote }
+      return {
+        pid: entry.pid, name: entry.name, look: entry.look, facing: entry.facing,
+        sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, emote: entry.emote,
+      }
     })
   }
 }

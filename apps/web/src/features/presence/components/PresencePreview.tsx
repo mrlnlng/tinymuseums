@@ -23,7 +23,7 @@ export default function PresencePreview() {
 
   useEffect(() => {
     if (prefs.seed === null || room === null) return
-    const self: Self = { x: WIDTH / 2, vx: 0, facing: 1, look: { kind: 'bunny', costume: null, bow: null } }
+    const self: Self = { x: WIDTH / 2, vx: 0, facing: 1, look: { kind: 'bunny', costume: null, bow: null }, sit: false, helm: false, cup: false }
     const keys = new Set<string>()
     const down = (e: KeyboardEvent) => keys.add(e.key)
     const up = (e: KeyboardEvent) => keys.delete(e.key)

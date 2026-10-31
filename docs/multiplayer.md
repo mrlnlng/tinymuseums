@@ -17,14 +17,47 @@ and its decisions are in `docs/multiplayer-plan.md`; this page is how it works n
   web addresses, phone numbers, reserved words (curator, staff, admin, tiny museum, …) or
   profanity (the `obscenity` list).
 - **Emotes.** The heart button in the top bar shows while you share a room. It and keys 1–4
-  send hi! / ♥ / ✦ / ooh!. Each pops a bubble over the sender for 2 s with a small hop (no hop
-  under reduced motion). One every 1.5 s. The bubbles are text placeholders until painted art
+  send hi! / ♥ / ✦ / ooh!. Each pops a bubble over the sender for 2 s with a small hop, on
+  everyone's screen including the sender's (no hop under reduced motion). One every 1.5 s. The bubbles are text placeholders until painted art
   arrives.
 - **Walk alone.** A switch in the account sheet, kept on this device. It leaves the room: you
   see nobody and nobody sees you, and the emote button hides.
 - **Screen readers** hear "Another visitor is here" when someone arrives, at most every 30 s.
-- **Not mirrored:** sitting on the beanbag, and the carried helmet and cup. Other visitors in
-  those states just stand where they are.
+- **Sharing the hall.** The room decides who has the one beanbag and each pedestal's helmet,
+  first claim wins:
+  - Others see the sitter on the beanbag, and a worn helmet on its wearer with its pedestal
+    bare.
+  - While it's taken, tapping it does nothing and standing idle beside it doesn't sit you down.
+  - If two visitors go for it at once, the one who lost steps back, or gets up, or the helmet
+    flies home.
+  - It comes free when its holder gets up, puts the helmet back, or leaves.
+- **Cups aren't contested.** The café serves everyone, so cups aren't held by the room;
+  others just see the cup in your paw.
+- **Costumes and the coin stay per visitor.** The forms are a display rack, and the coin is
+  a personal find.
+
+## Staying consistent
+
+- **Holds survive the room hibernating.** They are kept on each socket's attachment, so they
+  go with their socket, and a claim is settled in one synchronous step against everyone
+  else's.
+- **A reconnecting tab replaces its old socket** (same ticket id), keeping its holds and
+  without telling the others it left. After any reconnect, the client claims again what it
+  was holding; if someone else took it meanwhile, it gives it up.
+- **Ghosts are swept.** Every 10 s the room closes sockets silent for 15 s (a phone that lost
+  signal without closing), and frees what they held.
+- **Hidden tabs keep their heartbeat** on a timer while the page gets no animation frames,
+  then leave after 60 s hidden.
+- **A new name reaches the others at once.** Changing it, or signing in or out, takes a fresh
+  ticket.
+- **One visitor per device.** Of a browser's museum tabs, only the one in use is in the room
+  (`tab-turn.ts`, over a `BroadcastChannel`). Showing or focusing a tab takes the turn. The tab
+  in the room closing hands it to a tab still in view.
+- **Room places go to visitors with a ticket.** Capacity is counted at admission, after the
+  ticket is verified and before anything else awaits, so two at once can't both take the last
+  place. One address may hold at most 4 sockets that haven't shown a ticket.
+- **Walking off after standing still eases off** from where the visitor stood, rather than
+  lurching from a point seconds back.
 
 ## Privacy
 

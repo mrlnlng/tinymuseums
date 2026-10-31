@@ -71,6 +71,8 @@ export class HallScene {
   private pedestals = new Map<number, Pedestal>()
   private mountedList: MountedDisplay[] = []
   private bareHelmStand: number | null = null
+  /** Stands whose helmet another visitor is wearing. */
+  private takenHelmStands = new Set<number>()
   private coin: HiddenCoin
 
   constructor(
@@ -324,7 +326,7 @@ export class HallScene {
           this.assets,
           this.layout.pedestalX[i],
           i,
-          this.bareHelmStand === i,
+          this.isBare(i),
         )
         this.scene.add(pedestal.group)
         this.pedestals.set(i, pedestal)
@@ -399,11 +401,22 @@ export class HallScene {
     return [...this.pedestals.values()].find((p) => p.sprite === hit.object) ?? null
   }
 
+  private isBare(index: number): boolean {
+    return this.bareHelmStand === index || this.takenHelmStands.has(index)
+  }
+
   setBareHelmStand(index: number | null): void {
     const previous = this.bareHelmStand
     this.bareHelmStand = index
-    if (previous !== null) this.pedestals.get(previous)?.setBare(false)
+    if (previous !== null) this.pedestals.get(previous)?.setBare(this.isBare(previous))
     if (index !== null) this.pedestals.get(index)?.setBare(true)
+  }
+
+  setTakenHelmStands(indices: ReadonlySet<number>): void {
+    if (indices.size === this.takenHelmStands.size && [...indices].every((i) => this.takenHelmStands.has(i))) return
+    const changed = new Set([...this.takenHelmStands, ...indices])
+    this.takenHelmStands = new Set(indices)
+    for (const index of changed) this.pedestals.get(index)?.setBare(this.isBare(index))
   }
 
   helmStandPoint(index: number, out: THREE.Vector3): THREE.Vector3 | null {

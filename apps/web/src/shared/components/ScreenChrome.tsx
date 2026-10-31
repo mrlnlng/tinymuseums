@@ -5,6 +5,7 @@ import SoundToggle from '@/features/sound/components/SoundToggle'
 import AssetImage from '@/shared/components/AssetImage'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
 import { openAccount } from '@/features/account/lib/account'
+import EmoteButton from '@/features/presence/components/EmoteButton'
 
 export default function ScreenChrome() {
   const pathname = usePathname()
@@ -70,6 +71,7 @@ export default function ScreenChrome() {
           </svg>
         </button>
       ) : null}
+      {showReport ? <EmoteButton /> : null}
       <SoundToggle />
     </div>
   )

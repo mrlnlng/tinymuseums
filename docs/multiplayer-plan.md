@@ -148,8 +148,8 @@ apps/presence/
 4. On every later message the Room **overwrites** `pid` and `name` from the socket's
    attachment, checks the shape, enforces the rate limits, and then broadcasts to the others.
 
-A client can lie about its position, but not about who it is or its name. Signing (node:crypto)
-and verifying (Web Crypto) share a test vector in core, so the two can't drift.
+A client can lie about its position, but not about who it is or its name. Signing and verifying
+both use Web Crypto through the same code in `@tiny/core/presence/wire`, so the two can't drift.
 
 ### Rooms and capacity
 
@@ -165,11 +165,12 @@ and verifying (Web Crypto) share a test vector in core, so the two can't drift.
 
 - `npm run dev` gains `dev:presence` (`wrangler dev`, port 8787) beside web and worker. It
   needs no Cloudflare account.
-- `.env.example`: `NEXT_PUBLIC_PRESENCE_URL=ws://localhost:8787` and a dev `PRESENCE_SECRET`.
-- A `PresenceTransport` interface in the client has a `websocket` implementation (dev and
-  production alike) and a `memory` one for tests.
-- If `NEXT_PUBLIC_PRESENCE_URL` is unset, presence is off. Current behaviour stays the default
-  until the feature ships.
+- `.env.example`: `PRESENCE_URL=ws://localhost:8787` and a dev `PRESENCE_SECRET`. Both are
+  server-only. The ticket route returns the room's address with the ticket, so nothing is baked
+  into the browser bundle. In development, a page opened by LAN address gets the room on that
+  same host, so phones work.
+- If either is unset, the ticket route answers 404 and the client goes quiet for that page.
+  Current behaviour stays the default until the feature ships.
 
 ### Deploying
 
@@ -179,8 +180,9 @@ One-time, done by the owner (about 20 minutes; Claude cannot create accounts or 
 2. `npx wrangler login`.
 3. Generate `PRESENCE_SECRET`. Set it with `wrangler secret put PRESENCE_SECRET --env <env>`
    and as an Amplify branch variable of the same name.
-4. In Amplify, set `NEXT_PUBLIC_PRESENCE_URL=wss://tiny-museum-presence-<env>.<account>.workers.dev`.
-   It is baked in at build time, like the other variables (`.agents/DEPLOYMENT.md` §4).
+4. In Amplify, set `PRESENCE_URL=wss://tiny-museum-presence-<env>.<account>.workers.dev`.
+   `amplify.yml` already bakes it and `PRESENCE_SECRET` into `.env.production`, like the other
+   variables (`.agents/DEPLOYMENT.md` §4).
 5. Optional: connect the GitHub repo in **Workers Builds**, with root `apps/presence` and
    branch `gamma` deploying to the gamma env and `main` to production. Otherwise deploy with
    `npm run deploy --workspace @tiny/presence -- --env <env>`.
@@ -245,8 +247,9 @@ Plan:
   - Rejected in the spike: one shared renderer copying each rig into its own 2D canvas with
     `drawImage`. On a real GPU every copy is a GPU→CPU readback ("GPU stall due to
     ReadPixels"): 7.7 ms a frame for 8 rigs, 45 fps with the CPU slowed 4×.
-  - Still to do (Phase 3): parse each kind's GLB once and clone it per visitor
-    (`SkeletonUtils.clone`). Today each remote rig parses and uploads its own textures.
+  - Each character type's model is parsed and uploaded once per layer, and cloned per
+    visitor with `SkeletonUtils.clone` (`sharedTemplate` in `rig.ts`; `disposeRigLayer` frees
+    them).
   - The layer sits behind the local visitor. Remote visitors are all on one layer, so they
     can't interleave individually with DOM exhibits.
 - **Budget.**
@@ -278,11 +281,16 @@ Plan:
 
 ```
 apps/web/src/features/presence/
-  lib/transport.ts        PresenceTransport + websocket/memory
-  lib/presence.ts         createPresence({ room, outfitSlot, traversal }): send loop, peer table, interpolation
-  lib/ticket.ts           fetch + refresh the ticket before exp
-  scene/remote-visitors.ts  rig-layer avatars + name tags; update(dt, camera, viewport)
-  components/WalkAlone.tsx  toggle in ScreenChrome/AccountSheet
+  lib/presence.ts         createPresence({ room, seed, self, walkAlone, visible }): ticket, connect,
+                          send policy, reconnects, room overflow; tick() once a frame
+  lib/peers.ts            PeerTable: updates, 200 ms interpolation, 12 s timeout, emotes
+  lib/useVisitorName.ts   the visitor's own name (phase 1)
+  components/PresencePreview.tsx  /dev/presence: two windows meet without the scene
+  lib/join-room.ts        joinRoom({ room, host, character, traversal }): the one call each scene makes
+  lib/emote-events.ts     emote button ↔ scene events, and the placeholder bubble labels
+  scene/remote-visitors.ts  rig-layer avatars, name tags, bubbles, hop, arrival announcement
+  components/EmoteButton.tsx  the chrome button and its four choices; shown only while in a room
+  components/WalkAlone.tsx  (phase 5) toggle in ScreenChrome/AccountSheet
 ```
 
 Wiring:
@@ -367,13 +375,28 @@ Each phase ends green on `npm run typecheck` and `npm test` and is checked in th
    - The `presence` device slot.
    - Schema columns, `PUT /api/me/name`, and the account sheet row.
    - Shippable alone.
-2. **Protocol and the presence Worker.**
+2. **Protocol and the presence Worker.** Done 2026-10-31. Checked in two real browsers on
+   `/dev/presence`, one by `localhost` and one by LAN address:
+   - each saw the other's name;
+   - a 1.5 s walk arrived at the same x (14.55);
+   - a wave arrived;
+   - a closed tab vanished from the other;
+   - a member's chosen name ("Moss Painter") reached the other window.
    - `protocol.ts` and the shared HMAC test vector, with tests.
    - The ticket route (`PRESENCE_SECRET`).
    - `apps/presence`: Room, `room-logic.ts` with node tests, `dev:presence` in `npm run dev`.
    - `createPresence` with a memory-transport test that two peers converge and a timeout
      removes a peer.
-3. **Remote visitors on screen.**
+3. **Remote visitors on screen.** Done 2026-10-31. Checked with two browsers in `/museum` and
+   `/museum/atelier`:
+   - each saw the other's name tag;
+   - B walking right moved B across A's screen;
+   - key 1 and the emote button's heart reached the other;
+   - B's red cardigan showed on A's screen;
+   - a closed tab removed B.
+
+   Visitors who arrive at the same spot stand behind each other, so the one behind has no
+   name tag until someone steps away.
    - Shared GLB templates per kind, `remote-visitors.ts` on the rig layer, and name tags.
    - Wired into the hall and atelier.
    - Emotes: the protocol event, the `ScreenChrome` button and fan, bubbles and hop.

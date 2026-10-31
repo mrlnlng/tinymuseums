@@ -7,6 +7,7 @@ import { createAtelierRoom, disposeAtelierArt, loadAtelierArt, type AtelierArt }
 import { loadCharacterSprites, type CharacterSprites } from '@/features/hall/scene/assets'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCharacter } from '@/features/hall/scene/character'
+import { joinRoom, type Room } from '@/features/presence/lib/join-room'
 import { CONFIG } from '@/features/hall/scene/config'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
@@ -86,6 +87,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       const overlayHost = hosts.overlay.current
       const characterHost = hosts.character.current
       if (!canvasHost || !overlayHost || !characterHost) return
+      const visitorHost: HTMLElement = characterHost
 
       let art: AtelierArt
       let sprites: CharacterSprites
@@ -243,6 +245,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       let frameHandle = 0
       let lastFrameAt = performance.now()
       let readyAt = Infinity
+      let visitorRoom: Room | null = null
 
       function renderFrame(now: number): void {
         frameHandle = requestAnimationFrame(renderFrame)
@@ -259,6 +262,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
             setIsReady(true)
             revealFloorTransition()
             track('atelier')
+            visitorRoom = joinRoom({ room: 'atelier', host: visitorHost, character, traversal })
             passage.arrive()
           }
         } else {
@@ -270,6 +274,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         const cameraX = traversal.cameraX
         rig.sync(cameraX, 0)
         character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+        visitorRoom?.update(dt, rig.camera, viewport)
         room.update(dt, traversal.x)
         room.sync(rig.camera, viewport, !quiet())
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
@@ -290,6 +295,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         closet.dispose()
         passage.dispose()
         room.dispose()
+        visitorRoom?.dispose()
         character.dispose()
         renderer.dispose()
         renderer.forceContextLoss()

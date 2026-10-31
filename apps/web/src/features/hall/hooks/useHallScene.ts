@@ -11,6 +11,7 @@ import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createCharacter } from '@/features/hall/scene/character'
+import { joinRoom, type Room } from '@/features/presence/lib/join-room'
 import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
 import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
@@ -156,6 +157,7 @@ export function useHallScene({
       const overlayHost = hosts.overlay.current
       const characterHost = hosts.character.current
       if (!canvasHost || !overlayHost || !characterHost) return
+      const visitorHost: HTMLElement = characterHost
 
       const renderer = new THREE.WebGLRenderer({ antialias: false })
       let assets: Assets
@@ -529,6 +531,7 @@ export function useHallScene({
       let frameCount = 0
       let lastFrameAt = performance.now()
       let readyAt = Infinity
+      let room: Room | null = null
       let restX: number | null = null
       let hasMoved = false
 
@@ -544,6 +547,7 @@ export function useHallScene({
             readyAt = now
             setIsReady(true)
             revealFloorTransition()
+            room = joinRoom({ room: `hall-e${initialSlice.epochId}`, host: visitorHost, character, traversal })
             if (arrival === 'stairs') passage.arrive()
             else traversal.playIntro(introStart, entrance)
           }
@@ -571,6 +575,7 @@ export function useHallScene({
           rig.camera,
           viewport,
         )
+        room?.update(dt, rig.camera, viewport)
         helm?.update(dt, character, rig.camera, viewport)
         matcha?.update(dt, character, rig.camera, viewport)
         soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
@@ -643,6 +648,7 @@ export function useHallScene({
         helm?.dispose()
         matcha?.dispose()
         scenery?.dispose()
+        room?.dispose()
         character.dispose()
         renderer.dispose()
         renderer.forceContextLoss()

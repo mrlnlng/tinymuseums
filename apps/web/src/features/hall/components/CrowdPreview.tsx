@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { clearRigLayer, createRigLayer, loadRig, type CharacterKind, type Rig } from '../scene/rig'
+import { clearRigLayer, createRigLayer, disposeRigLayer, loadRig, type CharacterKind, type Rig } from '../scene/rig'
 import { createRigState, stepRigState } from '../scene/rig-motion'
 
 // Development only: N rigs walking at once, each with its own WebGL context or all drawn into
@@ -107,9 +107,10 @@ export default function CrowdPreview() {
       disposed = true
       cancelAnimationFrame(frame)
       for (const w of walkers) { w.rig.dispose(); w.canvas?.remove() }
-      layer?.dispose()
-      layer?.forceContextLoss()
-      layer?.domElement.remove()
+      if (layer) {
+        disposeRigLayer(layer)
+        layer.domElement.remove()
+      }
     }
   }, [])
 

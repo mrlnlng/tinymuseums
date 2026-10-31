@@ -1,6 +1,7 @@
 import { setCostumeVisibility } from './costume-visibility'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { modelUrl } from '@/shared/lib/assets'
 import type { RigState } from './rig-motion'
 
@@ -120,6 +121,143 @@ export function clearRigLayer(layer: THREE.WebGLRenderer): void {
   layer.setScissorTest(true)
 }
 
+interface Resources {
+  geometries: Set<THREE.BufferGeometry>
+  materials: Set<THREE.Material>
+  textures: Set<THREE.Texture>
+}
+
+const newResources = (): Resources => ({ geometries: new Set(), materials: new Set(), textures: new Set() })
+
+function releaseTexture(texture: THREE.Texture): void {
+  texture.dispose()
+  const image = texture.image as { close?: () => void } | undefined
+  image?.close?.()
+}
+
+function release(resources: Resources): void {
+  for (const geometry of resources.geometries) geometry.dispose()
+  for (const material of resources.materials) material.dispose()
+  for (const texture of resources.textures) releaseTexture(texture)
+}
+
+function paintedMap(map: THREE.Texture): THREE.Texture {
+  map.colorSpace = THREE.SRGBColorSpace
+  // The source has dark RGB outside its alpha silhouette. Generated mipmaps
+  // blend those pixels into the white face and expose a false neck outline.
+  // Supersample the small canvas instead, preserving the painted layer joins.
+  map.minFilter = THREE.LinearFilter
+  map.magFilter = THREE.LinearFilter
+  map.generateMipmaps = false
+  map.wrapS = THREE.ClampToEdgeWrapping
+  map.wrapT = THREE.ClampToEdgeWrapping
+  return map
+}
+
+function paintedMaterial(map: THREE.Texture): THREE.MeshBasicMaterial {
+  const material = new THREE.MeshBasicMaterial({
+    map,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  })
+  material.forceSinglePass = true
+  return material
+}
+
+/** A character's model with its painted materials, before any one rig poses it. */
+interface Template {
+  scene: THREE.Group
+  clip: THREE.AnimationClip
+  bowMap: THREE.Texture | null
+  resources: Resources
+}
+
+async function loadTemplate(kind: CharacterKind): Promise<Template> {
+  const spec = SPECS[kind]
+  const bowLoad = spec.chestBow
+    ? new THREE.TextureLoader().loadAsync(modelUrl('bunnyRigBow')).catch((error) => {
+        console.warn('[hall] bunny bow unavailable', error)
+        return null
+      })
+    : Promise.resolve(null)
+  let gltf
+  let bowMap
+  try {
+    [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl(spec.model)), bowLoad])
+  } catch (error) {
+    void bowLoad.then((texture) => texture?.dispose())
+    throw error
+  }
+
+  const resources = newResources()
+  const unusedTextures = new Set<THREE.Texture>()
+  gltf.scene.traverse((node) => {
+    if (node.userData.layer === 'costume') node.visible = false
+    if (!(node instanceof THREE.Mesh)) return
+    resources.geometries.add(node.geometry)
+    const original = (Array.isArray(node.material) ? node.material : [node.material]) as THREE.MeshStandardMaterial[]
+    const replacements = original.map((material) => {
+      const map = material.emissiveMap ?? material.map
+      if (!map) throw new Error(`Missing painted texture on ${node.name}`)
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture) unusedTextures.add(value)
+      }
+      material.dispose()
+      resources.textures.add(paintedMap(map))
+      const painted = paintedMaterial(map)
+      resources.materials.add(painted)
+      return painted
+    })
+    node.material = Array.isArray(node.material) ? replacements : replacements[0]
+    node.renderOrder = Number(node.userData.draw_order ?? 0)
+    // Animated ears/feet can leave the bind-pose bounds.
+    node.frustumCulled = false
+  })
+  for (const texture of unusedTextures) {
+    if (!resources.textures.has(texture)) releaseTexture(texture)
+  }
+  if (bowMap) resources.textures.add(paintedMap(bowMap))
+
+  const clip = gltf.animations.find((animation) => animation.name === 'walk')
+  if (!clip) {
+    release(resources)
+    throw new Error(`The ${kind} rig has no walk clip`)
+  }
+  return { scene: gltf.scene, clip, bowMap, resources }
+}
+
+// A layer's rigs share each character's model, so a crowd parses and uploads it once.
+const layerTemplates = new WeakMap<THREE.WebGLRenderer, Map<CharacterKind, Promise<Template>>>()
+
+function sharedTemplate(layer: THREE.WebGLRenderer, kind: CharacterKind): Promise<Template> {
+  let templates = layerTemplates.get(layer)
+  if (!templates) {
+    templates = new Map()
+    layerTemplates.set(layer, templates)
+  }
+  let template = templates.get(kind)
+  if (!template) {
+    const cache = templates
+    template = loadTemplate(kind)
+    template.catch(() => cache.delete(kind))
+    templates.set(kind, template)
+  }
+  return template
+}
+
+/** Releases a layer and the models its rigs shared; dispose its rigs first. */
+export function disposeRigLayer(layer: THREE.WebGLRenderer): void {
+  for (const template of layerTemplates.get(layer)?.values() ?? []) {
+    void template.then((loaded) => release(loaded.resources), () => {})
+  }
+  layerTemplates.delete(layer)
+  layer.dispose()
+  layer.forceContextLoss()
+}
+
 /** Without `layer` the rig owns a WebGL context on `canvas`; with it, it draws into the layer. */
 export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterKind, layer?: THREE.WebGLRenderer): Promise<Rig> {
   const spec = SPECS[kind]
@@ -133,89 +271,26 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   }
   const layerSize = new THREE.Vector2()
 
-  const bowLoad = spec.chestBow
-    ? new THREE.TextureLoader().loadAsync(modelUrl('bunnyRigBow')).catch((error) => {
-        console.warn('[hall] bunny bow unavailable', error)
-        return null
-      })
-    : Promise.resolve(null)
-  let gltf
-  let bowMap
+  let template: Template
   try {
-    [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl(spec.model)), bowLoad])
+    template = await (layer ? sharedTemplate(layer, kind) : loadTemplate(kind))
   } catch (error) {
     releaseRenderer()
-    void bowLoad.then((texture) => texture?.dispose())
     throw error
   }
-
-  const model = gltf.scene
-  const clip = gltf.animations.find((animation) => animation.name === 'walk')
-  const geometries = new Set<THREE.BufferGeometry>()
-  const materials = new Set<THREE.Material>()
-  const textures = new Set<THREE.Texture>()
-  const unusedTextures = new Set<THREE.Texture>()
+  const model = layer ? cloneSkinned(template.scene) : template.scene
+  const { clip, bowMap } = template
+  // What this rig adds to the model: its shadow and the chest bow.
+  const own = newResources()
   const skeletons = new Set<THREE.Skeleton>()
-
-  function paintedMaterial(map: THREE.Texture): THREE.MeshBasicMaterial {
-    map.colorSpace = THREE.SRGBColorSpace
-    // The source has dark RGB outside its alpha silhouette. Generated mipmaps
-    // blend those pixels into the white face and expose a false neck outline.
-    // Supersample the small canvas instead, preserving the painted layer joins.
-    map.minFilter = THREE.LinearFilter
-    map.magFilter = THREE.LinearFilter
-    map.generateMipmaps = false
-    map.wrapS = THREE.ClampToEdgeWrapping
-    map.wrapT = THREE.ClampToEdgeWrapping
-    textures.add(map)
-    const material = new THREE.MeshBasicMaterial({
-      map,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      toneMapped: false,
-    })
-    material.forceSinglePass = true
-    materials.add(material)
-    return material
-  }
-
   const costumeParts = new Map<string, THREE.Object3D[]>()
   model.traverse((node) => {
     if (node.userData.layer === 'costume') {
       const id = String(node.userData.costume)
       costumeParts.set(id, [...(costumeParts.get(id) ?? []), node])
-      node.visible = false
     }
-    if (!(node instanceof THREE.Mesh)) return
-    geometries.add(node.geometry)
-    const original = (Array.isArray(node.material) ? node.material : [node.material]) as THREE.MeshStandardMaterial[]
-    const replacements = original.map((material) => {
-      const map = material.emissiveMap ?? material.map
-      if (!map) throw new Error(`Missing painted texture on ${node.name}`)
-      for (const value of Object.values(material)) {
-        if (value instanceof THREE.Texture) unusedTextures.add(value)
-      }
-      material.dispose()
-      return paintedMaterial(map)
-    })
-    node.material = Array.isArray(node.material) ? replacements : replacements[0]
-    node.renderOrder = Number(node.userData.draw_order ?? 0)
-    // Animated ears/feet can leave the bind-pose bounds.
-    node.frustumCulled = false
     if (node instanceof THREE.SkinnedMesh) skeletons.add(node.skeleton)
   })
-
-  function releaseTexture(texture: THREE.Texture): void {
-    texture.dispose()
-    const image = texture.image as { close?: () => void } | undefined
-    image?.close?.()
-  }
-
-  for (const texture of unusedTextures) {
-    if (!textures.has(texture)) releaseTexture(texture)
-  }
 
   const scene = new THREE.Scene()
   scene.add(model)
@@ -229,9 +304,9 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   camera.updateProjectionMatrix()
   camera.updateMatrixWorld()
   const mixer = new THREE.AnimationMixer(model)
-  const walkAction = clip ? mixer.clipAction(clip).play() : null
+  const walkAction = mixer.clipAction(clip).play()
   // Frame 0 of the walk is the standing pose; blending towards it eases each stop.
-  const restAction = clip ? mixer.clipAction(clip.clone()).play() : null
+  const restAction = mixer.clipAction(clip.clone()).play()
   const anchors = new Map<RigAttachment, { at: THREE.Object3D; right: THREE.Object3D }>()
   const a = new THREE.Vector3()
   const b = new THREE.Vector3()
@@ -254,8 +329,10 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   let chestBow: THREE.Mesh | null = null
   if (bowSpec && bowMap && bowBone && bowInverse) {
     const geometry = new THREE.PlaneGeometry(bowSpec.width / 1000, bowSpec.height / 1000)
-    geometries.add(geometry)
-    chestBow = new THREE.Mesh(geometry, paintedMaterial(bowMap))
+    own.geometries.add(geometry)
+    const material = paintedMaterial(bowMap)
+    own.materials.add(material)
+    chestBow = new THREE.Mesh(geometry, material)
     chestBow.name = bowSpec.name
     chestBow.renderOrder = bowSpec.drawOrder
     chestBow.frustumCulled = false
@@ -266,8 +343,6 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
     bowBone.add(bowPivot)
     model.updateMatrixWorld(true)
     bowPivot.attach(chestBow)
-  } else if (bowMap) {
-    bowMap.dispose()
   }
 
   // Each blinker scales about its own centre.
@@ -308,8 +383,11 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
     shadowPaint.fillRect(0, 0, 128, 128)
   }
   const shadowGeometry = new THREE.PlaneGeometry(spec.shadow.width / 1000, spec.shadow.height / 1000)
-  geometries.add(shadowGeometry)
-  const shadowMaterial = paintedMaterial(new THREE.CanvasTexture(shadowCanvas))
+  own.geometries.add(shadowGeometry)
+  const shadowTexture = paintedMap(new THREE.CanvasTexture(shadowCanvas))
+  own.textures.add(shadowTexture)
+  const shadowMaterial = paintedMaterial(shadowTexture)
+  own.materials.add(shadowMaterial)
   const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial)
   const shadowAt = canvasToModel(spec.shadow.x, spec.shadow.y)
   shadow.position.copy(shadowAt)
@@ -363,20 +441,14 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   }
 
   function dispose(): void {
-    walkAction?.stop()
-    restAction?.stop()
+    walkAction.stop()
+    restAction.stop()
     mixer.stopAllAction()
     mixer.uncacheRoot(model)
-    for (const geometry of geometries) geometry.dispose()
-    for (const material of materials) material.dispose()
+    release(own)
     for (const skeleton of skeletons) skeleton.dispose()
-    for (const texture of textures) releaseTexture(texture)
+    if (!layer) release(template.resources)
     releaseRenderer()
-  }
-
-  if (!clip || !walkAction || !restAction) {
-    dispose()
-    throw new Error(`The ${kind} rig has no walk clip`)
   }
 
   return {

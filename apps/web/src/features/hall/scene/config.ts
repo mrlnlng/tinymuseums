@@ -46,6 +46,7 @@ export const CONFIG = {
 
   lobby: {
     length: 4.75,
+    minX: -3.6,
     startX: 0,
     introWalk: 1.9,
     door: { x: -0.09, centerY: 1.165, height: 2.81, z: 0.2 },
@@ -154,34 +155,14 @@ export const CONFIG = {
     vanishSeconds: 0.35,
   },
 
-  // Both floors draw the same flight: steps of `rise` by `run`, taken two hops at a time.
-  stairs: {
-    rise: 0.36,
-    run: 0.5,
-    // The lobby's newel post stands just left of the door; the flight rises leftwards from it.
-    lobbyFoot: -1.4,
-    // How far from the foot the character stands before the first hop.
-    clear: 0.38,
-    z: 0.1,
-    // The camera follows a hop up or down by this share of the climb.
-    cameraRise: 0.6,
-    hopSeconds: 0.4,
-    hopLift: 0.22,
-    dipSeconds: 0.3,
-  },
-
   // The room is laid out in the mocks' pixels (7.png, with 8.png continuing it 630 px further
-  // right and 9.png 1553 px further), then mapped to world units around the stairwell.
+  // right and 9.png 1553 px further), then mapped to world units around the room entrance.
   atelier: {
     mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
     ceiling: 4.97,
     max: 12.3,
-    clearX: 0.2,
-    // The landing's right edge, where the carpet begins; the stairwell opens to its left.
-    stairwell: { right: -1.0, width: 4, z: 0.12 },
     wall: { left: -7, right: 15, tile: 2.2 },
     carpet: { height: 1.25 },
-    exit: { x: -100, y: 400, width: 268 },
     curtains: { left: -40, width: 520, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },
     shelf: { x: 330, y: 207, width: 424, z: 0.2 },

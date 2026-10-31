@@ -1220,6 +1220,16 @@
       "src": "atelier-mirror.b2b6c729e8.webp",
       "width": 190,
       "height": 474
+    },
+    "plaque": {
+      "src": "plaque@2x.495da8a967.webp",
+      "width": 811,
+      "height": 400
     }
+  },
+  "galleryDoor": {
+    "src": "atelier-gallery-door-red.33233d9f3d.webp",
+    "width": 1076,
+    "height": 1461
   }
 }

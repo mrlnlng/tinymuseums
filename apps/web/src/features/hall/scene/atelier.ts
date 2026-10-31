@@ -1,14 +1,12 @@
 import * as THREE from 'three'
 import manifest from '@/generated/asset-manifest.json'
 import { builtUrl } from '@/shared/lib/assets'
-import { plane } from './board'
+import { plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
-import { atelierFlight, hopSteps } from './flights'
-import { drawStairs, type StairArt } from './stair-art'
+import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { CharacterKind } from './rig'
-import type { StairStep } from './stairway'
 
 const { atelier } = CONFIG
 const { mock } = atelier
@@ -55,11 +53,7 @@ export interface AtelierActions {
 
 export interface AtelierRoom {
   setActions(actions: AtelierActions): void
-  /** The floor at the stairwell's edge, then each hop down. */
-  readonly steps: readonly StairStep[]
-  /** The stairwell's drawing; its railing crosses in front of the visitor on the stairs. */
-  readonly stairs: StairArt
-  hitTestStairs(raycaster: THREE.Raycaster): boolean
+  hitTestDoor(raycaster: THREE.Raycaster): boolean
   hitTestFeatured(raycaster: THREE.Raycaster): ClothingPart | null
   /** The character the portrait offers, if it is under the pointer. */
   hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
@@ -74,7 +68,7 @@ export interface AtelierRoom {
 
 type Painted = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
 
-export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTMLElement): AtelierRoom {
+export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTMLElement, image: HTMLImageElement): AtelierRoom {
   const group = new THREE.Group()
 
   /** A picture by its centre and width in mock px. */
@@ -106,19 +100,16 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const carpetHeight = atelier.carpet.height
   const carpetMap = art.carpet
   carpetMap.wrapS = THREE.RepeatWrapping
-  const { stairwell } = atelier
-  carpetMap.repeat.set((wall.right - stairwell.right) / (carpetHeight * aspectOf('carpet')), 1)
-  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - stairwell.right, carpetHeight), new THREE.MeshBasicMaterial({ map: carpetMap }))
-  carpet.position.set((stairwell.right + wall.right) / 2, mock.floorWorld - carpetHeight / 2, 0.15)
+  carpetMap.repeat.set((wall.right - wall.left) / (carpetHeight * aspectOf('carpet')), 1)
+  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - wall.left, carpetHeight), new THREE.MeshBasicMaterial({ map: carpetMap }))
+  carpet.position.set((wall.left + wall.right) / 2, mock.floorWorld - carpetHeight / 2, 0.15)
   group.add(carpet)
 
-  // Left of the carpet the floor opens onto a stairwell, and the flight goes down into it.
-  const flight = atelierFlight(stairwell.right)
-  const stairArt = drawStairs(flight, { top: mock.floorWorld, width: stairwell.width })
-  const stairMap = new THREE.CanvasTexture(stairArt.art)
-  stairMap.colorSpace = THREE.SRGBColorSpace
-  const stairs = plane(stairArt.width, stairArt.height, stairMap, stairArt.left + stairArt.width / 2, stairArt.base + stairArt.height / 2, stairwell.z) as Painted
-  group.add(stairs)
+  const door = createGalleryDoor(group, image, GALLERY_DOOR.atelierX, GALLERY_DOOR.atelierBase)
+  const sign = CONFIG.lobby.sign
+  const signY = sign.centerY - 0.16
+  group.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
+    signY, sign.z, sign.width, sign.height))
 
   const spotlightWidth = atelier.spotlight.height * aspectOf('spotlight')
   function spotlight(x: number): void {
@@ -212,8 +203,13 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     bow: control("Try on Kiki's bow", 'atelier-item atelier-item-bow', atelier.bowPillar.bow, () => actions?.onItem('bow')),
   }
   const portraitButton = control('Walk as Jiji', 'atelier-choice', atelier.portrait, () => actions?.onCharacter(offered))
-  const exit = control('Back to first floor', 'atelier-exit', atelier.exit, () => actions?.onLeave())
-  exit.textContent = 'Back to first floor'
+  const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
+    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
+    y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
+    width: sign.width * 0.76 * mock.unit,
+  }, () => actions?.onLeave())
+  exit.textContent = 'Back to museum'
+  controls[controls.length - 1].font = 0.12
 
   let clock = 0
   let jiggle = -1
@@ -232,12 +228,10 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
 
 
   return {
-    steps: hopSteps(flight),
-    stairs: stairArt,
     setActions(next) { actions = next },
 
-    hitTestStairs(raycaster) {
-      return pickPainted(raycaster, [stairs]) !== null
+    hitTestDoor(raycaster) {
+      return door.hitTest(raycaster)
     },
 
     hitTestFeatured(raycaster) {
@@ -331,13 +325,15 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
 
     dispose() {
       scene.remove(group)
+      door.dispose()
       group.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return
         node.geometry.dispose()
-        ;(node.material as THREE.Material).dispose()
+        const material = node.material as THREE.MeshBasicMaterial
+        if (material.map?.userData.ownedByBoard) material.map.dispose()
+        material.dispose()
       })
       disposeAtelierArt(art)
-      stairMap.dispose()
       for (const { node } of controls) node.remove()
     },
   }

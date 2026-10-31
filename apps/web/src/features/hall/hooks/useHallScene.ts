@@ -1,7 +1,7 @@
 'use client'
 
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
-import { createStairForeground } from '@/features/hall/scene/stair-foreground'
+import { loadGalleryDoor, loadGalleryPillar, GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -37,9 +37,8 @@ import { useSound } from '@/features/sound/components/SoundProvider'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import { outfit } from '@tiny/core/slots'
 import { defaultStore } from '@/shared/lib/slots'
-import { lobbySteps } from '@/features/hall/scene/flights'
-import { createStairway } from '@/features/hall/scene/stairway'
-import { createLobbyStairs } from '@/features/hall/scene/stairs'
+import { createRoomPassage } from '@/features/hall/scene/room-passage'
+import { createLobbyGalleryDoor } from '@/features/hall/scene/lobby-gallery-door'
 import { followOutfit, lookOf } from '@/features/hall/scene/wardrobe'
 
 const BACKDROP_LENGTH = 600
@@ -74,7 +73,7 @@ export interface HallHosts {
 
 interface Options {
   hosts: HallHosts
-  /** Through the front door, or back down the stairs from the atelier. */
+  /** Through the front door, or back through the costume gallery doorway. */
   arrival: 'door' | 'stairs'
   onGoUpstairs: () => void
   initialSlice: HallSliceDto
@@ -160,8 +159,10 @@ export function useHallScene({
 
       const renderer = new THREE.WebGLRenderer({ antialias: false })
       let assets: Assets
+      let doorImage: HTMLImageElement
+      let pillarImage: HTMLImageElement
       try {
-        assets = await loadAssets(renderer)
+        ;[assets, doorImage, pillarImage] = await Promise.all([loadAssets(renderer), loadGalleryDoor(), loadGalleryPillar()])
       } catch (loadError) {
         renderer.dispose()
         renderer.forceContextLoss()
@@ -220,23 +221,21 @@ export function useHallScene({
       dip.hidden = true
       canvasHost.parentElement?.appendChild(dip)
 
-      const stairway = createStairway({
+      const passage = createRoomPassage({
         traversal,
-        steps: lobbySteps,
-        clearX: lobbySteps[0].x + 0.7,
+        doorX: GALLERY_DOOR.lobbyX,
+        clearX: GALLERY_DOOR.lobbyX + GALLERY_DOOR.clear,
         dip,
       })
 
-      function climb(): void {
-        if (stairway.busy || traversal.isIntro || isSuspendedRef.current) return
+      function enterAtelier(): void {
+        if (passage.busy || traversal.isIntro || isSuspendedRef.current) return
         track('stairs')
         soundRef.current.play('click')
-        stairway.leave(() => onGoUpstairsRef.current())
+        passage.leave(() => onGoUpstairsRef.current())
       }
 
-      const lobbyStairs = createLobbyStairs(scene, overlayHost, climb)
-      const stairForeground = createStairForeground(canvasHost.parentElement!, lobbyStairs.art)
-      stairForeground.setSource(lobbyStairs.art.rail.toDataURL())
+      const galleryDoor = createLobbyGalleryDoor(scene, overlayHost, enterAtelier, doorImage, pillarImage, assets)
 
       const entrance = CONFIG.lobby.startX
       const introStart = entrance - CONFIG.lobby.introWalk
@@ -380,7 +379,7 @@ export function useHallScene({
         const moved = Math.hypot(event.clientX - pressX, event.clientY - pressY)
         const slop = event.pointerType === 'touch' ? TAP_SLOP_PX.touch : TAP_SLOP_PX.mouse
         const tooSlow = performance.now() - pressedAt > TAP_TIMEOUT_MS
-        isTap = !(moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro || stairway.busy)
+        isTap = !(moved > slop || tooSlow || isSuspendedRef.current || traversal.isIntro || passage.busy)
       }
 
       // Taps act on click, not pointerup: on touch screens the browser's click lands on
@@ -392,8 +391,8 @@ export function useHallScene({
 
         aim(event)
 
-        if (lobbyStairs.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
-          climb()
+        if (galleryDoor.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
+          enterAtelier()
           return
         }
 
@@ -545,37 +544,36 @@ export function useHallScene({
             readyAt = now
             setIsReady(true)
             revealFloorTransition()
-            if (arrival === 'stairs') stairway.arrive()
+            if (arrival === 'stairs') passage.arrive()
             else traversal.playIntro(introStart, entrance)
           }
         } else {
-          traversal.setSuspended(isSuspendedRef.current || stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
-          traversal.update(dt, lobbySteps[0].x, hall.layout.totalLength)
+          traversal.setSuspended(isSuspendedRef.current || passage.locked || document.querySelector('[aria-modal="true"]') !== null)
+          traversal.update(dt, CONFIG.lobby.minX, hall.layout.totalLength)
         }
-        const moving = stairway.update(dt)
-        const cameraX = moving?.x ?? traversal.cameraX
+        passage.update(dt)
+        const cameraX = traversal.cameraX
 
         if (restX === null && !traversal.isIntro) {
           restX = traversal.cameraX
           onIntroDoneRef.current()
-        } else if (restX !== null && !hasMoved && !stairway.busy && Math.abs(traversal.cameraX - restX) > 0.05) {
+        } else if (restX !== null && !hasMoved && !passage.busy && Math.abs(traversal.cameraX - restX) > 0.05) {
           hasMoved = true
           onFirstMoveRef.current()
         }
 
-        rig.sync(cameraX, moving?.rise ?? 0)
+        rig.sync(cameraX, 0)
         sitting?.update(dt, cameraX, rig.viewWidth / 2)
         character.update(
           dt,
-          moving?.x ?? traversal.x,
-          moving?.velocity ?? traversal.walkVelocity,
+          traversal.x,
+          traversal.walkVelocity,
           rig.camera,
           viewport,
-          moving?.centerY,
         )
         helm?.update(dt, character, rig.camera, viewport)
         matcha?.update(dt, character, rig.camera, viewport)
-        soundRef.current.setWalking(Math.abs(moving?.velocity ?? traversal.walkVelocity) > WALKING_SPEED)
+        soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
 
         hall.update(now, dt, cameraX)
         if (!isSuspendedRef.current) hall.releaseCoin()
@@ -585,8 +583,7 @@ export function useHallScene({
         raiseComingSoon()
         placards.sync(hall.getMounted(), rig.camera, viewport)
         lobbySigns.sync(rig.camera, viewport)
-        lobbyStairs.sync(rig.camera, viewport, !stairway.busy && !traversal.isIntro)
-        stairForeground.sync(rig.camera, viewport, moving !== null)
+        galleryDoor.sync(rig.camera, viewport, !passage.busy && !traversal.isIntro)
         giftShopSigns?.sync(rig.camera, viewport)
         cafeLink?.sync(rig.camera, viewport)
         guestBoardNotes?.sync(rig.camera, viewport)
@@ -635,9 +632,8 @@ export function useHallScene({
         outfitFollower.dispose()
         hall.dispose()
         lobby.dispose()
-        stairForeground.dispose()
-        lobbyStairs.dispose()
-        stairway.dispose()
+        galleryDoor.dispose()
+        passage.dispose()
         giftShop?.dispose()
         sitting?.dispose()
         guestBoard?.dispose()

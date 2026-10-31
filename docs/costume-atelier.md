@@ -1,6 +1,6 @@
 # The Costume Atelier
 
-A second floor, reached by the staircase behind the entrance door. Visitors try on the
+A costume gallery room, reached through the fashion-themed archway to the left of the visitor centre. Visitors try on the
 bow and dress independently from the mannequin and can walk as the cat instead of the bunny. All
 choices persist through the `outfit` slot, so they come back on the next visit, and they
 sync across devices when the visitor has an account.
@@ -12,18 +12,20 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 ## How it plays
 
 - **Two pages.** The atelier is its own page, `/museum/atelier`, with its own scene, so each
-  floor loads only its own art.
-- **The stairs are two hops.** Both floors draw one staircase in code (`scene/stair-art.ts`): a
-  wooden flight with tread highlights, a gold handrail, balusters and a newel post, built from
-  the same step size the hops use, so every hop lands on a tread. In the lobby the flight stands
-  on the floor and rises leftwards from its newel just left of the door, out through the
-  ceiling. Upstairs the carpet ends at a stairwell and the flight goes down into it. Tapping the
-  stairs (or the cue, or "Back to first floor") walks the character to the newel; it hops two
-  steps up or down, the camera following, and the screen dips into the other floor's loading
-  screen. Arriving runs the same two hops the other way. Reduced motion skips the hops and only dips.
+  room loads only its own art.
+- **A room doorway.** Both rooms use a flat illustrated cream-and-rose museum archway,
+  with red curtains, a bow and a hanger emblem. Its plaque uses the visitor centre's
+  actual board artwork and lettering style, as does the room's Back to museum sign.
+  One existing cream museum pillar sits between the two entrances; the collection
+  stays in its original hall layout. The generated source is
+  `public/assets/atelier/gallery-door-red.png`; its prompt and style reference are in
+  `docs/gallery-door-imagegen-prompt.md`. Tap the doorway or its labelled sign to enter.
+  The visitor walks to the entrance before the screen fades, then walks clear of the
+  doorway on arrival. Reduced motion places the visitor directly clear of the door.
+  The atelier carpet spans the whole room, without a stairwell opening.
 - **Loading.** The atelier opens on a maroon loading screen: a dress form being sewn, with Kiki's
   bow. It shows for at least 2.8 s, then until the art, the fonts and the visitor's rig are ready.
-- **Upstairs**, left to right: the stairwell and "Back to first floor", the red
+- **In the atelier**, left to right: the doorway and "Back to museum", the red
   curtains, the title on its gilt shelf with the plaque text, the cabinet with the jewellery box
   and perfume, two bunny portraits; then **The Kiki Collection**: the spotlit form wearing the
   dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then a
@@ -34,7 +36,7 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 - **Changing character.** The portrait in the Kiki Collection shows the character the visitor is
   not: Jiji while walking as the bunny, the bunny while walking as Jiji. Tap it to change. It hops
   as the visitor comes near. Both clothing choices carry over between characters.
-- **Downstairs** the outfit stays on. Sitting is painted only for the plain bunny, so the
+- **Back in the museum** the outfit stays on. Sitting is painted only for the plain bunny, so the
   beanbag ignores other looks. The helmet and cup have anchors for both characters.
 
 ## Code
@@ -46,15 +48,15 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 | `features/hall/hooks/useAtelierScene.ts` | The atelier's scene: renderer, camera, visitor, taps, hover cursor, readiness. |
 | `scene/atelier.ts` | The room: its art loader, the meshes, the displays, the title and plaque text, hit tests. |
 | `scene/wardrobe.ts` | Try on and return, changing character at the displays, and `followOutfit`, which keeps both pages in the saved outfit. |
-| `scene/stairway.ts` | Leaving a floor by its stairs (approach, two hops, dip, then the page change) and arriving by them. |
-| `scene/flights.ts` | The flight on each floor (step size, foot, direction) and its hop steps. Tested in `flights.test.ts`. |
-| `scene/stair-art.ts`, `scene/stairs.ts`, `stair-foreground.ts` | The drawn staircase, the lobby's flight, and its railing drawn in front of the character on the stairs. |
+| `scene/room-passage.ts` | Approach, fade, route handoff and walking clear on arrival. Tested in `room-passage.test.ts`. |
+| `scene/gallery-door.ts`, `scene/lobby-gallery-door.ts` | Load and place the generated doorway and its lobby sign. |
 | `features/hall/lib/floor-transition.ts` | The transition cover retained across page changes. |
 | `scene/rig.ts`, `scene/character.ts` | One rig renderer for either character, with costumes; the visitor's `wear(look)` and `ready`. |
 | `packages/core/src/slots/outfit.ts` | The `outfit` slot: `character`, dress (`costume`), and `bow` as three last-write-wins registers. |
 | `apps/web/src/app/dev/rig` | Development-only rig preview: either character, any costume, facing, walk pose, and the helmet and cup on the hall's anchors. |
 
-All positions are in `CONFIG.stairs` and `CONFIG.atelier` (`scene/config.ts`). The atelier's are
+Door positions are in `GALLERY_DOOR` (`scene/gallery-door.ts`); room positions are in
+`CONFIG.atelier` (`scene/config.ts`). The atelier's are
 in the mocks' own pixels (198 px per world unit; the bunny is about 270 px tall there), so a
 change to the mock can be copied across directly.
 

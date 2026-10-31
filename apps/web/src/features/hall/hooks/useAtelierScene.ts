@@ -10,13 +10,13 @@ import { createCharacter } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
-import { createStairway } from '@/features/hall/scene/stairway'
+import { createRoomPassage } from '@/features/hall/scene/room-passage'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { createWardrobe, followOutfit, lookOf, type Wardrobe } from '@/features/hall/scene/wardrobe'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { defaultStore } from '@/shared/lib/slots'
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
-import { createStairForeground } from '@/features/hall/scene/stair-foreground'
+import { loadGalleryDoor, GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { track } from '@/shared/lib/visit'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
@@ -35,7 +35,7 @@ export interface AtelierHosts {
 
 interface Options {
   hosts: AtelierHosts
-  /** Called once the dip covers the screen on the way downstairs. */
+  /** Called once the dip covers the screen on the way back to the museum. */
   onLeave: () => void
 }
 
@@ -62,8 +62,9 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
 
       let art: AtelierArt
       let sprites: CharacterSprites
+      let doorImage: HTMLImageElement
       try {
-        ;[art, sprites] = await Promise.all([loadAtelierArt(), loadCharacterSprites()])
+        ;[art, sprites, doorImage] = await Promise.all([loadAtelierArt(), loadCharacterSprites(), loadGalleryDoor()])
       } catch (loadError) {
         if (!isDisposed) { setError((loadError as Error).message); revealFloorTransition() }
         return
@@ -80,7 +81,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       canvasHost.appendChild(renderer.domElement)
 
       const scene = new THREE.Scene()
-      const room = createAtelierRoom(scene, art, overlayHost)
+      const room = createAtelierRoom(scene, art, overlayHost, doorImage)
       const outfitSlot = defaultStore().getSlot(outfit)
       const character = createCharacter(sprites, characterHost, lookOf(outfitSlot.snapshot()))
       const traversal = new Traversal()
@@ -110,7 +111,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       canvasHost.parentElement?.appendChild(dip)
 
       const { atelier } = CONFIG
-      const stairway = createStairway({ traversal, steps: room.steps, clearX: atelier.clearX, dip })
+      const passage = createRoomPassage({ traversal, doorX: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear, dip })
 
       let wardrobe: Wardrobe | null = null
       const follower = followOutfit(
@@ -128,12 +129,10 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         onIdle: follower.sync,
       })
       const closet = wardrobe
-      const foreground = createStairForeground(canvasHost.parentElement!, room.stairs)
-      foreground.setSource(room.stairs.rail.toDataURL())
       room.setActions({
         onItem: (part) => { if (!quiet()) closet.tapFeatured(part) },
         onCharacter: (kind) => { if (!quiet()) closet.tapDisplay(kind) },
-        onLeave: () => { if (!quiet()) { track('stairs'); stairway.leave(() => onLeaveRef.current()) } },
+        onLeave: () => { if (!quiet()) { track('stairs'); passage.leave(() => onLeaveRef.current()) } },
       })
 
       let rigSettled = false
@@ -162,7 +161,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         raycaster.setFromCamera(pointer, rig.camera)
       }
 
-      const quiet = () => !ready || stairway.busy || document.querySelector('[aria-modal="true"]') !== null
+      const quiet = () => !ready || passage.busy || document.querySelector('[aria-modal="true"]') !== null
 
       function handlePointerDown(event: PointerEvent): void {
         isTap = false
@@ -194,10 +193,10 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
           closet.tapDisplay(kind)
           return
         }
-        if (room.hitTestStairs(raycaster)) {
+        if (room.hitTestDoor(raycaster)) {
           soundRef.current.play('click')
           track('stairs')
-          stairway.leave(() => onLeaveRef.current())
+          passage.leave(() => onLeaveRef.current())
         }
       }
 
@@ -205,7 +204,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       function handlePointerMove(event: PointerEvent): void {
         if (event.pointerType !== 'mouse' || event.buttons !== 0) return
         aim(event)
-        const live = !quiet() && (room.hitTestFeatured(raycaster) || room.hitTestDisplay(raycaster) !== null || room.hitTestStairs(raycaster))
+        const live = !quiet() && (room.hitTestFeatured(raycaster) || room.hitTestDisplay(raycaster) !== null || room.hitTestDoor(raycaster))
         renderer.domElement.style.cursor = live ? 'pointer' : ''
       }
 
@@ -233,21 +232,20 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
             setIsReady(true)
             revealFloorTransition()
             track('atelier')
-            stairway.arrive()
+            passage.arrive()
           }
         } else {
-          traversal.setSuspended(stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
-          traversal.update(dt, room.steps[0].x, atelier.max)
+          traversal.setSuspended(passage.locked || document.querySelector('[aria-modal="true"]') !== null)
+          traversal.update(dt, GALLERY_DOOR.atelierX, atelier.max)
         }
 
-        const moving = stairway.update(dt)
-        const cameraX = moving?.x ?? traversal.cameraX
-        rig.sync(cameraX, moving?.rise ?? 0)
-        character.update(dt, moving?.x ?? traversal.x, moving?.velocity ?? traversal.walkVelocity, rig.camera, viewport, moving?.centerY)
-        foreground.sync(rig.camera, viewport, moving !== null)
+        passage.update(dt)
+        const cameraX = traversal.cameraX
+        rig.sync(cameraX, 0)
+        character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
         room.update(dt, traversal.x)
         room.sync(rig.camera, viewport, !quiet())
-        soundRef.current.setWalking(Math.abs(moving?.velocity ?? traversal.walkVelocity) > WALKING_SPEED)
+        soundRef.current.setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
         renderer.render(scene, rig.camera)
       }
       frameHandle = requestAnimationFrame(renderFrame)
@@ -263,8 +261,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         traversal.detach()
         follower.dispose()
         closet.dispose()
-        stairway.dispose()
-        foreground.dispose()
+        passage.dispose()
         room.dispose()
         character.dispose()
         renderer.dispose()

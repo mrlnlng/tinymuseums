@@ -175,6 +175,9 @@ const before = await readFile(path, 'utf8')
 const manifest = JSON.parse(before)
 manifest.models = { ...manifest.models, ...models }
 delete manifest.stairs
+manifest.galleryDoor = await image('gallery-door-red', { lossless: true })
+delete manifest.galleryLeadIn
 manifest.atelier = atelier
+manifest.atelier.plaque = { src: manifest.images.plaque.x2.src, width: manifest.images.plaque.x2.w, height: manifest.images.plaque.x2.h }
 const after = JSON.stringify(manifest, null, 2) + '\n'
 if (after !== before) await writeFile(path, after)

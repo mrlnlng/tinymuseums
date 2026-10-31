@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { MESSAGE_MAX } from '@tiny/core/presence/messages'
 import {
   getPeople,
@@ -64,19 +65,16 @@ export default function ChatButton() {
   useEffect(() => {
     if (!open) return
     input.current?.focus()
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
     const onPointer = (event: PointerEvent) => {
       if (!control.current?.contains(event.target as Node)) setOpen(false)
     }
-    window.addEventListener('keydown', onKey)
     window.addEventListener('pointerdown', onPointer)
     return () => {
-      window.removeEventListener('keydown', onKey)
       window.removeEventListener('pointerdown', onPointer)
     }
   }, [open])
+
+  useEscapeKey(() => setOpen(false), open)
 
   if (!inRoom) return null
   return (

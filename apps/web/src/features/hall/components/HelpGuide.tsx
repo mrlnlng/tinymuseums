@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
 
 const AWNING = 0.462
@@ -29,13 +30,7 @@ interface HelpGuideProps {
 }
 
 export default function HelpGuide({ onClose }: HelpGuideProps) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useEscapeKey(onClose)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const fitRef = useRef<HTMLDivElement>(null)

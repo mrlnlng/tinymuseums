@@ -1,6 +1,7 @@
 'use client'
 
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
 import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
@@ -44,12 +45,9 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     emailRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  useEscapeKey(onClose)
 
   useEffect(() => {
     if (member !== null) void refreshMember()

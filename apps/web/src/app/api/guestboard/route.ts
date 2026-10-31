@@ -1,5 +1,6 @@
 import { GuestNoteRateLimited, GuestNoteRejected, listGuestNotes, postGuestNote } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
+import { rateLimitedResponse, rejectedResponse } from '@/shared/lib/domain-error'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -26,13 +27,10 @@ export async function POST(request: Request) {
     return Response.json({ note }, { status: 201 })
   } catch (error) {
     if (error instanceof GuestNoteRejected) {
-      return Response.json({ error: error.message }, { status: 400 })
+      return rejectedResponse(error)
     }
     if (error instanceof GuestNoteRateLimited) {
-      return Response.json(
-        { error: error.message },
-        { status: 429, headers: { 'retry-after': String(error.retryAfterSeconds) } },
-      )
+      return rateLimitedResponse(error)
     }
     throw error
   }

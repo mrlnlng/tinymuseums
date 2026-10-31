@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import SoundToggle from '@/features/sound/components/SoundToggle'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
 import { openAccount } from '@/features/account/lib/account'
@@ -14,24 +15,22 @@ export default function SettingsMenu() {
 
   useEffect(() => { setIsOpen(false) }, [pathname])
 
+  useEscapeKey((event) => {
+    event.preventDefault()
+    setIsOpen(false)
+    toggle.current?.focus()
+  }, isOpen)
+
   useEffect(() => {
     if (!isOpen) return
     const outside = (event: Event) => {
       if (event.target instanceof Node && !host.current?.contains(event.target)) setIsOpen(false)
     }
-    const escape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      setIsOpen(false)
-      toggle.current?.focus()
-    }
     document.addEventListener('pointerdown', outside, true)
     document.addEventListener('focusin', outside)
-    document.addEventListener('keydown', escape)
     return () => {
       document.removeEventListener('pointerdown', outside, true)
       document.removeEventListener('focusin', outside)
-      document.removeEventListener('keydown', escape)
     }
   }, [isOpen])
 

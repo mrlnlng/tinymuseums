@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { BRAND } from '@tiny/core/brand'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { track } from '@/shared/lib/visit'
 import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
 import { pickFocus } from '../lib/focus'
@@ -53,27 +54,13 @@ function openingPlan(prepared: PreparedGame | null): number[] {
 
 type Phase = 'choosing' | 'loading' | 'guessing' | 'answered' | 'done' | 'error'
 
-function readStored(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function writeStored(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {}
-}
-
 function readDifficulty(): Difficulty {
-  const saved = readStored(DIFFICULTY_KEY)
+  const saved = readLocal(DIFFICULTY_KEY)
   return isDifficulty(saved) ? saved : 'medium'
 }
 
 function readMode(): Mode {
-  const saved = readStored(MODE_KEY)
+  const saved = readLocal(MODE_KEY)
   return isMode(saved) ? saved : 'sketch'
 }
 
@@ -91,9 +78,9 @@ function clueUrl(mode: Mode, loaded: LoadedRound): string | null {
 }
 
 function saveIfHigher(key: string, value: number): number {
-  const previous = Number(readStored(key)) || 0
+  const previous = Number(readLocal(key)) || 0
   if (value <= previous) return previous
-  writeStored(key, String(value))
+  writeLocal(key, String(value))
   return value
 }
 
@@ -361,8 +348,8 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
 
   const startGame = useCallback(
     (level: Difficulty, chosenMode: Mode = mode) => {
-      writeStored(DIFFICULTY_KEY, level)
-      writeStored(MODE_KEY, chosenMode)
+      writeLocal(DIFFICULTY_KEY, level)
+      writeLocal(MODE_KEY, chosenMode)
       setMode(chosenMode)
       setDifficulty(level)
       setStarted(true)

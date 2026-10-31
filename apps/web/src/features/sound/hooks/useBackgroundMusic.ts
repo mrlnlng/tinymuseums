@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import {
   isRouted,
   resumeGain,
@@ -86,12 +87,8 @@ export function useBackgroundMusic({ isAllowed, track }: Options): BackgroundMus
   }, [])
 
   const restorePreference = useCallback(() => {
-    let stored: string | null = null
-    let storedVolume: string | null = null
-    try {
-      stored = window.localStorage.getItem(STORAGE_KEY)
-      storedVolume = window.localStorage.getItem(VOLUME_KEY)
-    } catch {}
+    const stored = readLocal(STORAGE_KEY)
+    const storedVolume = readLocal(VOLUME_KEY)
     setIsEnabled(stored === null ? DEFAULT_ENABLED : stored === 'on')
     if (storedVolume !== null) setVolumeState(clampVolume(Number(storedVolume)))
     setIsReady(true)
@@ -304,18 +301,12 @@ export function useBackgroundMusic({ isAllowed, track }: Options): BackgroundMus
 
   useEffect(() => applyVolume(), [applyVolume])
 
-  const remember = useCallback((key: string, value: string) => {
-    try {
-      window.localStorage.setItem(key, value)
-    } catch {}
-  }, [])
-
   const setEnabled = useCallback(
     (next: boolean) => {
       setIsEnabled(next)
-      remember(STORAGE_KEY, next ? 'on' : 'off')
+      writeLocal(STORAGE_KEY, next ? 'on' : 'off')
     },
-    [remember],
+    [],
   )
 
   const isSounding = isEnabled && (isPlaying || !isAllowed)
@@ -325,19 +316,19 @@ export function useBackgroundMusic({ isAllowed, track }: Options): BackgroundMus
     setEnabled(next)
     if (next && volume === 0) {
       setVolumeState(DEFAULT_VOLUME)
-      remember(VOLUME_KEY, String(DEFAULT_VOLUME))
+      writeLocal(VOLUME_KEY, String(DEFAULT_VOLUME))
     }
-  }, [isSounding, volume, setEnabled, remember])
+  }, [isSounding, volume, setEnabled])
 
   const setVolume = useCallback(
     (value: number) => {
       const next = clampVolume(value)
       setVolumeState(next)
-      remember(VOLUME_KEY, String(next))
+      writeLocal(VOLUME_KEY, String(next))
       if (next > 0 && !isEnabled) setEnabled(true)
       else if (next === 0 && isEnabled) setEnabled(false)
     },
-    [isEnabled, remember, setEnabled],
+    [isEnabled, setEnabled],
   )
 
   return {

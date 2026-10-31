@@ -4,6 +4,7 @@ import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
 import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
+import WalkAlone from '@/features/presence/components/WalkAlone'
 
 type Mode = 'sign-in' | 'create'
 type View = 'menu' | 'name' | 'password' | 'delete'
@@ -197,6 +198,7 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
               choose your own name.
             </p>
           ) : null}
+          {mode === 'sign-in' ? <WalkAlone /> : null}
 
           <input
             ref={emailRef}
@@ -227,7 +229,8 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
                 recovered.
               </p>
               <p className="bug-report-note">
-                Your email and the things you save here. Nothing about where you walk.
+                Your email and the things you save here. Other visitors see your character and name
+                while you&apos;re here; where you walk isn&apos;t kept.
               </p>
             </>
           ) : null}
@@ -290,6 +293,7 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
               In the museum you&apos;re <strong>{visitorName.name}</strong>.
             </p>
           ) : null}
+          {view === 'menu' ? <WalkAlone /> : null}
           {notice ? <p className="bug-report-note">{notice}</p> : null}
           {error ? (
             <p className="bug-report-error" role="alert">

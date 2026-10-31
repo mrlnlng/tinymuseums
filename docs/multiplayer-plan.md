@@ -407,7 +407,8 @@ Each phase ends green on `npm run typecheck` and `npm test` and is checked in th
    - Gamma and production envs in `wrangler.jsonc`, Amplify variables, optional Workers
      Builds.
    - Deploy to gamma, then a two-phone test.
-5. **Polish.**
+5. **Polish.** Done 2026-10-31, except room capacity tuning, which waits for real traffic:
+   the walk-alone switch in the account sheet, the sign-up wording, and `docs/multiplayer.md`.
    - Walk-alone toggle, copy changes, `docs/multiplayer.md`.
    - Tune room capacity if 8 feels empty or crowded.
    - Sitting and carried items (v2).

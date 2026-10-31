@@ -47,17 +47,19 @@ The "restraint over engagement" tiebreaker sets these limits:
 ### 3.1 Generated names (everyone has one)
 
 - `packages/core/src/presence/names.ts` is browser-safe. It holds two curated word lists:
-  - About 64 adjectives: Velvet, Gilded, Tiny, Sleepy, Pastel, Dappled, Lacquered, Mossy, Rosy,
-    Quiet, Painted…
-  - About 64 gallery nouns: Easel, Teacup, Brushstroke, Pigment, Plinth, Gouache, Sketchbook,
+  - 64 adjectives: Velvet, Gilded, Tiny, Sleepy, Dappled, Lacquered, Mossy, Rosy, Quiet,
+    Painted…
+  - 64 gallery nouns and small creatures: Easel, Teacup, Brushstroke, Pigment, Plinth, Gouache, Sketchbook,
     Frame, Palette, Curator, Muse, Pastel…
   - 64 × 64 gives 4,096 names. Both lists are reviewed by hand, so no combination reads badly.
 - `nameFromSeed(seed: number): string` is deterministic.
-- The seed is a random uint32. It lives in a **device-only slot `presence`** (`sync: false`) as
-  `{ seed, walkAlone }`. A member's seed is copied to the server at sign-up (§3.2), so their
-  generated name follows them until they choose one.
+- The seed is a random integer in [0, 2^31). It lives in a **device-only slot `presence`**
+  (`slots/presence.ts`, `sync: false`, never registered in `SLOTS`) as `{ seed, walkAlone }`.
+  Seeds merge as "lowest wins", so two tabs settle on one and the name never changes after.
+- A member with no seed takes the seed of the first device that asks for their name (§3.2), so
+  their generated name follows them to other devices until they choose one.
 - Anonymous visitors cannot change their name: the seed is fixed for the device. Only a member
-  can choose a name or reroll (a die button, still picking from the list).
+  can choose a name or reroll ("Pick a name for me", still picking from the list).
 - Two visitors in a room with the same name get a "·2" suffix when rendered. The suffix is
   computed per client, so there is no global uniqueness.
 
@@ -66,23 +68,26 @@ The "restraint over engagement" tiebreaker sets these limits:
 - Schema (idempotent, in `members.sql`):
   ```sql
   alter table members add column if not exists display_name text;
-  alter table members add column if not exists name_seed bigint;
+  alter table members add column if not exists name_seed integer;
   ```
   When `display_name` is null, the member uses `nameFromSeed(name_seed)`.
-- `PUT /api/me/name` takes `{ name }` or `{ seed }`. `domain/members.ts` adds `setDisplayName`.
+- `PUT /api/me/name` takes one of `{ device }` (read the name, adopting that seed if the member
+  has none), `{ name }` (choose) or `{ seed }` (reroll). `domain/members.ts` adds `memberName`,
+  `chooseName` and `rerollName`. The export includes the display name.
 - Validation lives in core and is shared by the client and the route (`presence/names.ts`,
-  `validDisplayName`):
+  `checkDisplayName`):
   - NFKC-normalise, trim, and collapse runs of spaces.
   - 2–20 characters from letters (any script), digits, spaces and `' - . _`.
   - No URLs, no `@`, no strings of digits that look like phone numbers.
-  - A blocklist (an existing npm list such as `obscenity`, checked under "prior art") plus our
+  - The `obscenity` blocklist (MIT; catches look-alikes like "sh1t" without flagging
+    "Scunthorpe") plus our
     own reserved words: curator, staff, admin, moderator, tiny museum, inspiratiq.
   - Names are not unique, which avoids squatting and the "is taken" UX.
 - An owner can reset a name with `display_name = null`. A one-line SQL command in
   `docs/multiplayer.md` covers this for v1; v2 adds a "report this name" action into the
   existing `bug_reports`.
 - UI: a "Your name in the museum" row in `AccountSheet.tsx`.
-  - Members get a text field and the die.
+  - Members get "Change name": a text field and "Pick a name for me".
   - Anonymous visitors see their generated name (read-only) and the passive
     `<KeepOnOtherDevices />` link ("Sign in to choose your own name"). It is not a nag.
 
@@ -131,7 +136,7 @@ apps/presence/
 1. The client calls `POST /api/presence/ticket` (Next route, Amplify) with `{ room, seed }`.
    The route:
    - Reads the member session, if there is one.
-   - Resolves the name: the chosen name, else `nameFromSeed(member.name_seed ?? seed)`.
+   - Resolves the name: a member's via `memberName(id, seed)`, else `nameFromSeed(seed)`.
    - Issues an HMAC-SHA256 ticket, `{ pid, name, room, exp }`, valid for 10 minutes, signed
      with **`PRESENCE_SECRET`**. That is a new secret, not `SESSION_SECRET`, so Cloudflare
      never holds the session key. `pid` is a random id per tab; it is never the member id.
@@ -233,13 +238,23 @@ cap live WebGL contexts at about 8–16, fewer on phones, so N remote characters
 a context.
 
 Plan:
-- **`RigPool`.** One shared offscreen `WebGLRenderer`.
-  - Each kind's GLB is parsed once and cloned per avatar with `SkeletonUtils.clone`.
-  - Each remote avatar is drawn into its own 2D `<canvas>` with `drawImage`, from the shared
-    renderer.
-  - Refactor `loadRig` so the renderer is injected. The local visitor keeps its current path.
+- **One rig layer.** A single transparent WebGL canvas over the hall (`createRigLayer` in
+  `rig.ts`). It is cleared once a frame, then each remote rig draws into its own rectangle
+  (`loadRig(null, kind, layer)`, `render(..., { left, top })`). The whole crowd costs one context
+  and no readback. The local visitor keeps its own context and path.
+  - Rejected in the spike: one shared renderer copying each rig into its own 2D canvas with
+    `drawImage`. On a real GPU every copy is a GPU→CPU readback ("GPU stall due to
+    ReadPixels"): 7.7 ms a frame for 8 rigs, 45 fps with the CPU slowed 4×.
+  - Still to do (Phase 3): parse each kind's GLB once and clone it per visitor
+    (`SkeletonUtils.clone`). Today each remote rig parses and uploads its own textures.
+  - The layer sits behind the local visitor. Remote visitors are all on one layer, so they
+    can't interleave individually with DOM exhibits.
 - **Budget.**
   - Show at most **8** others (decided): the nearest by `|x − self.x|`.
+  - Measured (`/dev/crowd`, 390 × 844 at 2×, RTX 4070, CPU slowed 4× as Chrome's mid-tier
+    mobile preset): 8 rigs on the layer hold 60 fps with 1.7 ms of script a frame, and 16
+    hold 60 fps with 4.0 ms. Separate contexts drop to 55 fps at 16. A real mid-range phone
+    still needs checking: open `/dev/crowd` from the phone on the LAN.
   - Re-render a remote rig only while it is on screen or within half a screen of the edge.
   - Throttle off-screen avatars to 12 fps.
   - Fall back to the static idle sprite (`assets.bunnyIdle`) when the pool reaches its cap or
@@ -266,7 +281,7 @@ apps/web/src/features/presence/
   lib/transport.ts        PresenceTransport + websocket/memory
   lib/presence.ts         createPresence({ room, outfitSlot, traversal }): send loop, peer table, interpolation
   lib/ticket.ts           fetch + refresh the ticket before exp
-  scene/remote-visitors.ts  RigPool-backed avatars + name tags; update(dt, camera, viewport)
+  scene/remote-visitors.ts  rig-layer avatars + name tags; update(dt, camera, viewport)
   components/WalkAlone.tsx  toggle in ScreenChrome/AccountSheet
 ```
 
@@ -304,7 +319,8 @@ Cloudflare Durable Objects ([pricing](https://developers.cloudflare.com/durable-
   $0.15 per million requests and $12.50 per million GB-s.
 
 Traffic from the analytics (30 days: 145 visits, average 5 m 56 s). Assumed: about 100 incoming
-messages per visitor-minute with company, 15 alone, and 2–10 ms per message.
+messages per visitor-minute with company, 15 alone, and 2–10 ms per message. The spike measured
+0.35 ms on average (2 ms at most) under `wrangler dev`, so duration is lower still (§9, phase 0).
 
 | | Average month (145 visits) | Busy month (500) | 10k visits |
 | --- | --- | --- | --- |
@@ -318,7 +334,7 @@ messages per visitor-minute with company, 15 alone, and 2–10 ms per message.
   That is roughly 20,000 minutes of visitors walking together in one day. Move to paid ($5)
   when a start-of-month burst gets near it.
 - Room size no longer drives cost, but rooms stay at 8 so phones download only what they draw.
-- To be measured in the spike: real handler time per message, and whether a busy room
+- Still to measure once deployed: handler time on Cloudflare itself, and whether a busy room
   hibernates between messages.
 
 Product note: at this traffic most visits will meet nobody. Two visitors overlap mostly in
@@ -329,12 +345,24 @@ the start-of-month burst. Nothing in the UI should point out that the museum is 
 
 Each phase ends green on `npm run typecheck` and `npm test` and is checked in the browser.
 
-0. **Spike (decide before building).**
-   - `apps/presence` skeleton under `wrangler dev`: hello and ticket check, stamping (confirm a
-     forged name is replaced), and the full-room handoff. Measure handler time per message.
-   - `RigPool` prototype: 8 remote otters and cats in costumes on a mid-range Android at
-     60 fps. If it fails, fall back to baked sprite strips per look.
-1. **Names.**
+0. **Spike.** Done 2026-10-31.
+   - `apps/presence` runs under `wrangler dev` (port 8787) and passed every check against
+     real WebSockets:
+     - a foreign Origin gets 403;
+     - a forged `name`/`pid` and extra fields are replaced by the ticket's identity;
+     - a newcomer is sent present peers;
+     - forged, expired and wrong-room tickets are denied;
+     - a socket with no hello is closed at 5.0 s;
+     - leave reaches others;
+     - the 9th visitor is told `full` and joins `-s1`;
+     - a flood is cut to 10 messages and closed;
+     - 7 visitors at 5 Hz for 20 s delivered 4,200/4,200 updates at p50 2.1 ms, p99 3.3 ms.
+
+     Handler time averaged 0.35 ms.
+   - Rendering: the rig layer (§6) holds 60 fps for 8 and 16 visitors. Copying into 2D
+     canvases was rejected.
+   - Not yet done: a real mid-range phone, and Cloudflare's own timings.
+1. **Names.** Done 2026-10-31.
    - `presence/names.ts` with tests: determinism, validation, blocklist.
    - The `presence` device slot.
    - Schema columns, `PUT /api/me/name`, and the account sheet row.
@@ -346,7 +374,7 @@ Each phase ends green on `npm run typecheck` and `npm test` and is checked in th
    - `createPresence` with a memory-transport test that two peers converge and a timeout
      removes a peer.
 3. **Remote visitors on screen.**
-   - `RigPool` and the `loadRig` refactor, plus `remote-visitors.ts` and name tags.
+   - Shared GLB templates per kind, `remote-visitors.ts` on the rig layer, and name tags.
    - Wired into the hall and atelier.
    - Emotes: the protocol event, the `ScreenChrome` button and fan, bubbles and hop.
    - Playwright e2e: two browser contexts on `/museum`. A sees B's name tag move when B walks,

@@ -11,6 +11,10 @@ create table if not exists members (
   last_seen_at timestamptz not null default now()   -- updated only when a session slides
 );
 
+-- The name other visitors see: chosen, else generated from the seed (presence/names.ts).
+alter table members add column if not exists display_name text;
+alter table members add column if not exists name_seed integer;
+
 create table if not exists member_sessions (
   token_hash  text primary key,                    -- sha256(token); raw never stored
   member_id   uuid not null references members(id) on delete cascade,

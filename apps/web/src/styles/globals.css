@@ -1538,6 +1538,11 @@ code.token {
   text-decoration: underline;
 }
 
+form > .account-switch {
+  display: block;
+  margin: 0 auto 4px;
+}
+
 .keep-other-devices {
   padding: 2px 0;
   font-family: var(--font-body);

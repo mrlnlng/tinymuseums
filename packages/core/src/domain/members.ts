@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { hashPassword, newToken, verifyPassword } from './auth.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
+import { checkDisplayName, nameFromSeed, type NameCheck } from '../presence/names.ts'
 import { SLOTS, docBytes, slotDef, upgrade, type SlotDef } from '../slots/index.ts'
 
 const SESSION_DAYS = 180
@@ -158,6 +159,52 @@ export async function deleteMember(memberId: string, password: string): Promise<
   return true
 }
 
+export interface MemberName {
+  /** Null only until a device has given the member a seed. */
+  name: string | null
+  chosen: boolean
+}
+
+type NameRow = { display_name: string | null; name_seed: number | null }
+
+const nameOf = (row: NameRow): MemberName => ({
+  name: row.display_name ?? (row.name_seed === null ? null : nameFromSeed(row.name_seed)),
+  chosen: row.display_name !== null,
+})
+
+/** The member's name; a member with no seed yet takes the device's, so their name carries over. */
+export async function memberName(memberId: string, deviceSeed: number | null): Promise<MemberName | null> {
+  const row = await queryOne<NameRow>(
+    `update members set name_seed = coalesce(name_seed, $2) where id = $1
+     returning display_name, name_seed`,
+    [memberId, deviceSeed],
+  )
+  return row ? nameOf(row) : null
+}
+
+export async function chooseName(
+  memberId: string,
+  raw: string,
+): Promise<MemberName | Extract<NameCheck, { ok: false }> | null> {
+  const check = checkDisplayName(raw)
+  if (!check.ok) return check
+  const row = await queryOne<NameRow>(
+    `update members set display_name = $2 where id = $1 returning display_name, name_seed`,
+    [memberId, check.name],
+  )
+  return row ? nameOf(row) : null
+}
+
+/** A new generated name, replacing any chosen one. */
+export async function rerollName(memberId: string, seed: number): Promise<MemberName | null> {
+  const row = await queryOne<NameRow>(
+    `update members set display_name = null, name_seed = $2 where id = $1
+     returning display_name, name_seed`,
+    [memberId, seed],
+  )
+  return row ? nameOf(row) : null
+}
+
 export async function readSlots(
   memberId: string,
 ): Promise<Record<string, { version: number; doc: unknown }>> {
@@ -172,11 +219,12 @@ export async function readSlots(
 
 export async function exportMember(memberId: string): Promise<{
   email: string
+  displayName: string | null
   createdAt: string
   slots: Record<string, { version: number; doc: unknown; updatedAt: string }>
 }> {
-  const member = await queryOne<{ email: string; created_at: Date }>(
-    `select email, created_at from members where id = $1`,
+  const member = await queryOne<{ email: string; created_at: Date } & NameRow>(
+    `select email, created_at, display_name, name_seed from members where id = $1`,
     [memberId],
   )
   if (!member) throw new Error(`no member with id ${memberId}`)
@@ -188,7 +236,7 @@ export async function exportMember(memberId: string): Promise<{
   for (const row of rows) {
     slots[row.slot] = { version: row.version, doc: row.doc, updatedAt: row.updated_at.toISOString() }
   }
-  return { email: member.email, createdAt: member.created_at.toISOString(), slots }
+  return { email: member.email, displayName: nameOf(member).name, createdAt: member.created_at.toISOString(), slots }
 }
 
 export type MergeResult =

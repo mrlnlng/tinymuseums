@@ -4,16 +4,20 @@ import { after, test } from 'node:test'
 import { closePool, query, queryOne } from '../src/infra/db.ts'
 import {
   changePassword,
+  chooseName,
   deleteMember,
   exportMember,
   hashToken,
   memberForSession,
+  memberName,
   mergeSlot,
   readSlots,
+  rerollName,
   signIn,
   signUp,
   type Started,
 } from '../src/domain/members.ts'
+import { nameFromSeed } from '../src/presence/names.ts'
 import { testFixture } from '../src/slots/test-fixture.ts'
 import type { SlotDef } from '../src/slots/index.ts'
 
@@ -187,6 +191,21 @@ test('export returns the email and every stored slot, including unregistered one
   assert.deepEqual(exported.slots['retired-slot'].doc, { kept: true })
   assert.ok(!Number.isNaN(Date.parse(exported.slots['test-fixture'].updatedAt)))
   assert.ok(!JSON.stringify(exported).includes('password'))
+})
+
+test('a member keeps the first device seed, then can choose or reroll a name', async () => {
+  const { member } = await started()
+  assert.deepEqual(await memberName(member.id, null), { name: null, chosen: false })
+  assert.deepEqual(await memberName(member.id, 7), { name: nameFromSeed(7), chosen: false })
+  assert.deepEqual(await memberName(member.id, 99), { name: nameFromSeed(7), chosen: false })
+
+  assert.deepEqual(await chooseName(member.id, '  Moss   Painter '), { name: 'Moss Painter', chosen: true })
+  assert.deepEqual(await chooseName(member.id, 'Curator'), { ok: false, reason: 'reserved' })
+  assert.deepEqual(await memberName(member.id, 99), { name: 'Moss Painter', chosen: true })
+  assert.equal((await exportMember(member.id)).displayName, 'Moss Painter')
+
+  assert.deepEqual(await rerollName(member.id, 300), { name: nameFromSeed(300), chosen: false })
+  assert.deepEqual(await memberName(member.id, 7), { name: nameFromSeed(300), chosen: false })
 })
 
 test('delete refuses a wrong password, then removes the member with its sessions and slots', async () => {

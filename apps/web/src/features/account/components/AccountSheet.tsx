@@ -3,15 +3,24 @@
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
+import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
 
 type Mode = 'sign-in' | 'create'
-type View = 'menu' | 'password' | 'delete'
+type View = 'menu' | 'name' | 'password' | 'delete'
 
 type Pending = { action: 'sign-out' } | { action: 'delete'; password: string }
 
 const FAILED = "Couldn't do that — try again in a moment."
 const PASSWORD_FAILED = "That didn't work — check the current password, and make the new one 8–72 characters."
 const DELETE_FAILED = "That password doesn't match."
+const NAME_ERRORS: Record<NameError, string> = {
+  length: 'Use 2–20 characters.',
+  characters: 'Use letters, numbers, spaces and \' - . _ only.',
+  contact: 'Names can\'t hold web addresses or phone numbers.',
+  reserved: 'That name is kept for the museum — try another.',
+  blocked: 'That name isn\'t allowed — try another.',
+  failed: FAILED,
+}
 const DIRTY_WARNING = "Some of your saved things haven't reached the server yet — continuing would lose them."
 
 export default function AccountSheet({ onClose }: { onClose: () => void }) {
@@ -28,6 +37,8 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState<Pending | null>(null)
+  const visitorName = useVisitorName()
+  const [nameDraft, setNameDraft] = useState('')
   const emailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -103,6 +114,27 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function runName(change: () => Promise<NameError | null>) {
+    setBusy(true)
+    setError(null)
+    try {
+      const failed = await change()
+      if (failed) {
+        setError(NAME_ERRORS[failed])
+      } else {
+        setView('menu')
+        setNotice('Name saved.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function submitName(event: React.FormEvent) {
+    event.preventDefault()
+    void runName(() => visitorName.choose(nameDraft))
+  }
+
   async function doSignOut(force: boolean) {
     setBusy(true)
     setError(null)
@@ -158,6 +190,13 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
           <h2 id="account-title" className="script bug-report-title">
             {mode === 'create' ? 'Create account' : 'Sign in'}
           </h2>
+
+          {visitorName.name ? (
+            <p className="bug-report-note">
+              In the museum you&apos;re <strong>{visitorName.name}</strong>. With an account you can
+              choose your own name.
+            </p>
+          ) : null}
 
           <input
             ref={emailRef}
@@ -246,6 +285,11 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
           </h2>
 
           {member.email !== '' ? <p className="account-email">{member.email}</p> : null}
+          {visitorName.name ? (
+            <p className="bug-report-note">
+              In the museum you&apos;re <strong>{visitorName.name}</strong>.
+            </p>
+          ) : null}
           {notice ? <p className="bug-report-note">{notice}</p> : null}
           {error ? (
             <p className="bug-report-error" role="alert">
@@ -255,6 +299,19 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
 
           {view === 'menu' ? (
             <div className="account-actions">
+              <button
+                type="button"
+                className="button quiet"
+                disabled={busy || visitorName.name === null}
+                onClick={() => {
+                  setView('name')
+                  setNameDraft(visitorName.name ?? '')
+                  setError(null)
+                  setNotice(null)
+                }}
+              >
+                Change name
+              </button>
               <button
                 type="button"
                 className="button quiet"
@@ -289,6 +346,44 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
                 Close
               </button>
             </div>
+          ) : view === 'name' ? (
+            <form onSubmit={submitName}>
+              <input
+                className="bug-report-input"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Your name in the museum"
+                aria-label="Your name in the museum"
+                autoComplete="nickname"
+                maxLength={40}
+                required
+              />
+              <p className="bug-report-note">The name other visitors will see.</p>
+              <button
+                type="button"
+                className="account-switch"
+                disabled={busy}
+                onClick={() => void runName(visitorName.reroll)}
+              >
+                Pick a name for me
+              </button>
+              <div className="bug-report-actions">
+                <button
+                  type="button"
+                  className="button quiet"
+                  disabled={busy}
+                  onClick={() => {
+                    setView('menu')
+                    setError(null)
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="button" disabled={busy}>
+                  Save
+                </button>
+              </div>
+            </form>
           ) : view === 'password' ? (
             <form onSubmit={submitPassword}>
               <input

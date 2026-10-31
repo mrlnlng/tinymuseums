@@ -1,0 +1,15 @@
+{
+  // Visitors' presence: one Durable Object per room instance (docs/multiplayer-plan.md §4).
+  "name": "tiny-museum-presence",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+  // The free plan needs SQLite-backed objects; Room stores nothing.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:3000,http://192.168.1.66:3000"
+  },
+  "observability": { "enabled": true }
+}

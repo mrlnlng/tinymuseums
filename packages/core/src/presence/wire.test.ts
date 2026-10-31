@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { parseClientMessage, parseRoom, roomName } from './protocol.ts'
+import { signTicket, verifyTicket, type Ticket } from './ticket.ts'
+
+const SECRET = 'test-secret'
+const ticket: Ticket = { pid: 'abcdEFGH1234', name: 'Velvet Easel', room: 'hall-e12', exp: Date.now() + 60_000 }
+
+test('a signed ticket verifies, and any change to it does not', async () => {
+  const token = await signTicket(ticket, SECRET)
+  assert.deepEqual(await verifyTicket(token, SECRET), ticket)
+  assert.equal(await verifyTicket(token, 'other-secret'), null)
+  const [body, signature] = token.split('.')
+  const forged = btoa(JSON.stringify({ ...ticket, name: 'Admin' })).replace(/=+$/, '')
+  assert.equal(await verifyTicket(`${forged}.${signature}`, SECRET), null)
+  assert.equal(await verifyTicket(`${body}.${signature}x`, SECRET), null)
+  assert.equal(await verifyTicket(`${body}`, SECRET), null)
+  assert.equal(await verifyTicket(`${token}.extra`, SECRET), null)
+})
+
+test('an expired ticket does not verify', async () => {
+  const token = await signTicket({ ...ticket, exp: 1000 }, SECRET)
+  assert.ok(await verifyTicket(token, SECRET, 999))
+  assert.equal(await verifyTicket(token, SECRET, 1000), null)
+})
+
+test('a ticket must carry exactly the expected fields', async () => {
+  const extra = await signTicket({ ...ticket, admin: true } as unknown as Ticket, SECRET)
+  assert.equal(await verifyTicket(extra, SECRET), null)
+  const badPid = await signTicket({ ...ticket, pid: 'short' }, SECRET)
+  assert.equal(await verifyTicket(badPid, SECRET), null)
+})
+
+test('room names are a known base plus an instance', () => {
+  assert.deepEqual(parseRoom('hall-e12-s0'), { base: 'hall-e12', instance: 0 })
+  assert.deepEqual(parseRoom('atelier-s3'), { base: 'atelier', instance: 3 })
+  assert.equal(roomName('atelier', 3), 'atelier-s3')
+  for (const bad of ['hall-s0', 'atelier', 'lobby-s0', 'atelier-s100', 'hall-e1-s0/../x']) assert.equal(parseRoom(bad), null, bad)
+})
+
+const look = { kind: 'otter', costume: 'cardigan-red', bow: null }
+
+test('state messages are validated and stripped of anything extra', () => {
+  const state = { t: 'state', x: 12.5, vx: -3, facing: -1, look, seq: 4 }
+  assert.deepEqual(parseClientMessage(JSON.stringify({ ...state, pid: 'someone', name: 'Admin' })), state)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, x: Number.MAX_VALUE })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, facing: 0 })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, look: { ...look, kind: 'dog' } })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, look: { ...look, costume: '<b>' } })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, seq: -1 })), null)
+})
+
+test('only the four emotes, hello, and leave are accepted besides state', () => {
+  assert.deepEqual(parseClientMessage('{"t":"emote","e":"wave","seq":1}'), { t: 'emote', e: 'wave', seq: 1 })
+  assert.equal(parseClientMessage('{"t":"emote","e":"rude","seq":1}'), null)
+  assert.deepEqual(parseClientMessage('{"t":"hello","v":1,"ticket":"a.b"}'), { t: 'hello', v: 1, ticket: 'a.b' })
+  assert.deepEqual(parseClientMessage('{"t":"leave"}'), { t: 'leave' })
+  for (const bad of ['', 'nope', '[]', '{"t":"chat","text":"hi"}', 'x'.repeat(2000)]) assert.equal(parseClientMessage(bad), null)
+})

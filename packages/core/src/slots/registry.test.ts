@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SLOTS, docBytes, slotDef, type SlotDef } from './index.ts'
+import { presence } from './presence.ts'
 import { testFixture, type TestFixture } from './test-fixture.ts'
 
 const FIXTURE_REGISTRY: Record<string, SlotDef<unknown>> = { 'test-fixture': testFixture }
@@ -39,6 +40,15 @@ function checkRegistry(label: string, registry: Record<string, SlotDef<unknown>>
 
 test('every slot in the production SLOTS registry obeys the merge laws', () => {
   checkRegistry('SLOTS', SLOTS)
+})
+
+test('the device-only presence slot obeys the merge laws and is never registered for sync', () => {
+  checkRegistry('device', { presence: presence as SlotDef<unknown> })
+  assert.equal(presence.sync, false)
+  assert.equal(slotDef('presence'), null)
+  assert.equal(presence.parse({ seed: -1, walkAlone: { v: false, at: 0 } }), null)
+  assert.equal(presence.parse({ seed: 1, walkAlone: { v: 'yes', at: 0 } }), null)
+  assert.equal(presence.merge({ seed: 9, walkAlone: { v: false, at: 1 } }, { seed: 4, walkAlone: { v: true, at: 2 } }).seed, 4)
 })
 
 test('the test fixture obeys the merge laws in an injected registry', () => {

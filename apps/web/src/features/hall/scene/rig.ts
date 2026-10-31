@@ -89,18 +89,49 @@ export interface Rig {
   readonly cycleSeconds: number
   readonly costumes: readonly string[]
   setCostume(id: string | null, bow?: string | null): void
-  render(state: RigState, dt: number, height: number, pixelRatio: number): void
+  /** `at` is the top-left corner in CSS pixels, for a rig drawn into a layer. */
+  render(state: RigState, dt: number, height: number, pixelRatio: number, at?: { left: number; top: number }): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
   dispose(): void
 }
 
-export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): Promise<Rig> {
-  const spec = SPECS[kind]
-  const { frame } = spec
+function createRenderer(canvas?: HTMLCanvasElement): THREE.WebGLRenderer {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
   renderer.setClearColor(0, 0)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.NoToneMapping
+  return renderer
+}
+
+/**
+ * One transparent WebGL canvas that many rigs draw into, each in its own rectangle, so a crowd
+ * costs one context. Clear it once per frame with `clearRigLayer`, then render each rig with
+ * its top-left corner in the layer's CSS pixels.
+ */
+export function createRigLayer(canvas?: HTMLCanvasElement): THREE.WebGLRenderer {
+  const renderer = createRenderer(canvas)
+  renderer.autoClear = false
+  return renderer
+}
+
+export function clearRigLayer(layer: THREE.WebGLRenderer): void {
+  layer.setScissorTest(false)
+  layer.clear()
+  layer.setScissorTest(true)
+}
+
+/** Without `layer` the rig owns a WebGL context on `canvas`; with it, it draws into the layer. */
+export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterKind, layer?: THREE.WebGLRenderer): Promise<Rig> {
+  const spec = SPECS[kind]
+  const { frame } = spec
+  if (!canvas && !layer) throw new Error('loadRig needs a canvas or a layer')
+  const renderer = layer ?? createRenderer(canvas!)
+  const releaseRenderer = () => {
+    if (layer) return
+    renderer.dispose()
+    renderer.forceContextLoss()
+  }
+  const layerSize = new THREE.Vector2()
 
   const bowLoad = spec.chestBow
     ? new THREE.TextureLoader().loadAsync(modelUrl('bunnyRigBow')).catch((error) => {
@@ -113,8 +144,7 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
   try {
     [gltf, bowMap] = await Promise.all([new GLTFLoader().loadAsync(modelUrl(spec.model)), bowLoad])
   } catch (error) {
-    renderer.dispose()
-    renderer.forceContextLoss()
+    releaseRenderer()
     void bowLoad.then((texture) => texture?.dispose())
     throw error
   }
@@ -341,8 +371,7 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
     for (const material of materials) material.dispose()
     for (const skeleton of skeletons) skeleton.dispose()
     for (const texture of textures) releaseTexture(texture)
-    renderer.dispose()
-    renderer.forceContextLoss()
+    releaseRenderer()
   }
 
   if (!clip || !walkAction || !restAction) {
@@ -358,7 +387,7 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
     cycleSeconds: clip.duration,
     costumes: [...costumeParts.keys()],
     setCostume,
-    render(state, dt, nextHeight, pixelRatio) {
+    render(state, dt, nextHeight, pixelRatio, at) {
       const nextRatio = Math.min(3, Math.max(2, pixelRatio))
       const nextWidth = nextHeight * frame.width / frameHeight
       const resized = height !== nextHeight || ratio !== nextRatio
@@ -366,8 +395,10 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
         width = nextWidth
         height = nextHeight
         ratio = nextRatio
-        renderer.setPixelRatio(ratio)
-        renderer.setSize(width, height, false)
+        if (!layer) {
+          renderer.setPixelRatio(ratio)
+          renderer.setSize(width, height, false)
+        }
       }
       clock += dt
       const walk = state.walk * state.walk * (3 - 2 * state.walk)
@@ -454,6 +485,12 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
       shadow.scale.set(Math.max(0.6, Math.abs(across)) * (1 - 2.5 * lift), 1 - 2.5 * lift, 1)
       shadowMaterial.opacity = Math.max(0, 1 - 6 * lift)
 
+      if (layer) {
+        // WebGL counts up from the bottom left.
+        const bottom = renderer.getSize(layerSize).y - (at?.top ?? 0) - height
+        renderer.setViewport(at?.left ?? 0, bottom, width, height)
+        renderer.setScissor(at?.left ?? 0, bottom, width, height)
+      }
       renderer.render(scene, camera)
       lastFacing = sign < 0 ? 'left' : 'right'
     },

@@ -62,3 +62,7 @@ __pycache__/
 # artifacts; the sharp layer's node_modules is installed during the build.
 .amplify/
 amplify_outputs.json
+
+# Cloudflare (apps/presence)
+.wrangler/
+.dev.vars*

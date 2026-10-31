@@ -149,16 +149,30 @@ let bunny = graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-r
   skip: ['paw'],
   paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
 })
+// The cat and otter wear the bunny's clothes too, fitted on the layer canvas: the cat's ribbon
+// hides under the cardigan; on the otter the clothes sit lower, under its head, and Kiki's bow
+// takes the place of its star.
+let cat = await master('cat-rig-kiki.glb')
+let otter = graftCostume(await master('otter-rig.glb'), await master('bunny-rig-kiki.glb'), {
+  skip: ['paw'],
+  relabel: (extras) => extras.part === 'bow' ? { ...extras, hides: 'otter_star' } : { ...extras, draw_order: 7.5 },
+  fit: { body: { dy: 40 }, bow: { dx: 60, dy: 60, scale: 0.85, pivot: [636, 659] } },
+})
 for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
-  bunny = graftCostume(bunny, await master(`bunny-rig-v2-cardigan-${colour}.glb`), {
-    relabel: (extras) => ({ ...extras, costume: `cardigan-${colour}`, hides: 'bowtie' }),
+  const cardigan = await master(`bunny-rig-v2-cardigan-${colour}.glb`)
+  const costume = `cardigan-${colour}`
+  bunny = graftCostume(bunny, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'bowtie' }) })
+  cat = graftCostume(cat, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'cat_ribbon' }) })
+  otter = graftCostume(otter, cardigan, {
+    relabel: (extras) => ({ ...extras, costume, ...(extras.part === 'body' && { draw_order: 7.5 }) }),
+    fit: { body: { dy: 90, scale: 1.12, pivot: [903, 1500] }, sleeve_R: { dx: 30, dy: 70 }, sleeve_L: { dx: 40, dy: 60 } },
   })
 }
 
 const models = {
   bunnyRig: await rig('bunny-rig-v2-dressed', bunny),
-  catRig: await rig('cat-rig-kiki'),
-  otterRig: await rig('otter-rig'),
+  catRig: await rig('cat-rig-dressed', cat),
+  otterRig: await rig('otter-rig-dressed', otter),
   bunnyRigBow: { src: await write('bunny-rig-bow', 'png', await master('bunny-rig-bow.png')) },
 }
 

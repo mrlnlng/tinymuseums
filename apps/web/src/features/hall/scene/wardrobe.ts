@@ -10,8 +10,8 @@ export const COSTUMES = ['kiki', ...CARDIGANS] as const
 /** The costumes fitted to each character's rig; the others stay on their stands. */
 export const FITS: Record<CharacterKind, readonly string[]> = {
   bunny: COSTUMES,
-  cat: ['kiki'],
-  otter: [],
+  cat: COSTUMES,
+  otter: COSTUMES,
 }
 
 export function lookOf(outfit: Outfit): Look {

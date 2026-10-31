@@ -37,9 +37,8 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   pillow to give it back. Either can be worn alone or both together. A swatch puts on that
   colour of cardigan; the form keeps the last colour chosen. A cardigan replaces the dress, and
   the dress replaces a cardigan, since both are the outfit's `costume`.
-- **What fits.** The bunny wears everything, the cat only the kiki pieces, and the otter nothing
-  yet (`FITS` in `wardrobe.ts`). Tapping a piece that does not fit shows a short note by it. A
-  saved costume that does not fit stays on its stand, and comes back on the next character it fits.
+- **What fits.** Every character wears every piece (`FITS` in `wardrobe.ts`). A piece missing
+  from a character's rig would stay on its stand, with a short note by it when tapped.
 - **Changing character.** Two portraits offer characters: Jiji in the Kiki Collection and the
   otter in the Cardigan Collection. A frame shows the bunny instead while the visitor is its own
   character. Tap one to change. Each hops as the visitor comes near. Clothing choices carry over.
@@ -106,9 +105,24 @@ form.
 ## The otter
 
 `public/assets/otter-rig.glb` from `otter_rig_handoff`: the same skeleton, canvas and walk clip
-as the others, drawn at the bunny's canvas scale so it stands a little shorter. It has no
-costumes yet. Its portrait (`atelier/portrait-otter.png`) is the Jiji frame with the otter's head
-layers painted in. Helmet and cup anchors are in `config.ts`.
+as the others, drawn at the bunny's canvas scale so it stands a little shorter. It wears the
+bunny's clothes, fitted at build time (below). Its portrait (`atelier/portrait-otter.png`) is
+the Jiji frame with the otter's head layers painted in. Helmet and cup anchors are in `config.ts`.
+
+## Fitting clothes to other characters
+
+`graftCostume` takes a `fit` per part: a move and scale on the layer canvas, applied to the
+skinned vertices or the rigid layer's matrix, so clothes drawn for the bunny sit on another
+body. The numbers in `prepare-models.mjs` were matched by overlaying the layer masters:
+
+- **Cat:** the cardigans as drawn, hiding Jiji's ribbon. Its Kiki outfit is the artist's cat
+  version, broom included.
+- **Otter:** the bunny's Kiki dress (no paw) 40 px lower and the bow smaller and further right,
+  in place of the star; the cardigan 90 px lower and 12 % larger, sleeves moved to its shoulders.
+  Both bodies draw under its head (order 7.5) so the collar does not cover its chin.
+
+They hold through the walk, but they are refits of bunny art; drawings made for each body would
+sit better.
 
 ## Art not supplied as files
 

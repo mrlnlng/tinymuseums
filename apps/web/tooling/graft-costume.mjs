@@ -61,6 +61,14 @@ function invert(m) {
   ]
 }
 
+// A move and scale in the layer canvas (px, y down) as a world matrix: 1000 px per unit,
+// centred on the 1668 × 2388 canvas.
+function canvasFit({ dx = 0, dy = 0, scale = 1, pivot = [834, 1194] }) {
+  const px = (pivot[0] - 834) / 1000
+  const py = (1194 - pivot[1]) / 1000
+  return [scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1, 0, px * (1 - scale) + dx / 1000, py * (1 - scale) - dy / 1000, 0, 1]
+}
+
 function worldMatrices(json) {
   const parent = new Map()
   json.nodes.forEach((node, i) => (node.children ?? []).forEach((child) => parent.set(child, i)))
@@ -71,10 +79,11 @@ function worldMatrices(json) {
 /**
  * Copies every costume mesh from `source` into `target`. Skinned layers bind to the target's
  * skin (same joints in the same order); rigid layers hang from the same-named bone, keeping
- * their place on the canvas. `paws` names target base layers repeated above the costume, and
- * `relabel` rewrites each copied layer's extras.
+ * their place on the canvas. `paws` names target base layers repeated above the costume,
+ * `relabel` rewrites each copied layer's extras, and `fit` moves and scales a part (by its
+ * extras.part) on the canvas to suit a differently shaped character.
  */
-export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relabel = (extras) => extras } = {}) {
+export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relabel = (extras) => extras, fit = {} } = {}) {
   const target = parse(targetGlb)
   const source = parse(sourceGlb)
   const t = target.json
@@ -144,10 +153,37 @@ export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relab
     t.materials.push(material)
     return t.materials.length - 1
   }
-  function copyMesh(index) {
+  // Skinned vertices sit in the rest pose's world space, so a fit moves the positions themselves.
+  function movedPositions(index, matrix) {
+    const accessor = s.accessors[index]
+    if (accessor.componentType !== 5126 || accessor.type !== 'VEC3' || accessor.sparse) throw new Error('graftCostume: unexpected positions')
+    const view = s.bufferViews[accessor.bufferView]
+    const stride = view.byteStride ?? 12
+    const start = (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0)
+    const out = Buffer.alloc(accessor.count * 12)
+    const min = [Infinity, Infinity, Infinity]
+    const max = [-Infinity, -Infinity, -Infinity]
+    for (let i = 0; i < accessor.count; i++) {
+      const at = start + i * stride
+      const [x, y, z] = [0, 4, 8].map((o) => source.bin.readFloatLE(at + o))
+      const p = [0, 1, 2].map((r) => matrix[r] * x + matrix[4 + r] * y + matrix[8 + r] * z + matrix[12 + r])
+      p.forEach((v, r) => { out.writeFloatLE(v, i * 12 + r * 4); min[r] = Math.min(min[r], v); max[r] = Math.max(max[r], v) })
+    }
+    const padding = (4 - (length % 4)) % 4
+    if (padding) chunks.push(Buffer.alloc(padding))
+    length += padding
+    t.bufferViews.push({ buffer: 0, byteOffset: length, byteLength: out.length, target: 34962 })
+    chunks.push(out)
+    length += out.length
+    t.accessors.push({ bufferView: t.bufferViews.length - 1, componentType: 5126, count: accessor.count, type: 'VEC3', min, max })
+    return t.accessors.length - 1
+  }
+  function copyMesh(index, moved) {
     const mesh = JSON.parse(JSON.stringify(s.meshes[index]))
     for (const primitive of mesh.primitives) {
-      for (const key of Object.keys(primitive.attributes)) primitive.attributes[key] = copyAccessor(primitive.attributes[key])
+      for (const key of Object.keys(primitive.attributes)) {
+        primitive.attributes[key] = key === 'POSITION' && moved ? movedPositions(primitive.attributes[key], moved) : copyAccessor(primitive.attributes[key])
+      }
       if (primitive.indices !== undefined) primitive.indices = copyAccessor(primitive.indices)
       if (primitive.material !== undefined) primitive.material = copyMaterial(primitive.material)
     }
@@ -165,7 +201,8 @@ export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relab
     if (node.mesh === undefined || node.extras?.layer !== 'costume' || skip.includes(node.extras.part)) return
     const extras = relabel(node.extras)
     const name = extras.costume === node.extras.costume ? node.name : `${node.name}_${extras.costume}`
-    const copy = { name, mesh: copyMesh(node.mesh), extras }
+    const moved = fit[node.extras.part] ? canvasFit(fit[node.extras.part]) : null
+    const copy = { name, mesh: copyMesh(node.mesh, node.skin !== undefined ? moved : null), extras }
     if (node.skin !== undefined) {
       copy.skin = 0
       t.nodes.push(copy)
@@ -176,7 +213,8 @@ export function graftCostume(targetGlb, sourceGlb, { skip = [], paws = [], relab
     const boneName = s.nodes[sourceWorld.parent.get(i)].name
     const bone = byName(t, boneName)
     if (bone < 0) throw new Error(`graftCostume: no bone ${boneName}`)
-    copy.matrix = multiply(invert(targetWorld.world(bone)), sourceWorld.world(i))
+    const world = sourceWorld.world(i)
+    copy.matrix = multiply(invert(targetWorld.world(bone)), moved ? multiply(moved, world) : world)
     t.nodes.push(copy)
     t.nodes[bone].children = [...(t.nodes[bone].children ?? []), t.nodes.length - 1]
   })

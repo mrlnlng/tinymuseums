@@ -89,18 +89,15 @@ test('a cardigan replaces the dress, and changing colour swaps it', async () => 
   assert.equal(lookOf(s.slot.snapshot()).costume, null)
 })
 
-test('a costume that does not fit stays on its stand and keeps the saved outfit', async () => {
+test('every character wears the same cardigan, and an unfitted piece only says so', async () => {
   const s = setup()
   s.wardrobe.tapItem(navy)
   s.wardrobe.tapDisplay('otter')
   await s.settled()
   assert.deepEqual(s.character.look, { kind: 'otter', costume: 'cardigan-navy-blue', bow: null })
-  assert.deepEqual(s.worn.at(-1), [null, null])
-  s.wardrobe.tapItem(dress)
-  await s.settled()
-  assert.deepEqual(s.misfits, ['kiki:otter'])
-  assert.equal(lookOf(s.slot.snapshot()).costume, 'cardigan-navy-blue')
-  s.wardrobe.tapDisplay('bunny')
-  await s.settled()
   assert.deepEqual(s.worn.at(-1), ['cardigan-navy-blue', null])
+  s.wardrobe.tapItem({ slot: 'costume', id: 'cape' })
+  await s.settled()
+  assert.deepEqual(s.misfits, ['cape:otter'])
+  assert.equal(lookOf(s.slot.snapshot()).costume, 'cardigan-navy-blue')
 })

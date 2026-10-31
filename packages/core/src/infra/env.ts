@@ -70,6 +70,18 @@ function sessionSecret(): string {
   return value
 }
 
+const DEV_PRESENCE_SECRET = 'dev-only-presence-0123456789abcdef'
+
+// Optional: without it presence is off. When set in production it must be a real secret,
+// since the Cloudflare room trusts every ticket it signs.
+function presenceSecret(): string {
+  const value = setting('PRESENCE_SECRET', '')
+  if (value && isProduction() && (value === DEV_PRESENCE_SECRET || value.length < 32)) {
+    throw new Error('PRESENCE_SECRET must be a real secret of at least 32 characters: openssl rand -hex 32')
+  }
+  return value
+}
+
 function fromRoot(value: string): string {
   return isAbsolute(value) ? value : resolve(repoRoot, value)
 }
@@ -115,6 +127,15 @@ export const env = {
 
   get mailTransport(): 'console' | 'file' {
     return setting('MAIL_TRANSPORT', 'console') as 'console' | 'file'
+  },
+
+  /** The Cloudflare presence Worker, e.g. wss://tiny-museum-presence.example.workers.dev. Empty turns presence off. */
+  get presenceUrl(): string {
+    return setting('PRESENCE_URL', '')
+  },
+
+  get presenceSecret(): string {
+    return presenceSecret()
   },
 
   get hallOwnerEmail(): string {

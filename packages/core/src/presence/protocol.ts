@@ -41,8 +41,14 @@ export type ServerMessage =
   | { t: 'full' }
   | { t: 'denied' }
 
+const BASE = /^(hall-e\d{1,9}|atelier)$/
 /** `hall-e<epoch>` or `atelier`, then `-s<instance>`. */
 const ROOM = /^(hall-e\d{1,9}|atelier)-s(\d{1,2})$/
+export const MAX_INSTANCE = 99
+
+export function validRoomBase(base: unknown): base is string {
+  return typeof base === 'string' && BASE.test(base)
+}
 
 export function parseRoom(name: string): { base: string; instance: number } | null {
   const match = ROOM.exec(name)
@@ -103,6 +109,49 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
       return (EMOTES as readonly unknown[]).includes(m.e) && isSeq(m.seq) ? { t: 'emote', e: m.e as Emote, seq: m.seq } : null
     case 'leave':
       return { t: 'leave' }
+    default:
+      return null
+  }
+}
+
+const isPid = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9_-]{8,32}$/.test(value)
+const isName = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 40
+
+function parsePeer(value: unknown): Peer | null {
+  const m = record(value)
+  if (!m || !isPid(m.pid) || !isName(m.name)) return null
+  const motion = parseMotion(m)
+  return motion ? { pid: m.pid, name: m.name, ...motion } : null
+}
+
+/** The client checks the room's messages too, so a bad deploy cannot break the scene. */
+export function parseServerMessage(raw: unknown): ServerMessage | null {
+  if (typeof raw !== 'string' || raw.length > 64 * 1024) return null
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  const m = record(parsed)
+  if (!m) return null
+  switch (m.t) {
+    case 'welcome': {
+      if (!isPid(m.pid) || !Array.isArray(m.peers)) return null
+      const peers = m.peers.map(parsePeer)
+      return peers.every((peer) => peer !== null) ? { t: 'welcome', pid: m.pid, peers: peers as Peer[] } : null
+    }
+    case 'state': {
+      const peer = parsePeer(m)
+      return peer ? { t: 'state', ...peer } : null
+    }
+    case 'emote':
+      return isPid(m.pid) && (EMOTES as readonly unknown[]).includes(m.e) ? { t: 'emote', pid: m.pid, e: m.e as Emote } : null
+    case 'leave':
+      return isPid(m.pid) ? { t: 'leave', pid: m.pid } : null
+    case 'full':
+    case 'denied':
+      return { t: m.t }
     default:
       return null
   }

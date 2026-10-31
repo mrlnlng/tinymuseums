@@ -57,3 +57,15 @@ test('only the four emotes, hello, and leave are accepted besides state', () => 
   assert.deepEqual(parseClientMessage('{"t":"leave"}'), { t: 'leave' })
   for (const bad of ['', 'nope', '[]', '{"t":"chat","text":"hi"}', 'x'.repeat(2000)]) assert.equal(parseClientMessage(bad), null)
 })
+
+test('server messages are checked on the client too', async () => {
+  const { parseServerMessage } = await import('./protocol.ts')
+  const peer = { pid: 'abcdEFGH1234', name: 'Velvet Easel', x: 1, vx: 0, facing: 1, look, seq: 2 }
+  assert.deepEqual(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [peer] })), { t: 'welcome', pid: 'abcdEFGH5678', peers: [peer] })
+  assert.deepEqual(parseServerMessage(JSON.stringify({ t: 'state', ...peer })), { t: 'state', ...peer })
+  assert.equal(parseServerMessage(JSON.stringify({ t: 'state', ...peer, name: '' })), null)
+  assert.equal(parseServerMessage(JSON.stringify({ t: 'welcome', pid: 'abcdEFGH5678', peers: [{ ...peer, x: 'far' }] })), null)
+  assert.deepEqual(parseServerMessage('{"t":"full"}'), { t: 'full' })
+  assert.deepEqual(parseServerMessage('{"t":"leave","pid":"abcdEFGH1234"}'), { t: 'leave', pid: 'abcdEFGH1234' })
+  assert.equal(parseServerMessage('{"t":"emote","pid":"abcdEFGH1234","e":"rude"}'), null)
+})

@@ -1,0 +1,314 @@
+import {
+  MAX_INSTANCE,
+  PROTOCOL_VERSION,
+  parseServerMessage,
+  roomName,
+  type ClientMessage,
+  type Emote,
+  type Look,
+  type ServerMessage,
+} from '@tiny/core/presence/wire'
+import { PeerTable, type RemoteVisitor } from './peers.ts'
+
+/** While someone else is here and we are moving. */
+export const STATE_INTERVAL_MS = 200
+/** Otherwise, and always while alone: enough for others to keep us and for newcomers to find us. */
+export const HEARTBEAT_MS = 4000
+export const EMOTE_GAP_MS = 1500
+/** A tab hidden this long lets go of its place in the room. */
+export const HIDDEN_LIMIT_MS = 5 * 60 * 1000
+const RETRY_MS = [1000, 2000, 4000, 8000, 15_000, 30_000]
+const TICKET_MARGIN_MS = 60_000
+const MOVING = 0.05
+
+export interface SocketHandlers {
+  open(): void
+  message(text: string): void
+  close(): void
+}
+
+export interface Socket {
+  send(text: string): void
+  close(code?: number): void
+}
+
+export type Connect = (url: string, handlers: SocketHandlers) => Socket
+
+export const connectWebSocket: Connect = (url, handlers) => {
+  const socket = new WebSocket(url)
+  socket.onopen = () => handlers.open()
+  socket.onmessage = (event) => {
+    if (typeof event.data === 'string') handlers.message(event.data)
+  }
+  socket.onclose = () => handlers.close()
+  return {
+    send: (text) => {
+      if (socket.readyState === WebSocket.OPEN) socket.send(text)
+    },
+    close: (code) => socket.close(code),
+  }
+}
+
+export interface TicketGrant {
+  ticket: string
+  exp: number
+  url: string
+}
+
+/** Null when presence is off for this site. */
+export type FetchTicket = (room: string, seed: number) => Promise<TicketGrant | null>
+
+export const fetchTicket: FetchTicket = async (room, seed) => {
+  const response = await fetch('/api/presence/ticket', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ room, seed }),
+  })
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`ticket ${response.status}`)
+  return (await response.json()) as TicketGrant
+}
+
+export interface Self {
+  x: number
+  vx: number
+  facing: 1 | -1
+  look: Look
+}
+
+export interface PresenceOptions {
+  /** Room base: `hall-e<epoch>` or `atelier`. */
+  room: string
+  seed: number
+  /** Where we are now; null while the scene is not ready. */
+  self(): Self | null
+  walkAlone?(): boolean
+  visible?(): boolean
+  onEmote?(pid: string, e: Emote): void
+  fetchTicket?: FetchTicket
+  connect?: Connect
+  now?(): number
+  setTimer?(run: () => void, ms: number): unknown
+  clearTimer?(timer: unknown): void
+}
+
+export interface Presence {
+  readonly status: 'idle' | 'connecting' | 'open' | 'waiting' | 'off'
+  readonly pid: string | null
+  readonly instance: number
+  /** Call once a frame. */
+  tick(): void
+  visitors(): RemoteVisitor[]
+  /** False when not connected, or too soon after the last one. */
+  emote(e: Emote): boolean
+  dispose(): void
+}
+
+const sameLook = (a: Look, b: Look) => a.kind === b.kind && a.costume === b.costume && a.bow === b.bow
+
+export function createPresence(options: PresenceOptions): Presence {
+  const now = options.now ?? (() => performance.now())
+  const setTimer = options.setTimer ?? ((run, ms) => setTimeout(run, ms))
+  const clearTimer = options.clearTimer ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>))
+  const getTicket = options.fetchTicket ?? fetchTicket
+  const connect = options.connect ?? connectWebSocket
+  // Ticket expiry is wall-clock time, unlike the frame clock.
+  const wallClock = () => Date.now()
+
+  const peers = new PeerTable()
+  let status: Presence['status'] = 'idle'
+  let socket: Socket | null = null
+  let grant: TicketGrant | null = null
+  let pid: string | null = null
+  let instance = 0
+  let attempts = 0
+  let retry: unknown = null
+  let seq = 0
+  let lastSent: (Self & { at: number }) | null = null
+  let lastEmoteAt = -Infinity
+  let hadCompany = false
+  let hiddenSince: number | null = null
+  let disposed = false
+
+  function send(message: ClientMessage): void {
+    socket?.send(JSON.stringify(message))
+  }
+
+  function drop(): void {
+    const closing = socket
+    socket = null
+    pid = null
+    lastSent = null
+    hadCompany = false
+    peers.clear()
+    closing?.close(1000)
+  }
+
+  function scheduleRetry(ms: number): void {
+    status = 'waiting'
+    retry = setTimer(() => {
+      retry = null
+      if (!disposed && status === 'waiting') void start()
+    }, ms)
+  }
+
+  async function start(): Promise<void> {
+    status = 'connecting'
+    let failed = false
+    try {
+      if (!grant || grant.exp - wallClock() < TICKET_MARGIN_MS) grant = await getTicket(options.room, options.seed)
+    } catch {
+      grant = null
+      failed = true
+    }
+    if (disposed || status !== 'connecting') return
+    if (!grant) {
+      // A failed fetch retries; a site with presence turned off stays quiet.
+      if (failed) scheduleRetry(RETRY_MS[Math.min(attempts++, RETRY_MS.length - 1)])
+      else status = 'off'
+      return
+    }
+    const ticket = grant.ticket
+    let moving = false
+    const current: Socket = connect(`${grant.url}/room/${roomName(options.room, instance)}`, {
+      open: () => {
+        if (socket === current) send({ t: 'hello', v: PROTOCOL_VERSION, ticket })
+      },
+      message: (text) => {
+        if (socket !== current) return
+        const message = parseServerMessage(text)
+        if (message?.t === 'full') {
+          moving = true
+          instance = instance < MAX_INSTANCE ? instance + 1 : 0
+        }
+        if (message?.t === 'denied') grant = null
+        if (message) receive(message)
+      },
+      close: () => {
+        if (socket !== current) return
+        drop()
+        if (disposed || status === 'idle') return
+        if (moving) {
+          void start()
+          return
+        }
+        scheduleRetry(RETRY_MS[Math.min(attempts++, RETRY_MS.length - 1)])
+      },
+    })
+    socket = current
+  }
+
+  function receive(message: ServerMessage): void {
+    const at = now()
+    switch (message.t) {
+      case 'welcome':
+        status = 'open'
+        pid = message.pid
+        attempts = 0
+        for (const peer of message.peers) peers.heard(peer, at)
+        break
+      case 'state':
+        peers.heard(message, at)
+        break
+      case 'emote':
+        if (peers.emoted(message.pid, message.e, at)) options.onEmote?.(message.pid, message.e)
+        break
+      case 'leave':
+        peers.left(message.pid)
+        break
+      case 'full':
+      case 'denied':
+        break
+    }
+  }
+
+  function sendState(self: Self, at: number): void {
+    seq = Math.max(seq + 1, Math.floor(wallClock()))
+    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, seq })
+    lastSent = { ...self, at }
+  }
+
+  function maybeSend(at: number): void {
+    const self = options.self()
+    if (!self) return
+    const company = peers.size > 0
+    const arrived = company && !hadCompany
+    hadCompany = company
+    const since = lastSent ? at - lastSent.at : Infinity
+    const lookChanged = !lastSent || !sameLook(lastSent.look, self.look)
+    const moved = !lastSent || Math.abs(self.x - lastSent.x) > 0.01 || lastSent.facing !== self.facing ||
+      (Math.abs(self.vx) > MOVING) !== (Math.abs(lastSent.vx) > MOVING)
+    const due =
+      since >= HEARTBEAT_MS ||
+      lookChanged ||
+      arrived ||
+      (company && (moved || Math.abs(self.vx) > MOVING) && since >= STATE_INTERVAL_MS)
+    if (due) sendState(self, at)
+  }
+
+  function onPageHide(): void {
+    send({ t: 'leave' })
+  }
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', onPageHide)
+
+  return {
+    get status() {
+      return status
+    },
+    get pid() {
+      return pid
+    },
+    get instance() {
+      return instance
+    },
+
+    tick() {
+      if (disposed || status === 'off') return
+      const at = now()
+      const visible = options.visible?.() ?? true
+      if (visible) hiddenSince = null
+      else hiddenSince ??= at
+      const away = (options.walkAlone?.() ?? false) || (hiddenSince !== null && at - hiddenSince > HIDDEN_LIMIT_MS)
+
+      if (away) {
+        if (status !== 'idle') {
+          send({ t: 'leave' })
+          status = 'idle'
+          if (retry !== null) clearTimer(retry)
+          retry = null
+          drop()
+        }
+        return
+      }
+      if (status === 'idle') {
+        attempts = 0
+        void start()
+        return
+      }
+      if (status !== 'open') return
+      peers.expire(at)
+      maybeSend(at)
+    },
+
+    visitors() {
+      return status === 'open' ? peers.visitors(now()) : []
+    },
+
+    emote(e) {
+      const at = now()
+      if (status !== 'open' || at - lastEmoteAt < EMOTE_GAP_MS) return false
+      lastEmoteAt = at
+      send({ t: 'emote', e, seq: ++seq })
+      return true
+    },
+
+    dispose() {
+      if (disposed) return
+      send({ t: 'leave' })
+      disposed = true
+      if (retry !== null) clearTimer(retry)
+      if (typeof window !== 'undefined') window.removeEventListener('pagehide', onPageHide)
+      drop()
+    },
+  }
+}

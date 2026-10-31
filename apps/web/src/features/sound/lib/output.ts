@@ -45,7 +45,10 @@ function isSameOrigin(src: string): boolean {
 // iOS ignores HTMLMediaElement.volume, so levels are set through Web Audio instead.
 // Routing cannot be undone, and a cross-origin source without CORS would play silent.
 export function routeThroughGain(element: HTMLMediaElement, mix = 1): boolean {
-  if (routed.has(element)) return true
+  if (routed.has(element)) {
+    element.volume = 1
+    return true
+  }
 
   const src = element.currentSrc || element.src
   if (!src || !(isSameOrigin(src) || element.crossOrigin === 'anonymous')) return false
@@ -59,6 +62,9 @@ export function routeThroughGain(element: HTMLMediaElement, mix = 1): boolean {
     context.createMediaElementSource(element).connect(voice)
     voice.connect(target)
     routed.add(element)
+    // Native volume still attenuates a MediaElementSource. Once routed, only
+    // the gain nodes should control volume (the element may have faded to zero).
+    element.volume = 1
     return true
   } catch {
     return false

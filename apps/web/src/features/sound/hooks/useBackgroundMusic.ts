@@ -8,9 +8,6 @@ import {
   setGainLevel,
   suspendGain,
 } from '@/features/sound/lib/output'
-import { staticUrl } from '@/shared/lib/static'
-
-const TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? staticUrl('/audio/hall.mp3')
 const STORAGE_KEY = 'tm_sound'
 const VOLUME_KEY = 'tm_volume'
 const DEFAULT_VOLUME = 0.32
@@ -35,6 +32,7 @@ function clampVolume(value: number): number {
 
 interface Options {
   isAllowed: boolean
+  track: string
 }
 
 export interface BackgroundMusic {
@@ -52,7 +50,7 @@ export interface BackgroundMusic {
   track: string
 }
 
-export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
+export function useBackgroundMusic({ isAllowed, track }: Options): BackgroundMusic {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fadeRef = useRef<number | null>(null)
 
@@ -180,6 +178,17 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     }
   }, [])
 
+  // Keep one media element (and its Web Audio routing) while changing floors.
+  // A new source restarts at the beginning without changing the visitor's preferences.
+  useEffect(() => {
+    if (fadeRef.current !== null) cancelAnimationFrame(fadeRef.current)
+    fadeRef.current = null
+    audioRef.current?.pause()
+    setIsPlaying(false)
+    setIsFailed(false)
+    setOutput(0)
+  }, [track, setOutput])
+
   useEffect(() => detectFailure(), [detectFailure])
   useEffect(() => restorePreference(), [restorePreference])
   useEffect(() => watchVisibility(), [watchVisibility])
@@ -248,7 +257,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
       return
     }
     fadeTo(0, () => audio.pause())
-  }, [shouldSound, isVisible, isReady, startPlayback, fadeTo])
+  }, [shouldSound, isVisible, isReady, startPlayback, fadeTo, track])
 
   useEffect(() => applyPreference(), [applyPreference])
 
@@ -339,7 +348,7 @@ export function useBackgroundMusic({ isAllowed }: Options): BackgroundMusic {
     setVolume,
     toggle,
     audioRef,
-    track: TRACK,
+    track,
     handleLoadedMetadata: () => setIsFailed(false),
     handleError: () => setIsFailed(true),
     handlePlaying: () => setIsPlaying(true),

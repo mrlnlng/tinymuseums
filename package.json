@@ -13,7 +13,7 @@
     "dev": "concurrently -n web,worker -c cyan,magenta \"npm:dev:web\" \"npm:dev:worker\"",
     "dev:web": "npm run dev --workspace @tiny/web",
     "dev:worker": "npm run dev --workspace @tiny/worker",
-    "test": "node --test 'packages/core/src/**/*.test.ts' 'apps/web/src/features/sketchguess/**/*.test.ts' 'apps/web/src/shared/lib/slots/**/*.test.ts' 'apps/web/src/features/hall/scene/**/*.test.ts'",
+    "test": "node --test 'packages/core/src/**/*.test.ts' 'apps/web/src/features/sketchguess/**/*.test.ts' 'apps/web/src/features/sound/**/*.test.ts' 'apps/web/src/shared/lib/slots/**/*.test.ts' 'apps/web/src/features/hall/scene/**/*.test.ts'",
     "typecheck": "npm run typecheck --workspace @tiny/core && npm run typecheck --workspace @tiny/worker && npm run typecheck --workspace @tiny/web",
     "build": "npm run build --workspace @tiny/web",
     "test:db": "node packages/core/db-tests/run.ts",

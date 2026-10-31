@@ -19,6 +19,8 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   if (existing) return existing
   const request = new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image()
+    // CDN images need CORS permission before WebGL can use them as textures.
+    image.crossOrigin = 'anonymous'
     image.decoding = 'async'
     image.onload = () => resolve(image)
     image.onerror = () => reject(new Error('The costume gallery doorway could not load.'))

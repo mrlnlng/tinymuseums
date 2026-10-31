@@ -14,6 +14,9 @@
     "ALLOWED_ORIGINS": "http://localhost:3000,http://192.168.1.66:3000"
   },
   "observability": { "enabled": true },
+  // Served at <name>.<account>.workers.dev; uploads get no extra preview addresses.
+  "workers_dev": true,
+  "preview_urls": false,
   // Bindings and vars are not inherited by environments, so each repeats them.
   "env": {
     "gamma": {

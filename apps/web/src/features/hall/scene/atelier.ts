@@ -239,7 +239,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   text('div', 'atelier-title', 'The Costume Atelier', atelier.title, 0.088)
   text('p', 'atelier-plaque', "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn.", atelier.plaque, 0.058)
   text('div', 'atelier-collection', 'The Kiki Collection', atelier.collection, 0.2)
-  text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.2)
+  text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.12)
+  text('div', 'atelier-collection', 'More costumes coming soon', atelier.comingSoon, 0.17)
   const kikiDress: ClothingItem = { slot: 'costume', id: 'kiki' }
   const kikiBow: ClothingItem = { slot: 'bow', id: 'kiki' }
   const itemButtons = {
@@ -250,7 +251,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const { swatches } = atelier.cardigans
   const swatchButtons = CARDIGANS.map((id, i) => {
     const node = control(`Try on the ${CARDIGAN_NAMES[id]} cardigan`, `atelier-swatch atelier-swatch-${id}`, {
-      x: cardiganStand.x + (i - (CARDIGANS.length - 1) / 2) * swatches.gap,
+      x: swatches.x + (i - (CARDIGANS.length - 1) / 2) * swatches.gap,
       y: swatches.y,
       width: swatches.width,
     }, () => actions?.onItem({ slot: 'costume', id }))
@@ -264,6 +265,28 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   place(note, { x: 0, y: 0, width: 260 }, 0.075)
   const noteSpot = controls[controls.length - 1].mark
   let noteFor = 0
+
+  // One hint, by the nearest piece the visitor has not tried yet.
+  const hint = document.createElement('p')
+  hint.className = 'atelier-hint'
+  hint.setAttribute('aria-hidden', 'true')
+  place(hint, { x: 0, y: 0, width: 300 }, 0.085)
+  const hintSpot = controls[controls.length - 1].mark
+  type HintKey = 'dress' | 'bow' | 'cardigan' | 'portrait0' | 'portrait1'
+  const hintSpots: { key: HintKey; x: number; y: number }[] = [
+    { key: 'dress', x: featuredX, y: 140 },
+    { key: 'bow', x: atelier.bowPillar.bow.x, y: 318 },
+    { key: 'portrait0', x: frames[0].spot.x, y: frames[0].spot.y + 72 },
+    { key: 'cardigan', x: cardiganStand.x, y: 232 },
+    { key: 'portrait1', x: frames[1].spot.x, y: frames[1].spot.y - 78 },
+  ]
+  const tried = new Set<HintKey>()
+  function hintText(key: HintKey): string {
+    if (key === 'dress') return target.dress > 0 ? 'Tap the dress to try it on' : 'Tap the form to give it back'
+    if (key === 'bow') return target.bow > 0 ? 'Tap the bow to try it on' : 'Tap the cushion to give it back'
+    if (key === 'cardigan') return target.cardigan > 0 ? 'Tap to try it on, or pick a colour' : 'Tap the form to give it back'
+    return `Tap to walk as ${CHARACTER_NAMES[frames[key === 'portrait0' ? 0 : 1].offered]}`
+  }
   const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
     x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
     y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
@@ -285,6 +308,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   let reflected = false
   const target = { dress: 1, bow: 1, cardigan: 1 }
   let worn: string | null = null
+  let visitorKind: CharacterKind | null = null
 
   // The form offers its colour; once worn, the bare form gives it back.
   function cardiganItem(): ClothingItem {
@@ -314,6 +338,11 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     setWorn(costume, bowId) {
+      if (reflected) {
+        if ((worn === 'kiki') !== (costume === 'kiki')) tried.add('dress')
+        if (isCardigan(worn) || isCardigan(costume)) { if (worn !== costume) tried.add('cardigan') }
+        if ((target.bow === 0) !== (bowId === 'kiki')) tried.add('bow')
+      }
       worn = costume
       if (isCardigan(costume) && costume !== onForm) {
         onForm = costume
@@ -341,6 +370,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     setVisitor(kind) {
+      if (visitorKind && visitorKind !== kind) { tried.add('portrait0'); tried.add('portrait1') }
+      visitorKind = kind
       frames.forEach((frame, i) => {
         frame.offered = kind === frame.own ? 'bunny' : frame.own
         for (const [shown, mesh] of Object.entries(frame.shows)) mesh!.visible = shown === frame.offered
@@ -389,6 +420,18 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
       for (const part of ['dress', 'bow', 'cardigan'] as const) shown[part] += (target[part] - shown[part]) * fade
       noteFor = Math.max(0, noteFor - dt)
+      let nearest: { key: HintKey; x: number; y: number } | null = null
+      for (const spot of hintSpots) {
+        const distance = Math.abs(visitorX - wx(spot.x))
+        if (tried.has(spot.key) || distance > 1.5) continue
+        if (!nearest || distance < Math.abs(visitorX - wx(nearest.x)) - 0.05) nearest = spot
+      }
+      if (nearest) {
+        hint.textContent = hintText(nearest.key)
+        hintSpot.x = wx(nearest.x)
+        hintSpot.y = wy(nearest.y)
+      }
+      hint.style.setProperty('--show', nearest && noteFor <= 0 ? '1' : '0')
       note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
       cardigan.material.opacity = shown.cardigan
       cardigan.visible = shown.cardigan > 0.01

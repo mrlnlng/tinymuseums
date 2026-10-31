@@ -198,7 +198,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45 }}
           >
-            {arrival === 'stairs' ? <AtelierLoading /> : <HallSkeleton preload={false} />}
+            {arrival === 'stairs' ? <AtelierLoading leaving /> : <HallSkeleton preload={false} />}
           </motion.div>
         )}
       </AnimatePresence>

@@ -24,14 +24,18 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   The visitor walks to the entrance before the screen fades, then walks clear of the
   doorway on arrival. Reduced motion places the visitor directly clear of the door.
   The atelier carpet spans the whole room, without a stairwell opening.
-- **Loading.** The atelier opens on a maroon loading screen: a dress form being sewn, with Kiki's
+- **Loading.** Going back to the museum shows the same screen titled Tiny Museum.
+  The atelier opens on a maroon loading screen: a dress form being sewn, with Kiki's
   bow. It shows for at least 2.8 s, then until the art, the fonts and the visitor's rig are ready.
 - **In the atelier**, left to right: the doorway and "Back to museum", the red
   curtains, the title on its gilt shelf with the plaque text, the cabinet with the jewellery box
   and perfume, two bunny portraits; then **The Kiki Collection**: the spotlit form wearing the
   dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then
-  **The Cardigan Collection**: the spotlit form in a cardigan with four colour swatches on its
-  platform, the otter portrait above an empty red pillow, a mirror and a last bare form.
+  **The Cardigan Collection**: the spotlit form in a cardigan, the otter portrait above a red
+  cushion holding four colour swatches, a mirror, and a last bare form under "More costumes
+  coming soon".
+- **Hints.** Near a piece or portrait not yet tried, one pill says what a tap does. A change
+  of outfit or character bursts sparkles over the visitor (not with reduced motion).
 - **Trying on.** Tap the dress (or the broom) or the bow. Each jiggles now and then as an
   invitation. A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
   pillow to give it back. Either can be worn alone or both together. A swatch puts on that

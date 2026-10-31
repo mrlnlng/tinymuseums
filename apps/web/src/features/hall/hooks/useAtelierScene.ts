@@ -27,6 +27,33 @@ const MIN_LOADING_MS = 2800
 const MAX_RIG_WAIT_MS = 8000
 const WALL_COLOR = '#3a0707'
 
+const SPARKLE_TINTS = ['#fbd99a', '#f7a8c4', '#fff4dc']
+
+/** A short burst of sparkles over the visitor when their outfit changes. */
+function sparkle(host: HTMLElement): void {
+  const figure = host.querySelector<HTMLElement>('.hall-bunny-rig:not([hidden]), .hall-bunny:not([hidden])')
+  if (!figure || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const at = figure.getBoundingClientRect()
+  const origin = host.getBoundingClientRect()
+  const burst = document.createElement('div')
+  burst.className = 'atelier-sparkle'
+  burst.style.left = `${at.left + at.width / 2 - origin.left}px`
+  burst.style.top = `${at.top + at.height * 0.45 - origin.top}px`
+  for (let i = 0; i < 9; i++) {
+    const star = document.createElement('span')
+    const angle = (i / 9) * Math.PI * 2 + Math.random() * 0.5
+    const reach = at.height * (0.45 + Math.random() * 0.2)
+    star.style.setProperty('--dx', `${Math.cos(angle) * reach}px`)
+    star.style.setProperty('--dy', `${Math.sin(angle) * reach}px`)
+    star.style.setProperty('--tint', SPARKLE_TINTS[i % SPARKLE_TINTS.length])
+    star.style.setProperty('--size', `${14 + Math.random() * 10}px`)
+    star.style.animationDelay = `${Math.random() * 0.12}s`
+    burst.append(star)
+  }
+  host.append(burst)
+  window.setTimeout(() => burst.remove(), 1100)
+}
+
 export interface AtelierHosts {
   canvas: React.RefObject<HTMLDivElement | null>
   overlay: React.RefObject<HTMLDivElement | null>
@@ -124,7 +151,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         character,
         room,
         outfit: outfitSlot,
-        onChange: (change) => track(change),
+        onChange: (change) => { track(change); sparkle(characterHost) },
         onMisfit: (item, kind) => room.showMisfit(item, kind),
         onIdle: follower.sync,
       })

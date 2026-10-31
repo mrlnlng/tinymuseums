@@ -186,8 +186,9 @@ export const CONFIG = {
     broom: { x: 987, y: 522, width: 115, z: 0.42 },
     bowPillar: { x: 1192, pillow: { y: 445, width: 210 }, bow: { x: 1185, y: 377, width: 160 } },
     painting: { x: 1487, y: 344, width: 381, z: 0.2 },
-    // The cardigan hangs on the first spare form; its colours are swatches on the platform.
-    cardigans: { label: { x: 1830, y: 132, width: 190 }, swatches: { y: 652, gap: 50, width: 34 } },
+    // The cardigan hangs on the first spare form; its colours are swatches on the red cushion.
+    cardigans: { label: { x: 1830, y: 122, width: 320 }, swatches: { x: 2083, y: 412, gap: 54, width: 44 } },
+    comingSoon: { x: 2653, y: 150, width: 170 },
     // Spare forms further along: one spotlit on its platform, one standing on the carpet.
     forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 685, platform: false }],
     redPillar: { x: 2083, pillow: { y: 440, width: 210 } },

@@ -8,7 +8,7 @@ import { motion } from 'motion/react'
 const SEAM =
   'M 96 74 C 84 96 82 122 96 150 C 101 160 101 168 94 178 L 70 238 Q 120 252 170 238 L 146 178 C 139 168 139 160 144 150 C 158 122 156 96 144 74 Q 120 66 96 74 Z'
 
-export default function AtelierLoading() {
+export default function AtelierLoading({ leaving = false }: { leaving?: boolean }) {
   // The maroon loading screen is ready to replace the cover before the room is loaded.
   useEffect(() => { revealFloorTransition() }, [])
   return (
@@ -38,8 +38,8 @@ export default function AtelierLoading() {
           <ellipse cx="-9" cy="0" rx="2.6" ry="0.9" />
         </g>
       </svg>
-      <p className="atelier-loading-title">The Costume Atelier</p>
-      <p className="atelier-loading-note">Threading the needle</p>
+      <p className="atelier-loading-title">{leaving ? 'Tiny Museum' : 'The Costume Atelier'}</p>
+      <p className="atelier-loading-note">{leaving ? 'Back to the collection' : 'Threading the needle'}</p>
     </motion.div>
   )
 }

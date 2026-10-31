@@ -149,15 +149,15 @@ let bunny = graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-r
   skip: ['paw'],
   paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
 })
-// The cat and otter wear the bunny's clothes too, fitted on the layer canvas: the cat's ribbon
-// hides under the cardigan; on the otter the clothes tuck under its head, its outstretched arm
-// is repeated over the dress, and Kiki's bow takes the place of its star.
+// The cat and otter wear the bunny's clothes too. The otter's arms sit where the bunny's do, so
+// its clothes keep their place but draw under its lower chin; both arms are repeated over the
+// dress, and a smaller Kiki bow sits on its head in place of the star.
 let cat = await master('cat-rig-kiki.glb')
 let otter = graftCostume(await master('otter-rig.glb'), await master('bunny-rig-kiki.glb'), {
   skip: ['paw'],
-  paws: [{ layer: 'otter_arm_R', costume: 'kiki', part: 'paw', draw_order: 9 }],
+  paws: ['otter_arm_R', 'otter_arm_L'].map((layer) => ({ layer, costume: 'kiki', part: 'paw', draw_order: 9 })),
   relabel: (extras) => extras.part === 'bow' ? { ...extras, hides: 'otter_star' } : { ...extras, draw_order: 7.5 },
-  fit: { body: { dy: 40 }, bow: { dx: 60, dy: 60, scale: 0.85, pivot: [636, 659] } },
+  fit: { bow: { dx: 120, dy: -10, scale: 0.66, pivot: [636, 659] } },
 })
 for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
   const cardigan = await master(`bunny-rig-v2-cardigan-${colour}.glb`)
@@ -165,8 +165,7 @@ for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
   bunny = graftCostume(bunny, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'bowtie' }) })
   cat = graftCostume(cat, cardigan, { relabel: (extras) => ({ ...extras, costume, hides: 'cat_ribbon' }) })
   otter = graftCostume(otter, cardigan, {
-    relabel: (extras) => ({ ...extras, costume, ...(extras.part === 'body' && { draw_order: 7.5 }) }),
-    fit: { body: { dx: 30, dy: 20, scale: 1.15, pivot: [903, 1300] }, sleeve_R: { dx: 30, dy: 30 }, sleeve_L: { dx: 60, dy: 30 } },
+    relabel: (extras) => ({ ...extras, costume, draw_order: { body: 7.5, sleeve_R: 7.6, sleeve_L: 7.7 }[extras.part] }),
   })
 }
 

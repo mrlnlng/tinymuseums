@@ -117,9 +117,10 @@ body. The numbers in `prepare-models.mjs` were matched by overlaying the layer m
 
 - **Cat:** the cardigans as drawn, hiding Jiji's ribbon. Its Kiki outfit is the artist's cat
   version, broom included.
-- **Otter:** the bunny's Kiki dress (no paw) 40 px lower and the bow smaller and further right,
-  in place of the star; the cardigan 90 px lower and 12 % larger, sleeves moved to its shoulders.
-  Both bodies draw under its head (order 7.5) so the collar does not cover its chin.
+- **Otter:** its arm bones sit within 30 px of the bunny's, so the bunny's clothes keep their
+  place; they draw under its head (order 7.5–7.7) because its chin hangs lower. Both arms are
+  repeated over Kiki's dress, and the bow is two-thirds size on top of its head, in place of the
+  star.
 
 They hold through the walk, but they are refits of bunny art; drawings made for each body would
 sit better.

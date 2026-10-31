@@ -39,7 +39,7 @@ import { outfit } from '@tiny/core/slots'
 import manifest from '@/generated/asset-manifest.json'
 import { builtUrl } from '@/shared/lib/assets'
 import { defaultStore } from '@/shared/lib/slots'
-import { lobbyFlight, climbSpan } from '@/features/hall/scene/flights'
+import { lobbyFlight, lobbySteps } from '@/features/hall/scene/flights'
 import { createStairway } from '@/features/hall/scene/stairway'
 import { createLobbyStairs, type LobbyStairs } from '@/features/hall/scene/stairs'
 import { followOutfit, lookOf } from '@/features/hall/scene/wardrobe'
@@ -227,9 +227,8 @@ export function useHallScene({
       const stairForeground = createStairForeground(canvasHost.parentElement!, lobbyFlight)
       const stairway = createStairway({
         traversal,
-        flight: lobbyFlight,
-        end: 'foot',
-        clearX: climbSpan(lobbyFlight).from + 0.7,
+        steps: lobbySteps,
+        clearX: lobbySteps[0].x + 0.7,
         dip,
       })
 
@@ -241,7 +240,7 @@ export function useHallScene({
       }
 
       // The first floor loads only its own flight, without an upstairs preview.
-      void Promise.all([new THREE.TextureLoader().loadAsync(builtUrl(manifest.atelier.staircase.src))])
+      void Promise.all([new THREE.TextureLoader().loadAsync(builtUrl(manifest.stairs.staircase.src))])
         .then(([stairsMap]) => {
           if (isDisposed) {
             stairsMap.dispose()
@@ -570,7 +569,7 @@ export function useHallScene({
         } else {
           traversal.setSuspended(isSuspendedRef.current || stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
           // Without its staircase the lobby keeps its old left edge.
-          traversal.update(dt, lobbyStairs ? climbSpan(lobbyFlight).from : 0, hall.layout.totalLength)
+          traversal.update(dt, lobbyStairs ? lobbySteps[0].x : 0, hall.layout.totalLength)
         }
         const moving = stairway.update(dt)
         const cameraX = moving?.x ?? traversal.cameraX
@@ -578,7 +577,7 @@ export function useHallScene({
         if (restX === null && !traversal.isIntro) {
           restX = traversal.cameraX
           onIntroDoneRef.current()
-        } else if (restX !== null && !hasMoved && Math.abs(traversal.cameraX - restX) > 0.05) {
+        } else if (restX !== null && !hasMoved && !stairway.busy && Math.abs(traversal.cameraX - restX) > 0.05) {
           hasMoved = true
           onFirstMoveRef.current()
         }

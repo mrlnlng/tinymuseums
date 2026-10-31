@@ -110,10 +110,12 @@ the hall walks one artist's works, so React logs a duplicate-key warning.
 
 ## Character rigs and the Costume Atelier
 
-The rig masters are `apps/web/public/assets/bunny-rig-kiki.glb` and `cat-rig-kiki.glb`,
-byte-identical to the costume handoff: the approved bunny (v4) and cat rigs plus the
-"kiki" costume meshes. Their skeletons, walk clips and base parts match the plain rigs
-exactly. The atelier's art lives in `public/assets/atelier/` and the costume art in
+The rig masters are `apps/web/public/assets/bunny-rig-v2.glb` (the repainted bunny),
+`bunny-rig-kiki.glb` and `cat-rig-kiki.glb`. The last two are byte-identical to the costume
+handoff: the first bunny (v4) and cat rigs plus the "kiki" costume meshes. The v2 bunny has
+the same skeleton and layer canvas, so `tooling/graft-costume.mjs` copies the kiki costume
+meshes from `bunny-rig-kiki.glb` onto it at build time; `bunny-rig-kiki.glb` is now only that
+source. The atelier's art lives in `public/assets/atelier/` and the costume art in
 `public/assets/costumes/`. After importing any of these, run:
 
 ```bash
@@ -121,14 +123,16 @@ npm run assets:models --workspace @tiny/web
 ```
 
 `tooling/compose-atelier.mjs` builds the derived art (the bare and dressed mannequins on
-one shared canvas, the bare column cut from the helmet pedestal, the flying costume, the
-waiting cat). `tooling/prepare-models.mjs` then writes `public/immutable/` copies and the
-`models` and `atelier` manifest entries. Each GLB is slimmed on the way: the export
-carries every painting twice (an emissive map and a base-colour map multiplied by
-black), so the base-colour copies are dropped (bunny 2.13 MB -> 1.38 MB, cat
-1.39 MB -> 1.04 MB). Run it after the image optimiser, which rewrites the manifest.
+one shared canvas, the bare column cut from the helmet pedestal, the wallpaper flattened
+onto the wall colour, the staircase's railing alone). `tooling/prepare-models.mjs` then writes `public/immutable/` copies
+and the `models`, `stairs` and `atelier` manifest entries. Each GLB is slimmed on the way:
+the export carries every painting twice (an emissive map and a base-colour map multiplied
+by black), so the base-colour copies are dropped. Run it after the image optimiser, which
+rewrites the manifest.
 
-The atelier's damask wallpaper is a seamless 318 x 256 px tile cut from the owner's mock
-(`costume_atelier_mock_scene/8.png`, x 560-878, y 0-256) and scaled 2x; no wallpaper tile
-was supplied. Replace `public/assets/atelier/wallpaper.png` with a real tile when one exists.
+The damask (`wallpaper-lines.png`), carpet, curtains, cabinet set, pillow, broom and Jiji
+portrait were supplied. The bunny portraits, ribbon, gilt shelf, Kiki painting and mirror
+were cut from mocks 7-9: the maroon wall was flood-filled away from the crop's edges
+(a pixel counts as wall when red is under 112 and green and blue are under 0.42 x red). The
+red pillow is the blue one dyed.
 See `docs/costume-atelier.md` for the floor itself.

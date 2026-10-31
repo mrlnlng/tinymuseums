@@ -2287,13 +2287,14 @@ code.token {
   pointer-events: none;
 }
 
-.atelier-title {
+.atelier-title,
+.atelier-collection {
   position: absolute;
   top: 0;
   left: 0;
   font-family: var(--font-title);
   font-weight: 400;
-  color: #f7a8c4;
+  color: #fbd99a;
   text-align: center;
   line-height: 1.05;
   white-space: normal;
@@ -2302,19 +2303,40 @@ code.token {
   pointer-events: none;
 }
 
+.atelier-title { white-space: nowrap; }
+
 .atelier-plaque {
   position: absolute;
   top: 0;
   left: 0;
   margin: 0;
   font-family: var(--font-button);
-  color: var(--plaque-ink);
+  color: #f6c67e;
   letter-spacing: 0.04em;
-  line-height: 1.35;
+  line-height: 1.45;
   text-transform: uppercase;
   will-change: transform, opacity;
   pointer-events: none;
 }
+
+.atelier-exit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.55em 0.4em;
+  border: 2px solid #f0a33c;
+  border-radius: 999px;
+  color: #6b3a22;
+  background: #ffe2b4;
+  font-family: var(--font-button);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.atelier-exit:focus-visible { outline: 2px solid #f7a8c4; outline-offset: 3px; }
+.atelier-exit[hidden] { display: none; }
 
 .hall-costume { z-index: 3; }
 

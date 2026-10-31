@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { CONFIG } from './config'
-import { flightSize, lobbyFlight } from './flights'
+import { lobbyFlight } from './flights'
 import { extendLobbyStairArt } from './lobby-stair-art'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
@@ -24,8 +24,8 @@ export function createLobbyStairs(
   const map = art.texture
   map.colorSpace = THREE.SRGBColorSpace
   map.anisotropy = 4
-  const { width, height } = flightSize(lobbyFlight)
-  const flight = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map, transparent: true }))
+  const { width, height } = lobbyFlight
+  const flight = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map, transparent: true}))
   flight.position.set(lobbyFlight.left + width / 2, lobbyFlight.base + height / 2, CONFIG.stairs.lobby.z)
   group.add(flight)
   scene.add(group)

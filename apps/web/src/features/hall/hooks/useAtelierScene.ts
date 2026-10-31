@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { outfit } from '@tiny/core/slots'
-import { createAtelierRoom, loadAtelierArt, type AtelierArt } from '@/features/hall/scene/atelier'
+import { createAtelierRoom, disposeAtelierArt, loadAtelierArt, type AtelierArt } from '@/features/hall/scene/atelier'
 import { loadCharacterSprites, type CharacterSprites } from '@/features/hall/scene/assets'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCharacter } from '@/features/hall/scene/character'
@@ -16,9 +16,10 @@ import { createWardrobe, followOutfit, lookOf, type Wardrobe } from '@/features/
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { defaultStore } from '@/shared/lib/slots'
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
-import { atelierFloorEdge } from '@/features/hall/scene/flights'
 import { createStairForeground } from '@/features/hall/scene/stair-foreground'
 import { track } from '@/shared/lib/visit'
+import manifest from '@/generated/asset-manifest.json'
+import { builtUrl } from '@/shared/lib/assets'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
@@ -70,7 +71,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         return
       }
       if (isDisposed) {
-        for (const texture of [...Object.values(art.maps), art.floor, art.plaque]) texture.dispose()
+        disposeAtelierArt(art)
         return
       }
 
@@ -81,7 +82,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       canvasHost.appendChild(renderer.domElement)
 
       const scene = new THREE.Scene()
-      const room = createAtelierRoom(scene, art, sprites, overlayHost)
+      const room = createAtelierRoom(scene, art, overlayHost)
       const outfitSlot = defaultStore().getSlot(outfit)
       const character = createCharacter(sprites, characterHost, lookOf(outfitSlot.snapshot()))
       const traversal = new Traversal()
@@ -111,7 +112,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
       canvasHost.parentElement?.appendChild(dip)
 
       const { atelier } = CONFIG
-      const stairway = createStairway({ traversal, flight: room.flight, end: 'top', clearX: atelier.arriveX, dip })
+      const stairway = createStairway({ traversal, steps: room.steps, clearX: atelier.clearX, dip })
 
       let wardrobe: Wardrobe | null = null
       const follower = followOutfit(
@@ -129,7 +130,8 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         onIdle: follower.sync,
       })
       const closet = wardrobe
-      const foreground = createStairForeground(canvasHost.parentElement!, room.flight, atelierFloorEdge(room.flight))
+      const foreground = createStairForeground(canvasHost.parentElement!, room.flight)
+      foreground.setSource(builtUrl(manifest.stairs.railing.src))
       room.setActions({
         onItem: (part) => { if (!quiet()) closet.tapFeatured(part) },
         onCharacter: (kind) => { if (!quiet()) closet.tapDisplay(kind) },
@@ -237,7 +239,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
           }
         } else {
           traversal.setSuspended(stairway.locked || document.querySelector('[aria-modal="true"]') !== null)
-          traversal.update(dt, atelier.min, atelier.max)
+          traversal.update(dt, room.steps[0].x, atelier.max)
         }
 
         const moving = stairway.update(dt)

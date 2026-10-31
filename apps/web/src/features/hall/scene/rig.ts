@@ -26,7 +26,7 @@ interface RigSpec {
   // The bunny's chest bow lives on the 1668 × 2388 layer canvas outside the export; costumes
   // hide it by this name.
   chestBow?: { name: string; bone: string; x: number; y: number; width: number; height: number; knotX: number; knotY: number; drawOrder: number }
-  blink: { split: string; eyes: readonly { x: number; y: number; width: number; height: number }[] } | { groups: readonly (readonly string[])[] }
+  blink: { groups: readonly (readonly string[])[] }
   feet: readonly { bone: string; x: number; y: number }[]
   shadow: { x: number; y: number; width: number; height: number }
 }
@@ -37,8 +37,8 @@ const SPECS: Record<CharacterKind, RigSpec> = {
     frame: { width: 1520, top: 48, bottom: 2262, spriteTop: 248, feet: 2162, centerX: 872 },
     squashY: 2143,
     chestBow: { name: 'bowtie', bone: 'chest', x: 809, y: 1146, width: 469, height: 581, knotX: 1005, knotY: 1262, drawOrder: 12 },
-    blink: { split: 'bunny_eyes', eyes: [{ x: 753, y: 1005, width: 80, height: 122 }, { x: 1069, y: 805, width: 80, height: 121 }] },
-    feet: [{ bone: 'leg_L', x: 620, y: 2110 }, { bone: 'leg_R', x: 1180, y: 2110 }],
+    blink: { groups: [['bunny_eye_L'], ['bunny_eye_R']] },
+    feet: [{ bone: 'leg_L', x: 660, y: 2110 }, { bone: 'leg_R', x: 1180, y: 2120 }],
     shadow: { x: 900, y: 2128, width: 820, height: 110 },
   },
   cat: {
@@ -233,66 +233,21 @@ export async function loadRig(canvas: HTMLCanvasElement, kind: CharacterKind): P
 
   // Each blinker scales about its own centre.
   const blinkers: THREE.Object3D[] = []
-  if ('split' in spec.blink) {
-    // Split the shared eyes layer into one quad per eye, reusing its texture coordinates.
-    const eyeLayer = model.getObjectByName(spec.blink.split)
-    if (eyeLayer instanceof THREE.Mesh && eyeLayer.parent) {
-      const position = eyeLayer.geometry.getAttribute('position')
-      const uv = eyeLayer.geometry.getAttribute('uv')
-      let left = 0, right = 0, bottom = 0, top = 0
-      for (let i = 0; i < position.count; i++) {
-        if (position.getX(i) < position.getX(left)) left = i
-        if (position.getX(i) > position.getX(right)) right = i
-        if (position.getY(i) < position.getY(bottom)) bottom = i
-        if (position.getY(i) > position.getY(top)) top = i
-      }
-      const lerp = (value: number, a: number, b: number, from: number, to: number) =>
-        from + ((value - a) / (b - a)) * (to - from)
-      const toLocal = eyeLayer.matrixWorld.clone().invert()
-      for (const eye of spec.blink.eyes) {
-        const min = canvasToModel(eye.x, eye.y + eye.height).applyMatrix4(toLocal)
-        const max = canvasToModel(eye.x + eye.width, eye.y).applyMatrix4(toLocal)
-        const center = min.clone().add(max).multiplyScalar(0.5)
-        const geometry = new THREE.PlaneGeometry(max.x - min.x, max.y - min.y)
-        const corners = geometry.getAttribute('position')
-        const uvs = geometry.getAttribute('uv')
-        for (let i = 0; i < corners.count; i++) {
-          const x = center.x + corners.getX(i)
-          const y = center.y + corners.getY(i)
-          uvs.setXY(
-            i,
-            lerp(x, position.getX(left), position.getX(right), uv.getX(left), uv.getX(right)),
-            lerp(y, position.getY(bottom), position.getY(top), uv.getY(bottom), uv.getY(top)),
-          )
-        }
-        geometries.add(geometry)
-        const mesh = new THREE.Mesh(geometry, eyeLayer.material)
-        mesh.renderOrder = eyeLayer.renderOrder
-        mesh.frustumCulled = false
-        mesh.position.copy(center).applyMatrix4(eyeLayer.matrix)
-        mesh.quaternion.copy(eyeLayer.quaternion)
-        eyeLayer.parent.add(mesh)
-        blinkers.push(mesh)
-      }
-      eyeLayer.visible = false
-    }
-  } else {
-    const box = new THREE.Box3()
-    for (const names of spec.blink.groups) {
-      const meshes = names.flatMap((name) => {
-        const mesh = model.getObjectByName(name)
-        return mesh instanceof THREE.Mesh && mesh.parent ? [mesh] : []
-      })
-      if (meshes.length === 0) continue
-      box.makeEmpty()
-      for (const mesh of meshes) box.expandByObject(mesh)
-      const pivot = new THREE.Object3D()
-      meshes[0].parent!.add(pivot)
-      pivot.position.copy(meshes[0].parent!.worldToLocal(box.getCenter(a)))
-      model.updateMatrixWorld(true)
-      for (const mesh of meshes) pivot.attach(mesh)
-      blinkers.push(pivot)
-    }
+  const box = new THREE.Box3()
+  for (const names of spec.blink.groups) {
+    const meshes = names.flatMap((name) => {
+      const mesh = model.getObjectByName(name)
+      return mesh instanceof THREE.Mesh && mesh.parent ? [mesh] : []
+    })
+    if (meshes.length === 0) continue
+    box.makeEmpty()
+    for (const mesh of meshes) box.expandByObject(mesh)
+    const pivot = new THREE.Object3D()
+    meshes[0].parent!.add(pivot)
+    pivot.position.copy(meshes[0].parent!.worldToLocal(box.getCenter(a)))
+    model.updateMatrixWorld(true)
+    for (const mesh of meshes) pivot.attach(mesh)
+    blinkers.push(pivot)
   }
 
   const baseHidden = new Set<THREE.Object3D>()

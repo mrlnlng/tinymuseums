@@ -1101,7 +1101,7 @@
   "ktx2": null,
   "models": {
     "bunnyRig": {
-      "src": "bunny-rig-kiki.9c4313558a.glb"
+      "src": "bunny-rig-v2-kiki.f5adaa7a10.glb"
     },
     "bunnyRigBow": {
       "src": "bunny-rig-bow.021c8341a1.png"
@@ -1111,18 +1111,63 @@
     }
   },
   "atelier": {
-    "staircase": {
-      "src": "atelier-staircase.dc1f0a7f2d.webp",
-      "width": 1027,
-      "height": 939
+    "wallpaper": {
+      "src": "atelier-wallpaper.3421bf606d.webp",
+      "width": 721,
+      "height": 718
+    },
+    "carpet": {
+      "src": "atelier-carpet.e55a3ec620.webp",
+      "width": 978,
+      "height": 201
+    },
+    "curtains": {
+      "src": "atelier-curtains.3f1e25b386.webp",
+      "width": 489,
+      "height": 517
+    },
+    "shelf": {
+      "src": "atelier-shelf.e0f45775d4.webp",
+      "width": 422,
+      "height": 61
+    },
+    "cabinet": {
+      "src": "atelier-cabinet.a51f2e745d.webp",
+      "width": 557,
+      "height": 388
+    },
+    "jewelryBox": {
+      "src": "atelier-jewelry-box.a83281b0db.webp",
+      "width": 480,
+      "height": 301
+    },
+    "perfume": {
+      "src": "atelier-perfume.b705309c95.webp",
+      "width": 360,
+      "height": 358
+    },
+    "portraitWink": {
+      "src": "atelier-portrait-wink.a866216bf6.webp",
+      "width": 147,
+      "height": 123
+    },
+    "portraitBunny": {
+      "src": "atelier-portrait-bunny.d398084a2e.webp",
+      "width": 106,
+      "height": 106
+    },
+    "portraitJiji": {
+      "src": "atelier-portrait-jiji.be8e44dc87.webp",
+      "width": 138,
+      "height": 135
+    },
+    "ribbon": {
+      "src": "atelier-ribbon.e3991eb0fd.webp",
+      "width": 80,
+      "height": 41
     },
     "mannequin": {
       "src": "atelier-mannequin-bare.d623f7011f.webp",
-      "width": 789,
-      "height": 1710
-    },
-    "mannequinDressed": {
-      "src": "atelier-mannequin-kiki.e29c76f342.webp",
       "width": 789,
       "height": 1710
     },
@@ -1131,15 +1176,10 @@
       "width": 789,
       "height": 1710
     },
-    "mannequinBow": {
-      "src": "atelier-mannequin-bow.e205ce5931.webp",
-      "width": 789,
-      "height": 1710
-    },
-    "railing": {
-      "src": "atelier-railing.a64dc36f7d.webp",
-      "width": 1027,
-      "height": 939
+    "broom": {
+      "src": "atelier-broom.0f7c76b942.webp",
+      "width": 135,
+      "height": 250
     },
     "platform": {
       "src": "atelier-platform.c2505f7d9c.webp",
@@ -1151,25 +1191,47 @@
       "width": 717,
       "height": 692
     },
-    "wallpaper": {
-      "src": "atelier-wallpaper.6eab15a1ae.webp",
-      "width": 636,
-      "height": 512
-    },
     "column": {
       "src": "atelier-column.d0e2882614.webp",
       "width": 549,
       "height": 629
     },
-    "costumeKiki": {
-      "src": "atelier-costume-kiki.aaae2c62ab.webp",
-      "width": 645,
-      "height": 651
+    "pillowBlue": {
+      "src": "atelier-pillow-blue.d1665d39a7.webp",
+      "width": 225,
+      "height": 118
     },
-    "catStanding": {
-      "src": "atelier-cat-standing.ffabd19e7e.webp",
-      "width": 669,
-      "height": 914
+    "pillowRed": {
+      "src": "atelier-pillow-red.2fc52e5c64.webp",
+      "width": 225,
+      "height": 118
+    },
+    "bow": {
+      "src": "atelier-bow.295095db35.webp",
+      "width": 962,
+      "height": 740
+    },
+    "painting": {
+      "src": "atelier-painting.896f38be08.webp",
+      "width": 372,
+      "height": 516
+    },
+    "mirror": {
+      "src": "atelier-mirror.b2b6c729e8.webp",
+      "width": 190,
+      "height": 474
+    }
+  },
+  "stairs": {
+    "staircase": {
+      "src": "atelier-staircase.dc1f0a7f2d.webp",
+      "width": 1027,
+      "height": 939
+    },
+    "railing": {
+      "src": "atelier-railing.a64dc36f7d.webp",
+      "width": 1027,
+      "height": 939
     }
   }
 }

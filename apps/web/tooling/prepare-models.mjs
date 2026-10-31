@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
+import { graftCostume } from './graft-costume.mjs'
 
 const root = new URL('../', import.meta.url)
 await mkdir(new URL('public/immutable/', root), { recursive: true })
@@ -121,8 +122,8 @@ function slimGlb(glb) {
   ])
 }
 
-async function rig(name) {
-  return { src: await write(name, 'glb', slimGlb(await master(`${name}.glb`))) }
+async function rig(name, body) {
+  return { src: await write(name, 'glb', slimGlb(body ?? await master(`${name}.glb`))) }
 }
 
 async function image(name, options = {}) {
@@ -133,30 +134,51 @@ async function image(name, options = {}) {
 }
 
 const models = {
-  bunnyRig: await rig('bunny-rig-kiki'),
+  // The repainted bunny wears the kiki costume fitted to the first bunny: same skeleton and
+  // canvas. Its own hanging paw is repeated above the dress, as the first export did.
+  bunnyRig: await rig('bunny-rig-v2-kiki', graftCostume(await master('bunny-rig-v2.glb'), await master('bunny-rig-kiki.glb'), {
+    skip: ['paw'],
+    paws: [{ layer: 'bunny_arm_L', costume: 'kiki', part: 'paw', draw_order: 10 }],
+  })),
   catRig: await rig('cat-rig-kiki'),
   bunnyRigBow: { src: await write('bunny-rig-bow', 'png', await master('bunny-rig-bow.png')) },
 }
 
-const atelier = {
+const stairs = {
   staircase: await image('staircase', { lossless: true }),
-  mannequin: await image('mannequin-bare', { lossless: true }),
-  mannequinDressed: await image('mannequin-kiki', { lossless: true }),
-  mannequinDress: await image('mannequin-dress', { lossless: true }),
-  mannequinBow: await image('mannequin-bow', { lossless: true }),
   railing: await image('railing', { lossless: true }),
+}
+
+const atelier = {
+  wallpaper: await image('wallpaper'),
+  carpet: await image('carpet'),
+  curtains: await image('curtains'),
+  shelf: await image('shelf'),
+  cabinet: await image('cabinet', { lossless: true }),
+  jewelryBox: await image('jewelry-box'),
+  perfume: await image('perfume'),
+  portraitWink: await image('portrait-wink'),
+  portraitBunny: await image('portrait-bunny'),
+  portraitJiji: await image('portrait-jiji'),
+  ribbon: await image('ribbon'),
+  mannequin: await image('mannequin-bare', { lossless: true }),
+  mannequinDress: await image('mannequin-dress', { lossless: true }),
+  broom: await image('broom'),
   platform: await image('platform', { lossless: true }),
   spotlight: await image('spotlight'),
-  wallpaper: await image('wallpaper'),
   column: await image('column', { lossless: true }),
-  costumeKiki: await image('costume-kiki', { lossless: true }),
-  catStanding: await image('cat-standing', { lossless: true }),
+  pillowBlue: await image('pillow-blue'),
+  pillowRed: await image('pillow-red'),
+  bow: await image('bow'),
+  painting: await image('painting'),
+  mirror: await image('mirror'),
 }
 
 const path = new URL('src/generated/asset-manifest.json', root)
 const before = await readFile(path, 'utf8')
 const manifest = JSON.parse(before)
 manifest.models = { ...manifest.models, ...models }
+manifest.stairs = stairs
 manifest.atelier = atelier
 const after = JSON.stringify(manifest, null, 2) + '\n'
 if (after !== before) await writeFile(path, after)

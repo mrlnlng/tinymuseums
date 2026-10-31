@@ -41,12 +41,12 @@ base-colour texture copies in this export are released after material replacemen
 
 ## Assets
 
-The bunny now loads from `apps/web/public/assets/bunny-rig-kiki.glb`, the same v4 rig plus
-the kiki costume; see `ASSET_PIPELINE.md`. Run
-`npm run assets:models --workspace @tiny/web` after replacing it, or after an
-image-only optimisation run. The tracked helper fingerprints it into
-`public/immutable/` and updates `models.bunnyRig` in the generated asset manifest.
-The current model is 1,427,168 bytes and is byte-identical to the supplied file.
+The bunny now loads the repainted v2 rig (`apps/web/public/assets/bunny-rig-v2.glb`) with
+the kiki costume grafted on from `bunny-rig-kiki.glb` at build time; see `ASSET_PIPELINE.md`.
+Run `npm run assets:models --workspace @tiny/web` after replacing either, or after an
+image-only optimisation run. The helper fingerprints the result into `public/immutable/` and
+updates `models.bunnyRig` in the generated asset manifest. v2's root is turned 180 degrees about
+Y in the export; everything reads world matrices, so nothing depends on that.
 
 ## Local review and checks
 

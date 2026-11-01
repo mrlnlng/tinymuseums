@@ -1,7 +1,8 @@
 # The Costume Atelier
 
 A costume gallery room, reached through the fashion-themed archway to the left of the visitor centre. Visitors try on the
-bow and dress from the mannequin, a cardigan in one of four colours, the blue floral dress, the floral dress with its red cardigan, or the flower crown, and can walk as the
+bow and dress from the mannequin, a cardigan in one of four colours, the blue floral dress, the floral dress with its red cardigan, the flower crown,
+the gold sequin set with or without its cape, a hibiscus in blue, yellow or pink, the blue cap, or the daisy clip, and can walk as the
 cat or the otter instead of the bunny. All
 choices persist through the `outfit` slot, so they come back on the next visit, and they
 sync across devices when the visitor has an account.
@@ -33,7 +34,12 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then
   **The Cardigan Collection**: the spotlit form in a cardigan, the otter portrait above a red
   cushion holding four colour swatches, a mirror, then **The Floral Collection**: two spotlit mannequins, one in the blue dress
-  and one in the dress with its red cardigan, with the flower crown on a cushion between them.
+  and one in the dress with its red cardigan, with the flower crown on a cushion between them; then **The Gold
+  Collection**: two spotlit forms, the gold sequin set alone and with its cape; then **The Accessory Collection**:
+  the blue cap, the three hibiscus sharing one cushion, and the daisy clip, each on a column. Every headpiece
+  shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
+  the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
+  the bunny's tilted body for the rigs; headpieces are placed per character in `HEADPIECES` (`prepare-models.mjs`).
 - **Hints.** Near a piece or portrait not yet tried, one pill says what a tap does. A change
   of outfit or character bursts sparkles over the visitor (not with reduced motion).
 - **Trying on.** Tap the dress (or the broom) or the bow. Each jiggles now and then as an

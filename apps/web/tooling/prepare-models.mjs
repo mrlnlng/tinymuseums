@@ -233,6 +233,62 @@ bunny = await floralOutfits(bunny, 'bunny')
 cat = await floralOutfits(cat, 'cat')
 otter = await floralOutfits(otter, 'otter')
 
+// Headpieces come on their own small canvases; centre each on the rig's canvas.
+async function placed(path, { x, y, scale, rotate = 0 }) {
+  const piece = await sharp(await master(path)).trim().toBuffer({ resolveWithObject: true })
+  const sized = await sharp(piece.data).resize(Math.round(piece.info.width * scale)).png().toBuffer()
+  const turned = await sharp(sized).rotate(rotate, { background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer({ resolveWithObject: true })
+  return sharp({ create: { width: 1668, height: 2388, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: turned.data, left: Math.round(x - turned.info.width / 2), top: Math.round(y - turned.info.height / 2) }])
+    .png().toBuffer()
+}
+
+const HEADPIECES = {
+  bunny: {
+    hibiscus: { x: 1010, y: 690, scale: 0.85, rotate: 10 },
+    'blue-cap': { x: 820, y: 610, scale: 1.15, rotate: -8 },
+    'daisy-clip': { x: 990, y: 700, scale: 0.75 },
+  },
+  cat: {
+    hibiscus: { x: 1120, y: 700, scale: 0.9, rotate: 10 },
+    'blue-cap': { x: 800, y: 640, scale: 1.3, rotate: -12 },
+    'daisy-clip': { x: 1110, y: 700, scale: 0.8 },
+  },
+  // The otter's flowers sit where its star does, in its place.
+  otter: {
+    hibiscus: { x: 267, y: 918, scale: 1, hides: 'otter_star' },
+    'blue-cap': { x: 760, y: 620, scale: 1.3, rotate: -20 },
+    'daisy-clip': { x: 267, y: 918, scale: 0.85, hides: 'otter_star' },
+  },
+}
+
+// The gold set is drawn twice: upright for the form, and on the bunny's tilted body for the rigs.
+async function goldOutfits(rig, kind) {
+  const hides = { bunny: 'bowtie', cat: 'cat_ribbon', otter: '' }[kind]
+  const order = kind === 'otter' ? 7.5 : kind === 'cat' ? 5 : 9
+  const set = await master('atelier/gold-sequin-set.png')
+  for (const costume of ['gold-sequin', 'gold-cape']) rig = await paintedCostume(rig, set, { costume, drawOrder: order, hides })
+  rig = await paintedCostume(rig, await master('atelier/gold-sequin-cape.png'), {
+    costume: 'gold-cape', part: 'cape', hides,
+    drawOrder: kind === 'otter' ? 7.75 : kind === 'cat' ? 5.4 : 16,
+  })
+  const places = HEADPIECES[kind]
+  const pieces = [
+    ...['blue', 'yellow', 'pink'].map((colour) => [`hibiscus-${colour}`, places.hibiscus]),
+    ['blue-cap', places['blue-cap']],
+    ['daisy-clip', places['daisy-clip']],
+  ]
+  for (const [costume, { hides: replaces = '', ...place }] of pieces) {
+    rig = await paintedCostume(rig, await placed(`atelier/${costume}.png`, place), {
+      costume, part: 'bow', bone: 'head', drawOrder: 18, hides: replaces,
+    })
+  }
+  return rig
+}
+bunny = await goldOutfits(bunny, 'bunny')
+cat = await goldOutfits(cat, 'cat')
+otter = await goldOutfits(otter, 'otter')
+
 const models = {
   bunnyRig: await rig('bunny-rig-v2-dressed', bunny),
   catRig: await rig('cat-rig-dressed', cat),
@@ -264,6 +320,13 @@ const atelier = {
   blueFloral: await image('mannequin-blue-floral'),
   floralCardigan: await image('mannequin-floral-cardigan'),
   flowerCrown: await image('flower-crown-trimmed'),
+  goldSequin: await image('mannequin-gold-sequin'),
+  goldCape: await image('mannequin-gold-cape'),
+  hibiscusBlue: await image('hibiscus-blue-trimmed'),
+  hibiscusYellow: await image('hibiscus-yellow-trimmed'),
+  hibiscusPink: await image('hibiscus-pink-trimmed'),
+  blueCap: await image('blue-cap-trimmed'),
+  daisyClip: await image('daisy-clip-trimmed'),
   broom: await image('broom'),
   platform: await image('platform', { lossless: true }),
   spotlight: await image('spotlight'),

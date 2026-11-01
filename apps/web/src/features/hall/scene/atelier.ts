@@ -7,7 +7,7 @@ import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { CharacterKind } from './rig'
-import { CARDIGANS } from './wardrobe'
+import { CARDIGANS, HIBISCUS } from './wardrobe'
 
 const { atelier } = CONFIG
 const { mock } = atelier
@@ -71,6 +71,11 @@ function itemName({ slot, id }: ClothingItem): string {
   if (id === 'blue-floral') return 'The blue floral dress'
   if (id === 'floral-cardigan') return 'The floral dress and cardigan'
   if (id === 'flower-crown') return 'The flower crown'
+  if (id === 'gold-sequin') return 'The gold sequin set'
+  if (id === 'gold-cape') return 'The gold sequin set and cape'
+  if ((HIBISCUS as readonly string[]).includes(id)) return `The ${id.slice('hibiscus-'.length)} hibiscus`
+  if (id === 'blue-cap') return 'The blue cap'
+  if (id === 'daisy-clip') return 'The daisy clip'
   return slot === 'bow' ? "Kiki's bow" : "Kiki's dress"
 }
 
@@ -202,19 +207,37 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     const mesh = plane(canvasWidth, canvasHeight, art.blueFloral, bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
     mesh.material.depthWrite = false
     group.add(mesh)
-    return { item: { slot: 'costume', id: 'blue-floral' } as ClothingItem, mesh, bare, x: spare.x, y: 330, shown: 1, target: 1 }
+    return { item: { slot: 'costume', id: 'blue-floral' } as ClothingItem, mesh, bare, x: spare.x, y: 330, width: 220, shown: 1, target: 1 }
   })
   const floralBare = form(atelier.floralDisplay.x, atelier.floralDisplay.feetY, true, true)
   floralBare.material.map = art.floralMannequin
   const floralCardigan = plane(canvasWidth, canvasHeight, art.floralCardigan, floralBare.position.x, floralBare.position.y, mannequin.z + 0.01) as Painted
   floralCardigan.material.depthWrite = false
   group.add(floralCardigan)
-  floralPieces.push({ item: { slot: 'costume', id: 'floral-cardigan' }, mesh: floralCardigan, bare: floralBare, x: atelier.floralDisplay.x, y: 330, shown: 1, target: 1 })
+  floralPieces.push({ item: { slot: 'costume', id: 'floral-cardigan' }, mesh: floralCardigan, bare: floralBare, x: atelier.floralDisplay.x, y: 330, width: 220, shown: 1, target: 1 })
   pillar(atelier.crownPillar.x)
   const crownPillow = picture('pillowBlue', { x: atelier.crownPillar.x, ...atelier.crownPillar.pillow, z: 0.34 })
   const crown = picture('flowerCrown', atelier.flowerCrown)
   crown.rotation.z = atelier.flowerCrown.rotation
-  floralPieces.push({ item: { slot: 'bow', id: 'flower-crown' }, mesh: crown, bare: crownPillow, x: atelier.flowerCrown.x, y: atelier.flowerCrown.y, shown: 1, target: 1 })
+  floralPieces.push({ item: { slot: 'bow', id: 'flower-crown' }, mesh: crown, bare: crownPillow, x: atelier.flowerCrown.x, y: atelier.flowerCrown.y, width: 190, shown: 1, target: 1 })
+  for (const { x, id, image } of atelier.goldForms) {
+    const bare = form(x, mannequin.feetY, true, true)
+    bare.material.map = art.floralMannequin
+    const mesh = plane(canvasWidth, canvasHeight, art[image], bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
+    mesh.material.depthWrite = false
+    group.add(mesh)
+    floralPieces.push({ item: { slot: 'costume', id }, mesh, bare, x, y: 330, width: 220, shown: 1, target: 1 })
+  }
+  // A worn headpiece leaves its cushion to give it back; the hibiscus share theirs.
+  for (const stand of atelier.accessories) {
+    pillar(stand.x)
+    const pillow = picture(stand.pillow, { x: stand.x, ...atelier.crownPillar.pillow, z: 0.34 })
+    for (const { id, image, dx, y, width, rotation } of stand.pieces) {
+      const mesh = picture(image, { x: stand.x + dx, y, width, z: 0.36 })
+      mesh.rotation.z = rotation
+      floralPieces.push({ item: { slot: 'bow', id }, mesh, bare: pillow, x: stand.x + dx, y, width: Math.min(190, width + 10), shown: 1, target: 1 })
+    }
+  }
   const cardigan = new THREE.Mesh(
     new THREE.PlaneGeometry(canvasWidth, canvasHeight),
     new THREE.MeshBasicMaterial({ map: art.cardiganRed, transparent: true, depthWrite: false }),
@@ -262,6 +285,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   text('div', 'atelier-collection', 'The Kiki Collection', atelier.collection, 0.2)
   text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.12)
   text('div', 'atelier-collection', 'The Floral Collection', atelier.floralCollection, 0.2)
+  text('div', 'atelier-collection', 'The Gold Collection', atelier.goldCollection, 0.2)
+  text('div', 'atelier-collection', 'The Accessory Collection', atelier.accessoryCollection, 0.2)
   const kikiDress: ClothingItem = { slot: 'costume', id: 'kiki' }
   const kikiBow: ClothingItem = { slot: 'bow', id: 'kiki' }
   const itemButtons = {
@@ -272,7 +297,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const floralButtons = floralPieces.map((piece) => control(
     `Try on ${itemName(piece.item).toLowerCase()}`,
     piece.item.slot === 'bow' ? 'atelier-item atelier-item-bow' : 'atelier-item atelier-item-dress',
-    { x: piece.x, y: piece.y, width: piece.item.slot === 'bow' ? 190 : 220 },
+    { x: piece.x, y: piece.y, width: piece.width },
     () => actions?.onItem(piece.item),
   ))
   const { swatches } = atelier.cardigans

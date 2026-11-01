@@ -162,8 +162,8 @@ export const CONFIG = {
   atelier: {
     mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
     ceiling: 4.97,
-    max: 15.2,
-    wall: { left: -7, right: 18.5, tile: 2.2 },
+    max: 23.4,
+    wall: { left: -7, right: 27, tile: 2.2 },
     carpet: { height: 1.25 },
     curtains: { left: -40, width: 520, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },
@@ -192,6 +192,21 @@ export const CONFIG = {
     floralDisplay: { x: 3250, feetY: 610 },
     flowerCrown: { x: 2940, y: 405, width: 165, z: 0.36, rotation: -Math.PI / 10 },
     crownPillar: { x: 2940, pillow: { y: 445, width: 210 } },
+    goldCollection: { x: 3780, y: 132, width: 340 },
+    goldForms: [{ x: 3620, id: 'gold-sequin', image: 'goldSequin' }, { x: 3940, id: 'gold-cape', image: 'goldCape' }] as const,
+    accessoryCollection: { x: 4560, y: 132, width: 380 },
+    // Headpieces on cushions; the three hibiscus share the middle one.
+    accessories: [
+      { x: 4290, pillow: 'pillowRed', pieces: [{ id: 'blue-cap', image: 'blueCap', dx: 0, y: 392, width: 180, rotation: -0.12 }] },
+      {
+        x: 4560, pillow: 'pillowBlue', pieces: [
+          { id: 'hibiscus-blue', image: 'hibiscusBlue', dx: -62, y: 410, width: 78, rotation: 0.2 },
+          { id: 'hibiscus-yellow', image: 'hibiscusYellow', dx: 0, y: 398, width: 78, rotation: 0 },
+          { id: 'hibiscus-pink', image: 'hibiscusPink', dx: 62, y: 410, width: 78, rotation: -0.2 },
+        ],
+      },
+      { x: 4830, pillow: 'pillowRed', pieces: [{ id: 'daisy-clip', image: 'daisyClip', dx: 0, y: 404, width: 120, rotation: -0.15 }] },
+    ] as const,
     // The cardigan and blue floral dress each have a spotlit form.
     forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 610, platform: true }],
     redPillar: { x: 2083, pillow: { y: 440, width: 210 } },

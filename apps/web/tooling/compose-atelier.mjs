@@ -69,7 +69,10 @@ async function floralForm(name, input) {
 await floralForm('mannequin-floral-bare', bare)
 await floralForm('mannequin-blue-floral', blue)
 await floralForm('mannequin-floral-cardigan', floralSource)
-for (const name of ['flower-crown']) {
+const gold = await sharp(bare).composite([{ input: new URL('atelier/gold-sequin-set-display.png', root).pathname }]).png().toBuffer()
+await floralForm('mannequin-gold-sequin', gold)
+await floralForm('mannequin-gold-cape', await sharp(gold).composite([{ input: new URL('atelier/gold-sequin-cape-display.png', root).pathname }]).png().toBuffer())
+for (const name of ['flower-crown', 'hibiscus-blue', 'hibiscus-yellow', 'hibiscus-pink', 'blue-cap', 'daisy-clip']) {
   await sharp(new URL(`atelier/${name}.png`, root).pathname).trim()
     .png({ compressionLevel: 9 }).toFile(new URL(`atelier/${name}-trimmed.png`, root).pathname)
 }

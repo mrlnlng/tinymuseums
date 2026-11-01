@@ -126,3 +126,17 @@ test('floral outfits and crown equip, persist, carry across characters, and retu
   assert.deepEqual(s.worn.at(-1), [null, null])
   assert.deepEqual(s.misfits, [])
 })
+
+test('a headpiece replaces the one worn before it, and the gold set keeps it', async () => {
+  const s = setup()
+  s.wardrobe.tapItem({ slot: 'costume', id: 'gold-cape' })
+  s.wardrobe.tapItem({ slot: 'bow', id: 'hibiscus-pink' })
+  s.wardrobe.tapItem({ slot: 'bow', id: 'blue-cap' })
+  await s.settled()
+  assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: 'gold-cape', bow: 'blue-cap' })
+  s.wardrobe.tapItem({ slot: 'costume', id: 'gold-sequin' })
+  s.wardrobe.tapItem({ slot: 'bow', id: 'blue-cap' })
+  await s.settled()
+  assert.deepEqual(s.worn.at(-1), ['gold-sequin', null])
+  assert.deepEqual(s.misfits, [])
+})

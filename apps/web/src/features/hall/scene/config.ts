@@ -163,7 +163,7 @@ export const CONFIG = {
     mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
     ceiling: 4.97,
     max: 23.4,
-    wall: { left: -7, right: 27, tile: 2.2 },
+    wall: { left: -10, right: 30, tile: 2.2 },
     carpet: { height: 1.25 },
     curtains: { left: -40, width: 520, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },

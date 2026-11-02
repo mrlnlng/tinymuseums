@@ -342,11 +342,12 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     { key: 'portrait1', x: frames[1].spot.x, y: frames[1].spot.y - 78 },
   ]
   const tried = new Set<HintKey>()
+  const tap = window.matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click'
   function hintText(key: HintKey): string {
-    if (key === 'dress') return target.dress > 0 ? 'Tap the dress to try it on' : 'Tap the form to give it back'
-    if (key === 'bow') return target.bow > 0 ? 'Tap the bow to try it on' : 'Tap the cushion to give it back'
-    if (key === 'cardigan') return target.cardigan > 0 ? 'Tap to try it on, or pick a colour' : 'Tap the form to give it back'
-    return `Tap to walk as ${CHARACTER_NAMES[frames[key === 'portrait0' ? 0 : 1].offered]}`
+    if (key === 'dress') return target.dress > 0 ? `${tap} the dress to try it on` : `${tap} the form to give it back`
+    if (key === 'bow') return target.bow > 0 ? `${tap} the bow to try it on` : `${tap} the cushion to give it back`
+    if (key === 'cardigan') return target.cardigan > 0 ? `${tap} to try it on, or pick a colour` : `${tap} the form to give it back`
+    return `${tap} to walk as ${CHARACTER_NAMES[frames[key === 'portrait0' ? 0 : 1].offered]}`
   }
   const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
     x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
@@ -392,7 +393,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   }
   priceTag(() => itemIdFor('costume', 'kiki'), { x: featuredX, y: 250, width: 150 })
   priceTag(() => itemIdFor('bow', 'kiki'), { x: atelier.bowPillar.bow.x, y: 248, width: 140 })
-  priceTag(() => itemIdFor('costume', cardiganItem().id), { x: cardiganStand.x, y: 250, width: 150 })
+  priceTag(() => itemIdFor('costume', cardiganItem().id), { x: cardiganStand.x, y: 322, width: 150 })
   for (const piece of floralPieces) {
     priceTag(() => itemIdFor(piece.item.slot, piece.item.id), { x: piece.x, y: piece.y + 58, width: 125 })
   }
@@ -553,8 +554,8 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       const nearbyFloral = floralPieces.find(piece => Math.abs(visitorX - wx(piece.x)) < 1.25)
       if (nearbyFloral && !nearest) {
         hint.textContent = nearbyFloral.target > 0
-          ? `Tap to try on ${itemName(nearbyFloral.item).toLowerCase()}`
-          : nearbyFloral.item.slot === 'bow' ? 'Tap the cushion to give it back' : 'Tap the form to give it back'
+          ? `${tap} to try on ${itemName(nearbyFloral.item).toLowerCase()}`
+          : nearbyFloral.item.slot === 'bow' ? `${tap} the cushion to give it back` : `${tap} the form to give it back`
         hintSpot.x = wx(nearbyFloral.x)
         hintSpot.y = wy(nearbyFloral.item.slot === 'bow' ? 310 : 160)
       }

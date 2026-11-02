@@ -19,10 +19,16 @@ function fitWidth(scale: number): number {
   return Math.max(BOOTH_WIDTH, COVER_WIDTH / scale)
 }
 
-const STEPS = [
+const TOUCH_STEPS = [
   'Swipe left and right to take a guilt-free scroll through the museum.',
   'Interact: tap any painting that catches your eye to view more details.',
   'Explore: hidden easter eggs are tucked all around the museum!',
+]
+
+const POINTER_STEPS = [
+  'Drag or use the arrow keys to take a guilt-free scroll through the museum.',
+  'Interact: click any painting that catches your eye to view more details.',
+  TOUCH_STEPS[2],
 ]
 
 interface HelpGuideProps {
@@ -37,6 +43,7 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
   const boothRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [steps] = useState(() => (window.matchMedia('(pointer: coarse)').matches ? TOUCH_STEPS : POINTER_STEPS))
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -119,7 +126,7 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
 
           <div className="help-band help-band-middle">
             <ol className="help-steps">
-              {STEPS.map((step) => (
+              {steps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>

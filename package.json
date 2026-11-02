@@ -14,7 +14,7 @@
     "dev:web": "npm run dev --workspace @tiny/web",
     "dev:worker": "npm run dev --workspace @tiny/worker",
     "dev:presence": "npm run dev --workspace @tiny/presence",
-    "test": "node --test 'packages/core/src/**/*.test.ts' 'apps/web/src/features/sketchguess/**/*.test.ts' 'apps/web/src/features/sound/**/*.test.ts' 'apps/web/src/shared/lib/slots/**/*.test.ts' 'apps/web/src/features/hall/scene/**/*.test.ts' 'apps/presence/src/**/*.test.ts' 'apps/web/src/features/presence/**/*.test.ts'",
+    "test": "node --test 'packages/core/src/**/*.test.ts' 'apps/web/src/features/sketchguess/**/*.test.ts' 'apps/web/src/features/colorgame/**/*.test.ts' 'apps/web/src/features/economy/**/*.test.ts' 'apps/web/src/app/api/wallet/**/*.test.ts' 'apps/web/src/features/sound/**/*.test.ts' 'apps/web/src/shared/lib/slots/**/*.test.ts' 'apps/web/src/features/hall/scene/**/*.test.ts' 'apps/presence/src/**/*.test.ts' 'apps/web/src/features/presence/**/*.test.ts'",
     "typecheck": "npm run typecheck --workspace @tiny/core && npm run typecheck --workspace @tiny/worker && npm run typecheck --workspace @tiny/presence && npm run typecheck --workspace @tiny/web",
     "build": "npm run build --workspace @tiny/web",
     "test:db": "node packages/core/db-tests/run.ts",

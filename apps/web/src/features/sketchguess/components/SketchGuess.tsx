@@ -7,6 +7,7 @@ import { useSound } from '@/features/sound/components/SoundProvider'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { track } from '@/shared/lib/visit'
+import { earn } from '@/features/economy/store'
 import { decodeImage, loadRound, type LoadedRound } from '../lib/api'
 import { pickFocus } from '../lib/focus'
 import {
@@ -304,6 +305,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     setBest(saveIfHigher(bestKeyFor(mode, difficulty), total))
     setPhase('done')
     track('sketch_finish')
+    earn('game', { game: 'sketch', score: total })
   }, [roundIndex, total, mode, difficulty])
 
   const playAgain = useCallback(() => {

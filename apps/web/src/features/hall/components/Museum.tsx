@@ -11,6 +11,7 @@ import AtelierLoading from '@/features/hall/components/AtelierLoading'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
+import type { MinigameId } from '@/features/minigames/registry'
 import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
@@ -21,12 +22,16 @@ const loadCoinFound = () => import('@/features/hall/components/CoinFound')
 const loadHelpGuide = () => import('@/features/hall/components/HelpGuide')
 const loadWalkthrough = () => import('@/features/artwork/components/Walkthrough')
 const loadSketchGuess = () => import('@/features/sketchguess/components/SketchGuess')
+const loadGameDesktop = () => import('@/features/minigames/components/GameDesktop')
+const loadColorRecall = () => import('@/features/colorgame/components/ColorRecall')
 
 const GuestBoard = dynamic(loadGuestBoard, { ssr: false })
 const CoinFound = dynamic(loadCoinFound, { ssr: false })
 const HelpGuide = dynamic(loadHelpGuide, { ssr: false })
 const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
 const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
+const GameDesktop = dynamic(loadGameDesktop, { ssr: false })
+const ColorRecall = dynamic(loadColorRecall, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
@@ -46,12 +51,25 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const [isGuestBoardHung, setIsGuestBoardHung] = useState(false)
   const [isHintShown, setIsHintShown] = useState(false)
   const [sketchGame, setSketchGame] = useState<PreparedGame | null>(null)
-  const [isSketchOpen, setIsSketchOpen] = useState(false)
+  const [openGame, setOpenGame] = useState<null | 'desktop' | MinigameId>(null)
   const [sketchSession, setSketchSession] = useState(0)
+  const [unkeptNote, setUnkeptNote] = useState(false)
   const hideHint = useCallback(() => setIsHintShown(false), [])
 
   useEffect(() => {
     performance.mark(MUSEUM_START_MARK)
+  }, [])
+
+  useEffect(() => {
+    let timer = 0
+    try {
+      if (window.sessionStorage.getItem('tm:economy:unkept') === '1') {
+        window.sessionStorage.removeItem('tm:economy:unkept')
+        setUnkeptNote(true)
+        timer = window.setTimeout(() => setUnkeptNote(false), 4200)
+      }
+    } catch {}
+    return () => window.clearTimeout(timer)
   }, [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
@@ -59,7 +77,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const router = useRouter()
 
   const isSuspended =
-    openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || isSketchOpen
+    openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || openGame !== null
 
   const { isReady, error } = useHallScene({
     hosts: {
@@ -80,14 +98,11 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
     onGuestBoardHung: () => setIsGuestBoardHung(true),
     onIntroDone: () => setIsHintShown(claimSwipeHint()),
     onFirstMove: hideHint,
-    onOpenSketchGame: () => {
-      setSketchSession((n) => n + 1)
-      setIsSketchOpen(true)
-    },
+    onOpenComputer: () => setOpenGame('desktop'),
   })
 
   useEffect(() => {
-    if (!isGuestBoardHung || sketchGame || isSketchOpen) return
+    if (!isGuestBoardHung || sketchGame || openGame === 'sketch') return
     const controller = new AbortController()
     loadSketchGuess()
       .then(({ prepareSketchGame }) => prepareSketchGame(initialSlice.epochId, controller.signal))
@@ -96,11 +111,16 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       })
       .catch(() => {})
     return () => controller.abort()
-  }, [isGuestBoardHung, sketchGame, isSketchOpen, initialSlice.epochId])
+  }, [isGuestBoardHung, sketchGame, openGame, initialSlice.epochId])
 
   const closeSketchGuess = useCallback(() => {
-    setIsSketchOpen(false)
+    setOpenGame('desktop')
     setSketchGame(null)
+  }, [])
+
+  const pickGame = useCallback((id: MinigameId) => {
+    if (id === 'sketch') setSketchSession((n) => n + 1)
+    setOpenGame(id)
   }, [])
 
   useEffect(() => {
@@ -148,18 +168,36 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
         </div>
         <div className="hall-character" ref={characterRef} />
 
+        {unkeptNote ? (
+          <p className="economy-note" role="status">
+            The unkept pieces went back to their stands.
+          </p>
+        ) : null}
+
         <AnimatePresence>
           {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
         </AnimatePresence>
 
         <AnimatePresence>
-          {isSketchOpen ? (
+          {openGame === 'desktop' ? (
+            <GameDesktop key="game-desktop" onPick={pickGame} onClose={() => setOpenGame(null)} />
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {openGame === 'sketch' ? (
             <SketchGuess
               key={`sketch-guess-${sketchSession}`}
               epochId={initialSlice.epochId}
               prepared={sketchGame}
               onClose={closeSketchGuess}
             />
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {openGame === 'color' ? (
+            <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
           ) : null}
         </AnimatePresence>
 

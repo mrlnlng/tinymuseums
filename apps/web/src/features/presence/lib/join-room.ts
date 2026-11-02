@@ -5,6 +5,7 @@ import { presence as presenceSlot } from '@tiny/core/slots'
 import type { Character } from '@/features/hall/scene/character'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import type { Traversal } from '@/features/hall/scene/traversal'
+import { getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
 import { defaultStore } from '@/shared/lib/slots'
 import { createRemoteVisitors, type VisitorScenery } from '../scene/remote-visitors'
 import { isMuted, onNameChange, onSayRequest, openChat, reportSay, setInRoom, setPeople } from './room-events'
@@ -84,6 +85,13 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     memberId = next
     presence.reconnect()
   })
+  let owned = getWalletSnapshot().items
+  const stopWallet = subscribeWallet(() => {
+    const next = getWalletSnapshot().items
+    if (next.length === owned.length && next.every((item, index) => item === owned[index])) return
+    owned = next
+    presence.reconnect()
+  })
   const onKey = (event: KeyboardEvent) => {
     const target = event.target instanceof Element ? event.target : null
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
@@ -112,6 +120,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
       stopSay()
       stopNames()
       stopMember()
+      stopWallet()
       window.removeEventListener('keydown', onKey)
       presence.dispose()
       turn.dispose()

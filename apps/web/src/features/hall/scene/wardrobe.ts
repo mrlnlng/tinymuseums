@@ -1,5 +1,7 @@
 import { restamp, type Outfit } from '@tiny/core/slots'
+import { itemIdFor } from '@tiny/core/economy'
 import type { SlotHandle } from '@/shared/lib/slots'
+import { allowedCharacter, owns, walletReady, type OwnedSnapshot } from '../../economy/lib/ownership.ts'
 import type { AtelierRoom, ClothingItem } from './atelier'
 import type { Character, Look } from './character'
 import type { CharacterKind } from './rig'
@@ -23,18 +25,36 @@ export function lookOf(outfit: Outfit): Look {
   return { kind: outfit.character.v, costume: known(outfit.costume.v), bow: known(outfit.bow.v) }
 }
 
+export function ownedLook(look: Look, snapshot: OwnedSnapshot | null): Look {
+  if (!walletReady(snapshot)) return look
+  const piece = (slot: 'costume' | 'bow', id: string | null) =>
+    id !== null && owns(snapshot, itemIdFor(slot, id)) ? id : null
+  return {
+    kind: allowedCharacter(snapshot, look.kind) ? look.kind : 'bunny',
+    costume: piece('costume', look.costume),
+    bow: piece('bow', look.bow),
+  }
+}
+
+export function shouldRewriteOutfit(look: Look, snapshot: OwnedSnapshot | null): boolean {
+  if (!walletReady(snapshot)) return false
+  const next = ownedLook(look, snapshot)
+  return next.kind !== look.kind || next.costume !== look.costume || next.bow !== look.bow
+}
+
 export function followOutfit(
   character: Character,
   outfit: SlotHandle<Outfit>,
   busy: () => boolean,
   applied: () => void,
+  filter: (look: Look) => Look = (look) => look,
 ): { sync(): void; dispose(): void } {
   let applying = false
   let disposed = false
   let failed: string | null = null
   function sync(): void {
     if (disposed || applying || busy()) return
-    const look = lookOf(outfit.snapshot())
+    const look = filter(lookOf(outfit.snapshot()))
     const key = JSON.stringify(look)
     if (key === JSON.stringify(character.look) || key === failed) return
     applying = true

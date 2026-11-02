@@ -1,5 +1,7 @@
 // Web Crypto only, so the Next route (Node) signs and the Cloudflare room verifies with one code path.
 
+import { ITEMS, isCatalogItem } from '../economy/catalog.ts'
+
 export interface Ticket {
   /** Random per tab; never a member id. */
   pid: string
@@ -8,9 +10,12 @@ export interface Ticket {
   room: string
   /** Expiry, ms since the epoch. */
   exp: number
+  /** Catalog ids this member owns; absent on older tickets, which mean none. */
+  own?: string[]
 }
 
 export const TICKET_TTL_MS = 10 * 60 * 1000
+const MAX_OWN = Object.keys(ITEMS).length
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -50,11 +55,21 @@ export async function signTicket(ticket: Ticket, secret: string): Promise<string
   return `${body}.${toBase64Url(new Uint8Array(signature))}`
 }
 
+function isOwn(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= MAX_OWN &&
+    value.every((item) => typeof item === 'string' && isCatalogItem(item)) &&
+    new Set(value).size === value.length
+  )
+}
+
 function isTicket(value: unknown): value is Ticket {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const t = value as Record<string, unknown>
+  const keys = Object.keys(t).length
   return (
-    Object.keys(t).length === 4 &&
+    (keys === 4 || (keys === 5 && 'own' in t && isOwn(t.own))) &&
     typeof t.pid === 'string' && /^[A-Za-z0-9_-]{8,32}$/.test(t.pid) &&
     typeof t.name === 'string' && t.name.length > 0 && t.name.length <= 40 &&
     typeof t.room === 'string' && t.room.length <= 40 &&
@@ -77,5 +92,6 @@ export async function verifyTicket(token: string, secret: string, now = Date.now
   } catch {
     return null
   }
-  return isTicket(ticket) && ticket.exp > now ? ticket : null
+  if (!isTicket(ticket) || ticket.exp <= now) return null
+  return { ...ticket, own: ticket.own ?? [] }
 }

@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import type { ClientMessage, Ticket } from '@tiny/core/presence/wire'
 import { GHOST_MS, HELLO_TIMEOUT_MS, MAX_WAITING_PER_IP, admitted, farewell, holdsOf, newAttachment, onMessage, peerOf, roomFull, stale, tooManyWaiting, type Attachment } from './room-logic.ts'
 
-const ticket: Ticket = { pid: 'pid-12345678', name: 'Velvet Easel', room: 'hall-e3', exp: Date.now() + 60_000 }
+const ticket: Ticket = { pid: 'pid-12345678', name: 'Velvet Easel', room: 'hall-e3', exp: Date.now() + 60_000, own: ['bow:kiki'] }
 const look = { kind: 'cat', costume: null, bow: 'kiki' } as const
 const state = (seq: number, x = 1): ClientMessage => ({ t: 'state', x, vx: 0, facing: 1, look, sit: false, helm: false, cup: false, seq })
 
@@ -33,6 +33,26 @@ test('states are stamped with the ticket identity, whatever the client sent', ()
     message: { t: 'state', pid: ticket.pid, name: ticket.name, x: 42, vx: 0, facing: 1, look, sit: false, helm: false, cup: false, seq: 1 },
   })
   assert.equal(peerOf(outcome.attachment)?.x, 42)
+})
+
+test('others see only the pieces and characters in the signed own list', () => {
+  const owned = { ...ticket, own: ['costume:kiki', 'bow:kiki'] }
+  const dressed = { ...state(1), look: { kind: 'otter', costume: 'kiki', bow: 'kiki' } } as ClientMessage
+  const outcome = onMessage(joined(0, owned), dressed, 0, [])
+  assert.deepEqual(outcome.send?.message, {
+    t: 'state', pid: ticket.pid, name: ticket.name, x: 1, vx: 0, facing: 1,
+    look: { kind: 'bunny', costume: 'kiki', bow: 'kiki' }, sit: false, helm: false, cup: false, seq: 1,
+  })
+})
+
+test('free characters always pass, and unowned pieces become none', () => {
+  const none = { ...ticket, own: [] }
+  const dressed = { ...state(1), look: { kind: 'cat', costume: 'kiki', bow: 'kiki' } } as ClientMessage
+  const outcome = onMessage(joined(0, none), dressed, 0, [])
+  assert.equal(outcome.send?.message.t, 'state')
+  if (outcome.send?.message.t === 'state') {
+    assert.deepEqual(outcome.send.message.look, { kind: 'cat', costume: null, bow: null })
+  }
 })
 
 test('out-of-order states are dropped', () => {

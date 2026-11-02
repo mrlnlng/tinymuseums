@@ -1,4 +1,4 @@
-import { canonicalEmail, hit, hitForVisitor, signUp } from '@tiny/core'
+import { canonicalEmail, grantWelcome, hit, hitForVisitor, signUp } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
 import { setMemberCookie } from '@/shared/lib/member-session'
 import { checkMutation, json, limited, readMemberBody } from '@/shared/lib/member-route'
@@ -25,6 +25,10 @@ export async function POST(request: Request) {
 
   const started = await signUp(email, password)
   if ('error' in started) return json({ error: started.error }, 400)
+
+  try {
+    await grantWelcome(started.member.id)
+  } catch {}
 
   await setMemberCookie(started.token, started.expiresAt)
   return json({ id: started.member.id, email: started.member.email })

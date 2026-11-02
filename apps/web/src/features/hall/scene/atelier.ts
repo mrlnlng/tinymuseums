@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import manifest from '@/generated/asset-manifest.json'
+import { FREE_CHARACTERS, itemIdFor, priceOf } from '@tiny/core/economy'
+import { florinLabel } from '@/features/economy/lib/claim'
 import { builtUrl } from '@/shared/lib/assets'
 import { plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
@@ -64,9 +66,9 @@ const CARDIGAN_NAMES: Record<Cardigan, string> = {
   'cardigan-butter-yellow': 'butter yellow',
 }
 const isCardigan = (id: string | null): id is Cardigan => (CARDIGANS as readonly (string | null)[]).includes(id)
-const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter' }
+export const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter' }
 
-function itemName({ slot, id }: ClothingItem): string {
+export function itemName({ slot, id }: ClothingItem): string {
   if (isCardigan(id)) return `The ${CARDIGAN_NAMES[id]} cardigan`
   if (id === 'blue-floral') return 'The blue floral dress'
   if (id === 'floral-cardigan') return 'The floral dress and cardigan'
@@ -77,6 +79,11 @@ function itemName({ slot, id }: ClothingItem): string {
   if (id === 'blue-cap') return 'The blue cap'
   if (id === 'daisy-clip') return 'The daisy clip'
   return slot === 'bow' ? "Kiki's bow" : "Kiki's dress"
+}
+
+export function keepName(item: ClothingItem): string {
+  const name = itemName(item)
+  return name.startsWith('The ') ? name.slice(4) : name
 }
 
 export interface AtelierActions {
@@ -93,6 +100,8 @@ export interface AtelierRoom {
   hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
   /** What the visitor wears; a worn piece leaves its stand bare. */
   setWorn(costume: string | null, bow: string | null): void
+  /** The member's owned catalog ids, or null while their wallet is still loading. */
+  setOwned(items: readonly string[] | null): void
   /** The portraits show the characters the visitor is not. */
   setVisitor(kind: CharacterKind): void
   /** Says by the piece that it does not fit this character. */
@@ -367,9 +376,50 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     return { slot: 'costume', id: isCardigan(worn) ? worn : onForm }
   }
 
+  const priceTags: { node: HTMLDivElement; label: HTMLSpanElement; item: () => string }[] = []
+  function priceTag(item: () => string, spot: { x: number; y: number; width: number }): void {
+    const node = document.createElement('div')
+    node.className = 'atelier-price'
+    node.hidden = true
+    const icon = document.createElement('img')
+    icon.className = 'atelier-price-coin'
+    icon.alt = ''
+    icon.src = builtUrl(manifest.images['coin-large'].x2.src)
+    const label = document.createElement('span')
+    node.append(icon, label)
+    place(node, spot, 0.062)
+    priceTags.push({ node, label, item })
+  }
+  priceTag(() => itemIdFor('costume', 'kiki'), { x: featuredX, y: 250, width: 150 })
+  priceTag(() => itemIdFor('bow', 'kiki'), { x: atelier.bowPillar.bow.x, y: 248, width: 140 })
+  priceTag(() => itemIdFor('costume', cardiganItem().id), { x: cardiganStand.x, y: 250, width: 150 })
+  for (const piece of floralPieces) {
+    priceTag(() => itemIdFor(piece.item.slot, piece.item.id), { x: piece.x, y: piece.y + 58, width: 125 })
+  }
+  for (const frame of frames) {
+    if ((FREE_CHARACTERS as readonly string[]).includes(frame.own)) continue
+    priceTag(() => itemIdFor('character', frame.own), { x: frame.spot.x, y: frame.spot.y + 86, width: 120 })
+  }
+
+  let owned: Set<string> | null = null
+  function refreshPriceTags(): void {
+    for (const tag of priceTags) {
+      const id = tag.item()
+      const price = priceOf(id)
+      const show = owned !== null && price !== null && !owned.has(id)
+      tag.node.hidden = !show
+      if (show && price !== null) tag.label.textContent = florinLabel(price)
+    }
+  }
+  refreshPriceTags()
 
   return {
     setActions(next) { actions = next },
+
+    setOwned(items) {
+      owned = items === null ? null : new Set(items)
+      refreshPriceTags()
+    },
 
     hitTestDoor(raycaster) {
       return door.hitTest(raycaster)
@@ -429,6 +479,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
         swatchButtons[i].setAttribute('aria-pressed', String(costume === id))
         swatchButtons[i].setAttribute('aria-label', `${costume === id ? 'Return' : 'Try on'} the ${CARDIGAN_NAMES[id]} cardigan`)
       })
+      refreshPriceTags()
     },
 
     setVisitor(kind) {

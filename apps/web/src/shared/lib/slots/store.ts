@@ -99,8 +99,8 @@ export class SyncStore {
     this.fetchFn = env.fetchFn
     this.registry = env.registry ?? SLOTS
     this.debounceMs = env.debounceMs ?? 2000
-    this.setTimeoutFn = env.setTimeoutFn ?? setTimeout
-    this.clearTimeoutFn = env.clearTimeoutFn ?? clearTimeout
+    this.setTimeoutFn = env.setTimeoutFn ?? setTimeout.bind(globalThis)
+    this.clearTimeoutFn = env.clearTimeoutFn ?? clearTimeout.bind(globalThis)
     this.isVisible = env.isVisible ?? (() => true)
     const marker = readStored(this.storage, MEMBER_KEY)
     this.scope = { memberId: marker, prefix: marker ? memberPrefix(marker) : ANON_PREFIX }

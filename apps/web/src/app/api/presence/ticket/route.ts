@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
-import { env, hitForVisitor, memberName } from '@tiny/core'
+import { env, exportWallet, hitForVisitor, memberName } from '@tiny/core'
+import { ITEMS, isCatalogItem } from '@tiny/core/economy'
 import { TICKET_TTL_MS, nameFromSeed, signTicket, validRoomBase, validSeed } from '@tiny/core/presence'
 import { clientIp } from '@/shared/lib/client-ip'
 import { checkMutation, json, limited, readMemberBody } from '@/shared/lib/member-route'
@@ -33,8 +34,17 @@ export async function POST(request: Request) {
   if (!validRoomBase(room) || !validSeed(seed)) return json({ error: 'invalid' }, 400)
 
   const session = await currentMember()
-  const name = (session ? (await memberName(session.member.id, seed))?.name : null) ?? nameFromSeed(seed)
+  const [member, wallet] = session
+    ? await Promise.all([memberName(session.member.id, seed), exportWallet(session.member.id)])
+    : [null, null]
+  const name = member?.name ?? nameFromSeed(seed)
+  const own = wallet
+    ? wallet.items
+        .map((item) => item.item_id)
+        .filter(isCatalogItem)
+        .slice(0, Object.keys(ITEMS).length)
+    : []
   const exp = Date.now() + TICKET_TTL_MS
-  const ticket = await signTicket({ pid: randomBytes(12).toString('base64url'), name, room, exp }, env.presenceSecret)
+  const ticket = await signTicket({ pid: randomBytes(12).toString('base64url'), name, room, exp, own }, env.presenceSecret)
   return json({ ticket, exp, url: presenceUrl(request) })
 }

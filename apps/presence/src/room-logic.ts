@@ -1,5 +1,6 @@
+import { FREE_CHARACTERS, itemIdFor } from '@tiny/core/economy'
 import { checkMessage } from '@tiny/core/presence/messages'
-import { MAX_HOLDS, type ClientMessage, type Item, type Motion, type Peer, type ServerMessage, type Ticket } from '@tiny/core/presence/wire'
+import { MAX_HOLDS, type ClientMessage, type Item, type Look, type Motion, type Peer, type ServerMessage, type Ticket } from '@tiny/core/presence/wire'
 
 export const HELLO_TIMEOUT_MS = 5000
 /** A visitor's tab sends at least every 4 s, even hidden; silence past this is a lost connection. */
@@ -25,6 +26,8 @@ export interface Attachment {
   last: Motion | null
   /** What this visitor holds; released when the socket goes. */
   holds: Item[]
+  /** Catalog ids from the signed ticket; others see only these pieces and characters. */
+  own: string[]
   tokens: number
   refilledAt: number
   saidAt: number
@@ -35,7 +38,7 @@ export interface Attachment {
 
 export function newAttachment(room: string, now: number, ip = ''): Attachment {
   return {
-    room, ip, joinedAt: now, heardAt: now, pid: null, name: null, last: null, holds: [],
+    room, ip, joinedAt: now, heardAt: now, pid: null, name: null, last: null, holds: [], own: [],
     tokens: STATE_BURST, refilledAt: now, saidAt: 0, strikes: 0, gone: false,
   }
 }
@@ -55,7 +58,19 @@ export const present = (attachment: Attachment): boolean => attachment.pid !== n
 
 export function admitted(attachment: Attachment, ticket: Ticket | null): Attachment | null {
   if (!ticket || ticket.room !== attachment.room.replace(/-s\d+$/, '')) return null
-  return { ...attachment, pid: ticket.pid, name: ticket.name }
+  return { ...attachment, pid: ticket.pid, name: ticket.name, own: ticket.own ?? [] }
+}
+
+export function ownedLook(look: Look, own: readonly string[]): Look {
+  const owned = new Set(own)
+  const piece = (slot: 'costume' | 'bow', id: string | null) =>
+    id !== null && owned.has(itemIdFor(slot, id)) ? id : null
+  const kind =
+    (FREE_CHARACTERS as readonly string[]).includes(look.kind) ||
+    owned.has(itemIdFor('character', look.kind))
+      ? look.kind
+      : 'bunny'
+  return { kind, costume: piece('costume', look.costume), bow: piece('bow', look.bow) }
 }
 
 export function peerOf(attachment: Attachment): Peer | null {
@@ -129,7 +144,8 @@ export function onMessage(attachment: Attachment, message: ClientMessage | null,
       if (!paid) return strike({ ...heard, tokens: 0, refilledAt: now })
       if (heard.last && message.seq <= heard.last.seq) return { attachment: heard }
       const { t: _t, ...motion } = message
-      return { attachment: { ...paid, last: motion }, send: { to: 'others', message: { t: 'state', pid, name, ...motion } } }
+      const safe = { ...motion, look: ownedLook(motion.look, paid.own) }
+      return { attachment: { ...paid, last: safe }, send: { to: 'others', message: { t: 'state', pid, name, ...safe } } }
     }
     case 'claim': {
       const paid = spend(heard, now)

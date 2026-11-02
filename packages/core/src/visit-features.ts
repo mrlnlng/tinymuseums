@@ -29,6 +29,10 @@ export const VISIT_FEATURES = {
   costume_on: 'Costume tried on',
   costume_off: 'Costume returned',
   character: 'Changed character',
+  coins_earned: 'Florins earned',
+  daily_cap_reached: 'Florins daily cap reached',
+  coins_invite_shown: 'Florins member invite shown',
+  item_kept: 'Wardrobe item kept',
 } as const
 
 export type VisitFeature = keyof typeof VISIT_FEATURES

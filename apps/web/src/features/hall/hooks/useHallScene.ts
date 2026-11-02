@@ -39,9 +39,11 @@ import { useSound } from '@/features/sound/components/SoundProvider'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import { outfit } from '@tiny/core/slots'
 import { defaultStore } from '@/shared/lib/slots'
+import { earn } from '@/features/economy/store'
+import { useWallet } from '@/features/economy/hooks'
 import { createRoomPassage } from '@/features/hall/scene/room-passage'
 import { createLobbyGalleryDoor } from '@/features/hall/scene/lobby-gallery-door'
-import { followOutfit, lookOf } from '@/features/hall/scene/wardrobe'
+import { followOutfit, lookOf, ownedLook } from '@/features/hall/scene/wardrobe'
 
 const BACKDROP_LENGTH = 600
 
@@ -88,7 +90,7 @@ interface Options {
   onGuestBoardHung: () => void
   onIntroDone: () => void
   onFirstMove: () => void
-  onOpenSketchGame: () => void
+  onOpenComputer: () => void
 }
 
 /** The pedestals whose helmet another visitor is wearing. */
@@ -112,10 +114,18 @@ export function useHallScene({
   onGuestBoardHung,
   onIntroDone,
   onFirstMove,
-  onOpenSketchGame,
+  onOpenComputer,
 }: Options) {
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const wallet = useWallet()
+  const walletRef = useRef(wallet)
+  walletRef.current = wallet
+  const syncLookRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    syncLookRef.current()
+  }, [wallet])
 
   // The scene is built once, so anything the frame loop reads that can change is held in a ref.
   const isReadyRef = useRef(false)
@@ -153,8 +163,8 @@ export function useHallScene({
   const onFirstMoveRef = useRef(onFirstMove)
   onFirstMoveRef.current = onFirstMove
 
-  const onOpenSketchGameRef = useRef(onOpenSketchGame)
-  onOpenSketchGameRef.current = onOpenSketchGame
+  const onOpenComputerRef = useRef(onOpenComputer)
+  onOpenComputerRef.current = onOpenComputer
 
   useEffect(() => {
     let isDisposed = false
@@ -198,8 +208,15 @@ export function useHallScene({
       hall.onTextureReady = (texture) => renderer.initTexture(texture)
 
       const outfitSlot = defaultStore().getSlot(outfit)
-      const character = createCharacter(assets, characterHost, lookOf(outfitSlot.snapshot()))
-      const outfitFollower = followOutfit(character, outfitSlot, () => false, () => {})
+      const character = createCharacter(assets, characterHost, ownedLook(lookOf(outfitSlot.snapshot()), walletRef.current))
+      const outfitFollower = followOutfit(
+        character,
+        outfitSlot,
+        () => false,
+        () => {},
+        (look) => ownedLook(look, walletRef.current),
+      )
+      syncLookRef.current = outfitFollower.sync
       const placards = new Placards(overlayHost)
       const lobbySigns = new LobbySigns(overlayHost, lobby.marks)
       const traversal = new Traversal()
@@ -419,6 +436,7 @@ export function useHallScene({
 
         if (lobby.hitTestCat(raycaster)) {
           track('help')
+          earn('secret', { feature: 'help' })
           soundRef.current.play('click')
           onOpenHelpRef.current()
           return
@@ -426,6 +444,7 @@ export function useHallScene({
 
         if (hall.hitTestCoin(raycaster)) {
           track('coin')
+          earn('coin')
           soundRef.current.play('coin')
           onFindCoinRef.current()
           return
@@ -434,6 +453,7 @@ export function useHallScene({
         const hit = hall.hitTest(raycaster)
         if (hit) {
           track('painting')
+          earn('art', { pieceId: hit.pieceId })
           soundRef.current.play('painting-open')
           onOpenPieceRef.current({
             slug: hit.mounted.display.slug,
@@ -446,10 +466,12 @@ export function useHallScene({
         const pedestal = hall.hitTestPedestal(raycaster)
         if (pedestal && helm?.tap(pedestal)) {
           track('helm')
+          earn('secret', { feature: 'helm' })
           return
         }
         if (pedestal?.voice) {
           track('statue')
+          earn('secret', { feature: 'statue' })
           soundRef.current.play(pedestal.voice)
           pedestal.chime()
           return
@@ -457,12 +479,14 @@ export function useHallScene({
 
         if (matcha?.tap(raycaster)) {
           track('matcha')
+          earn('secret', { feature: 'matcha' })
           soundRef.current.play('click')
           return
         }
 
         if (cafe?.hitTestCat(raycaster)) {
           track('cafe_cat')
+          earn('secret', { feature: 'cafe_cat' })
           soundRef.current.play('cafe-hello')
           return
         }
@@ -470,12 +494,13 @@ export function useHallScene({
         if (guestBoard?.hitTestDesktop(raycaster)) {
           track('sketch_open')
           soundRef.current.play('click')
-          onOpenSketchGameRef.current()
+          onOpenComputerRef.current()
           return
         }
 
         if (sitting?.tap(raycaster)) {
           track('beanbag')
+          earn('secret', { feature: 'beanbag' })
           soundRef.current.play('click')
           return
         }
@@ -659,6 +684,7 @@ export function useHallScene({
         funZoneSign?.clear()
         comingSoonNote?.clear()
         traversal.detach()
+        syncLookRef.current = () => {}
         outfitFollower.dispose()
         hall.dispose()
         lobby.dispose()

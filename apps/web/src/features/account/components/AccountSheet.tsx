@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
 import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
 import WalkAlone from '@/features/presence/components/WalkAlone'
+import Purse from '@/features/economy/components/Purse'
 
 type Mode = 'sign-in' | 'create'
 type View = 'menu' | 'name' | 'password' | 'delete'
@@ -286,6 +287,7 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
           </h2>
 
           {member.email !== '' ? <p className="account-email">{member.email}</p> : null}
+          <Purse />
           {visitorName.name ? (
             <p className="bug-report-note">
               In the museum you&apos;re <strong>{visitorName.name}</strong>.

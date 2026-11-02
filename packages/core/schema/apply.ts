@@ -14,8 +14,13 @@ async function main(): Promise<void> {
   }
 
   const files = (await readdir(SCHEMA_DIR)).filter((f) => f.endsWith('.sql')).sort()
+  // economy.sql references members(id), so it runs right after members.sql and before zz_once.sql.
+  const economy = files.filter((filename) => filename === 'economy.sql')
+  const ordered = files.filter((filename) => filename !== 'economy.sql')
+  const afterMembers = ordered.indexOf('members.sql') + 1
+  ordered.splice(afterMembers > 0 ? afterMembers : ordered.length, 0, ...economy)
 
-  for (const filename of files) {
+  for (const filename of ordered) {
     const sql = await readFile(join(SCHEMA_DIR, filename), 'utf8')
     await transaction(async (client) => {
       await client.query('select pg_advisory_xact_lock($1)', [LOCK_KEY])

@@ -1,0 +1,22 @@
+.purse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.coinWrap {
+  display: flex;
+  flex: none;
+}
+
+.coin {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}

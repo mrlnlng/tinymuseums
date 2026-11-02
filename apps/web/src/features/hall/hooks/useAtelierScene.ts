@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { outfit } from '@tiny/core/slots'
-import { createAtelierRoom, disposeAtelierArt, loadAtelierArt, type AtelierArt } from '@/features/hall/scene/atelier'
+import { createAtelierRoom, disposeAtelierArt, loadAtelierArt, type AtelierArt, type AtelierRoom } from '@/features/hall/scene/atelier'
 import { loadCharacterSprites, type CharacterSprites } from '@/features/hall/scene/assets'
 import { CameraRig } from '@/features/hall/scene/cameras'
 import { createCharacter } from '@/features/hall/scene/character'
@@ -19,6 +19,9 @@ import { defaultStore } from '@/shared/lib/slots'
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
 import { loadGalleryDoor, GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { track } from '@/shared/lib/visit'
+import { earn } from '@/features/economy/store'
+import { useWallet } from '@/features/economy/hooks'
+import { walletReady } from '@/features/economy/lib/ownership'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
@@ -76,6 +79,14 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
   soundRef.current = sound
   const onLeaveRef = useRef(onLeave)
   onLeaveRef.current = onLeave
+  const wallet = useWallet()
+  const walletRef = useRef(wallet)
+  walletRef.current = wallet
+  const roomRef = useRef<AtelierRoom | null>(null)
+
+  useEffect(() => {
+    roomRef.current?.setOwned(walletReady(wallet) ? wallet.items : null)
+  }, [wallet])
 
   useEffect(() => {
     let isDisposed = false
@@ -111,6 +122,8 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
 
       const scene = new THREE.Scene()
       const room = createAtelierRoom(scene, art, overlayHost, doorImage)
+      roomRef.current = room
+      room.setOwned(walletReady(walletRef.current) ? walletRef.current.items : null)
       const outfitSlot = defaultStore().getSlot(outfit)
       const character = createCharacter(sprites, characterHost, lookOf(outfitSlot.snapshot()))
       const traversal = new Traversal()
@@ -262,6 +275,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
             setIsReady(true)
             revealFloorTransition()
             track('atelier')
+            earn('secret', { feature: 'atelier' })
             visitorRoom = joinRoom({ room: 'atelier', host: visitorHost, character, traversal })
             passage.arrive()
           }
@@ -294,6 +308,7 @@ export function useAtelierScene({ hosts, onLeave }: Options) {
         follower.dispose()
         closet.dispose()
         passage.dispose()
+        roomRef.current = null
         room.dispose()
         visitorRoom?.dispose()
         character.dispose()

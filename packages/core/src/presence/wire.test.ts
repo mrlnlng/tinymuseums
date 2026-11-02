@@ -8,7 +8,7 @@ const ticket: Ticket = { pid: 'abcdEFGH1234', name: 'Velvet Easel', room: 'hall-
 
 test('a signed ticket verifies, and any change to it does not', async () => {
   const token = await signTicket(ticket, SECRET)
-  assert.deepEqual(await verifyTicket(token, SECRET), ticket)
+  assert.deepEqual(await verifyTicket(token, SECRET), { ...ticket, own: [] })
   assert.equal(await verifyTicket(token, 'other-secret'), null)
   const [body, signature] = token.split('.')
   const forged = btoa(JSON.stringify({ ...ticket, name: 'Admin' })).replace(/=+$/, '')
@@ -16,6 +16,14 @@ test('a signed ticket verifies, and any change to it does not', async () => {
   assert.equal(await verifyTicket(`${body}.${signature}x`, SECRET), null)
   assert.equal(await verifyTicket(`${body}`, SECRET), null)
   assert.equal(await verifyTicket(`${token}.extra`, SECRET), null)
+})
+
+test('owned catalog ids ride in the ticket, and an old ticket has none', async () => {
+  const owned = { ...ticket, own: ['bow:kiki', 'character:otter'] }
+  assert.deepEqual(await verifyTicket(await signTicket(owned, SECRET), SECRET), owned)
+  assert.deepEqual((await verifyTicket(await signTicket(ticket, SECRET), SECRET))?.own, [])
+  const unknown = await signTicket({ ...ticket, own: ['bow:not-real'] } as unknown as Ticket, SECRET)
+  assert.equal(await verifyTicket(unknown, SECRET), null)
 })
 
 test('an expired ticket does not verify', async () => {

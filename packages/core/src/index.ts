@@ -93,5 +93,25 @@ export {
   type MergeResult,
   type Started,
 } from './domain/members.ts'
+export {
+  buy,
+  claim as claimCoins,
+  claimBatch,
+  ensureWallet,
+  exportWallet,
+  getWallet,
+  grantNote,
+  grantWelcome,
+  type BuyResult,
+  type ClaimBatchResult,
+  type ClaimOutcome,
+  type ClaimResult,
+  type Wallet,
+  type WalletExport,
+  type WalletToday,
+  type WalletView,
+} from './domain/wallet.ts'
+export * as wallet from './domain/wallet.ts'
+export { localDay } from './economy/day.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

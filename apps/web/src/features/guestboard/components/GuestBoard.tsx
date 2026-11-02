@@ -8,6 +8,7 @@ import ComposeScreen from '@/features/guestboard/components/ComposeScreen'
 import ReadScreen from '@/features/guestboard/components/ReadScreen'
 import { PostRejected, useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 import { track } from '@/shared/lib/visit'
+import { earn } from '@/features/economy/store'
 
 type View = { screen: 'board' } | { screen: 'compose' } | { screen: 'read'; index: number }
 
@@ -42,8 +43,13 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
     setPublishError(null)
     toBoard()
     try {
-      await post(draft)
+      const posted: NoteDraft & { tzOffset: number } = {
+        ...draft,
+        tzOffset: -new Date().getTimezoneOffset(),
+      }
+      await post(posted)
       track('guest_note_posted')
+      earn('secret', { feature: 'guest_note_posted' })
       setDraft(blankDraft())
     } catch (postError) {
       setPublishError(

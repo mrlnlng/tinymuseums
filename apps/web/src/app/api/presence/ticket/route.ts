@@ -45,6 +45,10 @@ export async function POST(request: Request) {
         .slice(0, Object.keys(ITEMS).length)
     : []
   const exp = Date.now() + TICKET_TTL_MS
-  const ticket = await signTicket({ pid: randomBytes(12).toString('base64url'), name, room, exp, own }, env.presenceSecret)
+  // A ticket without `own` still passes a room server deployed before ownership existed.
+  const ticket = await signTicket(
+    { pid: randomBytes(12).toString('base64url'), name, room, exp, ...(own.length > 0 ? { own } : {}) },
+    env.presenceSecret,
+  )
   return json({ ticket, exp, url: presenceUrl(request) })
 }

@@ -11,7 +11,11 @@ import { currentMember } from '@/shared/lib/member-session'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
-  const limit = Number(url.searchParams.get('limit')) || undefined
+  const rawLimit = url.searchParams.get('limit')
+  const limit = rawLimit === null || rawLimit === '' ? undefined : Number(rawLimit)
+  if (limit !== undefined && !(Number.isSafeInteger(limit) && limit > 0)) {
+    return Response.json({ error: 'Invalid limit' }, { status: 400 })
+  }
   const cursor = url.searchParams.get('cursor')
 
   const page = await listGuestNotes({ limit, cursor })

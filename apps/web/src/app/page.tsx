@@ -59,7 +59,7 @@ export default function LandingPage() {
 
 async function CurrentlyShowing() {
   const slice = await firstSlice(8)
-  const showing = slice.slots.map((slot) => slot.display)
+  const showing = [...new Map(slice.slots.map((slot) => [slot.display.artistId, slot.display])).values()]
 
   return (
     <nav className="offscreen" aria-label="Artists currently showing">

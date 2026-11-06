@@ -4,12 +4,16 @@ import { isUuid } from '@/shared/lib/validate'
 const ALLOWED: EventKind[] = ['display_view', 'piece_view']
 
 export async function POST(request: Request) {
-  let body: { kind?: string; artistId?: string; pieceId?: string }
+  let parsed: unknown
   try {
-    body = await request.json()
+    parsed = await request.json()
   } catch {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return Response.json({ error: 'Unsupported event' }, { status: 400 })
+  }
+  const body = parsed as { kind?: unknown; artistId?: unknown; pieceId?: unknown }
 
   const kind = body.kind as EventKind
   if (!ALLOWED.includes(kind)) {
@@ -20,6 +24,6 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Unknown artist or work' }, { status: 400 })
   }
 
-  await recordEvent(kind, { artistId: body.artistId, pieceId: body.pieceId })
+  await recordEvent(kind, { artistId: body.artistId, pieceId: body.pieceId as string | undefined })
   return new Response(null, { status: 204 })
 }

@@ -8,8 +8,12 @@ export async function recordEvent(
   kind: EventKind,
   input: { artistId?: string; pieceId?: string; placement?: string },
 ): Promise<void> {
+  // Events naming an artist or work that does not exist are dropped rather than failing on the foreign key.
   await query(
-    `insert into events (kind, artist_id, piece_id, placement) values ($1, $2, $3, $4)`,
+    `insert into events (kind, artist_id, piece_id, placement)
+     select $1, $2::uuid, $3::uuid, $4
+      where ($2::uuid is null or exists (select 1 from artists where id = $2::uuid))
+        and ($3::uuid is null or exists (select 1 from pieces where id = $3::uuid))`,
     [kind, input.artistId ?? null, input.pieceId ?? null, input.placement ?? null],
   )
 }

@@ -13,6 +13,7 @@ export class Traversal {
   private lastPointerX = 0
   private dragVelocity = 0
   private suspended = false
+  private leashed = true
   private lastFootX = 0
 
   private introducing = false
@@ -117,6 +118,11 @@ export class Traversal {
       this.dragging = false
       this.velocity = 0
     }
+  }
+
+  /** With the leash off the camera can roam away from the character, as when decorating. */
+  setLeashed(leashed: boolean): void {
+    this.leashed = leashed
   }
 
   hold(x: number | null, follow = false): void {
@@ -236,7 +242,7 @@ export class Traversal {
   }
 
   private enforceLeash(): void {
-    if (this.heldAt !== null) return
+    if (this.heldAt !== null || !this.leashed) return
     const max = CONFIG.character.maxTrailDistance
     const gap = this.cameraX - this.x
     if (Math.abs(gap) <= max) return

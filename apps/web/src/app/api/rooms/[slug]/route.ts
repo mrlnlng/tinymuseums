@@ -30,7 +30,7 @@ export async function GET(
     kind: room.kind,
     published: room.published,
     canEdit: edit,
-    ...(edit ? { draft: room.draft } : {}),
+    ...(edit ? { draft: room.draft, draftVersion: room.draftVersion } : {}),
     ...(owner ? { sharing: { on: room.visibility === 'link', token: room.shareToken } } : {}),
   })
 }

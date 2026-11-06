@@ -116,12 +116,14 @@ export {
 export * as wallet from './domain/wallet.ts'
 export { localDay } from './economy/day.ts'
 export { STARTER_PROPS, isBuyable } from './economy/catalog.ts'
+export { POND_FISH, issuePondTicket, readPondTicket, type PondFishId } from './economy/pond.ts'
 export * from './rooms/themes.ts'
 export * from './rooms/placements.ts'
 export {
   canEdit,
   canView,
   getRoom,
+  roomPageView,
   personalRoomFor,
   publish,
   saveDraft,

@@ -1,7 +1,7 @@
-import { getRoom, hit, setSharing } from '@tiny/core'
-import { currentMember } from '@/shared/lib/member-session'
-import { checkMutation, json, limited } from '@/shared/lib/member-route'
+import { hit, setSharing } from '@tiny/core'
+import { json, limited } from '@/shared/lib/member-route'
 import { readJsonBody } from '@/shared/lib/read-json-body'
+import { roomEditor } from '../../editor'
 
 const MAX_BODY_BYTES = 1024
 const PER_MEMBER = { limit: 30, windowSeconds: 60 }
@@ -10,20 +10,12 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await currentMember()
-  if (!session) return json({ error: 'unauthorized' }, 401)
-
   const { slug } = await params
-  const room = await getRoom(slug)
-  if (!room) return json({ error: 'not_found' }, 404)
-  if (room.kind !== 'personal' || room.ownerMemberId !== session.member.id) {
-    return json({ error: 'forbidden' }, 403)
-  }
+  const guard = await roomEditor(request, slug, true)
+  if (!guard.ok) return guard.response
+  if (guard.room.kind !== 'personal' || !guard.actor.memberId) return json({ error: 'not_found' }, 404)
 
-  const denied = checkMutation(request, true)
-  if (denied) return denied
-
-  const rate = await hit(`rooms-sharing:${session.member.id}`, PER_MEMBER)
+  const rate = await hit(`rooms-sharing:${guard.actor.memberId}`, PER_MEMBER)
   if (!rate.allowed) return limited(rate)
 
   const parsed = await readJsonBody(request, MAX_BODY_BYTES)

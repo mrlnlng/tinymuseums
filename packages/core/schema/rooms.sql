@@ -16,6 +16,9 @@ create table if not exists rooms (
   check ((kind = 'personal') = (owner_member_id is not null))
 );
 
+-- Bumped on every draft save, so two editors cannot silently overwrite each other.
+alter table rooms add column if not exists draft_version integer not null default 0;
+
 create unique index if not exists rooms_personal_owner
   on rooms (owner_member_id)
   where kind = 'personal';

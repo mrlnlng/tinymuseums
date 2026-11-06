@@ -7,6 +7,7 @@ import {
   getRoom,
   personalRoomFor,
   publish,
+  roomPageView,
   saveDraft,
   setSharing,
 } from '../src/domain/rooms.ts'
@@ -122,7 +123,7 @@ test('saving a draft rejects unowned props and accepts owned ones', async () => 
     [{ id: 'draft-cabinet', kind: 'prop', ref: 'cabinet', zone: 'floor', x: 7 }],
     actor,
   )
-  assert.deepEqual(unowned, { ok: false, reason: 'not_owned' })
+  assert.deepEqual(unowned, { ok: false, reason: 'not_owned', id: 'draft-cabinet' })
   assert.deepEqual((await getRoom(room.slug))?.draft, room.draft)
 
   const starter = await saveDraft(
@@ -130,7 +131,7 @@ test('saving a draft rejects unowned props and accepts owned ones', async () => 
     [{ id: 'draft-carpet', kind: 'prop', ref: 'carpet', zone: 'floor', x: 6.5 }],
     actor,
   )
-  assert.deepEqual(starter, { ok: true })
+  assert.deepEqual(starter, { ok: true, version: room.draftVersion + 1 })
   assert.deepEqual((await getRoom(room.slug))?.draft, [
     { id: 'draft-carpet', kind: 'prop', ref: 'carpet', zone: 'floor', x: 6.5 },
   ])
@@ -144,7 +145,7 @@ test('saving a draft rejects unowned props and accepts owned ones', async () => 
     [{ id: 'draft-mirror', kind: 'prop', ref: 'mirror', zone: 'wall', x: 3 }],
     actor,
   )
-  assert.deepEqual(bought, { ok: true })
+  assert.deepEqual(bought, { ok: true, version: room.draftVersion + 2 })
 
   const stranger = await member()
   const forbidden = await saveDraft(
@@ -153,6 +154,56 @@ test('saving a draft rejects unowned props and accepts owned ones', async () => 
     { memberId: stranger, isOwnerArtist: false },
   )
   assert.deepEqual(forbidden, { ok: false, reason: 'forbidden' })
+})
+
+test('a save or publish from a stale draft version is a conflict', async () => {
+  const owner = await member()
+  const room = await personalRoomFor(owner)
+  const actor = { memberId: owner, isOwnerArtist: false }
+  const carpet = (x: number) => [{ id: 'draft-carpet', kind: 'prop', ref: 'carpet', zone: 'floor', x }]
+
+  const first = await saveDraft(room.slug, carpet(6), actor, room.draftVersion)
+  assert.deepEqual(first, { ok: true, version: room.draftVersion + 1 })
+
+  const stale = await saveDraft(room.slug, carpet(9), actor, room.draftVersion)
+  assert.deepEqual(stale, {
+    ok: false,
+    reason: 'conflict',
+    version: room.draftVersion + 1,
+    draft: carpet(6),
+  })
+  assert.deepEqual((await getRoom(room.slug))?.draft, carpet(6))
+
+  assert.equal(await publish(room.slug, room.draftVersion), null)
+  const published = await publish(room.slug, room.draftVersion + 1)
+  assert.deepEqual(published?.published, carpet(6))
+})
+
+test('a room page view decides access without handing out the token or owner', async () => {
+  const owner = await member()
+  const stranger = await member()
+  const room = await personalRoomFor(owner)
+  const shared = await setSharing(room.slug, true)
+  assert.ok(shared?.shareToken)
+
+  const mine = await roomPageView(room.slug, { memberId: owner })
+  assert.ok(mine)
+  assert.equal(mine.canView, true)
+  assert.equal(mine.canEdit, true)
+  assert.deepEqual(mine.published, room.published)
+  assert.ok(!('shareToken' in mine) && !('ownerMemberId' in mine))
+
+  const visitor = await roomPageView(room.slug, { memberId: stranger, shareToken: shared.shareToken })
+  assert.equal(visitor?.canView, true)
+  assert.equal(visitor?.canEdit, false)
+
+  const blocked = await roomPageView(room.slug, { memberId: null, shareToken: 'wrong' })
+  assert.deepEqual(blocked && { canView: blocked.canView, published: blocked.published, ownerName: blocked.ownerName }, {
+    canView: false,
+    published: [],
+    ownerName: null,
+  })
+  assert.equal(await roomPageView('r-missing0', { memberId: owner }), null)
 })
 
 test('publishing the hall seals an epoch in the published painting order', async () => {
@@ -169,10 +220,8 @@ test('publishing the hall seals an epoch in the published painting order', async
       { id: 'hall-second', kind: 'painting' as const, ref: second, zone: 'wall', x: 10 },
       { id: 'hall-third', kind: 'painting' as const, ref: third, zone: 'wall', x: 20 },
     ]
-    assert.deepEqual(
-      await saveDraft('hall', placements, { memberId: null, isOwnerArtist: true }),
-      { ok: true },
-    )
+    const saved = await saveDraft('hall', placements, { memberId: null, isOwnerArtist: true })
+    assert.equal(saved.ok, true)
     assert.ok(await publish('hall'))
 
     const epoch = await queryOne<{ id: number }>(

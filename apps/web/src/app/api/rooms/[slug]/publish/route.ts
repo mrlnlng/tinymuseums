@@ -1,36 +1,37 @@
-import { canEdit, getRoom, hit, publish } from '@tiny/core'
-import { currentMember } from '@/shared/lib/member-session'
-import { checkMutation, json, limited } from '@/shared/lib/member-route'
-import { currentArtist, isHallOwner } from '@/shared/lib/session'
+import { hit, publish } from '@tiny/core'
+import { json, limited } from '@/shared/lib/member-route'
+import { readJsonBody } from '@/shared/lib/read-json-body'
+import { roomEditor } from '../../editor'
 
 const PER_EDITOR = { limit: 20, windowSeconds: 60 }
+const MAX_BODY_BYTES = 1024
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
-  const session = await currentMember()
-  const artist = await currentArtist()
-  const actor = {
-    memberId: session?.member.id ?? null,
-    isOwnerArtist: artist ? isHallOwner(artist) : false,
-  }
+  const guard = await roomEditor(request, slug, false)
+  if (!guard.ok) return guard.response
 
-  const room = await getRoom(slug)
-  if (!room) return json({ error: 'not_found' }, 404)
-  if (!canEdit(room, actor)) return json({ error: 'forbidden' }, 403)
-
-  const denied = checkMutation(request, false)
-  if (denied) return denied
-
-  const editor = actor.memberId ?? artist?.id
-  if (editor) {
-    const rate = await hit(`rooms-publish:${editor}`, PER_EDITOR)
+  if (guard.editorId) {
+    const rate = await hit(`rooms-publish:${guard.editorId}`, PER_EDITOR)
     if (!rate.allowed) return limited(rate)
   }
 
-  const updated = await publish(slug)
-  if (!updated) return json({ error: 'not_found' }, 404)
+  // An optional { version } publishes only the draft the editor last saw.
+  let version: number | undefined
+  if (request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
+    const parsed = await readJsonBody(request, MAX_BODY_BYTES)
+    if (!parsed.ok) return json({ error: 'invalid' }, 400)
+    const raw = (parsed.body as { version?: unknown } | null)?.version
+    if (raw !== undefined && (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw < 0)) {
+      return json({ error: 'invalid' }, 400)
+    }
+    version = raw
+  }
+
+  const updated = await publish(slug, version)
+  if (!updated) return json({ error: 'conflict' }, 409)
   return json({ ok: true, publishedAt: updated.publishedAt })
 }

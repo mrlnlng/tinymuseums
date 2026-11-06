@@ -9,6 +9,8 @@ type AtelierImage = keyof typeof manifest.atelier
 
 export interface CozyArt {
   wall: THREE.Texture
+  wainscot: THREE.Texture
+  post: THREE.Texture
   floor: THREE.Texture
   props: Record<string, THREE.Texture>
 }
@@ -26,9 +28,12 @@ const FLOOR_HEIGHT = 2.6
 const WALL_HEIGHT = 9
 /** The backdrop runs past the walkable room so a wide view never shows its edge. */
 const BACKDROP_OVERHANG = 14
-const ROOM_LEFT = 0.28
-const ROOM_RIGHT = 13.72
-const WALL_TILE = CONFIG.atelier.wall.tile
+const ROOM_LEFT = 0.1
+const ROOM_RIGHT = 19.9
+const STRIPE_PAIR = CONFIG.wallpaper.stripePairWidth
+const WAINSCOT_HEIGHT = 0.95
+const WAINSCOT_PANEL = 1.4
+const POST_WIDTH = 0.34
 /** Share of the carpet that lies below the feet line, so it reads as lying on the floor. */
 const CARPET_SINK = 0.7
 
@@ -179,15 +184,81 @@ function fishTexture(ref: string): THREE.Texture {
   ctx.fill()
   ctx.restore()
 
+  return canvasTexture(canvas)
+}
+
+function canvasTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
   return texture
 }
 
+function drawingOn(width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('The room could not be drawn.')
+  return [canvas, ctx]
+}
+
+/** One pair of the museum's cream stripes, warmed toward peach for a home. */
+function wallpaperTexture(): THREE.Texture {
+  const [canvas, ctx] = drawingOn(128, 128)
+  ctx.fillStyle = '#fcf0dc'
+  ctx.fillRect(0, 0, 128, 128)
+  ctx.fillStyle = '#f7dfc6'
+  ctx.fillRect(64, 0, 64, 128)
+  ctx.fillStyle = 'rgba(214, 160, 128, 0.35)'
+  ctx.fillRect(62, 0, 2, 128)
+  ctx.fillRect(126, 0, 2, 128)
+  const texture = canvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  return texture
+}
+
+/** A run of wooden panels below a chair rail. */
+function wainscotTexture(): THREE.Texture {
+  const [canvas, ctx] = drawingOn(224, 152)
+  ctx.fillStyle = '#c98f6d'
+  ctx.fillRect(0, 0, 224, 152)
+  ctx.fillStyle = '#8b5641'
+  ctx.fillRect(0, 0, 224, 12)
+  ctx.fillStyle = '#a86d50'
+  ctx.fillRect(0, 12, 224, 4)
+  ctx.fillStyle = '#9a6248'
+  ctx.fillRect(0, 138, 224, 14)
+  roundedRect(ctx, 18, 30, 188, 94, 10)
+  ctx.fillStyle = '#d29d7c'
+  ctx.fill()
+  ctx.lineWidth = 4
+  ctx.strokeStyle = '#a5694c'
+  ctx.stroke()
+  ctx.fillStyle = 'rgba(255, 238, 214, 0.25)'
+  ctx.fillRect(26, 36, 172, 6)
+  const texture = canvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  return texture
+}
+
+/** A tall wooden post that closes the room at each end. */
+function postTexture(): THREE.Texture {
+  const [canvas, ctx] = drawingOn(64, 512)
+  ctx.fillStyle = '#b97e5e'
+  ctx.fillRect(0, 0, 64, 512)
+  ctx.fillStyle = '#d29d7c'
+  ctx.fillRect(10, 0, 30, 512)
+  ctx.fillStyle = '#8b5641'
+  ctx.fillRect(0, 0, 5, 512)
+  ctx.fillRect(59, 0, 5, 512)
+  return canvasTexture(canvas)
+}
+
 export async function loadCozyArt(): Promise<CozyArt> {
   const [wall, floor, props] = await Promise.all([
-    loadTexture(builtUrl(manifest.atelier.wallpaper.src)),
+    wallpaperTexture(),
     loadTexture(builtUrl(manifest.images.floor.x2.src)),
     Promise.all(
       Object.keys(THEMES.cozy.props).map(async (ref) => {
@@ -204,6 +275,8 @@ export async function loadCozyArt(): Promise<CozyArt> {
   ])
   return {
     wall,
+    wainscot: wainscotTexture(),
+    post: postTexture(),
     floor,
     props: Object.fromEntries(props.filter((entry): entry is readonly [string, THREE.Texture] => entry !== null)),
   }
@@ -211,6 +284,8 @@ export async function loadCozyArt(): Promise<CozyArt> {
 
 export function disposeCozyArt(art: CozyArt): void {
   art.wall.dispose()
+  art.wainscot.dispose()
+  art.post.dispose()
   art.floor.dispose()
   const seen = new Set<THREE.Texture>()
   for (const texture of Object.values(art.props)) {
@@ -237,10 +312,6 @@ export const cozyTheme: PlacementTheme<CozyArt> = {
 }
 
 
-export function cozyZoneAnchor(zone: string): number {
-  return zone === 'wall' ? WALL_Y : FEET_Y
-}
-
 export interface CozyBackdrop {
   dispose(): void
 }
@@ -248,45 +319,76 @@ export interface CozyBackdrop {
 export function createCozyBackdrop(scene: THREE.Scene, art: CozyArt): CozyBackdrop {
   const span = ROOM_RIGHT - ROOM_LEFT + BACKDROP_OVERHANG * 2
   const centerX = (ROOM_LEFT + ROOM_RIGHT) / 2
-  const wallAspect = manifest.atelier.wallpaper.width / manifest.atelier.wallpaper.height
   const floorAspect = manifest.images.floor.x2.w / manifest.images.floor.x2.h
 
-  art.wall.wrapS = THREE.RepeatWrapping
-  art.wall.wrapT = THREE.RepeatWrapping
-  art.wall.repeat.set(span / WALL_TILE, WALL_HEIGHT / (WALL_TILE / wallAspect))
+  art.wall.repeat.set(span / STRIPE_PAIR, WALL_HEIGHT / STRIPE_PAIR)
+  art.wainscot.repeat.set(span / WAINSCOT_PANEL, 1)
   art.floor.wrapS = THREE.RepeatWrapping
   art.floor.repeat.set(span / (FLOOR_HEIGHT * floorAspect), 1)
 
   const group = new THREE.Group()
-  const wall = new THREE.Mesh(
-    new THREE.PlaneGeometry(span, WALL_HEIGHT),
-    new THREE.MeshBasicMaterial({ map: art.wall }),
-  )
-  wall.position.set(centerX, FEET_Y + WALL_HEIGHT / 2, -0.5)
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(span, FLOOR_HEIGHT),
-    new THREE.MeshBasicMaterial({ map: art.floor }),
-  )
-  floor.position.set(centerX, FEET_Y - FLOOR_HEIGHT / 2, -0.4)
-  group.add(wall, floor)
+  const meshes: THREE.Mesh[] = []
+  const add = (width: number, height: number, material: THREE.Material, x: number, y: number, z: number) => {
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material)
+    mesh.position.set(x, y, z)
+    group.add(mesh)
+    meshes.push(mesh)
+  }
+
+  // As in the hall, the floor's back edge sits at y = 0, above the visitors' feet, so they stand on it.
+  add(span, WALL_HEIGHT, new THREE.MeshBasicMaterial({ map: art.wall }), centerX, WALL_HEIGHT / 2, -0.5)
+  add(span, WAINSCOT_HEIGHT, new THREE.MeshBasicMaterial({ map: art.wainscot }), centerX, WAINSCOT_HEIGHT / 2, -0.48)
+  add(span, FLOOR_HEIGHT, new THREE.MeshBasicMaterial({ map: art.floor }), centerX, -FLOOR_HEIGHT / 2, -0.4)
+
+  // Past the posts the room is shaded, so its ends read as walls rather than more room.
+  const outside = BACKDROP_OVERHANG
+  const shade = new THREE.MeshBasicMaterial({ color: '#3a1d12', transparent: true, opacity: 0.32, depthWrite: false })
+  const height = WALL_HEIGHT + FLOOR_HEIGHT
+  const y = WALL_HEIGHT / 2 - FLOOR_HEIGHT / 2
+  add(outside, height, shade, ROOM_LEFT - outside / 2, y, -0.3)
+  add(outside, height, shade, ROOM_RIGHT + outside / 2, y, -0.3)
+  const post = new THREE.MeshBasicMaterial({ map: art.post })
+  add(POST_WIDTH, WALL_HEIGHT, post, ROOM_LEFT, WALL_HEIGHT / 2, -0.28)
+  add(POST_WIDTH, WALL_HEIGHT, post, ROOM_RIGHT, WALL_HEIGHT / 2, -0.28)
   scene.add(group)
 
   return {
     dispose() {
       scene.remove(group)
-      for (const mesh of [wall, floor]) {
+      const materials = new Set<THREE.Material>()
+      for (const mesh of meshes) {
         mesh.geometry.dispose()
-        ;(mesh.material as THREE.Material).dispose()
+        materials.add(mesh.material as THREE.Material)
       }
+      for (const material of materials) material.dispose()
     },
   }
+}
+
+export interface GhostOptions {
+  valid: boolean
+  /** Radians; the drag's sway. */
+  tilt: number
+}
+
+export interface PlacementBounds {
+  x: number
+  top: number
+  bottom: number
 }
 
 export interface PlacementLayer {
   set(placements: Placement[]): void
   pick(raycaster: THREE.Raycaster): Placement | null
-  ghost(placement: Placement | null): void
+  /** Leaves one placement out while it is being carried. */
+  hide(id: string | null): void
+  ghost(placement: Placement | null, options?: GhostOptions): void
   highlight(zone: string | null, valid: boolean): void
+  select(id: string | null): void
+  /** A squash and settle, as when something is set down. */
+  bounce(id: string): void
+  bounds(id: string): PlacementBounds | null
+  update(now: number): void
   dispose(): void
 }
 
@@ -325,6 +427,16 @@ function aspectOf(texture: THREE.Texture): number {
   return width > 0 && height > 0 ? width / height : 1
 }
 
+const BOUNCE_MS = 420
+const LIFT = 0.16
+
+function settle(t: number): { x: number; y: number } {
+  // A quick squash, a small overshoot, then rest.
+  if (t >= 1) return { x: 1, y: 1 }
+  const wave = Math.sin(t * Math.PI * 2.4) * (1 - t) * (1 - t)
+  return { x: 1 + wave * 0.16, y: 1 - wave * 0.2 }
+}
+
 export function createPlacementLayer<Art>(
   scene: THREE.Scene,
   art: Art,
@@ -334,15 +446,20 @@ export function createPlacementLayer<Art>(
   scene.add(group)
   const helpers = new THREE.Group()
   scene.add(helpers)
-  let items: { mesh: THREE.Mesh; placement: Placement }[] = []
+  let items: { mesh: THREE.Mesh; placement: Placement; height: number; baseY: number }[] = []
+  let hidden: string | null = null
   let ghostMesh: THREE.Mesh | null = null
+  let shadowMesh: THREE.Mesh | null = null
   let bandMesh: THREE.Mesh | null = null
+  let outline: THREE.LineSegments | null = null
+  let selected: string | null = null
+  const bouncing = new Map<string, number>()
 
-  function dropMesh(mesh: THREE.Mesh | null): void {
-    if (!mesh) return
-    helpers.remove(mesh)
-    mesh.geometry.dispose()
-    ;(mesh.material as THREE.Material).dispose()
+  function dropHelper(object: THREE.Mesh | THREE.LineSegments | null): void {
+    if (!object) return
+    helpers.remove(object)
+    object.geometry.dispose()
+    ;(object.material as THREE.Material).dispose()
   }
 
   function clear(): void {
@@ -354,89 +471,175 @@ export function createPlacementLayer<Art>(
     items = []
   }
 
+  function sizeOf(placement: Placement): { width: number; height: number; texture: THREE.Texture } | null {
+    const prop = theme.spec.props[placement.ref]
+    const texture = theme.propImage(placement.ref, art)
+    if (!prop || !texture) return null
+    return { width: prop.width, height: prop.width / aspectOf(texture), texture }
+  }
+
+  function drawOutline(): void {
+    dropHelper(outline)
+    outline = null
+    const item = selected === null ? undefined : items.find((entry) => entry.placement.id === selected)
+    if (!item || item.placement.id === hidden) return
+    const prop = theme.spec.props[item.placement.ref]
+    if (!prop) return
+    const pad = 0.08
+    const halfW = prop.width / 2 + pad
+    const halfH = item.height / 2 + pad
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-halfW, -halfH, 0), new THREE.Vector3(halfW, -halfH, 0),
+      new THREE.Vector3(halfW, -halfH, 0), new THREE.Vector3(halfW, halfH, 0),
+      new THREE.Vector3(halfW, halfH, 0), new THREE.Vector3(-halfW, halfH, 0),
+      new THREE.Vector3(-halfW, halfH, 0), new THREE.Vector3(-halfW, -halfH, 0),
+    ])
+    const line = new THREE.LineSegments(
+      geometry,
+      new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.09, gapSize: 0.06, transparent: true, opacity: 0.95 }),
+    )
+    line.computeLineDistances()
+    line.position.set(item.mesh.position.x, item.baseY, item.mesh.position.z + 0.01)
+    helpers.add(line)
+    outline = line
+  }
+
   return {
     set(placements) {
       clear()
       for (const placement of placements) {
-        const prop = theme.spec.props[placement.ref]
-        const texture = theme.propImage(placement.ref, art)
-        if (!prop || !texture) continue
-        const width = prop.width
-        const height = width / aspectOf(texture)
+        const size = sizeOf(placement)
+        if (!size) continue
         const mesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(width, height),
-          new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+          new THREE.PlaneGeometry(size.width, size.height),
+          new THREE.MeshBasicMaterial({ map: size.texture, transparent: true }),
         )
-        mesh.position.set(
-          placement.x,
-          theme.zoneY(placement.zone, height, placement.ref),
-          depthFor(placement.zone, placement.ref, width),
-        )
+        const baseY = theme.zoneY(placement.zone, size.height, placement.ref)
+        mesh.position.set(placement.x, baseY, depthFor(placement.zone, placement.ref, size.width))
+        mesh.scale.x = placement.flip ? -1 : 1
+        mesh.visible = placement.id !== hidden
         mesh.userData.placement = placement
         group.add(mesh)
-        items.push({ mesh, placement })
+        items.push({ mesh, placement, height: size.height, baseY })
       }
+      drawOutline()
     },
 
     pick(raycaster) {
-      const hit = raycaster.intersectObjects(items.map((item) => item.mesh), false)[0]
+      const visible = items.filter((item) => item.mesh.visible).map((item) => item.mesh)
+      const hit = raycaster.intersectObjects(visible, false)[0]
       return hit ? (hit.object.userData.placement as Placement | undefined) ?? null : null
     },
 
-    ghost(placement) {
-      dropMesh(ghostMesh)
+    hide(id) {
+      hidden = id
+      for (const item of items) item.mesh.visible = item.placement.id !== id
+      drawOutline()
+    },
+
+    ghost(placement, options = { valid: true, tilt: 0 }) {
+      dropHelper(ghostMesh)
+      dropHelper(shadowMesh)
       ghostMesh = null
+      shadowMesh = null
       if (!placement) return
-      const prop = theme.spec.props[placement.ref]
-      const texture = theme.propImage(placement.ref, art)
-      if (!prop || !texture) return
-      const width = prop.width
-      const height = width / aspectOf(texture)
+      const size = sizeOf(placement)
+      if (!size) return
+      const baseY = theme.zoneY(placement.zone, size.height, placement.ref)
+      const z = depthFor(placement.zone, placement.ref, size.width) + 0.3
       const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(width, height),
-        new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.62, depthWrite: false }),
+        new THREE.PlaneGeometry(size.width, size.height),
+        new THREE.MeshBasicMaterial({
+          map: size.texture,
+          transparent: true,
+          opacity: options.valid ? 0.96 : 0.42,
+          depthWrite: false,
+        }),
       )
-      mesh.position.set(
-        placement.x,
-        theme.zoneY(placement.zone, height, placement.ref),
-        depthFor(placement.zone, placement.ref, width) + 0.05,
-      )
+      mesh.position.set(placement.x, baseY + LIFT, z)
+      mesh.rotation.z = options.tilt
+      mesh.scale.set(placement.flip ? -1.06 : 1.06, 1.06, 1)
       helpers.add(mesh)
       ghostMesh = mesh
+
+      // Where it will land: a soft shadow on the floor, or on the wall behind it.
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(0.5, 32),
+        new THREE.MeshBasicMaterial({ color: 0x3a1d12, transparent: true, opacity: options.valid ? 0.22 : 0.08, depthWrite: false }),
+      )
+      const onWall = placement.zone === 'wall'
+      shadow.scale.set(size.width * 0.9, onWall ? size.height * 0.9 : 0.22, 1)
+      shadow.position.set(placement.x + (onWall ? 0.06 : 0), onWall ? baseY - 0.06 : baseY - size.height / 2 + 0.02, z - 0.02)
+      helpers.add(shadow)
+      shadowMesh = shadow
     },
 
     highlight(zone, valid) {
-      dropMesh(bandMesh)
+      dropHelper(bandMesh)
       bandMesh = null
       if (!zone) return
       const band = theme.spec.zones[zone]
       if (!band) return
       const isWall = zone === 'wall'
-      const bandHeight = isWall ? 4.6 : 2.4
+      const bandHeight = isWall ? 3.3 : 1.2
       const mesh = new THREE.Mesh(
         new THREE.PlaneGeometry(band.maxX - band.minX, bandHeight),
         new THREE.MeshBasicMaterial({
-          color: valid ? 0x69b97c : 0xd45b45,
+          color: valid ? 0x7fcf93 : 0xe0705b,
           transparent: true,
-          opacity: 0.2,
+          opacity: 0.18,
           depthWrite: false,
         }),
       )
       mesh.position.set(
         (band.minX + band.maxX) / 2,
-        isWall ? WALL_Y : FEET_Y - bandHeight / 2,
-        isWall ? -0.05 : 0.12,
+        isWall ? WALL_Y : FEET_Y + 0.15,
+        isWall ? -0.05 : 0.02,
       )
       helpers.add(mesh)
       bandMesh = mesh
     },
 
+    select(id) {
+      selected = id
+      drawOutline()
+    },
+
+    bounce(id) {
+      bouncing.set(id, performance.now())
+    },
+
+    bounds(id) {
+      const item = items.find((entry) => entry.placement.id === id)
+      if (!item) return null
+      return { x: item.mesh.position.x, top: item.baseY + item.height / 2, bottom: item.baseY - item.height / 2 }
+    },
+
+    update(now) {
+      for (const [id, startedAt] of bouncing) {
+        const item = items.find((entry) => entry.placement.id === id)
+        const t = (now - startedAt) / BOUNCE_MS
+        if (!item) {
+          bouncing.delete(id)
+          continue
+        }
+        const { x, y } = settle(Math.min(1, t))
+        const flip = item.placement.flip ? -1 : 1
+        item.mesh.scale.set(x * flip, y, 1)
+        // Squash from the base, so a floor item stays standing on the floor.
+        item.mesh.position.y = item.baseY - (item.height * (1 - y)) / 2
+        if (t >= 1) bouncing.delete(id)
+      }
+      if (bandMesh) (bandMesh.material as THREE.MeshBasicMaterial).opacity = 0.14 + Math.sin(now / 260) * 0.06
+      if (outline) (outline.material as THREE.LineDashedMaterial).opacity = 0.7 + Math.sin(now / 200) * 0.25
+    },
+
     dispose() {
       clear()
-      dropMesh(ghostMesh)
-      dropMesh(bandMesh)
-      ghostMesh = null
-      bandMesh = null
+      dropHelper(ghostMesh)
+      dropHelper(shadowMesh)
+      dropHelper(bandMesh)
+      dropHelper(outline)
       scene.remove(helpers)
       scene.remove(group)
     },

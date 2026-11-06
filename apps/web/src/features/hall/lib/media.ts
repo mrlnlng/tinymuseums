@@ -5,7 +5,8 @@ export function sameOriginUrl(url: string): string | null {
   try {
     const parsed = new URL(url, window.location.href)
     if (parsed.origin === window.location.origin) return null
-    return `/api/media${parsed.pathname}`
+    // A media URL on another address of this same app already carries the /api/media prefix.
+    return parsed.pathname.startsWith('/api/media/') ? parsed.pathname : `/api/media${parsed.pathname}`
   } catch {
     return null
   }

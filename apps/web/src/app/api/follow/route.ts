@@ -3,15 +3,16 @@ import { clientIp } from '@/shared/lib/client-ip'
 import { isEmail } from '@/shared/lib/validate'
 
 export async function POST(request: Request) {
-  let body: { slug?: string; email?: string }
+  let body: unknown
   try {
     body = await request.json()
   } catch {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const slug = (body.slug ?? '').trim()
-  const email = (body.email ?? '').trim().toLowerCase()
+  const record = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
+  const slug = typeof record.slug === 'string' ? record.slug.trim() : ''
+  const email = typeof record.email === 'string' ? record.email.trim().toLowerCase() : ''
 
   if (!slug || !isEmail(email)) {
     return Response.json({ error: 'A valid email address is required' }, { status: 400 })

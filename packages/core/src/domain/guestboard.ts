@@ -54,7 +54,7 @@ function decodeCursor(cursor: string): { createdAt: string; id: string } | null 
 export async function listGuestNotes(
   options: { limit?: number; cursor?: string | null } = {},
 ): Promise<GuestNotePageDto> {
-  const limit = Math.min(MAX_GUEST_NOTES_PAGE, Math.max(1, options.limit ?? 50))
+  const limit = Math.min(MAX_GUEST_NOTES_PAGE, Math.max(1, Math.trunc(options.limit ?? 50) || 50))
   const after = options.cursor ? decodeCursor(options.cursor) : null
 
   const rows = await query<NoteRow>(

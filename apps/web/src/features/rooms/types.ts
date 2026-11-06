@@ -83,6 +83,8 @@ export interface RoomContents {
   /** `tap` asks for the click interaction; without it the stage is testing hover. */
   hitTest(raycaster: THREE.Raycaster, phase?: 'hover' | 'tap'): Interaction | null
   update(frame: Frame): void
+  /** Lifts or lowers the camera from the room's usual framing, in world units. */
+  cameraRise?(): number
   dispose(): void
 }
 

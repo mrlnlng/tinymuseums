@@ -5,6 +5,7 @@ import { mulberry32 } from '../infra/random.ts'
 import { parsePlacements, validatePlacements, type Placement, type PlacementOwnership } from '../rooms/placements.ts'
 import { THEMES, type ThemeId } from '../rooms/themes.ts'
 import { newToken } from './auth.ts'
+import { nameOf } from './members.ts'
 import { sealEpoch } from './epoch.ts'
 
 export type RoomKind = 'shared' | 'personal'
@@ -18,6 +19,7 @@ export interface RoomRow {
   visibility: RoomVisibility
   shareToken: string | null
   draft: Placement[]
+  draftVersion: number
   published: Placement[]
   publishedAt: Date | null
 }
@@ -27,7 +29,10 @@ export interface RoomAccess {
   isOwnerArtist?: boolean
 }
 
-export type SaveDraftResult = { ok: true } | { ok: false; reason: string }
+export type SaveDraftResult =
+  | { ok: true; version: number }
+  | { ok: false; reason: 'conflict'; version: number; draft: Placement[] }
+  | { ok: false; reason: string; id?: string }
 
 interface RoomDbRow {
   slug: string
@@ -37,13 +42,14 @@ interface RoomDbRow {
   visibility: RoomVisibility
   shareToken: string | null
   draft: unknown
+  draftVersion: number
   published: unknown
   publishedAt: Date | null
 }
 
 const ROOM_COLUMNS = `slug, theme, kind,
   owner_member_id as "ownerMemberId", visibility,
-  share_token as "shareToken", draft, published,
+  share_token as "shareToken", draft, draft_version as "draftVersion", published,
   published_at as "publishedAt"`
 
 const SLUG_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -57,6 +63,7 @@ function toRoom(row: RoomDbRow): RoomRow {
     visibility: row.visibility,
     shareToken: row.shareToken,
     draft: parsePlacements(row.draft) ?? [],
+    draftVersion: row.draftVersion,
     published: parsePlacements(row.published) ?? [],
     publishedAt: row.publishedAt,
   }
@@ -160,10 +167,12 @@ async function ownershipFor(room: RoomRow): Promise<PlacementOwnership> {
   }
 }
 
+/** `expectedVersion` is the draft version the editor last loaded; a newer one on the server is a conflict. */
 export async function saveDraft(
   slug: string,
   placements: unknown,
   can: RoomAccess = {},
+  expectedVersion?: number,
 ): Promise<SaveDraftResult> {
   const room = await getRoom(slug)
   if (!room) return { ok: false, reason: 'not_found' }
@@ -181,20 +190,27 @@ export async function saveDraft(
   const result = validatePlacements(theme, parsed, await ownershipFor(room))
   if (!result.ok) return result
 
-  await query(`update rooms set draft = $2::jsonb, updated_at = now() where slug = $1`, [
-    slug,
-    JSON.stringify(parsed),
-  ])
-  return { ok: true }
+  const row = await queryOne<{ draftVersion: number }>(
+    `update rooms
+        set draft = $2::jsonb, draft_version = draft_version + 1, updated_at = now()
+      where slug = $1 and ($3::integer is null or draft_version = $3)
+      returning draft_version as "draftVersion"`,
+    [slug, JSON.stringify(parsed), expectedVersion ?? null],
+  )
+  if (row) return { ok: true, version: row.draftVersion }
+  const latest = await getRoom(slug)
+  if (!latest) return { ok: false, reason: 'not_found' }
+  return { ok: false, reason: 'conflict', version: latest.draftVersion, draft: latest.draft }
 }
 
-export async function publish(slug: string): Promise<RoomRow | null> {
+/** With `expectedVersion`, publishes only if the draft is still the one the editor saw. */
+export async function publish(slug: string, expectedVersion?: number): Promise<RoomRow | null> {
   const row = await queryOne<RoomDbRow>(
     `update rooms
         set published = draft, published_at = now(), updated_at = now()
-      where slug = $1
+      where slug = $1 and ($2::integer is null or draft_version = $2)
       returning ${ROOM_COLUMNS}`,
-    [slug],
+    [slug, expectedVersion ?? null],
   )
   if (!row) return null
   if (row.slug === 'hall') await sealEpoch()
@@ -213,4 +229,53 @@ export async function setSharing(slug: string, on: boolean): Promise<RoomRow | n
     [slug, on ? 'link' : 'private', token],
   )
   return row ? toRoom(row) : null
+}
+
+export interface RoomPageView {
+  slug: string
+  theme: ThemeId
+  canView: boolean
+  canEdit: boolean
+  published: Placement[]
+  ownerName: string | null
+}
+
+/**
+ * What a room page shows, with access decided in SQL: the share token and owner id never leave
+ * the database, so they cannot end up in a page's payload.
+ */
+export async function roomPageView(
+  slug: string,
+  access: RoomAccess & { shareToken?: string | null },
+): Promise<RoomPageView | null> {
+  const row = await queryOne<{
+    slug: string
+    theme: string
+    published: unknown
+    canView: boolean
+    canEdit: boolean
+    display_name: string | null
+    name_seed: number | null
+  }>(
+    `select r.slug, r.theme, r.published,
+            (r.kind = 'shared'
+              or ($2::uuid is not null and r.owner_member_id = $2::uuid)
+              or (r.visibility = 'link' and r.share_token is not null and r.share_token = $3)) as "canView",
+            ((r.kind = 'shared' and $4::boolean)
+              or (r.kind = 'personal' and $2::uuid is not null and r.owner_member_id = $2::uuid)) as "canEdit",
+            m.display_name, m.name_seed
+       from rooms r
+       left join members m on m.id = r.owner_member_id
+      where r.slug = $1`,
+    [slug, access.memberId ?? null, access.shareToken ?? null, access.isOwnerArtist === true],
+  )
+  if (!row) return null
+  return {
+    slug: row.slug,
+    theme: row.theme as ThemeId,
+    canView: row.canView,
+    canEdit: row.canEdit,
+    published: row.canView ? parsePlacements(row.published) ?? [] : [],
+    ownerName: row.canView && (row.display_name !== null || row.name_seed !== null) ? nameOf(row).name : null,
+  }
 }

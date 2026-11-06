@@ -6,17 +6,21 @@ and can leave a note on the guest board at the end.
 
 ## Running locally
 
-`scripts/` and `db/` are gitignored local tooling (Postgres runner, migrations, seeding).
-
 ```bash
 npm install
-npm run setup                                                        # .env from .env.example
-node --experimental-strip-types scripts/db.ts                        # Postgres on :5433
+npm run setup                                     # .env from .env.example
+docker compose up -d                              # Postgres 16 on :5433
 node --experimental-strip-types --env-file=.env scripts/migrate.ts   # base schema
-npm run db:schema                                                    # deploy-applied schema
-node --experimental-strip-types --env-file=.env scripts/seed.ts      # optional seed data
-npm run dev                                                          # web on :3000 and worker
+npm run db:schema                                 # deploy-applied schema
+npm run dev                                       # web on :3000 and worker
 ```
+
+`scripts/` and `db/` are gitignored local tooling (migrations, seeding), so they exist only in a
+checkout that has them. The base schema lives in `db/migrations`; `npm run db:schema` only layers
+the idempotent `packages/core/schema` files on top. With the tooling present,
+`node --experimental-strip-types --env-file=.env scripts/seed.ts` adds sample artists.
+`scripts/db.ts` is an alternative to Docker that needs `embedded-postgres`, which is not a
+project dependency: run `npm install --no-save embedded-postgres` first if you want it.
 
 Seeded artists sign in at `/studio/sign-in` with `<slug>@example.com` and the password
 `tinymuseum`. Any Postgres works; the app only reads `DATABASE_URL`.

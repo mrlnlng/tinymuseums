@@ -60,6 +60,7 @@ test('the zone must exist and accept the placement kind', () => {
   assert.deepEqual(validatePlacements(THEMES.cozy, [placement({ zone: 'ceiling' })], ownsAll), {
     ok: false,
     reason: 'unknown_zone',
+    id: 'pl-1',
   })
   assert.deepEqual(
     validatePlacements(
@@ -67,7 +68,7 @@ test('the zone must exist and accept the placement kind', () => {
       [placement({ kind: 'painting', ref: 'piece-1', zone: 'wall', x: 7 })],
       ownsAll,
     ),
-    { ok: false, reason: 'zone_rejects_kind' },
+    { ok: false, reason: 'zone_rejects_kind', id: 'pl-1' },
   )
 })
 
@@ -76,27 +77,51 @@ test('a prop must be known, in one of its zones, and fully inside the zone', () 
   assert.deepEqual(validatePlacements(theme, [placement({ ref: 'throne' })], ownsAll), {
     ok: false,
     reason: 'unknown_prop',
+    id: 'pl-1',
   })
   assert.deepEqual(validatePlacements(theme, [placement({ ref: 'shelf' })], ownsAll), {
     ok: false,
     reason: 'wrong_zone',
+    id: 'pl-1',
   })
   assert.deepEqual(validatePlacements(theme, [placement({ x: 1.5 })], ownsAll), {
     ok: false,
     reason: 'out_of_bounds',
+    id: 'pl-1',
   })
-  assert.deepEqual(validatePlacements(theme, [placement({ x: 13.5 })], ownsAll), {
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 19.5 })], ownsAll), {
     ok: false,
     reason: 'out_of_bounds',
+    id: 'pl-1',
   })
   assert.deepEqual(validatePlacements(theme, [placement({ x: 3.1 })], ownsAll), { ok: true })
-  assert.deepEqual(validatePlacements(theme, [placement({ x: 12.4 })], ownsAll), { ok: true })
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 18.4 })], ownsAll), { ok: true })
+})
+
+test('a prop flush against a zone edge passes despite floating-point noise', () => {
+  const theme = THEMES.cozy
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 3.0999999999999996 })], ownsAll), { ok: true })
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 3.09 })], ownsAll), {
+    ok: false,
+    reason: 'out_of_bounds',
+    id: 'pl-1',
+  })
+})
+
+test('one owned prop can stand in only one spot', () => {
+  const pillow = placement({ ref: 'pillow-red', x: 5 })
+  assert.deepEqual(validatePlacements(THEMES.cozy, [pillow, { ...pillow, id: 'pl-2', x: 7 }], ownsAll), {
+    ok: false,
+    reason: 'duplicate_prop',
+    id: 'pl-2',
+  })
 })
 
 test('a prop must be owned', () => {
   assert.deepEqual(validatePlacements(THEMES.cozy, [placement()], ownsNone), {
     ok: false,
     reason: 'not_owned',
+    id: 'pl-1',
   })
 })
 
@@ -106,10 +131,11 @@ test('a painting must be owned and placed only once', () => {
   assert.deepEqual(validatePlacements(theme, [painting], ownsNone), {
     ok: false,
     reason: 'unknown_painting',
+    id: 'pl-1',
   })
   assert.deepEqual(
     validatePlacements(theme, [painting, { ...painting, id: 'pl-2', x: 20 }], ownsAll),
-    { ok: false, reason: 'duplicate_painting' },
+    { ok: false, reason: 'duplicate_painting', id: 'pl-2' },
   )
 })
 
@@ -127,6 +153,7 @@ test('games must be one of the known ids', () => {
   assert.deepEqual(validatePlacements(theme, [game('chess')], ownsAll), {
     ok: false,
     reason: 'unknown_game',
+    id: 'pl-1',
   })
 })
 
@@ -148,4 +175,11 @@ test('orderedPaintings sorts by x then id and leaves other kinds out', () => {
     placement({ id: 'pl-d', kind: 'prop', ref: 'carpet', zone: 'floor', x: 0 }),
   ]
   assert.deepEqual(orderedPaintings(paintings), ['piece-a', 'piece-b', 'piece-c'])
+})
+
+test('a placement may be flipped, and only by a boolean', () => {
+  const base = { id: 'flip-1', kind: 'prop', ref: 'mirror', zone: 'wall', x: 4 }
+  assert.deepEqual(parsePlacements([{ ...base, flip: true }]), [{ ...base, flip: true }])
+  assert.deepEqual(parsePlacements([{ ...base, flip: false }]), [base])
+  assert.equal(parsePlacements([{ ...base, flip: 'yes' }]), null)
 })

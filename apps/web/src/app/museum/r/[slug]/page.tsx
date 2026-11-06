@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
-import { canEdit, canView, getRoom } from '@tiny/core'
+import { roomPageView } from '@tiny/core'
 import PersonalRoom from '@/features/hall/components/PersonalRoom'
+import HomeSignIn from '@/features/rooms/personal/HomeSignIn'
 import { currentMember } from '@/shared/lib/member-session'
 import { currentArtist, isHallOwner } from '@/shared/lib/session'
 
@@ -19,21 +20,23 @@ export default async function RoomPage({
 
   const session = await currentMember()
   const artist = await currentArtist()
-  const actor = {
+  const view = await roomPageView(slug, {
     memberId: session?.member.id ?? null,
     isOwnerArtist: artist ? isHallOwner(artist) : false,
-  }
-
-  const room = await getRoom(slug)
-  if (!room || !canView(room, { ...actor, shareToken: key })) notFound()
+    shareToken: key,
+  })
+  if (!view) notFound()
+  // A private room says so, rather than a bare 404 (also what its owner sees after signing out).
+  if (!view.canView) return <HomeSignIn variant="private" isSignedIn={session !== null} />
 
   return (
     <PersonalRoom
-      slug={room.slug}
-      theme={room.theme}
-      placements={room.published}
+      slug={view.slug}
+      theme={view.theme}
+      placements={view.published}
+      ownerName={view.ownerName}
       shareKey={key ?? undefined}
-      canEdit={canEdit(room, actor)}
+      canEdit={view.canEdit}
     />
   )
 }

@@ -3,7 +3,12 @@ import { test } from 'node:test'
 import type { Placement } from '@tiny/core'
 import { THEMES } from '../../../../../../packages/core/src/rooms/themes.ts'
 import {
+  categoryOf,
   clampX,
+  withoutRejected,
+  cozyLevel,
+  freeX,
+  zoneAt,
   currentHallOrder,
   hallPlacements,
   newPlacementId,
@@ -23,11 +28,24 @@ function placement(overrides: Partial<Placement> = {}): Placement {
 }
 
 test('clampX keeps a prop fully inside its zone', () => {
-  assert.equal(clampX(cozy, 'shelf', 'wall', 0), 2.0 + 1.4 / 2)
-  assert.equal(clampX(cozy, 'shelf', 'wall', 99), 13.4 - 1.4 / 2)
+  assert.equal(clampX(cozy, 'shelf', 'wall', 0), 2.7)
+  assert.equal(clampX(cozy, 'shelf', 'wall', 99), 18.7)
   assert.equal(clampX(cozy, 'shelf', 'wall', 5), 5)
-  assert.equal(clampX(cozy, 'carpet', 'floor', -10), 1.9 + 2.4 / 2)
-  assert.equal(clampX(cozy, 'carpet', 'floor', 99), 13.6 - 2.4 / 2)
+  // 1.9 + 2.4 / 2 is 3.0999999999999996 in floating point, which the server once refused.
+  assert.equal(clampX(cozy, 'carpet', 'floor', -10), 3.1)
+  assert.equal(clampX(cozy, 'carpet', 'floor', 99), 18.4)
+  assert.equal(clampX(cozy, 'shelf', 'wall', 5.123456), 5.123)
+})
+
+test('a refused placement goes back to how it was saved, or away if it is new', () => {
+  const saved = [
+    { id: 'a', kind: 'prop' as const, ref: 'shelf', zone: 'wall', x: 4 },
+    { id: 'b', kind: 'prop' as const, ref: 'cat', zone: 'floor', x: 9 },
+  ]
+  const draft = [{ ...saved[0], x: 6 }, { ...saved[1], x: 11 }, { id: 'c', kind: 'prop' as const, ref: 'broom', zone: 'floor', x: 5 }]
+  assert.deepEqual(withoutRejected(draft, saved, 'a'), [saved[0], draft[1], draft[2]])
+  assert.deepEqual(withoutRejected(draft, saved, 'c'), [draft[0], draft[1]])
+  assert.deepEqual(withoutRejected(draft, saved, null), saved)
 })
 
 test('clampX leaves unknown props and zones alone', () => {
@@ -40,7 +58,7 @@ test('clampX centres a prop wider than the zone', () => {
     ...cozy,
     props: { ...cozy.props, huge: { zones: ['floor'], width: 40 } },
   }
-  assert.equal(clampX(theme, 'huge', 'floor', 3), (1.9 + 13.6) / 2)
+  assert.equal(clampX(theme, 'huge', 'floor', 3), (cozy.zones.floor.minX + cozy.zones.floor.maxX) / 2)
 })
 
 test('zoneFor chooses the first allowed zone unless another is preferred', () => {
@@ -129,4 +147,48 @@ test('reasonLabel and propLabel give readable text', () => {
   assert.equal(reasonLabel('nonsense'), 'That could not be saved.')
   assert.equal(propLabel('fish-golden-koi'), 'Golden koi trophy')
   assert.equal(propLabel('some-new-prop'), 'some new prop')
+})
+
+test('cozy level climbs as things are placed, and trophies count for more', () => {
+  const place = (ref: string, i: number): Placement => ({ id: `cozy-${i}`, kind: 'prop', ref, zone: 'floor', x: 4 })
+  assert.equal(cozyLevel([]).name, 'Bare')
+  assert.equal(cozyLevel([]).hearts, 0)
+  const starters = ['shelf', 'carpet', 'pillow-red'].map(place)
+  assert.equal(cozyLevel(starters).score, 8)
+  assert.equal(cozyLevel(starters).name, 'Snug')
+  assert.equal(cozyLevel([...starters, place('fish-golden-koi', 9)]).name, 'Cozy')
+  const top = cozyLevel(Array.from({ length: 20 }, (_, i) => place('cabinet', i)))
+  assert.equal(top.name, 'Legendary')
+  assert.equal(top.progress, 1)
+  assert.equal(top.next, null)
+})
+
+test('drawer categories follow the prop zones', () => {
+  assert.equal(categoryOf('mirror'), 'wall')
+  assert.equal(categoryOf('cabinet'), 'floor')
+  assert.equal(categoryOf('fish-koi'), 'fish')
+})
+
+test('a flip makes two arrangements differ', () => {
+  const a: Placement = { id: 'flip-a', kind: 'prop', ref: 'mirror', zone: 'wall', x: 3 }
+  assert.equal(samePlacements([a], [{ ...a }]), true)
+  assert.equal(samePlacements([a], [{ ...a, flip: true }]), false)
+})
+
+test('freeX finds the nearest gap beside things already there', () => {
+  const cozy = THEMES.cozy
+  const pillow: Placement = { id: 'free-1', kind: 'prop', ref: 'pillow-red', zone: 'floor', x: 6 }
+  assert.equal(freeX(cozy, 'pillow-blue', 'floor', [], 6), 6)
+  const x = freeX(cozy, 'pillow-blue', 'floor', [pillow], 6)
+  assert.ok(Math.abs(x - 6) >= 0.8 + 0.05 - 1e-9)
+  assert.ok(Math.abs(x - 6) < 1.1)
+  const carpet: Placement = { id: 'free-2', kind: 'prop', ref: 'carpet', zone: 'floor', x: 6 }
+  assert.equal(freeX(cozy, 'pillow-blue', 'floor', [carpet], 6), 6)
+  assert.equal(freeX(cozy, 'carpet', 'floor', [pillow], 6), 6)
+})
+
+test('a trophy goes on the wall when held high and the floor when held low', () => {
+  assert.equal(zoneAt(THEMES.cozy, 'fish-koi', 2), 'wall')
+  assert.equal(zoneAt(THEMES.cozy, 'fish-koi', -0.4), 'floor')
+  assert.equal(zoneAt(THEMES.cozy, 'cabinet', 3), 'floor')
 })

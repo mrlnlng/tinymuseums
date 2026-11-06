@@ -409,7 +409,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       }
 
       passage.update(dt)
-      rig.sync(traversal.cameraX, 0)
+      rig.sync(traversal.cameraX, entry.contents.cameraRise?.() ?? 0)
       const frame: Frame = { now, dt, camera: rig.camera, viewport, quiet: isQuiet(entry) }
       entry.contents.beforeCharacterUpdate?.(frame)
       character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)

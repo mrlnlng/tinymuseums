@@ -37,7 +37,7 @@ export type EconomyEvent = EarnedEvent | InviteEvent
 export type BuyOutcome = 'ok' | 'insufficient' | 'error'
 
 export type CollectOutcome =
-  | { ok: true; collected: boolean }
+  | { ok: true; collected: boolean; fish: string }
   | { ok: false; reason: 'guest' | 'error' }
 
 export { allowedCharacter, owns, walletReady } from './lib/ownership.ts'
@@ -244,9 +244,10 @@ function isBuyReply(value: unknown): value is { balance: number; items: string[]
 
 function isCollectReply(
   value: unknown,
-): value is { balance: number; items: string[]; collected: boolean } {
+): value is { balance: number; items: string[]; collected: boolean; fish: string } {
   if (!isBuyReply(value)) return false
-  return typeof (value as Record<string, unknown>).collected === 'boolean'
+  const record = value as Record<string, unknown>
+  return typeof record.collected === 'boolean' && typeof record.fish === 'string'
 }
 
 function isWalletView(value: unknown): value is WalletView {
@@ -476,16 +477,34 @@ export async function buy(itemId: string): Promise<BuyOutcome> {
   return 'ok'
 }
 
-export async function collect(itemId: string): Promise<CollectOutcome> {
+/** Asks the server for a cast ticket; null for guests or when offline. */
+export async function castLine(): Promise<string | null> {
+  ensureStarted()
+  const id = memberId
+  if (id === null) return null
+  try {
+    const response = await fetch('/api/pond/cast', { method: 'POST', headers: { 'X-TM-Member': id } })
+    if (!response.ok) return null
+    const body: unknown = await response.json().catch(() => null)
+    const ticket = typeof body === 'object' && body !== null ? (body as { ticket?: unknown }).ticket : null
+    return typeof ticket === 'string' ? ticket : null
+  } catch {
+    return null
+  }
+}
+
+/** Reels in the catch for a cast ticket; the server decides which fish it was. */
+export async function collect(ticket: string | null): Promise<CollectOutcome> {
   ensureStarted()
   const id = memberId
   if (id === null) return { ok: false, reason: 'guest' }
+  if (ticket === null) return { ok: false, reason: 'error' }
   let response: Response
   try {
     response = await fetch('/api/wallet/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-TM-Member': id },
-      body: JSON.stringify({ item: itemId, source: 'pond' }),
+      body: JSON.stringify({ ticket }),
     })
   } catch {
     return { ok: false, reason: 'error' }
@@ -499,7 +518,7 @@ export async function collect(itemId: string): Promise<CollectOutcome> {
     today: wallet?.today ?? EMPTY_TODAY,
   }
   publish()
-  return { ok: true, collected: body.collected }
+  return { ok: true, collected: body.collected, fish: body.fish }
 }
 
 export function subscribeEvents(listener: (event: EconomyEvent) => void): () => void {

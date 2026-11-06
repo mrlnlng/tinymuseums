@@ -124,3 +124,12 @@ test('the weighted fish pick roughly matches the table', () => {
   assert.equal(pickFish(() => 0).id, 'minnow')
   assert.equal(pickFish(() => 1).id, 'golden-koi')
 })
+
+test('the local catch odds match the server roll for members', async () => {
+  const { POND_FISH, POND_MIN_REEL_MS } = await import('../../../../../../packages/core/src/economy/pond.ts')
+  assert.deepEqual(
+    FISH.map((fish) => ({ id: fish.id, weight: fish.weight })),
+    POND_FISH.map((fish) => ({ id: fish.id, weight: fish.weight })),
+  )
+  assert.ok(POND_MIN_REEL_MS <= (CAST_SECONDS + WAIT_MIN_SECONDS) * 1000)
+})

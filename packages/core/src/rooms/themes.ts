@@ -41,12 +41,10 @@ const COZY_FLOOR_PROPS = [
   ['perfume', 0.4],
   ['broom', 0.6],
   ['cat', 1.0],
-  ['fish-minnow', 0.7],
-  ['fish-perch', 0.7],
-  ['fish-carp', 0.7],
-  ['fish-koi', 0.7],
-  ['fish-golden-koi', 0.7],
 ] as const
+
+/** Fish trophies are plaques: they hang on the wall, or lean on the floor. */
+const COZY_TROPHIES = ['fish-minnow', 'fish-perch', 'fish-carp', 'fish-koi', 'fish-golden-koi'] as const
 
 function propsOn(zone: string, props: readonly (readonly [string, number])[]): Record<string, PropSpec> {
   return Object.fromEntries(props.map(([id, width]) => [id, { zones: [zone], width }]))
@@ -66,12 +64,13 @@ export const THEMES: Record<ThemeId, ThemeSpec> = {
     id: 'cozy',
     kind: 'personal',
     zones: {
-      wall: { minX: 2.0, maxX: 13.4, accepts: ['prop'] },
-      floor: { minX: 1.9, maxX: 13.6, accepts: ['prop'] },
+      wall: { minX: 2.0, maxX: 19.4, accepts: ['prop'] },
+      floor: { minX: 1.9, maxX: 19.6, accepts: ['prop'] },
     },
     props: {
       ...propsOn('wall', COZY_WALL_PROPS),
       ...propsOn('floor', COZY_FLOOR_PROPS),
+      ...Object.fromEntries(COZY_TROPHIES.map((id) => [id, { zones: ['wall', 'floor'], width: 0.7 }])),
     },
     maxPlacements: 24,
   },

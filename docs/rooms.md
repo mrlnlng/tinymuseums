@@ -173,11 +173,51 @@ style.
   back to the hall inside the room
 - [x] Share link (`?key=`) for personal rooms; presence tickets for `r-*` rooms check the same access
 
+### Personal room polish (2026-11-05)
+Decorating follows the usual pattern from cozy decorating games: a bottom drawer of item cards
+with categories, tap or drag to place, drag back to the drawer to put away, and quick, layered
+feedback (lift and tilt on pick-up, squash and sparkles on drop, green or red zone tints).
+- Look: cream stripes like the museum, a wood wainscot, a floor with depth (visitors stand on it),
+  end posts with shade beyond, a "Museum" sign on the door, and the owner's name sign with
+  their cozy level.
+- The room is 20 units wide. Fish trophies hang on the wall or lean on the floor, chosen by drag
+  height.
+- Decorate mode: the camera lifts the floor above the drawer (`RoomContents.cameraRise`). Tap a
+  card and the thing lands in the nearest free spot. A toolbar flips (`placement.flip`) or puts
+  away the selected thing. Undo (button or Ctrl+Z). Done saves and publishes in one step.
+- Progress: a cozy meter (Bare → Settling in → Snug → Cozy → Dreamy → Legendary) with a
+  level-up toast. "New!" badges mark things not placed yet.
+- A private room shows a friendly "This room is private" card instead of a 404, including for its
+  owner after signing out.
+
+### Stress-test fixes (2026-11-06)
+Fixes for `docs/personal-room-issues.md` and `docs/testing/local-e2e-stress-2026-11-06.md`:
+- Saving: x is rounded to a thousandth and the server allows 1e-6 of edge slack. A prop `ref`
+  may be placed once (`duplicate_prop`). A refused save names the placement (`id`), and the
+  editor puts back only that one. Saves run one at a time, retry with backoff and on `online`,
+  and are flushed with `keepalive` on `pagehide`, on tab hiding and on leaving the room.
+- Two tabs: `rooms.draft_version` goes up on every save. The draft PUT and the publish POST take
+  `{ version }` and answer 409 `conflict` (the PUT with the newest draft) when it is stale.
+- Room mutations go through `app/api/rooms/editor.ts`: a room the caller can't edit is 404
+  whether or not it exists, and a personal room needs `X-TM-Member` to match the session.
+- Pond: `POST /api/pond/cast` gives a signed ticket; `POST /api/wallet/collect { ticket }` rolls
+  the fish on the server (`packages/core/src/economy/pond.ts`), at least 1.8 s and at most 2 min
+  after the cast, once per ticket. The client no longer names the fish it caught.
+- Drawer: always-visible save dot (with text when offline), an "In room n/24" list that pans to a
+  thing, edge markers for things out of view, keyboard placing (Enter/Space on a card), and touch
+  swipes that scroll the cards (an upward drag picks one up). Levels are celebrated once per visit.
+- The name sign hides while decorating and shrinks long names. After Done the view glides back to
+  the bunny; the leash is off while decorating (`Traversal.setLeashed`).
+- The room page reads `roomPageView`, which decides access in SQL, so the share token and owner id
+  never reach the page payload. The hall's loading screen moved into `app/museum/(hall)/`, so
+  room pages answer real 404s and redirects.
+
 ### Follow-ups after Phases 4–7
-- Deploy: apply `schema/rooms.sql` (`npm run db:schema`) and redeploy the presence worker. Until
+- Deploy: apply `schema/rooms.sql` (`npm run db:schema`; it now also adds `draft_version`) and redeploy the presence worker. Until
   then, the deployed room server rejects `r-*` room names, so personal rooms have no presence.
-- Art: the cozy room reuses atelier art (dark wallpaper, wardrobe-style door), and fish trophies
-  are drawn in code. A dedicated room theme and door would read better.
+- Art: the cozy room's wallpaper and wainscot are drawn in code. Its door is the atelier doorway
+  with a "Museum" sign over the hanger, and fish trophies are drawn in code. A drawn door and
+  trophies would read better.
 - The hall arranger has not been checked in a browser locally, because `HALL_OWNER_EMAIL` isn't
   set in `.env`. Its logic is unit-tested, and publishing the hall is covered by `db-tests/rooms.test.ts`.
 - Game placements (`kind: 'game'`) pass validation, but no theme draws them yet.

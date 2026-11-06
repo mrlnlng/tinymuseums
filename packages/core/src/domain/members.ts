@@ -165,9 +165,9 @@ export interface MemberName {
   chosen: boolean
 }
 
-type NameRow = { display_name: string | null; name_seed: number | null }
+export type NameRow = { display_name: string | null; name_seed: number | null }
 
-const nameOf = (row: NameRow): MemberName => ({
+export const nameOf = (row: NameRow): MemberName => ({
   name: row.display_name ?? (row.name_seed === null ? null : nameFromSeed(row.name_seed)),
   chosen: row.display_name !== null,
 })

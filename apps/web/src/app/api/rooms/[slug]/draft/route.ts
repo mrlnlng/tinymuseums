@@ -1,34 +1,25 @@
-import { canEdit, getRoom, hit, saveDraft } from '@tiny/core'
-import { currentMember } from '@/shared/lib/member-session'
-import { checkMutation, json, limited } from '@/shared/lib/member-route'
+import { hit, saveDraft } from '@tiny/core'
+import { json, limited } from '@/shared/lib/member-route'
 import { readJsonBody } from '@/shared/lib/read-json-body'
-import { currentArtist, isHallOwner } from '@/shared/lib/session'
+import { roomEditor } from '../../editor'
 
 const MAX_BODY_BYTES = 128 * 1024
 const PER_EDITOR = { limit: 120, windowSeconds: 60 }
+
+function versionOf(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined
+}
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
-  const session = await currentMember()
-  const artist = await currentArtist()
-  const actor = {
-    memberId: session?.member.id ?? null,
-    isOwnerArtist: artist ? isHallOwner(artist) : false,
-  }
+  const guard = await roomEditor(request, slug, true)
+  if (!guard.ok) return guard.response
 
-  const room = await getRoom(slug)
-  if (!room) return json({ error: 'not_found' }, 404)
-  if (!canEdit(room, actor)) return json({ error: 'forbidden' }, 403)
-
-  const denied = checkMutation(request, true)
-  if (denied) return denied
-
-  const editor = actor.memberId ?? artist?.id
-  if (editor) {
-    const rate = await hit(`rooms-draft:${editor}`, PER_EDITOR)
+  if (guard.editorId) {
+    const rate = await hit(`rooms-draft:${guard.editorId}`, PER_EDITOR)
     if (!rate.allowed) return limited(rate)
   }
 
@@ -38,13 +29,16 @@ export async function PUT(
       ? json({ error: 'too_large' }, 413)
       : json({ error: 'invalid' }, 400)
   }
-  const body = typeof parsed.body === 'object' && parsed.body !== null ? parsed.body : {}
-  const placements = (body as { placements?: unknown }).placements
-
-  const result = await saveDraft(slug, placements, actor)
-  if (!result.ok) {
-    const status = result.reason === 'not_found' ? 404 : result.reason === 'forbidden' ? 403 : 400
-    return json({ error: status === 400 ? 'invalid' : result.reason, reason: result.reason }, status)
+  const body = (typeof parsed.body === 'object' && parsed.body !== null ? parsed.body : {}) as {
+    placements?: unknown
+    version?: unknown
   }
-  return json({ ok: true })
+
+  const result = await saveDraft(slug, body.placements, guard.actor, versionOf(body.version))
+  if (result.ok) return json({ ok: true, version: result.version })
+  if (result.reason === 'conflict' && 'draft' in result) {
+    return json({ error: 'conflict', version: result.version, draft: result.draft }, 409)
+  }
+  if (result.reason === 'not_found' || result.reason === 'forbidden') return json({ error: 'not_found' }, 404)
+  return json({ error: 'invalid', reason: result.reason, ...('id' in result && result.id ? { id: result.id } : {}) }, 400)
 }

@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'rea
 import { useReducedMotion } from 'motion/react'
 import MinigameFrame from '@/features/minigames/components/MinigameFrame'
 import { useSound } from '@/features/sound/components/SoundProvider'
-import { collect, earn } from '@/features/economy/store'
+import { castLine, collect, earn } from '@/features/economy/store'
 import { assetUrl, type AssetName } from '@/shared/lib/assets'
 import { depthAtY, feetY, scaleAt, type FloorPoint } from '@/features/rooms/floor'
 import manifestJson from '../../../../public/assets/manifest.json'
 import {
+  FISH,
   cast,
   createFishingState,
   reel,
@@ -345,6 +346,8 @@ export default function PondGame({ onClose, onCatch }: PondGameProps) {
   const toastTimerRef = useRef(0)
   const toastKeyRef = useRef(0)
   const guestNoteShownRef = useRef(false)
+  /** The server's ticket for the current cast; members' catches are rolled from it. */
+  const ticketRef = useRef<{ cast: number; ticket: string | null }>({ cast: 0, ticket: null })
 
   const [sprites, setSprites] = useState<SpriteSet | null>(null)
   const [phase, setPhase] = useState<FishingPhase>('idle')
@@ -401,6 +404,11 @@ export default function PondGame({ onClose, onCatch }: PondGameProps) {
     fishingRef.current = next
     setPhase(next.phase)
     play('click')
+    const castId = ticketRef.current.cast + 1
+    ticketRef.current = { cast: castId, ticket: null }
+    void castLine().then((ticket) => {
+      if (ticketRef.current.cast === castId) ticketRef.current = { cast: castId, ticket }
+    })
   }, [play])
 
   const doReel = useCallback(() => {
@@ -410,28 +418,26 @@ export default function PondGame({ onClose, onCatch }: PondGameProps) {
     fishingRef.current = next
     setPhase(next.phase)
     if (next.phase === 'caught' && next.fish) {
-      const fish = next.fish
+      const local = next.fish
+      const ticket = ticketRef.current.ticket
+      ticketRef.current = { cast: ticketRef.current.cast + 1, ticket: null }
       catchesRef.current += 1
       setCatches(catchesRef.current)
-      showToast(`You caught a ${fish.name.toLowerCase()}!`)
-      onCatch?.(fish.id)
+      onCatch?.(local.id)
       play('harp')
       const toastKey = ++toastKeyRef.current
-      void collect(`prop:fish-${fish.id}`).then((result) => {
+      const caught = (name: string) => `You caught a ${name.toLowerCase()}!`
+      showToast(ticket ? 'Reeling it in…' : caught(local.name))
+      void collect(ticket).then((result) => {
         if (toastKeyRef.current !== toastKey) return
         if (result.ok) {
-          if (result.collected) {
-            showToast(
-              `You caught a ${fish.name.toLowerCase()}!`,
-              `New for your room: ${fish.name} trophy`,
-            )
-          }
+          const fish = FISH.find((entry) => entry.id === result.fish) ?? local
+          showToast(caught(fish.name), result.collected ? `New for your room: ${fish.name} trophy` : undefined)
         } else if (result.reason === 'guest' && !guestNoteShownRef.current) {
           guestNoteShownRef.current = true
-          showToast(
-            `You caught a ${fish.name.toLowerCase()}!`,
-            'Sign in to keep fish trophies for your room',
-          )
+          showToast(caught(local.name), 'Sign in to keep fish trophies for your room')
+        } else if (ticket) {
+          showToast(caught(local.name))
         }
       })
     } else if (next.phase === 'escaped' && next.escape === 'early') {

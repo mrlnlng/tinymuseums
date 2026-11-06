@@ -1264,6 +1264,23 @@ code.token {
   .visitor-ticket { animation: none; transform: rotate(-4deg); }
 }
 
+/* Covers the page the moment a top-corner button is pressed: it answers the tap and swallows repeats. */
+.screen-leaving {
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: var(--wall);
+  opacity: 0;
+  animation: screen-leaving 0.25s ease-out 0.08s forwards;
+  cursor: progress;
+}
+
+@keyframes screen-leaving { to { opacity: 0.7; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-leaving { animation: none; opacity: 0.7; }
+}
+
 .screen-chrome {
   position: absolute;
   top: 12px;

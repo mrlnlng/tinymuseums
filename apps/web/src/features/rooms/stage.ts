@@ -358,6 +358,15 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     renderer.domElement.addEventListener('click', handleClick)
 
     let lastFrameAt = performance.now()
+    let isCharacterShown = true
+
+    // The character layer floats over the page, loading screens included, so it shows only
+    // while a room is ready; otherwise the last room's bunny would hang over the next one's loading.
+    function showCharacter(shown: boolean): void {
+      if (shown === isCharacterShown) return
+      isCharacterShown = shown
+      hosts.character.style.visibility = shown ? '' : 'hidden'
+    }
 
     function renderFrame(now: number): void {
       frameHandle = requestAnimationFrame(renderFrame)
@@ -365,6 +374,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       pixelRatio.sample(now - lastFrameAt, now - (entry?.readyAt ?? Infinity) > 3000)
       const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
       lastFrameAt = now
+      showCharacter(entry !== null && entry.ready && entry.contents !== null)
 
       if (!entry || !entry.contents || !entry.scene) {
         sound().setWalking(false)
@@ -433,6 +443,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       viewport,
       dispose() {
         cancelAnimationFrame(frameHandle)
+        hosts.character.style.visibility = ''
         sound().setWalking(false)
         resizeObserver.disconnect()
         renderer.domElement.removeEventListener('pointerdown', handlePointerDown)

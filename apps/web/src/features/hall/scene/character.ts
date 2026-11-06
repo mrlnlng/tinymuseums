@@ -67,6 +67,8 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   sprite.alt = ''
   sprite.setAttribute('aria-hidden', 'true')
   sprite.src = idle.right.src
+  // Unsized it would show at the image's full size; update() sizes it and shows it.
+  sprite.hidden = true
   host.appendChild(sprite)
 
   let canvas = document.createElement('canvas')

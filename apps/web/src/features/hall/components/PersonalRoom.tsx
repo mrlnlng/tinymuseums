@@ -160,6 +160,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   const retryRef = useRef<{ timer: number | null; attempt: number }>({ timer: null, attempt: 0 })
   /** The most hearts reached while decorating; a level is celebrated only the first time. */
   const bestHeartsRef = useRef(0)
+  const isEditingRef = useRef(false)
 
   const { isReady, error } = useRoom({
     room,
@@ -519,6 +520,9 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   )
 
   const enterEdit = useCallback(async () => {
+    // A double tap on Decorate would load the room twice and reset the second time.
+    if (isEditingRef.current) return
+    isEditingRef.current = true
     setNotice(null)
     setSaveState('saved')
     setIsHintShown(false)
@@ -530,6 +534,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
       if (!response.ok) throw new Error('room')
       body = await response.json()
     } catch {
+      isEditingRef.current = false
       setIsEditing(false)
       setNotice('Your room could not be opened for decorating just now.')
       return
@@ -562,6 +567,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     controller.hide(null)
     controller.setCharacterOpacity(1)
     setSelected(null)
+    isEditingRef.current = false
     setIsEditing(false)
     setLoaded(false)
     setSaveState('saved')

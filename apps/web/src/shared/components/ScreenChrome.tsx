@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import SettingsMenu from './SettingsMenu'
 import AssetImage from '@/shared/components/AssetImage'
 import ChatButton from '@/features/presence/components/ChatButton'
@@ -8,6 +9,25 @@ import ChatButton from '@/features/presence/components/ChatButton'
 export default function ScreenChrome() {
   const pathname = usePathname()
   const router = useRouter()
+  const [leaving, setLeaving] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const wasPending = useRef(false)
+
+  // One trip at a time: repeat taps while the next page loads are ignored, not queued.
+  useEffect(() => {
+    if (isPending) wasPending.current = true
+    else if (wasPending.current) {
+      wasPending.current = false
+      setLeaving(false)
+    }
+  }, [isPending])
+  useEffect(() => setLeaving(false), [pathname])
+
+  function go(href: string): void {
+    if (leaving || href === pathname) return
+    setLeaving(true)
+    startTransition(() => router.push(href))
+  }
 
   if (pathname.startsWith('/studio')) return null
 
@@ -19,12 +39,14 @@ export default function ScreenChrome() {
 
   return (
     <>
+      {leaving ? <div className="screen-leaving" aria-hidden="true" /> : null}
       <div className={onDark ? 'screen-chrome screen-chrome--on-dark' : 'screen-chrome'}>
         {showHome ? (
           <button
             type="button"
             className="chrome-button"
-            onClick={() => router.push('/')}
+            onClick={() => go('/')}
+            disabled={leaving}
             aria-label="Back to the entrance"
             title="Back to the entrance"
           >
@@ -35,7 +57,8 @@ export default function ScreenChrome() {
           <button
             type="button"
             className="chrome-button"
-            onClick={() => router.push('/museum/home')}
+            onClick={() => go('/museum/home')}
+            disabled={leaving}
             aria-label="My room"
             title="My room"
           >

@@ -12,7 +12,10 @@ import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
 import type { MinigameId } from '@/features/minigames/registry'
-import { useHallScene, type OpenPiece } from '@/features/hall/hooks/useHallScene'
+import { createHallRoom, type HallCallbacks, type OpenPiece } from '@/features/rooms/hall/room'
+import { hrefFor } from '@/features/rooms/links'
+import { useRoom } from '@/features/rooms/MuseumStage'
+import type { DoorRef } from '@/features/rooms/types'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
 import { MUSEUM_START_MARK } from '@/shared/lib/vitals-marks'
@@ -39,9 +42,6 @@ interface MuseumProps {
 }
 
 export default function Museum({ initialSlice, arrival }: MuseumProps) {
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const characterRef = useRef<HTMLDivElement>(null)
   const guestBoardNotesRef = useRef<HTMLDivElement>(null)
 
   const [openPiece, setOpenPiece] = useState<OpenPiece | null>(null)
@@ -79,17 +79,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const isSuspended =
     openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || openGame !== null
 
-  const { isReady, error } = useHallScene({
-    hosts: {
-      canvas: canvasRef,
-      overlay: overlayRef,
-      character: characterRef,
-      guestBoardNotes: guestBoardNotesRef,
-    },
-    initialSlice,
-    arrival,
-    onGoUpstairs: () => router.push('/museum/atelier'),
-    isSuspended,
+  const hallCallbacks = (): HallCallbacks => ({
     onOpenPiece: setOpenPiece,
     onLeave: () => router.push('/'),
     onOpenHelp: () => setIsHelpOpen(true),
@@ -99,6 +89,23 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
     onIntroDone: () => setIsHintShown(claimSwipeHint()),
     onFirstMove: hideHint,
     onOpenComputer: () => setOpenGame('desktop'),
+  })
+  const callbacksRef = useRef<HallCallbacks>(hallCallbacks())
+  callbacksRef.current = hallCallbacks()
+
+  const [hallRoom] = useState(() =>
+    createHallRoom({
+      initialSlice,
+      guestBoardNotes: () => guestBoardNotesRef.current,
+      callbacks: () => callbacksRef.current,
+    }),
+  )
+
+  const { isReady, error } = useRoom({
+    room: hallRoom,
+    arrival: arrival === 'stairs' ? { kind: 'door', door: 'atelier' } : { kind: 'opening' },
+    isSuspended: () => isSuspended,
+    onExit: (to: DoorRef) => router.push(hrefFor(to)),
   })
 
   useEffect(() => {
@@ -145,88 +152,76 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
 
   if (error) {
     return (
-      <div className="museum">
-        <p className="hall-error" role="alert">
-          {error}
-        </p>
-      </div>
+      <p className="hall-error" role="alert">
+        {error}
+      </p>
     )
   }
 
   return (
     <>
-      <motion.div
-        className="museum"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isReady ? 1 : 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="hall-host" ref={canvasRef} />
-        <div className="hall-overlay" ref={overlayRef} />
-        <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
-          <PinnedNotes notes={guestNotes} avoidSitArea />
-        </div>
-        <div className="hall-character" ref={characterRef} />
+      <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
+        <PinnedNotes notes={guestNotes} avoidSitArea />
+      </div>
 
-        {unkeptNote ? (
-          <p className="economy-note" role="status">
-            The unkept pieces went back to their stands.
-          </p>
+      {unkeptNote ? (
+        <p className="economy-note" role="status">
+          The unkept pieces went back to their stands.
+        </p>
+      ) : null}
+
+      <AnimatePresence>
+        {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {openGame === 'desktop' ? (
+          <GameDesktop key="game-desktop" onPick={pickGame} onClose={() => setOpenGame(null)} />
         ) : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
-        </AnimatePresence>
+      <AnimatePresence>
+        {openGame === 'sketch' ? (
+          <SketchGuess
+            key={`sketch-guess-${sketchSession}`}
+            epochId={initialSlice.epochId}
+            prepared={sketchGame}
+            onClose={closeSketchGuess}
+          />
+        ) : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {openGame === 'desktop' ? (
-            <GameDesktop key="game-desktop" onPick={pickGame} onClose={() => setOpenGame(null)} />
-          ) : null}
-        </AnimatePresence>
+      <AnimatePresence>
+        {openGame === 'color' ? (
+          <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
+        ) : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {openGame === 'sketch' ? (
-            <SketchGuess
-              key={`sketch-guess-${sketchSession}`}
-              epochId={initialSlice.epochId}
-              prepared={sketchGame}
-              onClose={closeSketchGuess}
-            />
-          ) : null}
-        </AnimatePresence>
+      <AnimatePresence>
+        {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {openGame === 'color' ? (
-            <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
-          ) : null}
-        </AnimatePresence>
+      <AnimatePresence>
+        {isCoinOpen ? <CoinFound key="coin" onClose={() => setIsCoinOpen(false)} /> : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}
-        </AnimatePresence>
+      <AnimatePresence>
+        {isGuestBoardOpen ? (
+          <GuestBoard key="guestboard" onClose={() => setIsGuestBoardOpen(false)} />
+        ) : null}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {isCoinOpen ? <CoinFound key="coin" onClose={() => setIsCoinOpen(false)} /> : null}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {isGuestBoardOpen ? (
-            <GuestBoard key="guestboard" onClose={() => setIsGuestBoardOpen(false)} />
-          ) : null}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {openPiece ? (
-            <Walkthrough
-              key="walkthrough"
-              slug={openPiece.slug}
-              artistId={openPiece.artistId}
-              initialPieceId={openPiece.pieceId}
-              onClose={() => setOpenPiece(null)}
-            />
-          ) : null}
-        </AnimatePresence>
-      </motion.div>
+      <AnimatePresence>
+        {openPiece ? (
+          <Walkthrough
+            key="walkthrough"
+            slug={openPiece.slug}
+            artistId={openPiece.artistId}
+            initialPieceId={openPiece.pieceId}
+            onClose={() => setOpenPiece(null)}
+          />
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isReady ? null : (

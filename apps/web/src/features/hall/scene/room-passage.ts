@@ -12,22 +12,32 @@ export function createRoomPassage({ traversal, doorX, clearX, dip }: {
   let phase: 'idle' | 'approach' | 'fade' | 'parked' | 'arrive' = 'idle'
   let elapsed = 0
   let covered: (() => void) | null = null
+  let door = { x: doorX, clearX }
   return {
     get busy() { return phase !== 'idle' },
     get locked() { return phase === 'fade' || phase === 'parked' },
-    leave(done: () => void) {
+    leave(done: () => void, at = door) {
       if (phase !== 'idle') return
+      door = at
       covered = done
       phase = 'approach'
-      traversal.hold(doorX, true)
+      traversal.hold(at.x, true)
     },
-    arrive() {
+    arrive(at = door) {
       if (phase !== 'idle') return
-      traversal.reset(reduced ? clearX : doorX)
+      door = at
+      traversal.reset(reduced ? at.clearX : at.x)
       if (!reduced) {
-        traversal.hold(clearX, true)
+        traversal.hold(at.clearX, true)
         phase = 'arrive'
       }
+    },
+    reset() {
+      phase = 'idle'
+      elapsed = 0
+      covered = null
+      dip.hidden = true
+      dip.style.opacity = '0'
     },
     update(dt: number) {
       if (phase === 'arrive') {
@@ -40,8 +50,8 @@ export function createRoomPassage({ traversal, doorX, clearX, dip }: {
         if (!traversal.isHeld && !traversal.isFollowing) {
           covered = null
           phase = 'idle'
-        } else if (Math.abs(traversal.x - doorX) < 0.12) {
-          traversal.reset(doorX)
+        } else if (Math.abs(traversal.x - door.x) < 0.12) {
+          traversal.reset(door.x)
           phase = 'fade'
           elapsed = 0
         }

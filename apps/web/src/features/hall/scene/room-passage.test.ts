@@ -68,3 +68,26 @@ test('interrupted approach cancels entry without leaving a busy room', () => {
   assert.equal(passage.busy, false)
   assert.equal(dip.hidden, true)
 })
+
+test('reset clears a parked passage and its dip so the next room can arrive', () => {
+  const { walker, dip, passage } = fixture()
+  passage.leave(() => {})
+  walker.x = -2
+  passage.update(0.2)
+  passage.update(0.3)
+  passage.update(1)
+  assert.equal(passage.busy, true)
+  assert.equal(passage.locked, true)
+  assert.equal(dip.hidden, false)
+
+  passage.reset()
+  assert.equal(passage.busy, false)
+  assert.equal(passage.locked, false)
+  assert.equal(dip.hidden, true)
+  assert.equal(dip.style.opacity, '0')
+
+  passage.arrive()
+  assert.equal(walker.x, -2)
+  assert.equal(walker.target, -1)
+  assert.equal(passage.busy, true)
+})

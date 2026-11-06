@@ -2,8 +2,11 @@ import { env } from '../infra/env.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { FRAME_AVIF_SINCE, framePxPerUnit } from '../media/collage.ts'
 import { frameAvifKey, getStorage } from '../media/storage.ts'
+import { orderedPaintings, parsePlacements } from '../rooms/placements.ts'
 import { MAX_STANDS } from './gallery.ts'
 import type { HallPieceDto, HallSliceDto } from '../types.ts'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export interface EpochRow {
   id: number
@@ -13,17 +16,46 @@ export interface EpochRow {
 }
 
 export async function sealEpoch(): Promise<EpochRow> {
-  const candidates = await query<{ id: string }>(
-    `select p.id
-       from pieces p
-       join artists a on a.id = p.artist_id
-      where a.status = 'live'
-        and p.flattened_key is not null
-        and p.order_index between 1 and $1
-        ${env.hallOwnerEmail ? `and a.email = $2` : ''}
-      order by p.order_index, p.created_at`,
-    env.hallOwnerEmail ? [MAX_STANDS, env.hallOwnerEmail] : [MAX_STANDS],
+  const hall = await queryOne<{ published: unknown }>(
+    `select published from rooms where slug = 'hall'`,
   )
+  const placed = hall ? parsePlacements(hall.published) : null
+  const refs = placed ? orderedPaintings(placed) : []
+
+  let candidates: { id: string }[]
+  if (refs.length > 0) {
+    const ids = refs.filter((ref) => UUID.test(ref))
+    const live =
+      ids.length === 0
+        ? []
+        : await query<{ id: string }>(
+            `select p.id
+               from pieces p
+               join artists a on a.id = p.artist_id
+              where p.id = any($1::uuid[])
+                and a.status = 'live'
+                and p.flattened_key is not null
+                ${env.hallOwnerEmail ? 'and a.email = $2' : ''}`,
+            env.hallOwnerEmail ? [ids, env.hallOwnerEmail] : [ids],
+          )
+    const byId = new Map(live.map((row) => [row.id, row]))
+    candidates = ids.flatMap((id) => {
+      const row = byId.get(id)
+      return row ? [row] : []
+    })
+  } else {
+    candidates = await query<{ id: string }>(
+      `select p.id
+         from pieces p
+         join artists a on a.id = p.artist_id
+        where a.status = 'live'
+          and p.flattened_key is not null
+          and p.order_index between 1 and $1
+          ${env.hallOwnerEmail ? `and a.email = $2` : ''}
+        order by p.order_index, p.created_at`,
+      env.hallOwnerEmail ? [MAX_STANDS, env.hallOwnerEmail] : [MAX_STANDS],
+    )
+  }
 
   const seed = Math.floor(Math.random() * 0x7fffffff)
   const order = candidates.map((row) => row.id)

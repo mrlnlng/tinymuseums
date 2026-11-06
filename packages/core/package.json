@@ -15,6 +15,7 @@
     "./visit-features": "./src/visit-features.ts",
     "./slots": "./src/slots/index.ts",
     "./economy": "./src/economy/index.ts",
+    "./rooms": "./src/rooms/index.ts",
     "./presence": "./src/presence/index.ts",
     "./presence/wire": "./src/presence/wire.ts",
     "./presence/messages": "./src/presence/messages.ts"

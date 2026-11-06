@@ -24,7 +24,7 @@ export const SECRET_FEATURES = [
 
 export type SecretFeature = (typeof SECRET_FEATURES)[number]
 
-export const GAMES = ['colorrecall', 'sketch'] as const
+export const GAMES = ['colorrecall', 'sketch', 'pond'] as const
 
 export type GameId = (typeof GAMES)[number]
 

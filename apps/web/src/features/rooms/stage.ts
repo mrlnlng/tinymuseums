@@ -385,6 +385,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
           const placed = entry.contents.onShown?.()
           const presence = joinRoom({
             room: entry.contents.presence.key,
+            key: entry.contents.presence.ticketKey,
             host: hosts.character,
             character,
             traversal,

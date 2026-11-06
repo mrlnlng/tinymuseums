@@ -1,7 +1,7 @@
 import { validateClaim, type SecretFeature, type SourceId } from '@tiny/core/economy'
 
 export type EarnSource = SourceId
-export type GameSource = 'colorrecall' | 'sketch'
+export type GameSource = 'colorrecall' | 'sketch' | 'pond'
 
 export interface EarnDetail {
   feature?: SecretFeature

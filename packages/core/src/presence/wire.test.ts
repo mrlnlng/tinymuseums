@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseClientMessage, parseRoom, roomName } from './protocol.ts'
+import { parseClientMessage, parseRoom, roomName, validRoomBase } from './protocol.ts'
 import { signTicket, verifyTicket, type Ticket } from './ticket.ts'
 
 const SECRET = 'test-secret'
@@ -42,8 +42,15 @@ test('a ticket must carry exactly the expected fields', async () => {
 test('room names are a known base plus an instance', () => {
   assert.deepEqual(parseRoom('hall-e12-s0'), { base: 'hall-e12', instance: 0 })
   assert.deepEqual(parseRoom('atelier-s3'), { base: 'atelier', instance: 3 })
+  assert.deepEqual(parseRoom('r-abc12345-s2'), { base: 'r-abc12345', instance: 2 })
   assert.equal(roomName('atelier', 3), 'atelier-s3')
-  for (const bad of ['hall-s0', 'atelier', 'lobby-s0', 'atelier-s100', 'hall-e1-s0/../x']) assert.equal(parseRoom(bad), null, bad)
+  assert.equal(roomName('r-abc12345', 2), 'r-abc12345-s2')
+  for (const bad of ['hall-s0', 'atelier', 'lobby-s0', 'atelier-s100', 'hall-e1-s0/../x', 'r-ABC12345-s0', 'r-abc1234-s0', 'r-abc123456-s0', 'r-abc12345']) assert.equal(parseRoom(bad), null, bad)
+})
+
+test('a personal room slug is a valid presence base', () => {
+  for (const base of ['hall-e12', 'atelier', 'r-abc12345']) assert.equal(validRoomBase(base), true, base)
+  for (const base of ['hall', 'r-abc1234', 'r-abc123456', 'r-ABC12345', 'r-abc12345-s0']) assert.equal(validRoomBase(base), false, base)
 })
 
 const look = { kind: 'otter', costume: 'cardigan-red', bow: null }

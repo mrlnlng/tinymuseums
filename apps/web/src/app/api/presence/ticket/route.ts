@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { env, exportWallet, hitForVisitor, memberName } from '@tiny/core'
+import { canView, env, exportWallet, getRoom, hitForVisitor, memberName } from '@tiny/core'
 import { ITEMS, isCatalogItem } from '@tiny/core/economy'
 import { TICKET_TTL_MS, nameFromSeed, signTicket, validRoomBase, validSeed } from '@tiny/core/presence'
 import { clientIp } from '@/shared/lib/client-ip'
@@ -30,10 +30,17 @@ export async function POST(request: Request) {
 
   const body = await readMemberBody(request, MAX_BODY_BYTES)
   if (!body.ok) return body.response
-  const { room, seed } = (body.body ?? {}) as { room?: unknown; seed?: unknown }
+  const { room, seed, key } = (body.body ?? {}) as { room?: unknown; seed?: unknown; key?: unknown }
   if (!validRoomBase(room) || !validSeed(seed)) return json({ error: 'invalid' }, 400)
 
   const session = await currentMember()
+  if (room.startsWith('r-')) {
+    const shareKey = typeof key === 'string' && key.length <= 128 ? key : null
+    const found = await getRoom(room)
+    if (!found || !canView(found, { memberId: session?.member.id ?? null, shareToken: shareKey })) {
+      return json({ error: 'forbidden' }, 403)
+    }
+  }
   const [member, wallet] = session
     ? await Promise.all([memberName(session.member.id, seed), exportWallet(session.member.id)])
     : [null, null]
@@ -41,7 +48,8 @@ export async function POST(request: Request) {
   const own = wallet
     ? wallet.items
         .map((item) => item.item_id)
-        .filter(isCatalogItem)
+        // Only what others can see worn; a room server built before props would refuse them.
+        .filter((id) => isCatalogItem(id) && ITEMS[id].kind !== 'prop')
         .slice(0, Object.keys(ITEMS).length)
     : []
   const exp = Date.now() + TICKET_TTL_MS

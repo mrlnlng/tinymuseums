@@ -12,6 +12,7 @@ export default function ScreenChrome() {
   if (pathname.startsWith('/studio')) return null
 
   const showHome = pathname !== '/'
+  const showMyRoom = pathname === '/museum'
   const showChat = pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier'
   // The atelier's walls are dark maroon, where the pink buttons would disappear.
   const onDark = pathname === '/museum/atelier'
@@ -28,6 +29,25 @@ export default function ScreenChrome() {
             title="Back to the entrance"
           >
             <AssetImage name="icon-home" />
+          </button>
+        ) : null}
+        {showMyRoom ? (
+          <button
+            type="button"
+            className="chrome-button"
+            onClick={() => router.push('/museum/home')}
+            aria-label="My room"
+            title="My room"
+          >
+            <svg viewBox="0 0 75 75" aria-hidden="true">
+              <mask id="my-room-toggle-cutout">
+                <rect width="75" height="75" fill="white" />
+                <path fill="black" d="M25 58V21L47 16V58Z" />
+                <rect x="40" y="34" width="23" height="24" fill="black" />
+                <circle cx="45" cy="46" r="2.4" fill="white" />
+              </mask>
+              <circle cx="37.5" cy="37.5" r="37.5" mask="url(#my-room-toggle-cutout)" />
+            </svg>
           </button>
         ) : null}
         <SettingsMenu />

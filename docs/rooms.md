@@ -11,11 +11,14 @@ the renderer, camera, visitor, movement, taps, the door fade, presence and loadi
   `/museum` ↔ `/museum/atelier`. Each page only names the active room, so URLs,
   deep links and the back button keep working without rebuilding the WebGL
   canvas or the character.
-- **Depth uses walkable areas.** Rooms with depth (a pond to walk around)
-  define walkable polygons on the floor, which may have holes. The visitor
-  moves in x and depth, is drawn smaller and higher further back, and is
-  depth-sorted against props. This is the walkbox approach from 2D adventure
-  games. Today's flat rooms are a `strip` floor, the zero-depth case.
+- **The museum stays side-scrolling; depth lives in minigames.** Shared and
+  themed rooms keep today's 2D left-right style (polished, not reinvented),
+  so the museum stays consistent. Rooms can offer minigames; joining one opens
+  a modal in the museum's style, and inside it the 2D style is free to change,
+  including depth (a pond to walk around). Depth there uses walkable areas:
+  floor polygons with holes, the walkbox approach from 2D adventure games
+  (`features/rooms/floor.ts`). (Changed 2026-11-05: an earlier plan put
+  depth on the main stage.)
 
 ## Themes and arrangements (decided 2026-11-05)
 
@@ -53,7 +56,7 @@ Decisions:
 Sketch of the data:
 - `rooms`: id, slug, theme, kind (`shared` | `personal`), owner member (personal
   only), draft and published placements, door links.
-- placement: `{ id, kind: 'prop' | 'painting' | 'game', ref, zone, x, depth }`.
+- placement: `{ id, kind: 'prop' | 'painting' | 'game', ref, zone, x }`.
   `ref` points at a catalog prop, a piece, or a game id.
 - Member inventory: the items a member owns. This extends the existing wallet
   `items`, which already tracks owned costume pieces.
@@ -64,8 +67,9 @@ Sketch of the data:
   effectively the admin: it is how art gets uploaded before being placed.
 
 Open questions:
-- Credit for artists whose work hangs in shared rooms: plaque and link, as today?
-- Admin roles: is the owner's studio account enough, or is a proper admin flag needed when decorating shared rooms?
+- Credit for artists whose work hangs in shared rooms: plaque and link, as today? (Kept as today for now.)
+- Admin roles: settled for now. The owner is the studio artist whose email matches
+  `HALL_OWNER_EMAIL` (`isHallOwner` in `shared/lib/session.ts`); the hall already shows only their pieces.
 
 ## Model (`apps/web/src/features/rooms/types.ts`)
 
@@ -95,27 +99,85 @@ Open questions:
 - [x] Room swap: passage fade → dispose contents → load and build the next room → arrive at the linked door, with no renderer or character rebuild
 - [x] Per-room loading curtains and the `/museum` server slice handed to the hall room
 
-### Phase 4: depth
-- [ ] `AreaFloor`: walkable polygons with holes; `Traversal` gains depth, with movement clamped to the area
-- [ ] Depth projection: screen y and scale from depth; character and props sorted by depth
-- [ ] Input: W/S and up/down for depth; tap-to-walk with pathing around holes on touch
-- [ ] Presence carries depth (a protocol change; keep old clients working)
-- [ ] Sandbox room to tune the projection, then the pond room
+### Phase 4: minigame modals, depth inside them
+Rooms stay flat strips. A room prop (like the sitting-area computer today)
+opens a minigame in a museum-styled modal with its own canvas and its own 2D
+style.
+
+- [x] Walkable-area geometry for minigames with depth: `features/rooms/floor.ts`
+  (`contains`, `nearestInside`, `slide`, `findPath`, linear `DepthView` for feet y and scale), with tests
+- [x] Minigame frame: `features/minigames/components/MinigameFrame.tsx`, the shared modal shell
+  (overlay, card, header, close, Escape). The room is paused underneath by `isSuspended`, and
+  rewards go through `earn('game', …)`
+- [x] Computer desktop and Color Recall use the frame. SketchGuess keeps its own markup, because its
+  animated bunny sits above the header
+- [x] First depth minigame, Pond (`features/pondgame`): walk around a pond with arrows/WASD or by
+  tapping, cast at the rim, and reel on the bite. Weighted fish table; florins on close
+  (`game: 'pond'`). Opens from the computer desktop
+- [ ] Later, if a game needs it: multiplayer inside minigames (presence would then carry depth)
+
+### Design for Phases 5–7 (2026-11-05)
+- **Theme specs live in core** (`packages/core/src/rooms/themes.ts`), as data with no art, so the
+  server can validate placements: `{ id, width, zones: { [zone]: { minX, maxX, accepts } },
+  props: { [propId]: { zones, width } } }`. The art and drawing for each theme live in the web app
+  (`features/rooms/themes/<id>`).
+- **Placements** are JSON on the room: `{ id, kind: 'prop' | 'painting' | 'game', ref, zone, x }`.
+  `validatePlacements` checks that the zone exists and accepts the kind, that the prop fits the zone,
+  that x is inside the zone, the count limit, and ownership (in a personal room, props must be items the member owns).
+- **`rooms` table** (`schema/rooms.sql`): slug, theme, kind, owner member (personal rooms only),
+  visibility (`private` | `link`), share token, draft and published placements, and timestamps.
+  Shared rooms are seeded rows (`hall`).
+- **The hall** stays a strip laid out by the existing hall code. Its painting placements give the
+  *order* of the pieces. Publishing the hall seals a new epoch from those placements
+  (`sealEpoch` reads them when they exist and otherwise falls back to the studio order), so the
+  hall's client code, presence keys and sketch rounds keep working.
+- **Decorating**: `/museum/<room>?edit=1` (or the edit button) shows a tray on the right.
+  Drag from the tray onto the room to place an item; it snaps to the nearest zone that accepts
+  it. Drag an item to move it, or drop it on the tray to remove it. The draft autosaves, and
+  Publish copies the draft to the published placements. Shared rooms can only be edited by the
+  owner's studio session; a personal room only by its member.
+- **Personal rooms**: theme `cozy` (atelier wallpaper, floor, and props reused from atelier art).
+  The route is `/museum/home`, which creates the member's room on first visit and redirects to
+  `/museum/r/<slug>`. Rooms are private by default. The owner can turn on a share link
+  (`?key=<token>`), and anyone with the link can visit, including in presence. A home button in
+  the museum HUD leads there for now, standing in for a door; a door can be drawn later.
+- **Collectibles**: catalog items with kind `prop` (`prop:cabinet`, …). The starter props are
+  free and granted when the room is created; the rest are bought with florins through the
+  existing `buy`. Fish from the pond game are collectible props too, granted on first catch.
 
 ### Phase 5: themes, zones and arrangements
-- [ ] Split `RoomDef` into a theme (zones, prop catalog, fixed features) plus an arrangement it renders
-- [ ] Generic placement renderer for props, paintings and games from an arrangement, depth-sorted
-- [ ] `rooms` table, with core domain functions and API routes
-- [ ] The hall as a shared room with hand-placed paintings, replacing the epoch feed
-- [ ] Door links come from room data instead of `links.ts`
+- [x] Themes as data in core (`packages/core/src/rooms/themes.ts`: zones, prop catalog), with art and
+  drawing in the web app (`features/rooms/themes/cozy.ts`, a `PlacementTheme`); rooms render their arrangement
+- [x] Generic placement layer (`createPlacementLayer`) for props. The hall's paintings are placed
+  through the epoch as before; game placements are allowed by the rules but not drawn yet
+- [x] `rooms` table (`schema/rooms.sql`), `domain/rooms.ts`, and `/api/rooms/*` (room, draft, publish,
+  sharing, home, paintings)
+- [x] The hall as a shared room: publishing its painting order seals a new epoch from it
+  (`sealEpoch`), falling back to the studio order
+- [ ] Later: door links from room data instead of `links.ts` (kept hand-made for now, as decided).
+  `links.ts` gained one-way exits (personal room → hall)
 
 ### Phase 6: decorating mode
-- [ ] Edit mode on the stage: a tray on the right holding the catalog's props and the owner's paintings
-- [ ] Drag to place with zone highlighting and snapping; move and remove
-- [ ] Draft → publish, and permissions (owner: shared rooms; member: their own room)
+- [x] Edit mode for personal rooms (`PersonalRoom.tsx` + `features/rooms/decorate/`): a tray on the right
+  (a bottom sheet on narrow screens) with Your things and a florin Shop
+- [x] Drag to place with zone highlighting and clamping; move, pan, select, Put away, and arrow-key nudge
+- [x] Autosaved draft → Publish; the server checks permissions (owner artist: shared rooms; member:
+  their own room). The owner's hall gets a list-based Arrange hall panel (`HallArranger.tsx`)
 
 ### Phase 7: personal rooms
-- [ ] A personal room per member, made from a starter theme and created on first visit
-- [ ] Member inventory of collectibles: earned in play or bought with florins
-- [ ] A door into your own room from the shared rooms
-- [ ] Share link / invite to visit a personal room
+- [x] A personal room per member (`cozy` theme), created on the first visit to `/museum/home` with
+  starter props (shelf, carpet, red pillow)
+- [x] Collectibles: `prop:*` catalog items bought with florins; fish trophies granted on the first catch in
+  Pond (`/api/wallet/collect`)
+- [x] A My room button in the hall's top-right chrome (standing in for a drawn door), and a door
+  back to the hall inside the room
+- [x] Share link (`?key=`) for personal rooms; presence tickets for `r-*` rooms check the same access
+
+### Follow-ups after Phases 4–7
+- Deploy: apply `schema/rooms.sql` (`npm run db:schema`) and redeploy the presence worker. Until
+  then, the deployed room server rejects `r-*` room names, so personal rooms have no presence.
+- Art: the cozy room reuses atelier art (dark wallpaper, wardrobe-style door), and fish trophies
+  are drawn in code. A dedicated room theme and door would read better.
+- The hall arranger has not been checked in a browser locally, because `HALL_OWNER_EMAIL` isn't
+  set in `.env`. Its logic is unit-tested, and publishing the hall is covered by `db-tests/rooms.test.ts`.
+- Game placements (`kind: 'game'`) pass validation, but no theme draws them yet.

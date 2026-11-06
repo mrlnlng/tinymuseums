@@ -66,9 +66,9 @@ export type ServerMessage =
   | { t: 'full' }
   | { t: 'denied' }
 
-const BASE = /^(hall-e\d{1,9}|atelier)$/
-/** `hall-e<epoch>` or `atelier`, then `-s<instance>`. */
-const ROOM = /^(hall-e\d{1,9}|atelier)-s(\d{1,2})$/
+const BASE = /^(hall-e\d{1,9}|atelier|r-[a-z0-9]{8})$/
+/** A room base, then `-s<instance>`. */
+const ROOM = /^(hall-e\d{1,9}|atelier|r-[a-z0-9]{8})-s(\d{1,2})$/
 export const MAX_INSTANCE = 99
 
 export function validRoomBase(base: unknown): base is string {

@@ -1,5 +1,5 @@
 import type { PoolClient } from 'pg'
-import { priceOf } from '../economy/catalog.ts'
+import { ITEMS, isBuyable, isCatalogItem, priceOf } from '../economy/catalog.ts'
 import { validateClaim, type ParsedClaim } from '../economy/rules.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 
@@ -39,6 +39,8 @@ export interface WalletExport {
 }
 
 export type BuyResult = Wallet | { error: 'unknown_item' | 'insufficient' }
+
+export type CollectResult = (Wallet & { collected: boolean }) | { error: 'unknown_item' }
 
 const MAX_BATCH = 64
 
@@ -184,8 +186,8 @@ export async function claimBatch(
 }
 
 export async function buy(memberId: string, itemId: string): Promise<BuyResult> {
-  const price = priceOf(itemId)
-  if (price === null) return { error: 'unknown_item' }
+  if (!isBuyable(itemId)) return { error: 'unknown_item' }
+  const price = priceOf(itemId) ?? 0
   return transaction(async (client) => {
     const balance = await lockWallet(client, memberId)
     const owned = await client.query(
@@ -204,6 +206,27 @@ export async function buy(memberId: string, itemId: string): Promise<BuyResult> 
       [memberId, price],
     )
     return walletOf(client, memberId, updated.rows[0].balance)
+  })
+}
+
+function isCollectable(itemId: string): boolean {
+  return isCatalogItem(itemId) && ITEMS[itemId].earnedBy !== undefined
+}
+
+export async function collect(memberId: string, itemId: string): Promise<CollectResult> {
+  if (!isCollectable(itemId)) return { error: 'unknown_item' }
+  return transaction(async (client) => {
+    const balance = await lockWallet(client, memberId)
+    const inserted = await client.query<{ item_id: string }>(
+      `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
+       on conflict do nothing
+       returning item_id`,
+      [memberId, itemId],
+    )
+    return {
+      ...(await walletOf(client, memberId, balance)),
+      collected: inserted.rows.length > 0,
+    }
   })
 }
 

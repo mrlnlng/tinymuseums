@@ -15,6 +15,7 @@ import type { MinigameId } from '@/features/minigames/registry'
 import { createHallRoom, type HallCallbacks, type OpenPiece } from '@/features/rooms/hall/room'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
+import type { HallRoomData } from '@/features/rooms/decorate/HallArranger'
 import type { DoorRef } from '@/features/rooms/types'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
@@ -27,6 +28,8 @@ const loadWalkthrough = () => import('@/features/artwork/components/Walkthrough'
 const loadSketchGuess = () => import('@/features/sketchguess/components/SketchGuess')
 const loadGameDesktop = () => import('@/features/minigames/components/GameDesktop')
 const loadColorRecall = () => import('@/features/colorgame/components/ColorRecall')
+const loadPondGame = () => import('@/features/pondgame/components/PondGame')
+const loadHallArranger = () => import('@/features/rooms/decorate/HallArranger')
 
 const GuestBoard = dynamic(loadGuestBoard, { ssr: false })
 const CoinFound = dynamic(loadCoinFound, { ssr: false })
@@ -35,6 +38,8 @@ const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
 const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
 const GameDesktop = dynamic(loadGameDesktop, { ssr: false })
 const ColorRecall = dynamic(loadColorRecall, { ssr: false })
+const PondGame = dynamic(loadPondGame, { ssr: false })
+const HallArranger = dynamic(loadHallArranger, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
@@ -54,10 +59,26 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const [openGame, setOpenGame] = useState<null | 'desktop' | MinigameId>(null)
   const [sketchSession, setSketchSession] = useState(0)
   const [unkeptNote, setUnkeptNote] = useState(false)
+  const [arrangeRoom, setArrangeRoom] = useState<HallRoomData | null>(null)
+  const [isArrangerOpen, setIsArrangerOpen] = useState(false)
   const hideHint = useCallback(() => setIsHintShown(false), [])
 
   useEffect(() => {
     performance.mark(MUSEUM_START_MARK)
+  }, [])
+
+  useEffect(() => {
+    const abort = new AbortController()
+    fetch('/api/rooms/hall', { cache: 'no-store', signal: abort.signal })
+      .then(async (response) => {
+        if (!response.ok) return
+        const body: unknown = await response.json()
+        if (typeof body === 'object' && body !== null && (body as { canEdit?: unknown }).canEdit === true) {
+          setArrangeRoom(body as HallRoomData)
+        }
+      })
+      .catch(() => {})
+    return () => abort.abort()
   }, [])
 
   useEffect(() => {
@@ -77,7 +98,12 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const router = useRouter()
 
   const isSuspended =
-    openPiece !== null || isHelpOpen || isCoinOpen || isGuestBoardOpen || openGame !== null
+    openPiece !== null ||
+    isHelpOpen ||
+    isCoinOpen ||
+    isGuestBoardOpen ||
+    openGame !== null ||
+    isArrangerOpen
 
   const hallCallbacks = (): HallCallbacks => ({
     onOpenPiece: setOpenPiece,
@@ -170,6 +196,26 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
         </p>
       ) : null}
 
+      {arrangeRoom && isReady && !isArrangerOpen ? (
+        <button type="button" className="arranger-open" onClick={() => setIsArrangerOpen(true)}>
+          Arrange hall
+        </button>
+      ) : null}
+
+      <AnimatePresence>
+        {isArrangerOpen && arrangeRoom ? (
+          <HallArranger
+            key="hall-arranger"
+            room={arrangeRoom}
+            onClose={() => setIsArrangerOpen(false)}
+            onPublished={() => {
+              setIsArrangerOpen(false)
+              window.location.reload()
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isHintShown ? <SwipeHint key="swipe-hint" onDone={hideHint} /> : null}
       </AnimatePresence>
@@ -194,6 +240,12 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       <AnimatePresence>
         {openGame === 'color' ? (
           <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {openGame === 'pond' ? (
+          <PondGame key="pond-game" onClose={() => setOpenGame('desktop')} />
         ) : null}
       </AnimatePresence>
 

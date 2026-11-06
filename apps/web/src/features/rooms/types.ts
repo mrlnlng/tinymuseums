@@ -7,7 +7,7 @@ import type { Pose, Room } from '@/features/presence/lib/join-room'
 import type { VisitorScenery } from '@/features/presence/scene/remote-visitors'
 import type { EffectName } from '@/features/sound/hooks/useSoundEffects'
 
-export type RoomId = 'hall' | 'atelier'
+export type RoomId = 'hall' | 'atelier' | 'personal'
 
 export interface DoorRef {
   room: RoomId
@@ -69,7 +69,7 @@ export interface Frame {
 
 export interface RoomContents {
   floor: Floor
-  presence: { key: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
+  presence: { key: string; ticketKey?: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
   /** Extra gate on top of the stage's own (fonts, character rig, minimum loading time). */
   isReady?(now: number): boolean
   /** Runs once the room is shown, before the visitor walks in. Returning true means the room placed the visitor itself. */

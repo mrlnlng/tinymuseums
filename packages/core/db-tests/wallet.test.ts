@@ -6,6 +6,7 @@ import {
   buy,
   claim,
   claimBatch,
+  collect,
   exportWallet,
   getWallet,
   grantNote,
@@ -248,6 +249,41 @@ test('buying an owned item again does not charge twice', async () => {
   await assertInvariant(id)
 })
 
+test('a fish prop is collected once for free', async () => {
+  const id = await member()
+  assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
+    balance: 0,
+    items: ['prop:fish-minnow'],
+    collected: true,
+  })
+  assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
+    balance: 0,
+    items: ['prop:fish-minnow'],
+    collected: false,
+  })
+  const wallet = await getWallet(id, today)
+  assert.deepEqual(wallet.items, ['prop:fish-minnow'])
+  assert.equal(wallet.balance, 0)
+  await assertInvariant(id)
+})
+
+test('collect refuses buyable and unknown items', async () => {
+  const id = await member()
+  assert.deepEqual(await collect(id, 'bow:kiki'), { error: 'unknown_item' })
+  assert.deepEqual(await collect(id, 'character:bunny'), { error: 'unknown_item' })
+  assert.deepEqual(await collect(id, 'bow:nope'), { error: 'unknown_item' })
+  assert.deepEqual((await getWallet(id, today)).items, [])
+  await assertInvariant(id)
+})
+
+test('buy still refuses fish props', async () => {
+  const id = await member()
+  await grantWelcome(id)
+  assert.deepEqual(await buy(id, 'prop:fish-minnow'), { error: 'unknown_item' })
+  assert.equal((await getWallet(id, today)).balance, 60)
+  await assertInvariant(id)
+})
+
 test('an unknown or free item is rejected', async () => {
   const id = await member()
   await grantWelcome(id)
@@ -311,7 +347,7 @@ test('an art claim needs an existing published piece', async () => {
 
 test('the balance invariant holds after 200 random operations', async () => {
   const id = await member()
-  const catalog = Object.keys(ITEMS)
+  const catalog = Object.keys(ITEMS).filter((itemId) => ITEMS[itemId].earnedBy === undefined)
   for (let i = 0; i < 200; i++) {
     if (Math.random() < 0.7) {
       const requests = [

@@ -36,6 +36,10 @@ export type EconomyEvent = EarnedEvent | InviteEvent
 
 export type BuyOutcome = 'ok' | 'insufficient' | 'error'
 
+export type CollectOutcome =
+  | { ok: true; collected: boolean }
+  | { ok: false; reason: 'guest' | 'error' }
+
 export { allowedCharacter, owns, walletReady } from './lib/ownership.ts'
 
 const CARRY_KEY = 'tm:economy:carry'
@@ -236,6 +240,13 @@ function isBuyReply(value: unknown): value is { balance: number; items: string[]
     Array.isArray(value.items) &&
     value.items.every((item) => typeof item === 'string')
   )
+}
+
+function isCollectReply(
+  value: unknown,
+): value is { balance: number; items: string[]; collected: boolean } {
+  if (!isBuyReply(value)) return false
+  return typeof (value as Record<string, unknown>).collected === 'boolean'
 }
 
 function isWalletView(value: unknown): value is WalletView {
@@ -463,6 +474,32 @@ export async function buy(itemId: string): Promise<BuyOutcome> {
   publish()
   track('item_kept')
   return 'ok'
+}
+
+export async function collect(itemId: string): Promise<CollectOutcome> {
+  ensureStarted()
+  const id = memberId
+  if (id === null) return { ok: false, reason: 'guest' }
+  let response: Response
+  try {
+    response = await fetch('/api/wallet/collect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-TM-Member': id },
+      body: JSON.stringify({ item: itemId, source: 'pond' }),
+    })
+  } catch {
+    return { ok: false, reason: 'error' }
+  }
+  if (!response.ok) return { ok: false, reason: 'error' }
+  const body: unknown = await response.json().catch(() => null)
+  if (memberId !== id || !isCollectReply(body)) return { ok: false, reason: 'error' }
+  wallet = {
+    balance: body.balance,
+    items: body.items,
+    today: wallet?.today ?? EMPTY_TODAY,
+  }
+  publish()
+  return { ok: true, collected: body.collected }
 }
 
 export function subscribeEvents(listener: (event: EconomyEvent) => void): () => void {

@@ -97,12 +97,14 @@ export {
   buy,
   claim as claimCoins,
   claimBatch,
+  collect,
   ensureWallet,
   exportWallet,
   getWallet,
   grantNote,
   grantWelcome,
   type BuyResult,
+  type CollectResult,
   type ClaimBatchResult,
   type ClaimOutcome,
   type ClaimResult,
@@ -113,5 +115,22 @@ export {
 } from './domain/wallet.ts'
 export * as wallet from './domain/wallet.ts'
 export { localDay } from './economy/day.ts'
+export { STARTER_PROPS, isBuyable } from './economy/catalog.ts'
+export * from './rooms/themes.ts'
+export * from './rooms/placements.ts'
+export {
+  canEdit,
+  canView,
+  getRoom,
+  personalRoomFor,
+  publish,
+  saveDraft,
+  setSharing,
+  type RoomAccess,
+  type RoomKind,
+  type RoomRow,
+  type RoomVisibility,
+  type SaveDraftResult,
+} from './domain/rooms.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

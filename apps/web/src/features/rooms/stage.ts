@@ -16,6 +16,7 @@ import { ROOM_ART, type RoomArt } from './art'
 import { createArtCache } from './art-cache'
 import { linkedDoor } from './links'
 import { createNearby, type Nearby } from './nearby'
+import { createMinimap, MAP_PLACES } from './minimap'
 import { createPerfMeter } from './perf'
 import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
@@ -109,6 +110,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     keepMs: KEEP_ART_MS,
   })
   const perf = createPerfMeter(hosts.overlay)
+  const minimap = createMinimap(hosts.overlay)
 
   const renderer = new THREE.WebGLRenderer({ antialias: false })
   const initPromise = initialize().then((value) => {
@@ -154,6 +156,21 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     )
   }
 
+  /** A place on the museum's map shows the map in the corner, following the visitor. */
+  function showMap(entry: Entry): void {
+    const contents = entry.contents
+    if (!contents || !MAP_PLACES[entry.room.id] || !contents.joined) return
+    const joined = contents.joined
+    const floor = contents.floor
+    minimap.show({
+      id: entry.room.id,
+      minX: floor.minX,
+      maxX: () => floor.maxX(),
+      rooms: () => joined(),
+      doors: entry.room.doors,
+    })
+  }
+
   function closeEntry(entry: Entry): void {
     if (entry.disposed) return
     entry.disposed = true
@@ -167,6 +184,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     }
     entry.presence?.dispose()
     entry.presence = null
+    minimap.hide()
     entry.contents = null
     entry.scene = null
     if (runtime) runtime.renderer.domElement.style.cursor = ''
@@ -479,6 +497,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
           doorStartedAt = null
           entry.handlers.onReady()
           revealFloorTransition()
+          showMap(entry)
           const placed = entry.contents.onShown?.()
           const presence = joinRoom({
             room: entry.contents.presence.key,
@@ -504,6 +523,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         )
         traversal.update(dt, entry.contents.floor.minX, entry.contents.floor.maxX())
         prefetchNearDoors(entry, now)
+        minimap.update(traversal.x)
       }
 
       passage.update(dt)
@@ -571,6 +591,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       if (entry) closeEntry(entry)
       artCache.clear()
       perf.dispose()
+      minimap.dispose()
       runtime?.dispose()
       runtime = null
     },

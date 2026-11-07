@@ -3189,7 +3189,7 @@ form > .account-switch {
 /* Florins: atelier price tags, purse, and the keep panel. */
 .atelier-purse {
   position: absolute;
-  top: calc(58px + env(safe-area-inset-top));
+  top: calc(152px + env(safe-area-inset-top));
   left: 14px;
   z-index: 6;
   padding: 6px 12px;
@@ -4135,4 +4135,138 @@ form > .account-switch {
   font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
   pointer-events: none;
   white-space: pre;
+}
+
+/* The map in the top-left corner: a sign in the place's own colours holding a window onto the
+   museum seen from above. Rooms are boxes with walls, joined rooms open into each other, and the
+   door between places is a short passage. Each place keeps its own colours wherever it is seen:
+   the hall cream with brown walls, the fashion area damask red with gold. */
+.minimap {
+  --map-board: var(--plaque);
+  --map-edge: #c99a6b;
+  --map-ink: var(--ink);
+  --map-title: var(--script);
+  --map-well: rgb(138 90 68 / 0.14);
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 10px;
+  z-index: 6;
+  width: clamp(168px, 44%, 250px);
+  padding: 6px 8px 8px;
+  border: 2px solid var(--map-edge);
+  border-radius: 12px;
+  background: var(--map-board);
+  box-shadow: 0 2px 0 rgb(109 64 46 / 0.22), 0 5px 12px rgb(60 24 12 / 0.18);
+  color: var(--map-ink);
+  pointer-events: none;
+  user-select: none;
+}
+.minimap[hidden] { display: none; }
+.minimap.is-atelier {
+  --map-board: #4a0b0b;
+  --map-edge: #d9a441;
+  --map-ink: #fbe8c8;
+  --map-title: #fbd99a;
+  --map-well: rgb(0 0 0 / 0.28);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.3), 0 5px 14px rgb(20 0 0 / 0.4);
+}
+.minimap-place {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 2px 5px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.minimap-title {
+  font-family: var(--font-title);
+  font-size: 14px;
+  color: var(--map-title);
+}
+.minimap-here {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-button);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.minimap-window {
+  position: relative;
+  height: 90px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--map-well);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.18);
+}
+.minimap-plan {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Each place's palette: its walls, and each room's floor coloured like the room. */
+.minimap-plan .is-hall { --wall: #8a5a44; --icon: rgb(138 90 68 / 0.8); --icon-here: #e2557f; }
+.minimap-plan .is-atelier { --wall: #d9a441; --icon: rgb(251 217 154 / 0.75); --icon-here: #fff4dc; }
+.minimap-plan .is-entrance { --tile: #f9cfdb; }
+.minimap-plan .is-gallery { --tile: #fff3d6; }
+.minimap-plan .is-cafe { --tile: #d3e6c1; }
+.minimap-plan .is-giftShop { --tile: #eadaf3; }
+.minimap-plan .is-atelierEntrance { --tile: #6e1616; }
+.minimap-plan .is-collection { --tile: #962531; }
+.minimap-plan .is-bruce { --tile: #8fc6e6; --icon: rgb(45 93 122 / 0.85); --icon-here: #1f4a66; }
+.map-wall {
+  fill: var(--wall);
+  stroke: var(--wall);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.map-wall.is-unknown {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2.5;
+  opacity: 0.5;
+}
+.map-floor, .map-gap { fill: var(--tile); }
+.map-room.is-unknown .map-floor { opacity: 0.35; }
+.map-room.is-current .map-floor { filter: brightness(1.14) saturate(1.1); }
+.map-icon path { fill: var(--icon); }
+.map-icon path.is-line {
+  fill: none;
+  stroke: var(--icon);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.map-room.is-current .map-icon path { fill: var(--icon-here); }
+.map-room.is-current .map-icon path.is-line { fill: none; stroke: var(--icon-here); }
+/* The door between places, across its passage, pink like the doorway itself. */
+.map-door { fill: #f39bb3; stroke: #fff1d2; stroke-width: 0.75; }
+/* The visitor: a pink pin with a white rim, its tip where they stand, bobbing as if walking. */
+.minimap-you {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+.minimap-you::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -13px;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pink-deep);
+  box-shadow: 0 1px 2px rgb(60 24 12 / 0.45);
+  transform: rotate(-45deg);
+  animation: minimap-bob 1.4s ease-in-out infinite;
+}
+@keyframes minimap-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .minimap-you::before { animation: none; }
 }

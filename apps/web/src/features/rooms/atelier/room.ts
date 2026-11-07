@@ -46,7 +46,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
     clearColor: '#3a0707',
     minLoadingMs: 2800,
     doors: {
-      gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear },
+      gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear, label: 'To the hall' },
     },
 
     build(ctx, { art, door }) {
@@ -81,10 +81,12 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
       })
 
       // Each collection is its own room, joined wall to wall; the stage builds the ones near the camera.
-      const joinedRooms: JoinedRoom[] = room.rooms.map(({ key, startX, endX }) => ({
+      const joinedRooms: JoinedRoom[] = room.rooms.map(({ key, label, startX, endX }) => ({
         key,
         startX,
         endX,
+        label,
+        tint: key === 'entrance' ? 'atelierEntrance' : key === 'bruce' ? 'bruce' : 'collection',
         build() {
           const teardown = room.buildRoom(key)
           return { hitTest: () => null, update() {}, dispose: teardown }

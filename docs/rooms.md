@@ -269,3 +269,35 @@ Next:
   room instead of all at once (worth it only if `?perf` shows that load is heavy).
 - [ ] Optional: `staleTimes.dynamic` so returning to the hall reuses its page for ~30 s
   (applies to every dynamic page).
+
+## The map
+
+The hall and the fashion area show a map in the top-left corner (`features/rooms/minimap.ts`,
+styles under `.minimap` in `globals.css`): the museum seen from above, like a dungeon map. The
+stage shows it when the place is ready, moves its pin with the visitor every frame, and hides it
+when the place closes.
+
+- **The plan:** each room is a box with walls, as wide as the room is long. Rooms joined wall to
+  wall open into each other through a gap in the wall they share. A door to another place is a
+  short passage with a pink door across it, since a door leads into another room, not up a floor.
+- **Where places go:** every place has its own row (`MAP_PLACES[id].row`). The hall is the front
+  row; the fashion area, through the door in the entrance's back wall, is the row behind it.
+  `planMap` lines each place up so the two ends of a door face each other (`doorPoint`, which
+  keeps a passage clear of a room's corners).
+- **The window:** the plan is drawn at a fixed scale (`MAP_SCALE`) and the map is a window onto it
+  that follows the pin (`panTo`), never showing past the plan's ends. A plan that fits is centred.
+- **What it shows:** the place's name and the room the visitor is in, which lights up. Each room
+  carries a small icon for its kind (entrance, gallery, café, gift shop, the fashion area's
+  doorway, collections, Bruce's fish), and each place keeps its own colours wherever it appears:
+  the hall cream with brown walls, the fashion area damask red with gold.
+- **Places not yet visited:** the fashion area's rooms are fixed, so the map knows them from the
+  start. The hall's grow with its paintings, so before a visit it shows only the entrance and a
+  faint way on. The map remembers each place as last seen for the stage's lifetime.
+- **What a place gives it:** `MAP_PLACES` names each place, its look, its row and what it looks
+  like before a visit; a place not listed there, such as a personal room, has no map. Joined rooms
+  give their `label` and `tint`, and doors are paired by `links.ts`.
+- **Looks:** the hall's map is a cream sign with the script title. The fashion area's is dark
+  red with a gold rim, and its purse sits below the map.
+- **Growing halls:** the hall's map redraws when its rooms or length change as paintings arrive.
+- **Tests:** `minimap.test.ts` covers which room is named, where doors meet their rooms, how the
+  places are laid out and joined, the hall before a visit, and how the window follows the pin.

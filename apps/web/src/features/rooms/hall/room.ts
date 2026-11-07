@@ -75,13 +75,19 @@ function takenStands(items: Item[]): Set<number> {
   return stands
 }
 
+/** A hall room's name on the map. */
+function mapLabel(room: HallRoomSpan): string {
+  if (room.kind === 'gallery') return `Gallery ${room.key.slice('gallery-'.length)}`
+  return { entrance: 'The entrance', cafe: 'The café', giftShop: 'The gift shop' }[room.kind]
+}
+
 export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
   return {
     id: 'hall',
     gatesItself: true,
     clearColor: manifest.room.wallColor,
     doors: {
-      atelier: { x: GALLERY_DOOR.lobbyX, clearX: GALLERY_DOOR.lobbyX + GALLERY_DOOR.clear },
+      atelier: { x: GALLERY_DOOR.lobbyX, clearX: GALLERY_DOOR.lobbyX + GALLERY_DOOR.clear, label: 'To the fashion area' },
     },
 
     initialLook() {
@@ -349,7 +355,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       function joined(): readonly JoinedRoom[] {
         if (joinedFor === hall.layout) return joinedRooms
         joinedFor = hall.layout
-        joinedRooms = hall.layout.rooms.map((room) => ({ ...room, build: () => buildRoom(room) }))
+        joinedRooms = hall.layout.rooms.map((room) => ({ ...room, label: mapLabel(room), tint: room.kind, build: () => buildRoom(room) }))
         return joinedRooms
       }
 

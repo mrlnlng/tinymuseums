@@ -18,7 +18,12 @@ export interface DoorRef {
 export interface DoorDef {
   x: number
   clearX: number
+  /** Where it leads, for the map. */
+  label?: string
 }
+
+/** How the map draws a row of joined rooms: each room's look, matching its walls. */
+export type MapTint = 'entrance' | 'gallery' | 'cafe' | 'giftShop' | 'atelierEntrance' | 'collection' | 'bruce'
 
 /** The ground a visitor may stand on. Flat rooms are a strip; rooms with depth will add walkable areas. */
 export interface StripFloor {
@@ -105,6 +110,9 @@ export interface JoinedRoom {
   key: string
   startX: number
   endX: number
+  /** Its name on the map, and how the map draws it. */
+  label?: string
+  tint?: MapTint
   build(ctx: RoomContext): JoinedContents
 }
 

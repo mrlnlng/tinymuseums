@@ -91,7 +91,7 @@ export interface AtelierActions {
 
 export interface AtelierRoom {
   /** The fashion area's rooms, in world units, joined wall to wall. */
-  readonly rooms: readonly { key: string; startX: number; endX: number }[]
+  readonly rooms: readonly { key: string; label: string; startX: number; endX: number }[]
   /** Builds one room's displays; the returned function takes them down again. */
   buildRoom(key: string): () => void
   setActions(actions: AtelierActions): void
@@ -606,7 +606,7 @@ export function createAtelierRoom(
   const refreshAll = () => { for (const room of built.values()) room.refresh() }
 
   return {
-    rooms: ATELIER_ROOMS.map(({ key, startX, endX }) => ({ key, startX: wx(startX), endX: wx(endX) })),
+    rooms: ATELIER_ROOMS.map(({ key, startX, endX, collection }) => ({ key, label: collection?.title ?? 'The entrance', startX: wx(startX), endX: wx(endX) })),
     buildRoom,
 
     setActions(next) { actions = next },

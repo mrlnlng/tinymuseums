@@ -255,7 +255,9 @@ Fixes for `docs/personal-room-issues.md` and `docs/testing/local-e2e-stress-2026
 - **Perf readout**: `?perf` (remembered; `?perf=off` clears it) shows the room, camera x, fps,
   frame time, the stage's own time per frame, draw calls, textures, geometries, overlay nodes,
   heap, and how long the last room took to open. `window.__tmPerf.snapshot()` returns the same.
-  In development, `/museum?paintings=100` repeats the local paintings to try a long hall.
+  Gamma's hall always repeats its paintings to 100, to try a long hall (`?paintings=N` sets
+  another count; `?paintings=0` shows the real hall). In development the same needs
+  `/museum?paintings=100`. Production never repeats them.
 - Kept hall-wide on purpose: helmet stand numbers, the hidden coin and painting progress. All three
   belong to an epoch (presence joins `hall-e<epoch>`), so their numbers can't shift under anyone,
   and per-room numbers would need a presence protocol change. One presence channel per hall, so

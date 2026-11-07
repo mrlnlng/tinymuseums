@@ -46,9 +46,10 @@ interface MuseumProps {
   arrival: 'door' | 'stairs'
 }
 
-/** Development only: `?paintings=100` repeats the hall's paintings to try out a long hall. */
+/** Dev and gamma only: `?paintings=100` repeats the hall's paintings to try out a long hall. */
 function stretchedForTesting(slice: HallSliceDto): HallSliceDto {
-  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined' || slice.slots.length === 0) return slice
+  const switchesOn = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_TEST_SWITCHES === 'on'
+  if (!switchesOn || typeof window === 'undefined' || slice.slots.length === 0) return slice
   const count = Number(new URLSearchParams(window.location.search).get('paintings'))
   if (!Number.isInteger(count) || count <= slice.slots.length || count > 1000) return slice
   const slots = Array.from({ length: count }, (_, index) => ({ ...slice.slots[index % slice.slots.length], index }))

@@ -11,6 +11,8 @@ const SECURITY_HEADERS = [
 const config: NextConfig = {
   assetPrefix: process.env.NEXT_PUBLIC_STATIC_BASE_URL || undefined,
   crossOrigin: process.env.NEXT_PUBLIC_STATIC_BASE_URL ? 'anonymous' : undefined,
+  // Test switches such as ?paintings=N stay out of production builds except the gamma branch's.
+  env: { NEXT_PUBLIC_TEST_SWITCHES: process.env.AWS_BRANCH === 'gamma' ? 'on' : '' },
   transpilePackages: ['@tiny/core'],
   serverExternalPackages: ['pg', '@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'],
   eslint: { ignoreDuringBuilds: true },

@@ -59,11 +59,15 @@ export function validatePlacements(
 
   const paintings = new Set<string>()
   const props = new Set<string>()
+  const filled = new Map<string, number>()
   for (const placement of placements) {
     const fail = (reason: string) => ({ ok: false as const, reason, id: placement.id })
     const zone = theme.zones[placement.zone]
     if (!zone) return fail('unknown_zone')
     if (!zone.accepts.includes(placement.kind)) return fail('zone_rejects_kind')
+    const count = (filled.get(placement.zone) ?? 0) + 1
+    if (zone.capacity !== undefined && count > zone.capacity) return fail('zone_full')
+    filled.set(placement.zone, count)
 
     if (placement.kind === 'prop') {
       const prop = theme.props[placement.ref]

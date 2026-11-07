@@ -8,7 +8,9 @@ import { CONFIG } from './config'
 import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
+import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from './rig'
+import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
 import { CARDIGANS, HIBISCUS } from './wardrobe'
 
 const { atelier } = CONFIG
@@ -53,12 +55,6 @@ export interface ClothingItem {
 }
 
 type Cardigan = (typeof CARDIGANS)[number]
-const CARDIGAN_ART: Record<Cardigan, AtelierImage> = {
-  'cardigan-red': 'cardiganRed',
-  'cardigan-forest-green': 'cardiganForestGreen',
-  'cardigan-navy-blue': 'cardiganNavyBlue',
-  'cardigan-butter-yellow': 'cardiganButterYellow',
-}
 const CARDIGAN_NAMES: Record<Cardigan, string> = {
   'cardigan-red': 'red',
   'cardigan-forest-green': 'forest green',
@@ -94,6 +90,10 @@ export interface AtelierActions {
 }
 
 export interface AtelierRoom {
+  /** The fashion area's rooms, in world units, joined wall to wall. */
+  readonly rooms: readonly { key: string; startX: number; endX: number }[]
+  /** Builds one room's displays; the returned function takes them down again. */
+  buildRoom(key: string): () => void
   setActions(actions: AtelierActions): void
   hitTestDoor(raycaster: THREE.Raycaster): boolean
   hitTestItem(raycaster: THREE.Raycaster): ClothingItem | null
@@ -113,12 +113,58 @@ export interface AtelierRoom {
 }
 
 type Painted = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+type Spot = { x: number; y: number; width: number }
+interface Control { node: HTMLElement; mark: { x: number; y: number; width: number }; font: number }
 
-export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTMLElement, image: HTMLImageElement): AtelierRoom {
-  const group = new THREE.Group()
+/** A piece on a form or a cushion: shown on its stand until worn, then its stand gives it back. */
+interface Piece {
+  item(): ClothingItem
+  wornBy(costume: string | null, bow: string | null): boolean
+  /** Drawn on the stand while it is there to try on. */
+  meshes: Painted[]
+  /** What a tap on the empty stand hits, to give the piece back. */
+  bare: Painted[]
+  button: HTMLButtonElement
+  hint: { x: number; y: number }
+  hintText(available: boolean): string
+  target: number
+  shown: number
+}
+
+/** A portrait offering a character, or the bunny while the visitor is that character. */
+interface Display {
+  own: CharacterKind
+  offered: CharacterKind
+  shows: Partial<Record<CharacterKind, Painted>>
+  spot: Spot
+  rest: THREE.Vector3
+  button: HTMLButtonElement
+  near: boolean
+  hop: number
+}
+
+interface BuiltRoom {
+  pieces: Piece[]
+  displays: Display[]
+  glints: { node: HTMLDivElement; shown: () => boolean }[]
+  refresh(): void
+  dispose?(): void
+}
+
+export function createAtelierRoom(
+  scene: THREE.Scene,
+  art: AtelierArt,
+  host: HTMLElement,
+  image: HTMLImageElement,
+  spots: Readonly<Record<string, SpotPainting>> = {},
+): AtelierRoom {
+  const shell = new THREE.Group()
+  scene.add(shell)
+  const tap = window.matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click'
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   /** A picture by its centre and width in mock px. */
-  function picture(name: AtelierImage, spot: { x: number; y: number; width: number; z: number }): Painted {
+  function picture(group: THREE.Group, name: AtelierImage, spot: { x: number; y: number; width: number; z: number }): Painted {
     const width = units(spot.width)
     const mesh = plane(width, width / aspectOf(name), art[name], wx(spot.x), wy(spot.y), spot.z) as Painted
     group.add(mesh)
@@ -126,7 +172,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   }
 
   /** A picture standing on the floor at mock px x, its foot at mock px y. */
-  function standing(name: AtelierImage, x: number, footY: number, height: number, z: number): Painted {
+  function standing(group: THREE.Group, name: AtelierImage, x: number, footY: number, height: number, z: number): Painted {
     const h = units(height)
     const mesh = plane(h * aspectOf(name), h, art[name], wx(x), wy(footY) + h / 2, z) as Painted
     group.add(mesh)
@@ -141,7 +187,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   wallMap.repeat.set((wall.right - wall.left) / wall.tile, wallHeight / (wall.tile / aspectOf('wallpaper')))
   const wallMesh = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - wall.left, wallHeight), new THREE.MeshBasicMaterial({ map: wallMap }))
   wallMesh.position.set((wall.left + wall.right) / 2, mock.floorWorld + wallHeight / 2, -0.5)
-  group.add(wallMesh)
+  shell.add(wallMesh)
 
   const carpetHeight = atelier.carpet.height
   const carpetMap = art.carpet
@@ -149,26 +195,18 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   carpetMap.repeat.set((wall.right - wall.left) / (carpetHeight * aspectOf('carpet')), 1)
   const carpet = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - wall.left, carpetHeight), new THREE.MeshBasicMaterial({ map: carpetMap }))
   carpet.position.set((wall.left + wall.right) / 2, mock.floorWorld - carpetHeight / 2, 0.15)
-  group.add(carpet)
+  shell.add(carpet)
 
-  const door = createGalleryDoor(group, image, GALLERY_DOOR.atelierX, GALLERY_DOOR.atelierBase)
+  const door = createGalleryDoor(shell, image, GALLERY_DOOR.atelierX, GALLERY_DOOR.atelierBase)
   const sign = CONFIG.lobby.sign
   const signY = sign.centerY - 0.16
-  group.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
+  shell.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
     signY, sign.z, sign.width, sign.height))
-
-  const spotlightHeight = units(atelier.spotlight.height)
-  const spotlightWidth = spotlightHeight * aspectOf('spotlight')
-  function spotlight(x: number, top = atelier.spotlight.top): void {
-    const light = plane(spotlightWidth, spotlightHeight, art.spotlight, wx(x), wy(top) - spotlightHeight / 2, atelier.spotlight.z)
-    ;(light.material as THREE.MeshBasicMaterial).depthWrite = false
-    group.add(light)
-  }
 
   const { curtains } = atelier
   const curtainWidth = units(curtains.width)
   const curtainHeight = curtainWidth / aspectOf('curtains')
-  group.add(plane(curtainWidth, curtainHeight, art.curtains, wx(curtains.left) + curtainWidth / 2, atelier.ceiling - curtainHeight / 2, curtains.z))
+  shell.add(plane(curtainWidth, curtainHeight, art.curtains, wx(curtains.left) + curtainWidth / 2, atelier.ceiling - curtainHeight / 2, curtains.z))
 
   const { curtainDrape, curtainSwags } = atelier
   const drapeWidth = units(curtainDrape.width)
@@ -176,7 +214,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   // The drape closes the far end at the screen's edge, so sync() places it once the view's width is known.
   const drape = plane(drapeWidth, drapeHeight, art.curtainDrape, atelier.max, atelier.ceiling - drapeHeight / 2, curtainDrape.z)
   drape.scale.x = -1
-  group.add(drape)
+  shell.add(drape)
   let drapeForHalf = -1
   const drapeRight = atelier.max + curtainDrape.widestHalf
 
@@ -188,289 +226,394 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   // The swags run on behind the drape to where the widest screen ends.
   const swagAnchor = wx(curtainSwags.startX)
   const firstSwag = swagAnchor - Math.ceil((swagAnchor - swagsFrom) / swagStep) * swagStep
-  for (let left = firstSwag; left < swagsTo; left += swagStep) {
-    group.add(plane(swagWidth, swagHeight, art.curtainSwag, left + swagWidth / 2, wy(curtainSwags.top) - swagHeight / 2, curtainSwags.z))
+  // The shell hangs the entrance's swags; each collection room hangs its own from its left wall.
+  const entranceEnd = wx(ATELIER_ROOMS[1].startX)
+  for (let left = firstSwag; left < entranceEnd; left += swagStep) {
+    shell.add(plane(swagWidth, swagHeight, art.curtainSwag, left + swagWidth / 2, wy(curtainSwags.top) - swagHeight / 2, curtainSwags.z))
   }
   // Tall screens see above the swags; their top band carries on in its own colour.
-  const bandBottom = wy(curtainSwags.top) - 0.03
+  // It sits in front by a few pixels, over the art's lighter top rows.
+  const bandBottom = wy(curtainSwags.top) - 0.025
   const bandTop = atelier.ceiling + 2
   const band = new THREE.Mesh(new THREE.PlaneGeometry(swagsTo - firstSwag, bandTop - bandBottom), new THREE.MeshBasicMaterial({ color: 0x951806 }))
-  band.position.set((firstSwag + swagsTo) / 2, (bandTop + bandBottom) / 2, curtainSwags.z - 0.005)
-  group.add(band)
+  band.position.set((firstSwag + swagsTo) / 2, (bandTop + bandBottom) / 2, curtainSwags.z + 0.001)
+  shell.add(band)
 
-  picture('shelf', atelier.shelf)
-  picture('cabinet', atelier.cabinet)
-  picture('jewelryBox', atelier.jewelryBox)
-  picture('perfume', atelier.perfume)
-  picture('portraitWink', atelier.portraitWink)
-  picture('portraitBunny', atelier.portraitBunny)
-  picture('ribbon', atelier.ribbon)
-  picture('painting', atelier.painting)
-  picture('mirror', atelier.mirror)
-
-  const { column } = atelier
-  const pillar = (x: number) => standing('column', x, column.bottomY, column.height, column.z)
-  pillar(atelier.bowPillar.x)
-  pillar(atelier.redPillar.x)
-  const bowPillow = picture('pillowBlue', { x: atelier.bowPillar.x, ...atelier.bowPillar.pillow, z: 0.34 })
-  picture('pillowRed', { x: atelier.redPillar.x, ...atelier.redPillar.pillow, z: 0.34 })
-  const bow = picture('bow', { ...atelier.bowPillar.bow, z: 0.36 })
-
-  const { mannequin, platform } = atelier
-  const unit = units(mannequin.height) / mannequin.canvas.form[1]
-  const canvasWidth = (mannequin.canvas.form[0] + 2 * mannequin.canvas.padX) * unit
-  const canvasHeight = (mannequin.canvas.form[1] + mannequin.canvas.padTop) * unit
-  const platformWidth = units(platform.width)
-  function form(x: number, feetY: number, onPlatform: boolean, lit: boolean): Painted {
-    const mesh = plane(canvasWidth, canvasHeight, art.mannequin, wx(x), wy(feetY) + canvasHeight / 2, mannequin.z) as Painted
-    group.add(mesh)
-    if (onPlatform) group.add(plane(platformWidth, platformWidth / aspectOf('platform'), art.platform, wx(x), wy(platform.y), platform.z))
-    if (lit) spotlight(x)
-    return mesh
+  // Overlay nodes, placed each frame; a room's own come and go with it.
+  const controls: Control[] = []
+  function place(node: HTMLElement, spot: Spot, font: number): Control {
+    host.append(node)
+    const control = { node, mark: { x: wx(spot.x), y: wy(spot.y), width: units(spot.width) }, font }
+    controls.push(control)
+    return control
   }
-  const featuredX = atelier.featured.x
-  const featured = form(featuredX, mannequin.feetY, true, true)
-  const dress = new THREE.Mesh(
-    new THREE.PlaneGeometry(canvasWidth, canvasHeight),
-    new THREE.MeshBasicMaterial({ map: art.mannequinDress, transparent: true, depthWrite: false }),
-  )
-  dress.position.copy(featured.position)
-  dress.position.z += 0.01
-  group.add(dress)
-  const broom = picture('broom', atelier.broom)
-  const [cardiganStand, ...spares] = atelier.forms
-  const cardiganForm = form(cardiganStand.x, cardiganStand.feetY, cardiganStand.platform, cardiganStand.platform)
-  const floralPieces = spares.map((spare) => {
-    const bare = form(spare.x, spare.feetY, spare.platform, spare.platform)
-    bare.material.map = art.floralMannequin
-    const mesh = plane(canvasWidth, canvasHeight, art.blueFloral, bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
-    mesh.material.depthWrite = false
-    group.add(mesh)
-    return { item: { slot: 'costume', id: 'blue-floral' } as ClothingItem, mesh, bare, x: spare.x, y: 330, width: 220, shown: 1, target: 1 }
-  })
-  const floralBare = form(atelier.floralDisplay.x, atelier.floralDisplay.feetY, true, true)
-  floralBare.material.map = art.floralMannequin
-  const floralCardigan = plane(canvasWidth, canvasHeight, art.floralCardigan, floralBare.position.x, floralBare.position.y, mannequin.z + 0.01) as Painted
-  floralCardigan.material.depthWrite = false
-  group.add(floralCardigan)
-  floralPieces.push({ item: { slot: 'costume', id: 'floral-cardigan' }, mesh: floralCardigan, bare: floralBare, x: atelier.floralDisplay.x, y: 330, width: 220, shown: 1, target: 1 })
-  pillar(atelier.crownPillar.x)
-  const crownPillow = picture('pillowBlue', { x: atelier.crownPillar.x, ...atelier.crownPillar.pillow, z: 0.34 })
-  const crown = picture('flowerCrown', atelier.flowerCrown)
-  crown.rotation.z = atelier.flowerCrown.rotation
-  floralPieces.push({ item: { slot: 'bow', id: 'flower-crown' }, mesh: crown, bare: crownPillow, x: atelier.flowerCrown.x, y: atelier.flowerCrown.y, width: 190, shown: 1, target: 1 })
-  for (const { x, id, image } of atelier.goldForms) {
-    const bare = form(x, mannequin.feetY, true, true)
-    bare.material.map = art.floralMannequin
-    const mesh = plane(canvasWidth, canvasHeight, art[image], bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
-    mesh.material.depthWrite = false
-    group.add(mesh)
-    floralPieces.push({ item: { slot: 'costume', id }, mesh, bare, x, y: 330, width: 220, shown: 1, target: 1 })
-  }
-  // A worn headpiece leaves its cushion to give it back; the hibiscus share theirs.
-  for (const stand of atelier.accessories) {
-    pillar(stand.x)
-    const pillow = picture(stand.pillow, { x: stand.x, ...atelier.crownPillar.pillow, z: 0.34 })
-    for (const { id, image, dx, y, width, rotation } of stand.pieces) {
-      const mesh = picture(image, { x: stand.x + dx, y, width, z: 0.36 })
-      mesh.rotation.z = rotation
-      floralPieces.push({ item: { slot: 'bow', id }, mesh, bare: pillow, x: stand.x + dx, y, width: Math.min(190, width + 10), shown: 1, target: 1 })
+  function unplace(owned: Control[]): void {
+    for (const control of owned) {
+      control.node.remove()
+      const i = controls.indexOf(control)
+      if (i >= 0) controls.splice(i, 1)
     }
   }
-  const { bruce } = atelier
-  for (const { frame, painting, fill, ...spot } of bruce.frames) {
-    picture(painting, { ...spot, width: spot.width * fill, z: 0.19 })
-    picture(frame, { ...spot, z: 0.2 })
-  }
-  picture('bruceTag', bruce.tag)
-  picture('ribbonBlue', bruce.ribbon)
-  picture('fishWall', bruce.fish)
-  pillar(bruce.pillar.x)
-  picture('pillowRed', { x: bruce.pillar.x, ...bruce.pillar.pillow, z: 0.34 })
-  picture('fishBag', bruce.fishBag)
-  const tutuBare = form(bruce.form.x, bruce.form.feetY, false, false)
-  spotlight(bruce.spotlight.x, bruce.spotlight.top)
-  picture('platformBlue', { x: bruce.form.x, ...bruce.platform })
-  picture('flowerBush', bruce.bush)
-  const tutu = plane(canvasWidth, canvasHeight, art.tutu, tutuBare.position.x, tutuBare.position.y, mannequin.z + 0.01) as Painted
-  tutu.material.depthWrite = false
-  group.add(tutu)
-  floralPieces.push({ item: { slot: 'costume', id: 'tutu' }, mesh: tutu, bare: tutuBare, x: bruce.form.x, y: 330, width: 220, shown: 1, target: 1 })
-
-  const cardigan = new THREE.Mesh(
-    new THREE.PlaneGeometry(canvasWidth, canvasHeight),
-    new THREE.MeshBasicMaterial({ map: art.cardiganRed, transparent: true, depthWrite: false }),
-  )
-  cardigan.position.copy(cardiganForm.position)
-  cardigan.position.z += 0.01
-  group.add(cardigan)
-  // The colour on the form: the last one chosen, shown again once it is given back.
-  let onForm: Cardigan = 'cardigan-red'
-
-  // Each frame offers its own character, or the bunny while the visitor is that character.
-  const frames = atelier.portraits.map(({ own, image, ...spot }) => {
-    const mine = picture(image, spot)
-    const bunny = picture('portraitBunny', { ...spot, width: spot.width * 0.92 })
-    bunny.visible = false
-    const shows: Partial<Record<CharacterKind, Painted>> = { [own]: mine, bunny }
-    return { own: own as CharacterKind, spot, shows, offered: own as CharacterKind, rest: mine.position.clone(), near: false, hop: -1 }
-  })
-
-  scene.add(group)
 
   let actions: AtelierActions | null = null
-  const controls: { node: HTMLElement; mark: { x: number; y: number; width: number }; font: number }[] = []
-  function place(node: HTMLElement, spot: { x: number; y: number; width: number }, font: number): void {
-    host.append(node)
-    controls.push({ node, mark: { x: wx(spot.x), y: wy(spot.y), width: units(spot.width) }, font })
-  }
-  function control(label: string, className: string, spot: { x: number; y: number; width: number }, click: () => void): HTMLButtonElement {
-    const node = document.createElement('button')
-    node.type = 'button'
-    node.className = className
-    node.setAttribute('aria-label', label)
-    node.addEventListener('click', click)
-    place(node, spot, 0.09)
-    return node
-  }
-  function text(tag: 'div' | 'p', className: string, content: string, spot: { x: number; y: number; width: number }, font: number): void {
-    const node = document.createElement(tag)
-    node.className = className
-    node.textContent = content
-    place(node, spot, font)
-  }
-  text('div', 'atelier-title', 'The Costume Atelier', atelier.title, 0.088)
-  text('p', 'atelier-plaque', "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn.", atelier.plaque, 0.058)
-  text('div', 'atelier-collection', 'The Kiki Collection', atelier.collection, 0.2)
-  text('div', 'atelier-collection', 'The Cardigan Collection', atelier.cardigans.label, 0.12)
-  text('div', 'atelier-collection', 'The Floral Collection', atelier.floralCollection, 0.2)
-  text('div', 'atelier-collection', 'The Gold Collection', atelier.goldCollection, 0.2)
-  text('div', 'atelier-collection', 'The Accessory Collection', atelier.accessoryCollection, 0.2)
-  const kikiDress: ClothingItem = { slot: 'costume', id: 'kiki' }
-  const kikiBow: ClothingItem = { slot: 'bow', id: 'kiki' }
-  const itemButtons = {
-    dress: control("Try on Kiki's dress", 'atelier-item atelier-item-dress', { x: featuredX, y: 330, width: 200 }, () => actions?.onItem(kikiDress)),
-    bow: control("Try on Kiki's bow", 'atelier-item atelier-item-bow', atelier.bowPillar.bow, () => actions?.onItem(kikiBow)),
-    cardigan: control('Try on the red cardigan', 'atelier-item atelier-item-dress', { x: cardiganStand.x, y: 330, width: 200 }, () => actions?.onItem(cardiganItem())),
-  }
-  const floralButtons = floralPieces.map((piece) => control(
-    `Try on ${itemName(piece.item).toLowerCase()}`,
-    piece.item.slot === 'bow' ? 'atelier-item atelier-item-bow' : 'atelier-item atelier-item-dress',
-    { x: piece.x, y: piece.y, width: piece.width },
-    () => actions?.onItem(piece.item),
-  ))
-  const { swatches } = atelier.cardigans
-  const swatchButtons = CARDIGANS.map((id, i) => {
-    const node = control(`Try on the ${CARDIGAN_NAMES[id]} cardigan`, `atelier-swatch atelier-swatch-${id}`, {
-      x: swatches.x + (i - (CARDIGANS.length - 1) / 2) * swatches.gap,
-      y: swatches.y,
-      width: swatches.width,
-    }, () => actions?.onItem({ slot: 'costume', id }))
-    return node
-  })
-  const portraitButtons = frames.map((frame) =>
-    control(`Walk as ${CHARACTER_NAMES[frame.own]}`, 'atelier-choice', frame.spot, () => actions?.onCharacter(frame.offered)))
+  const exit = document.createElement('button')
+  exit.type = 'button'
+  exit.className = 'lobby-sign gallery-door-cue atelier-exit'
+  exit.setAttribute('aria-label', 'Back to museum')
+  exit.textContent = 'Back to museum'
+  exit.addEventListener('click', () => actions?.onLeave())
+  place(exit, {
+    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
+    y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
+    width: sign.width * 0.76 * mock.unit,
+  }, 0.12)
+
   const note = document.createElement('p')
   note.className = 'atelier-note'
   note.setAttribute('role', 'status')
-  place(note, { x: 0, y: 0, width: 260 }, 0.075)
-  const noteSpot = controls[controls.length - 1].mark
+  const noteSpot = place(note, { x: 0, y: 0, width: 260 }, 0.075).mark
   let noteFor = 0
 
   // One hint, by the nearest piece the visitor has not tried yet.
   const hint = document.createElement('p')
   hint.className = 'atelier-hint'
   hint.setAttribute('aria-hidden', 'true')
-  place(hint, { x: 0, y: 0, width: 300 }, 0.085)
-  const hintSpot = controls[controls.length - 1].mark
-  type HintKey = 'dress' | 'bow' | 'cardigan' | 'portrait0' | 'portrait1' | 'portrait2'
-  const hintSpots: { key: HintKey; x: number; y: number }[] = [
-    { key: 'dress', x: featuredX, y: 140 },
-    { key: 'bow', x: atelier.bowPillar.bow.x, y: 318 },
-    { key: 'portrait0', x: frames[0].spot.x, y: frames[0].spot.y + 72 },
-    { key: 'cardigan', x: cardiganStand.x, y: 232 },
-    { key: 'portrait1', x: frames[1].spot.x, y: frames[1].spot.y - 78 },
-    { key: 'portrait2', x: frames[2].spot.x, y: frames[2].spot.y - 72 },
-  ]
-  const tried = new Set<HintKey>()
-  const tap = window.matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click'
-  function hintText(key: HintKey): string {
-    if (key === 'dress') return target.dress > 0 ? `${tap} the dress to try it on` : `${tap} the form to give it back`
-    if (key === 'bow') return target.bow > 0 ? `${tap} the bow to try it on` : `${tap} the cushion to give it back`
-    if (key === 'cardigan') return target.cardigan > 0 ? `${tap} to try it on, or pick a colour` : `${tap} the form to give it back`
-    return `${tap} to walk as ${CHARACTER_NAMES[frames[Number(key.slice('portrait'.length))].offered]}`
-  }
-  const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
-    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
-    y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
-    width: sign.width * 0.76 * mock.unit,
-  }, () => actions?.onLeave())
-  exit.textContent = 'Back to museum'
-  controls[controls.length - 1].font = 0.12
+  const hintSpot = place(hint, { x: 0, y: 0, width: 300 }, 0.085).mark
+  const tried = new Set<string>()
 
-  let clock = 0
-  let jiggle = -1
-  let nextJiggle = 3.2
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const rest = {
-    dress: dress.position.clone(),
-    bow: bow.position.clone(),
-    cardigan: cardigan.position.clone(),
-  }
-  const shown = { dress: 1, bow: 1, cardigan: 1 }
-  let reflected = false
-  const target = { dress: 1, bow: 1, cardigan: 1 }
+  // What the visitor wears, owns and is; each room reads these when it is built.
   let worn: string | null = null
+  let wornBow: string | null = null
+  let reflected = false
+  let owned: Set<string> | null = null
   let visitorKind: CharacterKind | null = null
 
-  // The form offers its colour; once worn, the bare form gives it back.
-  function cardiganItem(): ClothingItem {
-    return { slot: 'costume', id: isCardigan(worn) ? worn : onForm }
+  const built = new Map<string, BuiltRoom>()
+  const teardowns = new Map<string, () => void>()
+  const placed = new Map(ATELIER_ROOMS.map((room) => [room.key, room]))
+
+  /** What every room builds its displays with: buttons, price tags, glints, and pieces to try on. */
+  function roomKit(group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void) {
+    const pieces: Piece[] = []
+    const displays: Display[] = []
+    const glints: BuiltRoom['glints'] = []
+    const priceTags: { node: HTMLDivElement; label: HTMLSpanElement; item: () => string }[] = []
+
+    function button(label: string, className: string, spot: Spot, click: () => void): HTMLButtonElement {
+      const node = document.createElement('button')
+      node.type = 'button'
+      node.className = className
+      node.setAttribute('aria-label', label)
+      node.addEventListener('click', click)
+      own(spot, node, 0.09)
+      return node
+    }
+    function priceTag(item: () => string, spot: Spot): void {
+      const node = document.createElement('div')
+      node.className = 'atelier-price'
+      node.hidden = true
+      const icon = document.createElement('img')
+      icon.className = 'atelier-price-coin'
+      icon.alt = ''
+      icon.src = builtUrl(manifest.images['coin-large'].x2.src)
+      const label = document.createElement('span')
+      node.append(icon, label)
+      own(spot, node, 0.062)
+      priceTags.push({ node, label, item })
+    }
+    // A few small stars twinkle over each piece still on its stand, and over each portrait.
+    function glint(spot: Spot, aspect: number, shown: () => boolean): void {
+      const node = document.createElement('div')
+      node.className = 'atelier-glint'
+      node.setAttribute('aria-hidden', 'true')
+      node.style.aspectRatio = String(aspect)
+      const seed = (spot.x * 0.013) % 2.6
+      for (const [x, y, size] of [[16, 20, 1], [84, 38, 0.75], [30, 82, 0.6]]) {
+        const star = document.createElement('span')
+        star.style.left = `${x}%`
+        star.style.top = `${y}%`
+        star.style.setProperty('--size', String(size))
+        star.style.animationDelay = `${-((seed + x * 0.031) % 2.6).toFixed(2)}s`
+        node.append(star)
+      }
+      own(spot, node, 0.1)
+      glints.push({ node, shown })
+    }
+
+    /** A headpiece resting on a cushion or a shelf; tapping where it lay gives it back. */
+    function headpiece(spot: { id: string; image: string; y: number; width: number; rotation: number }, x: number, stand: Painted[], standName: string): void {
+      const mesh = picture(group, spot.image as AtelierImage, { x, y: spot.y, width: spot.width, z: 0.36 })
+      mesh.rotation.z = spot.rotation
+      const item: ClothingItem = { slot: 'bow', id: spot.id }
+      const node = button('', 'atelier-item atelier-item-bow', { x, y: spot.y, width: Math.min(220, spot.width + 10) }, () => actions?.onItem(item))
+      const piece: Piece = {
+        item: () => item,
+        wornBy: (_, bow) => bow === spot.id,
+        meshes: [mesh],
+        bare: [...stand, mesh],
+        button: node,
+        hint: { x, y: spot.y - 70 },
+        hintText: (available) => available ? `${tap} to try on ${itemName(item).toLowerCase()}` : `${tap} the ${standName} to give it back`,
+        target: 1,
+        shown: 1,
+      }
+      pieces.push(piece)
+      priceTag(() => itemIdFor('bow', spot.id), { x, y: spot.y + 58, width: 125 })
+      glint({ x, y: spot.y, width: Math.max(90, spot.width) }, 1.6, () => piece.target > 0)
+    }
+
+    function refresh(): void {
+      for (const piece of pieces) {
+        const wearing = piece.wornBy(worn, wornBow)
+        piece.target = wearing ? 0 : 1
+        piece.button.setAttribute('aria-pressed', String(wearing))
+        piece.button.setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName(piece.item()).toLowerCase()}`)
+      }
+      for (const display of displays) {
+        display.offered = visitorKind === display.own ? 'bunny' : display.own
+        for (const [shown, mesh] of Object.entries(display.shows)) mesh!.visible = shown === display.offered
+        display.button.setAttribute('aria-label', `Walk as ${CHARACTER_NAMES[display.offered]}`)
+      }
+      for (const tag of priceTags) {
+        const id = tag.item()
+        const price = priceOf(id)
+        const show = owned !== null && price !== null && !owned.has(id)
+        tag.node.hidden = !show
+        if (show && price !== null) tag.label.textContent = florinLabel(price)
+      }
+    }
+
+    return { pieces, displays, button, priceTag, glint, headpiece, built: (): BuiltRoom => ({ pieces, displays, glints, refresh }) }
   }
 
-  const priceTags: { node: HTMLDivElement; label: HTMLSpanElement; item: () => string }[] = []
-  function priceTag(item: () => string, spot: { x: number; y: number; width: number }): void {
-    const node = document.createElement('div')
-    node.className = 'atelier-price'
-    node.hidden = true
-    const icon = document.createElement('img')
-    icon.className = 'atelier-price-coin'
-    icon.alt = ''
-    icon.src = builtUrl(manifest.images['coin-large'].x2.src)
-    const label = document.createElement('span')
-    node.append(icon, label)
-    place(node, spot, 0.062)
-    priceTags.push({ node, label, item })
-  }
-  priceTag(() => itemIdFor('costume', 'kiki'), { x: featuredX, y: 250, width: 150 })
-  priceTag(() => itemIdFor('bow', 'kiki'), { x: atelier.bowPillar.bow.x, y: 248, width: 140 })
-  priceTag(() => itemIdFor('costume', cardiganItem().id), { x: cardiganStand.x, y: 322, width: 150 })
-  for (const piece of floralPieces) {
-    priceTag(() => itemIdFor(piece.item.slot, piece.item.id), { x: piece.x, y: piece.y + 58, width: 125 })
-  }
-  for (const frame of frames) {
-    if ((FREE_CHARACTERS as readonly string[]).includes(frame.own)) continue
-    priceTag(() => itemIdFor('character', frame.own), { x: frame.spot.x, y: ('priceY' in frame.spot && frame.spot.priceY) || frame.spot.y + 86, width: 120 })
+  function buildEntrance(group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void): BuiltRoom {
+    for (const name of ['shelf', 'cabinet', 'jewelryBox', 'perfume', 'portraitWink', 'portraitBunny', 'ribbon'] as const) {
+      picture(group, name, atelier[name])
+    }
+    const title = document.createElement('div')
+    title.className = 'atelier-title'
+    title.textContent = 'The Costume Atelier'
+    own(atelier.title, title, 0.088)
+    const plaque = document.createElement('p')
+    plaque.className = 'atelier-plaque'
+    plaque.textContent = "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn."
+    own(atelier.plaque, plaque, 0.058)
+    // Accessories without a room of their own rest in the cabinet's compartments.
+    const kit = roomKit(group, own)
+    for (const spot of atelier.cabinetPieces) {
+      const { compartment } = spot
+      const hollow = new THREE.Mesh(
+        new THREE.PlaneGeometry(units(compartment.width), units(compartment.height)),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+      ) as Painted
+      hollow.position.set(wx(compartment.x), wy(compartment.y), 0.255)
+      group.add(hollow)
+      kit.headpiece(spot, spot.x, [hollow], 'cabinet')
+    }
+    return kit.built()
   }
 
-  let owned: Set<string> | null = null
-  function refreshPriceTags(): void {
-    for (const tag of priceTags) {
-      const id = tag.item()
-      const price = priceOf(id)
-      const show = owned !== null && price !== null && !owned.has(id)
-      tag.node.hidden = !show
-      if (show && price !== null) tag.label.textContent = florinLabel(price)
+  function buildCollection(room: PlacedRoom & { collection: CollectionRoom; centerX: number }, group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void): BuiltRoom {
+    const { collection } = room
+    const C = room.centerX
+    const T = ROOM_TEMPLATE
+    const kit = roomKit(group, own)
+    const { pieces, displays, button, priceTag, glint } = kit
+
+    // A frame the owner has filled shows that painting, cropped to fill the frame's opening;
+    // the placeholder shows until it loads, or if it cannot.
+    let alive = true
+    const loaded: THREE.Texture[] = []
+    function hang(mesh: Painted, spotId: string): void {
+      const painting = spots[spotId]
+      if (!painting) return
+      const opening = mesh.geometry.parameters.width / mesh.geometry.parameters.height
+      new THREE.TextureLoader().loadAsync(painting.imageUrl).then((texture) => {
+        if (!alive) {
+          texture.dispose()
+          return
+        }
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.anisotropy = 4
+        const ratio = painting.width / painting.height
+        if (ratio > opening) {
+          texture.repeat.set(opening / ratio, 1)
+          texture.offset.set((1 - opening / ratio) / 2, 0)
+        } else {
+          texture.repeat.set(1, ratio / opening)
+          texture.offset.set(0, (1 - ratio / opening) / 2)
+        }
+        loaded.push(texture)
+        mesh.material.map = texture
+        mesh.material.needsUpdate = true
+      }).catch(() => {})
+    }
+
+    // The tag hangs from under the curtain, lit from above.
+    const tag = { x: C + T.tag.dx, y: T.tag.y, width: T.tag.width, z: T.tag.z }
+    picture(group, collection.tagImage, tag)
+    if (collection.tagImage === 'tagBlank') {
+      const name = document.createElement('div')
+      name.className = 'atelier-tag-name'
+      name.textContent = collection.title
+      own({ x: tag.x, y: tag.y + T.tagText.dy, width: T.tagText.width }, name, 0.088)
+    }
+    const spotlightHeight = units(atelier.spotlight.height)
+    const light = plane(spotlightHeight * aspectOf('spotlight'), spotlightHeight, art.spotlight,
+      wx(C + T.spotlight.dx), wy(T.spotlight.top) - spotlightHeight / 2, atelier.spotlight.z)
+    ;(light.material as THREE.MeshBasicMaterial).depthWrite = false
+    group.add(light)
+
+    // The curtain over this room, overlapping its neighbours'; the last room's runs on behind the drape.
+    const index = ATELIER_ROOMS.indexOf(room)
+    const swagsEnd = index === ATELIER_ROOMS.length - 1 ? swagsTo : wx(room.endX)
+    for (let left = wx(room.startX + SWAG_START - SWAG_STEP); left < swagsEnd; left += swagStep) {
+      group.add(plane(swagWidth, swagHeight, art.curtainSwag, left + swagWidth / 2, wy(curtainSwags.top) - swagHeight / 2,
+        curtainSwags.z - 0.002 * (1 + (index % 2))))
+    }
+
+    // The walls stand out by the room's spread, so two forms fit between them.
+    const out = room.spread
+    const { leftFrame, rightFrame } = T
+    if (collection.left.framed) {
+      picture(group, collection.left.painting as AtelierImage, { x: C + leftFrame.dx - out, ...collection.left.framed, z: 0.2 })
+    } else {
+      const spot = { x: C + leftFrame.dx - out, y: leftFrame.y }
+      hang(picture(group, collection.left.painting as AtelierImage, { ...spot, width: leftFrame.width * leftFrame.fill, z: 0.19 }), `${collection.key}.left`)
+      picture(group, 'bruceFrameBlue', { ...spot, width: leftFrame.width, z: 0.2 })
+    }
+    const rightSpot = { x: C + rightFrame.dx + out, y: rightFrame.y }
+    hang(picture(group, collection.right.painting as AtelierImage, { ...rightSpot, width: rightFrame.width * rightFrame.fill, z: 0.19 }), `${collection.key}.right`)
+    picture(group, 'bruceFrameCream', { ...rightSpot, width: rightFrame.width, z: 0.2 })
+
+    const { mannequin } = atelier
+    const unit = units(mannequin.height) / mannequin.canvas.form[1]
+    const canvasWidth = (mannequin.canvas.form[0] + 2 * mannequin.canvas.padX) * unit
+    const canvasHeight = (mannequin.canvas.form[1] + mannequin.canvas.padTop) * unit
+    const platform = atelier.platformBlue
+
+    function form(spot: FormSpot, x: number): void {
+      const bare = plane(canvasWidth, canvasHeight, art[spot.base], wx(x), wy(mannequin.feetY) + canvasHeight / 2, mannequin.z) as Painted
+      group.add(bare)
+      const pw = units(platform.width)
+      group.add(plane(pw, pw / aspectOf('platformBlue'), art.platformBlue, wx(x), wy(platform.y), platform.z))
+      picture(group, 'flowerBush', { ...atelier.bush, x: x + atelier.bush.dx })
+      const dress = plane(canvasWidth, canvasHeight, art[spot.image as AtelierImage], bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
+      dress.material.depthWrite = false
+      group.add(dress)
+      const meshes = [dress]
+      if (spot.broom) meshes.push(picture(group, 'broom', { ...atelier.broom, x: x + atelier.broom.dx }))
+      const item: ClothingItem = { slot: 'costume', id: spot.costume }
+      const node = button('', 'atelier-item atelier-item-dress', { x, y: 330, width: 210 }, () => actions?.onItem(item))
+      const piece: Piece = {
+        item: () => item,
+        wornBy: (costume) => costume === spot.costume,
+        meshes,
+        bare: [bare],
+        button: node,
+        hint: { x, y: 150 },
+        hintText: (available) => available ? `${tap} to try on ${itemName(item).toLowerCase()}` : `${tap} the form to give it back`,
+        target: 1,
+        shown: 1,
+      }
+      pieces.push(piece)
+      priceTag(() => itemIdFor('costume', item.id), { x, y: 290, width: 150 })
+      glint({ x, y: 300, width: 210 }, 0.95, () => piece.target > 0)
+    }
+    const formDx = collection.forms.length === 2 ? T.pair.formDx : 0
+    collection.forms.forEach((spot, i) => form(spot, C + (i === 0 ? -formDx : formDx)))
+
+    const { pillar } = collection
+    const pillarX = C + T.pillar.dx + out
+    standing(group, 'column', pillarX, atelier.column.bottomY, atelier.column.height, atelier.column.z)
+    const pillow = picture(group, pillar.pillow.image, { x: pillarX, y: pillar.pillow.y, width: pillar.pillow.width, z: 0.34 })
+    for (const spot of pillar.pieces) kit.headpiece(spot, pillarX + spot.dx, [pillow], 'cushion')
+    if (pillar.fishBag) picture(group, 'fishBag', { ...atelier.fishBag, x: pillarX + atelier.fishBag.dx })
+
+    const portrait = collection.portrait
+    const portraitSpot = { x: C + T.portrait.dx + out, y: T.portrait.y, width: portrait.width }
+    picture(group, collection.ribbon, { ...T.ribbon, x: C + T.ribbon.dx + out })
+    if (collection.fish) picture(group, 'fishWall', { ...T.fish, x: C + T.fish.dx + out })
+    const kind = portrait.own
+    if (kind === null) {
+      picture(group, portrait.image as AtelierImage, { ...portraitSpot, z: T.portrait.z })
+    } else {
+      const mine = picture(group, portrait.image as AtelierImage, { ...portraitSpot, z: T.portrait.z })
+      const bunny = picture(group, 'portraitBunny', { ...portraitSpot, width: portrait.width * 0.92, z: T.portrait.z })
+      bunny.visible = false
+      const display: Display = {
+        own: kind,
+        offered: kind,
+        shows: { [kind]: mine, bunny },
+        spot: portraitSpot,
+        rest: mine.position.clone(),
+        button: button(`Walk as ${CHARACTER_NAMES[kind]}`, 'atelier-choice', portraitSpot, () => actions?.onCharacter(display.offered)),
+        near: false,
+        hop: -1,
+      }
+      displays.push(display)
+      if (!(FREE_CHARACTERS as readonly string[]).includes(kind)) {
+        priceTag(() => itemIdFor('character', kind), { x: portraitSpot.x, y: portraitSpot.y + (collection.fish ? 161 : 105), width: 120 })
+      }
+      glint(portraitSpot, 1, () => true)
+    }
+
+    return {
+      ...kit.built(),
+      dispose() {
+        alive = false
+        for (const texture of loaded) texture.dispose()
+      },
     }
   }
-  refreshPriceTags()
+
+  function buildRoom(key: string): () => void {
+    const room = placed.get(key)
+    if (!room || built.has(key)) return () => {}
+    const group = new THREE.Group()
+    const owned: Control[] = []
+    const own = (spot: Spot, node: HTMLElement, font: number) => { owned.push(place(node, spot, font)) }
+    const contents = room.collection && room.centerX !== null
+      ? buildCollection(room as PlacedRoom & { collection: CollectionRoom; centerX: number }, group, own)
+      : buildEntrance(group, own)
+    contents.refresh()
+    // A room built mid-visit opens as things stand, not as a change to animate.
+    for (const piece of contents.pieces) {
+      piece.shown = piece.target
+      for (const mesh of piece.meshes) { mesh.material.opacity = piece.shown; mesh.visible = piece.shown > 0.01 }
+    }
+    shell.add(group)
+    built.set(key, contents)
+    const teardown = () => {
+      if (built.get(key) !== contents) return
+      built.delete(key)
+      teardowns.delete(key)
+      contents.dispose?.()
+      unplace(owned)
+      shell.remove(group)
+      group.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return
+        node.geometry.dispose()
+        ;(node.material as THREE.Material).dispose()
+      })
+    }
+    teardowns.set(key, teardown)
+    return teardown
+  }
+
+  const allPieces = () => [...built.values()].flatMap((room) => room.pieces)
+  const allDisplays = () => [...built.values()].flatMap((room) => room.displays)
+  const refreshAll = () => { for (const room of built.values()) room.refresh() }
 
   return {
+    rooms: ATELIER_ROOMS.map(({ key, startX, endX }) => ({ key, startX: wx(startX), endX: wx(endX) })),
+    buildRoom,
+
     setActions(next) { actions = next },
 
     setOwned(items) {
       owned = items === null ? null : new Set(items)
-      refreshPriceTags()
+      refreshAll()
     },
 
     hitTestDoor(raycaster) {
@@ -478,80 +621,46 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     hitTestItem(raycaster) {
-      if (pickPainted(raycaster, target.bow > 0 ? [bow] : [bow, bowPillow])) return kikiBow
-      if (pickPainted(raycaster, target.dress > 0 ? [dress, broom] : [featured])) return kikiDress
-      if (pickPainted(raycaster, [target.cardigan > 0 ? cardigan : cardiganForm])) return cardiganItem()
-      for (const piece of floralPieces) {
-        if (pickPainted(raycaster, [piece.target > 0 ? piece.mesh : piece.bare])) return piece.item
+      for (const piece of allPieces()) {
+        if (pickPainted(raycaster, piece.target > 0 ? piece.meshes : piece.bare)) return piece.item()
       }
       return null
     },
 
     hitTestDisplay(raycaster) {
-      for (const frame of frames) {
-        if (pickPainted(raycaster, [frame.shows[frame.offered]!])) return frame.offered
+      for (const display of allDisplays()) {
+        if (pickPainted(raycaster, [display.shows[display.offered]!])) return display.offered
       }
       return null
     },
 
     setWorn(costume, bowId) {
       if (reflected) {
-        if ((worn === 'kiki') !== (costume === 'kiki')) tried.add('dress')
-        if (isCardigan(worn) || isCardigan(costume)) { if (worn !== costume) tried.add('cardigan') }
-        if ((target.bow === 0) !== (bowId === 'kiki')) tried.add('bow')
+        for (const piece of allPieces()) {
+          if (piece.wornBy(worn, wornBow) !== piece.wornBy(costume, bowId)) tried.add(piece.item().id)
+        }
       }
       worn = costume
-      if (isCardigan(costume) && costume !== onForm) {
-        onForm = costume
-        cardigan.material.map = art[CARDIGAN_ART[costume]]
-      }
-      target.dress = costume === 'kiki' ? 0 : 1
-      target.bow = bowId === 'kiki' ? 0 : 1
-      target.cardigan = isCardigan(costume) ? 0 : 1
-      floralPieces.forEach((piece, i) => {
-        const wearing = (piece.item.slot === 'bow' ? bowId : costume) === piece.item.id
-        piece.target = wearing ? 0 : 1
-        if (!reflected) piece.shown = piece.target
-        floralButtons[i].setAttribute('aria-pressed', String(wearing))
-        floralButtons[i].setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName(piece.item).toLowerCase()}`)
-      })
+      wornBow = bowId
+      refreshAll()
       // The first reflection is how the room opens, not a change to animate.
-      if (!reflected) Object.assign(shown, target)
+      if (!reflected) for (const piece of allPieces()) piece.shown = piece.target
       reflected = true
-      for (const part of ['dress', 'bow'] as const) {
-        const available = target[part] > 0
-        const node = itemButtons[part]
-        node.setAttribute('aria-label', `${available ? 'Try on' : 'Return'} Kiki's ${part}`)
-        node.setAttribute('aria-pressed', String(!available))
-      }
-      const offer = cardiganItem()
-      itemButtons.cardigan.setAttribute('aria-label', `${target.cardigan > 0 ? 'Try on' : 'Return'} ${itemName(offer).toLowerCase()}`)
-      itemButtons.cardigan.setAttribute('aria-pressed', String(target.cardigan === 0))
-      CARDIGANS.forEach((id, i) => {
-        swatchButtons[i].setAttribute('aria-pressed', String(costume === id))
-        swatchButtons[i].setAttribute('aria-label', `${costume === id ? 'Return' : 'Try on'} the ${CARDIGAN_NAMES[id]} cardigan`)
-      })
-      refreshPriceTags()
     },
 
     setVisitor(kind) {
-      if (visitorKind && visitorKind !== kind) frames.forEach((_, i) => tried.add(`portrait${i}` as HintKey))
+      if (visitorKind && visitorKind !== kind) tried.add('portraits')
       visitorKind = kind
-      frames.forEach((frame, i) => {
-        frame.offered = kind === frame.own ? 'bunny' : frame.own
-        for (const [shown, mesh] of Object.entries(frame.shows)) mesh!.visible = shown === frame.offered
-        portraitButtons[i].setAttribute('aria-label', `Walk as ${CHARACTER_NAMES[frame.offered]}`)
-      })
+      refreshAll()
     },
 
     showMisfit(item, kind) {
       note.textContent = `${itemName(item)} doesn't fit ${CHARACTER_NAMES[kind]} yet`
-      const floral = floralPieces.find(piece => piece.item.id === item.id)
-      const spot = floral ? { x: floral.x, y: floral.y } : item.id === 'kiki'
-        ? item.slot === 'bow' ? atelier.bowPillar.bow : { x: featuredX, y: 250 }
-        : { x: cardiganStand.x, y: 250 }
-      noteSpot.x = wx(spot.x)
-      noteSpot.y = wy(spot.y - 70)
+      const piece = allPieces().find((p) => p.item().id === item.id)
+      if (piece) {
+        noteSpot.x = wx(piece.hint.x)
+        noteSpot.y = wy(piece.hint.y + 80)
+      }
       noteFor = 2.6
     },
 
@@ -575,95 +684,74 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     update(dt, visitorX) {
-      clock += dt
-      if (!reducedMotion && clock >= nextJiggle) {
-        jiggle = 0
-        nextJiggle = clock + 6.5
-      }
-      if (jiggle >= 0) {
-        jiggle += dt
-        if (jiggle > 0.8) jiggle = -1
-      }
-      const t = jiggle < 0 ? 1 : jiggle / 0.8
-      const wobble = reducedMotion || t >= 1 ? 0 : Math.sin(t * Math.PI * 6) * Math.sin(t * Math.PI)
-
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
-      for (const part of ['dress', 'bow', 'cardigan'] as const) shown[part] += (target[part] - shown[part]) * fade
-      for (const piece of floralPieces) {
+      const pieces = allPieces()
+      for (const piece of pieces) {
         piece.shown += (piece.target - piece.shown) * fade
-        piece.mesh.material.opacity = piece.shown
-        piece.mesh.visible = piece.shown > 0.01
+        for (const mesh of piece.meshes) {
+          mesh.material.opacity = piece.shown
+          mesh.visible = piece.shown > 0.01
+        }
       }
+      for (const room of built.values()) for (const glint of room.glints) glint.node.hidden = !glint.shown()
       noteFor = Math.max(0, noteFor - dt)
-      let nearest: { key: HintKey; x: number; y: number } | null = null
-      for (const spot of hintSpots) {
-        const distance = Math.abs(visitorX - wx(spot.x))
-        if (tried.has(spot.key) || distance > 1.5) continue
-        if (!nearest || distance < Math.abs(visitorX - wx(nearest.x)) - 0.05) nearest = spot
-      }
-      if (nearest) {
-        hint.textContent = hintText(nearest.key)
-        hintSpot.x = wx(nearest.x)
-        hintSpot.y = wy(nearest.y)
-      }
-      const nearbyFloral = floralPieces.find(piece => Math.abs(visitorX - wx(piece.x)) < 1.25)
-      if (nearbyFloral && !nearest) {
-        hint.textContent = nearbyFloral.target > 0
-          ? `${tap} to try on ${itemName(nearbyFloral.item).toLowerCase()}`
-          : nearbyFloral.item.slot === 'bow' ? `${tap} the cushion to give it back` : `${tap} the form to give it back`
-        hintSpot.x = wx(nearbyFloral.x)
-        hintSpot.y = wy(nearbyFloral.item.slot === 'bow' ? 310 : 160)
-      }
-      hint.style.setProperty('--show', (nearest || nearbyFloral) && noteFor <= 0 ? '1' : '0')
-      note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
-      cardigan.material.opacity = shown.cardigan
-      cardigan.visible = shown.cardigan > 0.01
-      cardigan.scale.x = 1 + 0.035 * wobble
-      cardigan.position.x = rest.cardigan.x - 0.022 * wobble
-      dress.material.opacity = shown.dress
-      dress.visible = shown.dress > 0.01
-      broom.material.opacity = shown.dress
-      broom.visible = dress.visible
-      bow.material.opacity = shown.bow
-      bow.visible = shown.bow > 0.01
 
-      dress.scale.x = 1 + 0.035 * wobble
-      dress.position.x = rest.dress.x - 0.022 * wobble
-      broom.rotation.z = 0.04 * wobble
-      bow.scale.x = 1 + 0.05 * wobble
-      bow.position.y = rest.bow.y + 0.02 * Math.abs(wobble)
+      let text = ''
+      let best = Infinity
+      for (const piece of pieces) {
+        const distance = Math.abs(visitorX - wx(piece.hint.x))
+        if (tried.has(piece.item().id) || distance > 1.25 || distance >= best) continue
+        best = distance
+        text = piece.hintText(piece.target > 0)
+        hintSpot.x = wx(piece.hint.x)
+        hintSpot.y = wy(piece.hint.y)
+      }
+      if (!tried.has('portraits')) {
+        for (const display of allDisplays()) {
+          const distance = Math.abs(visitorX - wx(display.spot.x))
+          if (distance > 1.1 || distance >= best) continue
+          best = distance
+          text = `${tap} to walk as ${CHARACTER_NAMES[display.offered]}`
+          hintSpot.x = wx(display.spot.x)
+          hintSpot.y = wy(display.spot.y - 72)
+        }
+      }
+      if (text) hint.textContent = text
+      hint.style.setProperty('--show', text && noteFor <= 0 ? '1' : '0')
+      note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
 
       // A portrait hops as the visitor comes near, an invitation to step into it.
-      for (const frame of frames) {
-        const near = Math.abs(visitorX - wx(frame.spot.x)) < 1.1
-        if (near && !frame.near && !reducedMotion) frame.hop = 0
-        frame.near = near
+      for (const display of allDisplays()) {
+        const near = Math.abs(visitorX - wx(display.spot.x)) < 1.1
+        if (near && !display.near && !reducedMotion) display.hop = 0
+        display.near = near
         let lift = 0
-        if (frame.hop >= 0) {
-          frame.hop += dt
-          const p = frame.hop / 0.42
+        if (display.hop >= 0) {
+          display.hop += dt
+          const p = display.hop / 0.42
           lift = p < 1 ? 0.08 * Math.sin(Math.PI * p) : 0
-          if (p >= 1) frame.hop = -1
+          if (p >= 1) display.hop = -1
         }
-        for (const mesh of Object.values(frame.shows)) {
-          mesh!.position.y = frame.rest.y + lift
-          mesh!.rotation.z = 0.05 * Math.sin(Math.PI * Math.max(0, Math.min(1, frame.hop / 0.42)) * 2)
+        for (const mesh of Object.values(display.shows)) {
+          mesh!.position.y = display.rest.y + lift
+          mesh!.rotation.z = 0.05 * Math.sin(Math.PI * Math.max(0, Math.min(1, display.hop / 0.42)) * 2)
         }
       }
     },
 
     dispose() {
-      scene.remove(group)
+      for (const teardown of [...teardowns.values()]) teardown()
+      scene.remove(shell)
       door.dispose()
-      group.traverse((node) => {
+      shell.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return
         node.geometry.dispose()
         const material = node.material as THREE.MeshBasicMaterial
         if (material.map?.userData.ownedByBoard) material.map.dispose()
         material.dispose()
       })
-      for (const { node } of controls) node.remove()
+      unplace([...controls])
     },
   }
 }

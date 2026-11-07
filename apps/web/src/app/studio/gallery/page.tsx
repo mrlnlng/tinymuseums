@@ -1,9 +1,10 @@
-import { MAX_STANDS, env, getGallery, listQrTokens } from '@tiny/core'
+import { MAX_STANDS, env, getGallery, listQrTokens, locationStates, whereHung } from '@tiny/core'
 import Message from '@/shared/components/Message'
 import UploadWork from '@/features/studio/components/UploadWork'
 import CodesSection from '@/features/studio/components/CodesSection'
 import { FloorControls, StorageControls } from '@/features/studio/components/ArrangeControls'
-import { requireArtist } from '@/shared/lib/session'
+import PlacePicker from '@/features/studio/components/PlacePicker'
+import { isHallOwner, requireArtist } from '@/shared/lib/session'
 import { deletePieceAction, updatePieceAction } from '@/features/studio/actions'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +23,9 @@ export default async function GalleryPage({
   const codes = (await listQrTokens(artist.id))
     .filter((code) => !code.revoked)
     .map(({ token, placement, scans }) => ({ token, placement, scans }))
+  const owner = isHallOwner(artist)
+  const states = owner ? await locationStates() : []
+  const titles = new Map(works.map((work) => [work.id, work.title]))
 
   return (
     <>
@@ -91,6 +95,16 @@ export default async function GalleryPage({
                     Save
                   </button>
                 </form>
+
+                {owner && work.status === 'ready' ? (
+                  <div className="piece-location">
+                    <p className="small muted flush">
+                      {whereHung(states, work.id) ? `Hangs in ${whereHung(states, work.id)}` : 'Not hung anywhere yet'}
+                      {' · '}<a href="/studio/locations">All locations</a>
+                    </p>
+                    <PlacePicker pieceId={work.id} states={states} titles={titles} back="/studio/gallery" />
+                  </div>
+                ) : null}
 
                 <form action={deletePieceAction} className="piece-remove">
                   <input type="hidden" name="id" value={work.id} />

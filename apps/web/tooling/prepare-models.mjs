@@ -364,6 +364,8 @@ const atelier = {
   mirror: await image('mirror'),
   tutu: await image('mannequin-tutu'),
   bruceTag: await image('bruce-tag'),
+  tagBlank: await image('tag-blank'),
+  placeholderPainting: await image('placeholder-painting'),
   bruceFrameBlue: await image('bruce-frame-blue'),
   bruceFrameCream: await image('bruce-frame-cream'),
   brucePaintingGarden: await image('bruce-painting-garden'),

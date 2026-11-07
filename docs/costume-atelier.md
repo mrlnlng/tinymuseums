@@ -28,25 +28,32 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 - **Loading.** Going back to the museum shows the same screen titled Tiny Museum.
   The atelier opens on a maroon loading screen: a dress form being sewn, with Kiki's
   bow. It shows for at least 2.8 s, then until the art, the fonts and the visitor's rig are ready.
-- **In the atelier**, left to right: the doorway and "Back to museum", the red
-  curtains, the title on its gilt shelf with the plaque text, the cabinet with the jewellery box
-  and perfume, two bunny portraits; then **The Kiki Collection**: the spotlit form wearing the
-  dress, Kiki's broom, the Jiji portrait, the bow on a blue pillow, and the Kiki painting; then
-  **The Cardigan Collection**: the spotlit form in a cardigan, the otter portrait above a red
-  cushion holding four colour swatches, a mirror, then **The Floral Collection**: two spotlit mannequins, one in the blue dress
-  and one in the dress with its red cardigan, with the flower crown on a cushion between them; then **The Gold
-  Collection**: two spotlit forms, the gold sequin set alone and with its cape; then **The Accessory Collection**:
-  the blue cap, the three hibiscus sharing one cushion, and the daisy clip, each on a column; then
-  **Bruce's Chronicles** (`bruce_mock_scene.png`): the hanging tag under a spotlight, the garden painting in its blue
-  frame, the form in the tutu on a blue platform in flowers, Bruce's portrait over a blue ribbon and a fish, the pond
-  painting, and the fish in a bag on a red cushion. Every headpiece
+- **Rooms.** The fashion area is a row of rooms joined wall to wall, like the hall: the stage
+  builds the ones near the camera and takes the rest down (`scene/atelier-layout.ts`). The
+  **entrance** is mock 7: the doorway and "Back to museum", the red curtains, the title on its
+  gilt shelf with the plaque text, the cabinet with the jewellery box and perfume, and two bunny
+  portraits. Accessories without a room of their own rest in the cabinet's two compartments:
+  the blue cap and the daisy clip (`CONFIG.atelier.cabinetPieces`). Then one room per collection, each laid out exactly like Bruce's booth
+  (`bruce_mock_scene.png`, `ROOM_TEMPLATE`): a painting in the blue frame on the left wall, its
+  name on a hanging tag lit from under the curtain, the form on a blue platform in flowers, a
+  portrait over a ribbon, a painting in the cream frame, and a column with its cushion. A room
+  with two forms stands them 150 px either side of centre and moves its walls out by 140 px,
+  keeping the template's gaps. Each room hangs its own swags from its left wall, so every tag
+  hangs under the curtain the same way. Paintings not yet supplied
+  are a plain canvas (`placeholder-painting.png`). **The Kiki Collection**: the Kiki painting (in
+  its own gilt frame), the dress with Kiki's broom, Jiji, the bow. **The Floral Collection**: the
+  blue dress and the dress with its red cardigan, the otter, the flower crown.
+  **The Gold Collection**: the gold sequin set alone and with its cape, the bunny portrait (no
+  character), the three hibiscus. **Bruce's Chronicles**: the garden and pond paintings, the
+  tutu, Bruce over a blue ribbon and a fish, the fish in a bag. The cardigans
+  have no room now; one already worn or owned is still worn. Every headpiece
   shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
   the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
   the bunny's tilted body for the rigs; headpieces are placed per character in `HEADPIECES` (`prepare-models.mjs`).
 - **Hints.** Near a piece or portrait not yet tried, one pill says what a tap does. A change
   of outfit or character bursts sparkles over the visitor (not with reduced motion).
-- **Trying on.** Tap the dress (or the broom) or the bow. Each jiggles now and then as an
-  invitation. A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
+- **Trying on.** Tap the dress (or the broom) or the bow. A few small stars twinkle over every
+  piece still on its stand and over the portraits (static with reduced motion). A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
   pillow to give it back. Either can be worn alone or both together. The floral dresses use the same try-on/return
   behavior; the flower crown shares the headwear slot with Kiki's bow and can accompany any dress. A swatch puts on that
   colour of cardigan; the form keeps the last colour chosen. A cardigan replaces the dress, and
@@ -75,9 +82,10 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 | `packages/core/src/slots/outfit.ts` | The `outfit` slot: `character`, dress (`costume`), and `bow` as three last-write-wins registers. |
 | `apps/web/src/app/dev/rig` | Development-only rig preview: either character, any costume, facing, walk pose, and the helmet and cup on the hall's anchors. |
 
-Door positions are in `GALLERY_DOOR` (`scene/gallery-door.ts`); room positions are in
-`CONFIG.atelier` (`scene/config.ts`). The atelier's are
-in the mocks' own pixels (198 px per world unit; the bunny is about 270 px tall there), so a
+Door positions are in `GALLERY_DOOR` (`scene/gallery-door.ts`). The rooms and what each
+holds are in `scene/atelier-layout.ts`, and the shared sizes in `CONFIG.atelier`
+(`scene/config.ts`). A one-form room is 1120 px wide, a two-form room 1400 px; positions inside a
+room are offsets from its centre. All are in the mocks' own pixels (198 px per world unit; the bunny is about 270 px tall there), so a
 change to the mock can be copied across directly.
 
 ## Adding a costume
@@ -90,7 +98,7 @@ change to the mock can be copied across directly.
    build its dressed form and its flying bundle, then run `npm run assets:models`.
 3. Add `<id>` to `COSTUMES` in `wardrobe.ts`. The `outfit` slot already accepts any id,
    so no version bump is needed. Saved ids the code does not know are worn as none.
-4. Give it a form in `CONFIG.atelier` and the room. One form per costume, at most one worn
+4. Give it a form in its collection's room in `atelier-layout.ts`, or a new room. One form per costume, at most one worn
    at a time. A form stands bare while its costume is worn.
 
 ## Adding a character
@@ -192,7 +200,7 @@ head attachment.
 ## Bruce's Chronicles
 
 From `costume_atelier_asset_v4`. The booth is the mock drawn at 0.82 of its own pixels around
-the form (`CONFIG.atelier.bruce`). The form, column and platforms keep the room's sizes. The
+the form, and is the template every collection room follows (`ROOM_TEMPLATE`). The form, column and platforms keep the room's sizes. The
 blue ribbon is the pink one dyed. The chandelier in that pack is in no mock, so it is not hung.
 
 **Bruce** is a character (250 coins), from `bruce_costume/rigs/bruce/bruce_v2_rig_tutu.glb`

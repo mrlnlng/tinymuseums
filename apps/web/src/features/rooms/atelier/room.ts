@@ -8,7 +8,8 @@ import { createWardrobe, followOutfit, type Wardrobe } from '@/features/hall/sce
 import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
 import type { AtelierArtwork } from '../art'
-import type { RoomDef } from '../types'
+import type { SpotPainting } from '@tiny/core'
+import type { JoinedRoom, RoomDef } from '../types'
 
 const SPARKLE_TINTS = ['#fbd99a', '#f7a8c4', '#fff4dc']
 
@@ -37,85 +38,100 @@ function sparkle(host: HTMLElement): void {
   window.setTimeout(() => burst.remove(), 1100)
 }
 
-export const atelierRoom: RoomDef<AtelierArtwork> = {
-  id: 'atelier',
-  className: 'atelier',
-  clearColor: '#3a0707',
-  minLoadingMs: 2800,
-  doors: {
-    gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear },
-  },
+/** The fashion area, its frames showing the paintings the owner published to them. */
+export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting>>): RoomDef<AtelierArtwork> {
+  return {
+    id: 'atelier',
+    className: 'atelier',
+    clearColor: '#3a0707',
+    minLoadingMs: 2800,
+    doors: {
+      gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear },
+    },
 
-  build(ctx, { art, door }) {
-    const room = createAtelierRoom(ctx.scene, art, ctx.overlay, door)
-    const outfitSlot = defaultStore().getSlot(outfit)
-    let wardrobe: Wardrobe | null = null
-    const follower = followOutfit(
-      ctx.character,
-      outfitSlot,
-      () => wardrobe?.busy ?? true,
-      () => wardrobe?.reflect(),
-    )
-    wardrobe = createWardrobe({
-      character: ctx.character,
-      room,
-      outfit: outfitSlot,
-      onChange: (change) => { track(change); sparkle(ctx.characterHost) },
-      onMisfit: (item, kind) => room.showMisfit(item, kind),
-      onIdle: follower.sync,
-    })
-    const closet = wardrobe
-    let disposed = false
-    const stopWallet = subscribeWallet(() => {
+    build(ctx, { art, door }) {
+      const room = createAtelierRoom(ctx.scene, art, ctx.overlay, door, spots)
+      const outfitSlot = defaultStore().getSlot(outfit)
+      let wardrobe: Wardrobe | null = null
+      const follower = followOutfit(
+        ctx.character,
+        outfitSlot,
+        () => wardrobe?.busy ?? true,
+        () => wardrobe?.reflect(),
+      )
+      wardrobe = createWardrobe({
+        character: ctx.character,
+        room,
+        outfit: outfitSlot,
+        onChange: (change) => { track(change); sparkle(ctx.characterHost) },
+        onMisfit: (item, kind) => room.showMisfit(item, kind),
+        onIdle: follower.sync,
+      })
+      const closet = wardrobe
+      let disposed = false
+      const stopWallet = subscribeWallet(() => {
+        const snapshot = getWalletSnapshot()
+        room.setOwned(walletReady(snapshot) ? snapshot.items : null)
+      })
       const snapshot = getWalletSnapshot()
       room.setOwned(walletReady(snapshot) ? snapshot.items : null)
-    })
-    const snapshot = getWalletSnapshot()
-    room.setOwned(walletReady(snapshot) ? snapshot.items : null)
 
-    void ctx.character.ready.finally(() => {
-      if (!disposed && !closet.busy) closet.reflect()
-    })
+      void ctx.character.ready.finally(() => {
+        if (!disposed && !closet.busy) closet.reflect()
+      })
 
-    room.setActions({
-      onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
-      onCharacter: (kind) => { if (!ctx.isQuiet()) closet.tapDisplay(kind) },
-      onLeave: () => { if (!ctx.isQuiet()) { track('stairs'); ctx.leave('gallery') } },
-    })
+      // Each collection is its own room, joined wall to wall; the stage builds the ones near the camera.
+      const joinedRooms: JoinedRoom[] = room.rooms.map(({ key, startX, endX }) => ({
+        key,
+        startX,
+        endX,
+        build() {
+          const teardown = room.buildRoom(key)
+          return { hitTest: () => null, update() {}, dispose: teardown }
+        },
+      }))
 
-    return {
-      floor: { kind: 'strip', minX: GALLERY_DOOR.atelierX, maxX: () => CONFIG.atelier.max },
-      presence: { key: 'atelier' },
+      room.setActions({
+        onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
+        onCharacter: (kind) => { if (!ctx.isQuiet()) closet.tapDisplay(kind) },
+        onLeave: () => { if (!ctx.isQuiet()) { track('stairs'); ctx.leave('gallery') } },
+      })
 
-      onShown() {
-        closet.reflect()
-        track('atelier')
-        earn('secret', { feature: 'atelier' })
-      },
+      return {
+        floor: { kind: 'strip', minX: GALLERY_DOOR.atelierX, maxX: () => CONFIG.atelier.max },
+        presence: { key: 'atelier' },
+        joined: () => joinedRooms,
 
-      hitTest(raycaster) {
-        const item = room.hitTestItem(raycaster)
-        if (item) return { activate: () => closet.tapItem(item) }
-        const kind = room.hitTestDisplay(raycaster)
-        if (kind) return { activate: () => closet.tapDisplay(kind) }
-        if (room.hitTestDoor(raycaster)) {
-          return { activate: () => { track('stairs'); ctx.leave('gallery') } }
-        }
-        return null
-      },
+        onShown() {
+          closet.reflect()
+          track('atelier')
+          earn('secret', { feature: 'atelier' })
+        },
 
-      update(frame) {
-        room.update(frame.dt, ctx.traversal.x)
-        room.sync(frame.camera, frame.viewport, !frame.quiet)
-      },
+        hitTest(raycaster) {
+          const item = room.hitTestItem(raycaster)
+          if (item) return { activate: () => closet.tapItem(item) }
+          const kind = room.hitTestDisplay(raycaster)
+          if (kind) return { activate: () => closet.tapDisplay(kind) }
+          if (room.hitTestDoor(raycaster)) {
+            return { activate: () => { track('stairs'); ctx.leave('gallery') } }
+          }
+          return null
+        },
 
-      dispose() {
-        disposed = true
-        stopWallet()
-        follower.dispose()
-        closet.dispose()
-        room.dispose()
-      },
-    }
-  },
+        update(frame) {
+          room.update(frame.dt, ctx.traversal.x)
+          room.sync(frame.camera, frame.viewport, !frame.quiet)
+        },
+
+        dispose() {
+          disposed = true
+          stopWallet()
+          follower.dispose()
+          closet.dispose()
+          room.dispose()
+        },
+      }
+    },
+  }
 }

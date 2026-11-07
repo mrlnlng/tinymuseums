@@ -1,9 +1,13 @@
+import { ATELIER_SPOTS } from './spots.ts'
+
 export type PlacementKind = 'prop' | 'painting' | 'game'
 
 export interface ZoneSpec {
   minX: number
   maxX: number
   accepts: PlacementKind[]
+  /** At most this many placements; a frame holds one painting. */
+  capacity?: number
 }
 
 export interface PropSpec {
@@ -19,7 +23,7 @@ export interface ThemeSpec {
   maxPlacements: number
 }
 
-export type ThemeId = 'hall' | 'cozy'
+export type ThemeId = 'hall' | 'cozy' | 'atelier'
 
 const COZY_WALL_PROPS = [
   ['mirror', 0.9],
@@ -59,6 +63,13 @@ export const THEMES: Record<ThemeId, ThemeSpec> = {
     },
     props: {},
     maxPlacements: 30,
+  },
+  atelier: {
+    id: 'atelier',
+    kind: 'shared',
+    zones: Object.fromEntries(ATELIER_SPOTS.map((spot) => [spot.id, { minX: 0, maxX: 0, accepts: ['painting'], capacity: 1 }])),
+    props: {},
+    maxPlacements: ATELIER_SPOTS.length,
   },
   cozy: {
     id: 'cozy',

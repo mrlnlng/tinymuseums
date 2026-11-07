@@ -7,6 +7,11 @@ import {
   createSession,
   deletePiece,
   destroySession,
+  discardLocation,
+  locationStates,
+  nudgeInRow,
+  placePainting,
+  publishLocation,
   ensureQrToken,
   hashPassword,
   hideGuestNote,
@@ -218,4 +223,66 @@ export async function setBugReportResolvedAction(formData: FormData): Promise<vo
   await setBugReportResolved(String(formData.get('id') ?? ''), resolved)
   revalidatePath('/studio/bugs')
   back('/studio/bugs', resolved ? 'Marked fixed' : 'Reopened')
+}
+
+
+// Placing paintings: the owner chooses a spot for a painting, then publishes each location.
+const PLACE_ERRORS: Record<string, string> = {
+  unknown_painting: 'That painting is not ready to hang yet',
+  zone_full: 'That frame already holds a painting',
+  unknown_spot: 'That spot no longer exists',
+  unknown_location: 'That location no longer exists',
+}
+
+function returnTo(formData: FormData, fallback: string): string {
+  const path = String(formData.get('back') ?? '')
+  return path.startsWith('/studio/') ? path : fallback
+}
+
+/** `target` is `none`, `<location>|end` for a row, or `<location>|<spot>` for a frame. */
+export async function placePaintingAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  const id = String(formData.get('id') ?? '')
+  const target = String(formData.get('target') ?? '')
+  const path = returnTo(formData, '/studio/gallery')
+  const [location, spot] = target.split('|')
+  const states = await locationStates()
+  const state = states.find((s) => s.id === location)
+  if (target !== 'none' && !state) back(path, 'Choose where it should hang', 'bad')
+  const result = await placePainting(
+    id,
+    target === 'none' ? null : state!.kind === 'row' ? { location, after: spot === 'end' ? null : spot } : { location, spot },
+  )
+  if (!result.ok) back(path, PLACE_ERRORS[result.reason] ?? `Could not place it (${result.reason})`, 'bad')
+  revalidatePath('/studio/gallery')
+  revalidatePath('/studio/locations')
+  back(path, target === 'none' ? 'Taken down in the draft. Publish its location to make it live.' : `Placed in ${state!.label} as a draft. Publish it to make it live.`)
+}
+
+export async function nudgeInRowAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  const location = String(formData.get('location') ?? '')
+  const result = await nudgeInRow(location, String(formData.get('id') ?? ''), formData.get('by') === 'up' ? -1 : 1)
+  if (!result.ok) back('/studio/locations', `Could not move it (${result.reason})`, 'bad')
+  revalidatePath('/studio/locations')
+  redirect(`/studio/locations#${location}`)
+}
+
+export async function publishLocationAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  const location = String(formData.get('location') ?? '')
+  const label = (await locationStates()).find((s) => s.id === location)?.label ?? location
+  if (!(await publishLocation(location))) back('/studio/locations', `Could not publish ${label}`, 'bad')
+  revalidatePath('/studio/locations')
+  revalidatePath('/museum', 'layout')
+  back('/studio/locations', `${label} is live`)
+}
+
+export async function discardLocationAction(formData: FormData): Promise<void> {
+  await requireHallOwner()
+  const location = String(formData.get('location') ?? '')
+  const result = await discardLocation(location)
+  if (!result.ok) back('/studio/locations', `Could not discard (${result.reason})`, 'bad')
+  revalidatePath('/studio/locations')
+  back('/studio/locations', 'Back to what is live')
 }

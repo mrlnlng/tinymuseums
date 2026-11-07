@@ -119,6 +119,7 @@ export { STARTER_PROPS, isBuyable } from './economy/catalog.ts'
 export { POND_FISH, issuePondTicket, readPondTicket, type PondFishId } from './economy/pond.ts'
 export * from './rooms/themes.ts'
 export * from './rooms/placements.ts'
+export * from './rooms/spots.ts'
 export {
   canEdit,
   canView,
@@ -134,5 +135,22 @@ export {
   type RoomVisibility,
   type SaveDraftResult,
 } from './domain/rooms.ts'
+export {
+  discardLocation,
+  hasUnpublished,
+  locationStates,
+  nudgeInRow,
+  placePainting,
+  publishLocation,
+  rowPlacements,
+  spotPaintings,
+  whereHung,
+  workingCopy,
+  type LocationState,
+  type PlaceResult,
+  type PlaceTarget,
+  type SpotPainting,
+  type SpotState,
+} from './domain/locations.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

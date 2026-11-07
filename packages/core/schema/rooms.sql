@@ -26,3 +26,8 @@ create unique index if not exists rooms_personal_owner
 insert into rooms (slug, theme, kind)
 values ('hall', 'hall', 'shared')
 on conflict (slug) do nothing;
+
+-- The fashion area's frames, placed from the studio (rooms/spots.ts).
+insert into rooms (slug, theme, kind)
+values ('atelier', 'atelier', 'shared')
+on conflict (slug) do nothing;

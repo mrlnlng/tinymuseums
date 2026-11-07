@@ -2,11 +2,13 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import type { SpotPainting } from '@tiny/core'
 import { AnimatePresence } from 'motion/react'
 import { outfit, restamp } from '@tiny/core/slots'
 import AtelierKeeps from '@/features/hall/components/AtelierKeeps'
 import AtelierLoading from '@/features/hall/components/AtelierLoading'
-import { atelierRoom } from '@/features/rooms/atelier/room'
+import { createAtelierRoomDef } from '@/features/rooms/atelier/room'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { DoorRef } from '@/features/rooms/types'
@@ -14,7 +16,8 @@ import { lookOf, ownedLook, shouldRewriteOutfit } from '@/features/hall/scene/wa
 import { useWallet } from '@/features/economy'
 import { useSlot } from '@/shared/lib/slots'
 
-export default function Atelier() {
+export default function Atelier({ spots }: { spots: Record<string, SpotPainting> }) {
+  const [atelierRoom] = useState(() => createAtelierRoomDef(spots))
   const router = useRouter()
   const wallet = useWallet()
   const [outfitDoc, updateOutfit] = useSlot(outfit)

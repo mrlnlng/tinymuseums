@@ -1,3 +1,5 @@
+import { ATELIER_END_X, ENTRANCE } from './atelier-layout.ts'
+
 export const CONFIG = {
   world: {
     viewHeight: 6.4,
@@ -173,21 +175,22 @@ export const CONFIG = {
     vanishSeconds: 0.35,
   },
 
-  // The room is laid out in the mocks' pixels (7.png, with 8.png continuing it 630 px further
-  // right and 9.png 1553 px further), then mapped to world units around the room entrance.
+  // The fashion area is laid out in the mocks' pixels (7.png's), then mapped to world units
+  // around the room entrance. Its rooms are in atelier-layout.ts.
   atelier: {
     mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
     ceiling: 4.97,
-    max: 28.9,
-    wall: { left: -10, right: 36, tile: 2.2 },
+    max: (ATELIER_END_X - 297) / 198,
+    wall: { left: -10, right: 40, tile: 2.2 },
     carpet: { height: 1.25 },
     curtains: { left: -40, width: 520, z: 0.5 },
-    // The same drape art at the same scale: swags along the ceiling to a drape closing the far
-    // end, mirrored, its right edge on the screen's edge when the camera reaches the end.
-    // widestHalf is half the widest view it allows for; the swags run that far.
-    // Sized and hung as in bruce_mock_scene.png: edge to edge, one starting at startX.
-    curtainSwags: { width: 574, overlap: 14, top: -349, startX: 5225, z: 0.49 },
+    // Swags along the ceiling to a drape closing the far end, mirrored, its right edge on the
+    // screen's edge when the camera reaches the end. widestHalf is half the widest view it
+    // allows for; the swags run that far. Sized and hung as in bruce_mock_scene.png: edge to
+    // edge, each room's starting 195 px in from its left wall.
+    curtainSwags: { width: 574, overlap: 14, top: -349, startX: ENTRANCE.endX + 195, z: 0.49 },
     curtainDrape: { width: 455, widestHalf: 6.5, z: 0.5 },
+    // The entrance, as in 7.png.
     title: { x: 330, y: 147, width: 390 },
     shelf: { x: 330, y: 207, width: 424, z: 0.2 },
     plaque: { x: 320, y: 317, width: 380 },
@@ -197,65 +200,19 @@ export const CONFIG = {
     portraitWink: { x: 651, y: 204, width: 153, z: 0.2 },
     portraitBunny: { x: 650, y: 339, width: 110, z: 0.2 },
     ribbon: { x: 650, y: 415, width: 64, z: 0.21 },
-    collection: { x: 1170, y: 132, width: 170 },
-    // The characters the visitor can become hang in these frames, each showing the bunny
-    // while the visitor is its own character.
-    portraits: [
-      { own: 'cat' as const, image: 'portraitJiji' as const, x: 1169, y: 246, width: 127, z: 0.2 },
-      { own: 'otter' as const, image: 'portraitOtter' as const, x: 2083, y: 262, width: 107, z: 0.2 },
-      { own: 'bruce' as const, image: 'portraitBruce' as const, x: 5738, y: 211, width: 116, z: 0.2, priceY: 372 },
+    // Accessories with no room of their own, one in each of the cabinet's compartments.
+    cabinetPieces: [
+      { id: 'blue-cap', image: 'blueCap', x: 236, y: 598, width: 130, rotation: -0.12, compartment: { x: 236, y: 569, width: 175, height: 145 } },
+      { id: 'daisy-clip', image: 'daisyClip', x: 443, y: 606, width: 85, rotation: -0.15, compartment: { x: 443, y: 569, width: 175, height: 145 } },
     ],
-    // Bruce's booth (bruce_mock_scene.png), drawn at 0.82 of its own pixels around the form.
-    bruce: {
-      tag: { x: 5563, y: -46, width: 406, z: 0.2 },
-      // Its light comes from under the curtain, over the tag.
-      spotlight: { x: 5563, top: -165 },
-      form: { x: 5590, feetY: 610 },
-      platform: { y: 632, width: 276, z: 0.32 },
-      bush: { x: 5610, y: 659, width: 451, z: 0.4 },
-      ribbon: { x: 5741, y: 282, width: 60, z: 0.21 },
-      fish: { x: 5745, y: 306, width: 118, z: 0.21 },
-      frames: [
-        { frame: 'bruceFrameBlue', painting: 'brucePaintingGarden', x: 5219, y: 209, width: 350, fill: 0.73 },
-        { frame: 'bruceFrameCream', painting: 'brucePaintingPond', x: 5926, y: 148, width: 201, fill: 0.68 },
-      ] as const,
-      pillar: { x: 5914, pillow: { y: 433, width: 210 } },
-      fishBag: { x: 5911, y: 352, width: 93, z: 0.36 },
-    },
-    featured: { x: 910 },
-    broom: { x: 987, y: 522, width: 115, z: 0.42 },
-    bowPillar: { x: 1192, pillow: { y: 447, width: 233 }, bow: { x: 1186, y: 383, width: 216 } },
-    painting: { x: 1487, y: 344, width: 381, z: 0.2 },
-    // The cardigan hangs on the first spare form; its colours are swatches on the red cushion.
-    cardigans: { label: { x: 1830, y: 122, width: 320 }, swatches: { x: 2083, y: 412, gap: 54, width: 44 } },
-    floralCollection: { x: 2940, y: 132, width: 340 },
-    floralDisplay: { x: 3250, feetY: 610 },
-    flowerCrown: { x: 2940, y: 405, width: 165, z: 0.36, rotation: -Math.PI / 10 },
-    crownPillar: { x: 2940, pillow: { y: 445, width: 210 } },
-    goldCollection: { x: 3780, y: 132, width: 340 },
-    goldForms: [{ x: 3620, id: 'gold-sequin', image: 'goldSequin' }, { x: 3940, id: 'gold-cape', image: 'goldCape' }] as const,
-    accessoryCollection: { x: 4560, y: 132, width: 380 },
-    // Headpieces on cushions; the three hibiscus share the middle one.
-    accessories: [
-      { x: 4290, pillow: 'pillowRed', pieces: [{ id: 'blue-cap', image: 'blueCap', dx: 0, y: 392, width: 180, rotation: -0.12 }] },
-      {
-        x: 4560, pillow: 'pillowBlue', pieces: [
-          { id: 'hibiscus-blue', image: 'hibiscusBlue', dx: -62, y: 410, width: 78, rotation: 0.2 },
-          { id: 'hibiscus-yellow', image: 'hibiscusYellow', dx: 0, y: 398, width: 78, rotation: 0 },
-          { id: 'hibiscus-pink', image: 'hibiscusPink', dx: 62, y: 410, width: 78, rotation: -0.2 },
-        ],
-      },
-      { x: 4830, pillow: 'pillowRed', pieces: [{ id: 'daisy-clip', image: 'daisyClip', dx: 0, y: 404, width: 120, rotation: -0.15 }] },
-    ] as const,
-    // The cardigan and blue floral dress each have a spotlit form.
-    forms: [{ x: 1830, feetY: 610, platform: true }, { x: 2653, feetY: 610, platform: false }],
-    redPillar: { x: 2083, pillow: { y: 440, width: 210 } },
-    mirror: { x: 2397, y: 340, width: 196, z: 0.2 },
+    // Shared by every collection room.
+    broom: { dx: 77, y: 522, width: 115, z: 0.42 },
+    fishBag: { dx: -3, y: 352, width: 93, z: 0.36 },
+    bush: { dx: 20, y: 659, width: 451, z: 0.4 },
     column: { bottomY: 680, height: 225, z: 0.3 },
     mannequin: { feetY: 610, height: 450, z: 0.35, canvas: { padX: 62, padTop: 45, form: [173, 525] } },
-    platform: { y: 640, width: 330, z: 0.32 },
-    // Drawn 1:1 in 7.png, 8.png and 9.png, its top just above the screen.
-    spotlight: { top: -15, height: 692, z: 0.05 },
+    platformBlue: { y: 632, width: 276, z: 0.32 },
+    spotlight: { height: 692, z: 0.05 },
   },
 
   statue: { minDwellMs: 180 },

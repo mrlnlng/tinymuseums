@@ -239,6 +239,8 @@ export const CONFIG = {
   statue: { minDwellMs: 180 },
   loading: { prefetchAheadUnits: 16, sliceSize: 6 },
   virtualization: { mountRadiusUnits: 9, loadRadiusUnits: 15 },
+  // The hall is a row of rooms joined wall to wall; a gallery room holds paintings up to this width.
+  galleryRoom: { maxWidth: 16 },
 }
 
 export function centerYFor(frustumHeight: number): number {

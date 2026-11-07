@@ -3,6 +3,8 @@ import type * as THREE from 'three'
 /** What the perf readout shows, also readable as `window.__tmPerf.snapshot()`. */
 export interface PerfSnapshot {
   room: string | null
+  /** Where the camera is on the room's floor, in world units. */
+  cameraX: number
   fps: number
   frameMs: { avg: number; worst: number }
   stageMs: { avg: number; worst: number }
@@ -17,7 +19,7 @@ export interface PerfSnapshot {
 }
 
 export interface PerfMeter {
-  frame(frameMs: number, stageMs: number, room: string | null): void
+  frame(frameMs: number, stageMs: number, room: string | null, cameraX: number): void
   rendered(info: THREE.WebGLInfo): void
   opened(room: string, ms: number, warm: boolean, viaDoor: boolean): void
   dispose(): void
@@ -44,6 +46,7 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
   let frames: { at: number; frameMs: number; stageMs: number }[] = []
   let info = { drawCalls: 0, triangles: 0, textures: 0, geometries: 0 }
   let room: string | null = null
+  let camera = 0
   let lastOpen: PerfSnapshot['lastOpen'] = null
 
   function snapshot(): PerfSnapshot {
@@ -55,6 +58,7 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
     const memory = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory
     return {
       room,
+      cameraX: camera,
       fps: frames.length,
       frameMs: { avg: sum('frameMs') / n, worst: worst('frameMs') },
       stageMs: { avg: sum('stageMs') / n, worst: worst('stageMs') },
@@ -82,7 +86,7 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
         ? `${s.lastOpen.room} ${Math.round(s.lastOpen.ms)}ms${s.lastOpen.warm ? ' warm' : ''}${s.lastOpen.viaDoor ? ' door' : ''}`
         : '-'
       panel!.textContent = [
-        `${s.room ?? '-'}  ${s.fps} fps`,
+        `${s.room ?? '-'}  ${s.fps} fps  x ${s.cameraX.toFixed(1)}`,
         `frame ${ms(s.frameMs.avg)} / ${ms(s.frameMs.worst)} ms`,
         `stage ${ms(s.stageMs.avg)} / ${ms(s.stageMs.worst)} ms`,
         `draws ${s.drawCalls}  tris ${s.triangles}`,
@@ -94,8 +98,9 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
   }
 
   return {
-    frame(frameMs, stageMs, current) {
+    frame(frameMs, stageMs, current, cameraX) {
       room = current
+      camera = cameraX
       frames.push({ at: performance.now(), frameMs, stageMs })
       if (frames.length > 240) frames = frames.slice(-120)
     },

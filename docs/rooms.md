@@ -221,3 +221,49 @@ Fixes for `docs/personal-room-issues.md` and `docs/testing/local-e2e-stress-2026
 - The hall arranger has not been checked in a browser locally, because `HALL_OWNER_EMAIL` isn't
   set in `.env`. Its logic is unit-tested, and publishing the hall is covered by `db-tests/rooms.test.ts`.
 - Game placements (`kind: 'game'`) pass validation, but no theme draws them yet.
+
+### Rooms as the one building block (decided 2026-11-06)
+- **Everything is built from rooms, joined in two ways.** A **door** leads to a different place
+  (hall ↔ fashion room, hall ↔ personal room): a change of theme and mood, so it keeps the fade
+  and, on a cold visit, the loading animation. Rooms **joined wall to wall** have no transition
+  at all: the wall and floor run straight through, so a row of joined rooms reads as one long
+  room. The hall is such a row: entrance → gallery 1 … n → cafe (with the guest board and
+  beanbag) → gift shop.
+- **The stage builds the joined rooms near the camera** (`RoomContents.joined()`, `JoinedRoom`,
+  `features/rooms/nearby.ts`). A joined room is built once it is within one view width beyond
+  the edge of the screen and removed beyond two, so walking back and forth at a join doesn't
+  rebuild it. Taps go to the entered room first, then to each joined room; an interaction that
+  returns `false` from `activate` passes the tap on.
+- **The hall's rooms** (`hall/scene/layout.ts` `cutRooms`): gallery rooms hold paintings up to
+  `CONFIG.galleryRoom.maxWidth` (16 units, about 4 paintings) and join in the middle of a gap.
+  Adding paintings only grows the last gallery or adds new ones, so room keys stay stable.
+  What belongs to the whole hall stays with the hall: the painting loader (`HallScene`, which
+  keeps only the slots of built gallery rooms), the coin, pedestals and helmets, the matcha,
+  presence, and the far-hall art. The cafe room builds the cafe, guest board and beanbag.
+- **The wall and floor travel with the camera** (`hall/scene/backdrop.ts`): one wall and one floor
+  three view widths wide, with their textures scrolled the other way so the pattern stays fixed
+  to the world. There is no length limit (the old fixed 600-unit backdrop ended near 170 paintings).
+- **Painting textures are freed when their room goes.** The old radius code took a painting's
+  mesh down at 9 units but only freed its texture past 15 units if the mesh was still up, so
+  every texture leaked until leaving the hall. Walking a 100-painting hall: 112 textures held
+  before, at most 21 now.
+- **Loading ahead of doors** (`features/rooms/art.ts`, `art-cache.ts`): every room's art comes from
+  `ROOM_ART[id]`, never from the room itself, and rooms build from it without disposing it. The
+  stage loads the art behind a door once the visitor is within 1.5 screens of it (and the page
+  behind it through `router.prefetch`), and keeps a room's art for 60 s after leaving. A room
+  whose art was already loaded (`RoomContext.warm`) skips its minimum loading time.
+- **Perf readout**: `?perf` (remembered; `?perf=off` clears it) shows the room, camera x, fps,
+  frame time, the stage's own time per frame, draw calls, textures, geometries, overlay nodes,
+  heap, and how long the last room took to open. `window.__tmPerf.snapshot()` returns the same.
+  In development, `/museum?paintings=100` repeats the local paintings to try a long hall.
+- Kept hall-wide on purpose: helmet stand numbers, the hidden coin and painting progress. All three
+  belong to an epoch (presence joins `hall-e<epoch>`), so their numbers can't shift under anyone,
+  and per-room numbers would need a presence protocol change. One presence channel per hall, so
+  visitors are visible across joins.
+
+Next:
+- [ ] Arranging the hall room by room (replacing the list arranger), once rooms are saved as data.
+- [ ] Split the far-hall art (`loadScenery`) per room, so the cafe and gift shop art loads with its
+  room instead of all at once (worth it only if `?perf` shows that load is heavy).
+- [ ] Optional: `staleTimes.dynamic` so returning to the hall reuses its page for ~30 s
+  (applies to every dynamic page).

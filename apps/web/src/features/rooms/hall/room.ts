@@ -25,6 +25,7 @@ import {
   LobbySigns,
   Placards,
 } from '@/features/hall/scene/overlay'
+import type { HallLayout, HallRoomSpan } from '@/features/hall/scene/layout'
 import { HallScene } from '@/features/hall/scene/scene'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { followOutfit, lookOf, ownedLook } from '@/features/hall/scene/wardrobe'
@@ -32,9 +33,8 @@ import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import type { HallArt } from '../art'
-import type { RoomDef } from '../types'
+import type { Interaction, JoinedContents, JoinedRoom, RoomDef } from '../types'
 
-const BACKDROP_LENGTH = 600
 
 const SCENERY_MAX_WAIT_MS = 5000
 const OPENING_MAX_WAIT_MS = 5000
@@ -97,8 +97,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       let disposed = false
       let presence: Room | null = null
 
-      const backdrop = createBackdrop(scene, assets, BACKDROP_LENGTH)
-      const lobby = createLobby(scene, assets)
+      const backdrop = createBackdrop(scene, assets)
       const hall = new HallScene(scene, assets)
       hall.ingestSlice(options.initialSlice)
       hall.onTextureReady = (texture) => renderer.initTexture(texture)
@@ -113,7 +112,6 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       )
       const stopWallet = subscribeWallet(follower.sync)
       const placards = new Placards(overlayHost)
-      const lobbySigns = new LobbySigns(overlayHost, lobby.marks)
 
       function enterAtelier(): void {
         if (ctx.isQuiet() || traversal.isIntro) return
@@ -121,8 +119,6 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         ctx.sound.play('click')
         ctx.leave('atelier')
       }
-
-      const galleryDoor = createLobbyGalleryDoor(scene, overlayHost, enterAtelier, door, pillar, assets)
 
       const entrance = CONFIG.lobby.startX
       const introStart = entrance - CONFIG.lobby.introWalk
@@ -157,60 +153,204 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       let helm: Helm | null = null
       let matcha: Matcha | null = null
 
-      let giftShop: GiftShop | null = null
-      let giftShopSigns: GiftShopSigns | null = null
-
+      // Built by the cafe room; the hall reads them for presence poses, the matcha and the beanbag.
       let cafe: Cafe | null = null
-      let cafeLink: CafeLink | null = null
-
       let guestBoard: GuestBoard | null = null
-      let guestBoardNotes: GuestBoardNotes | null = null
-      let funZoneSign: FunZoneSign | null = null
-      let comingSoon: ComingSoon | null = null
-      let comingSoonNote: ComingSoonNote | null = null
       let sitting: Sitting | null = null
 
-      const raiseGiftShop = (): void => {
-        const x = hall.layout.giftShopX
-        if (x === null || giftShop || !scenery) return
-        giftShop = createGiftShop(scene, assets, scenery, x)
-        giftShopSigns = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
+      /** Gallery rooms built right now; only their paintings and pedestals are kept. */
+      const builtGalleries = new Set<string>()
+      const near = (x: number): boolean => {
+        const room = hall.layout.rooms.find((r) => x >= r.startX && x < r.endX)
+        return room !== undefined && builtGalleries.has(room.key)
       }
+      const tapWith = (phase: 'hover' | 'tap' | undefined, tap: () => boolean): Interaction | null =>
+        phase === 'tap' && !traversal.isIntro ? { silent: true, activate: tap } : null
 
-      const raiseGuestBoard = (): void => {
-        const x = hall.layout.guestBoardX
-        if (x === null || guestBoard || !scenery) return
-        guestBoard = createGuestBoard(scene, assets, scenery, x)
-        funZoneSign = new FunZoneSign(overlayHost, guestBoard.signMark)
-        sitting = createSitting(
-          scenery,
-          guestBoard,
-          traversal,
-          ctx.character,
-          () => helm,
-          {
-            prepare: () => ctx.sound.prepare('jump'),
-            hop: () => ctx.sound.play('jump'),
+      function entranceRoom(): JoinedContents {
+        const lobby = createLobby(scene, assets)
+        const signs = new LobbySigns(overlayHost, lobby.marks)
+        const galleryDoor = createLobbyGalleryDoor(scene, overlayHost, enterAtelier, door, pillar, assets)
+        function tap(raycaster: THREE.Raycaster): boolean {
+          if (galleryDoor.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
+            enterAtelier()
+            return true
+          }
+          if (lobby.hitTestDoor(raycaster)) {
+            track('leave')
+            ctx.sound.play('click')
+            callbacks().onLeave()
+            return true
+          }
+          if (lobby.hitTestCat(raycaster)) {
+            track('help')
+            earn('secret', { feature: 'help' })
+            ctx.sound.play('click')
+            callbacks().onOpenHelp()
+            return true
+          }
+          return false
+        }
+        return {
+          hitTest: (raycaster, phase) => tapWith(phase, () => tap(raycaster)),
+          update(frame) {
+            signs.sync(frame.camera, frame.viewport)
+            galleryDoor.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
+            lobby.update(frame.dt, traversal.cameraX)
           },
-          { taken: () => presence?.taken('seat') ?? false, claim: (on) => presence?.want('seat', on) },
-        )
-        const layer = options.guestBoardNotes()
-        if (layer) guestBoardNotes = new GuestBoardNotes(layer, guestBoard.mark)
-        callbacks().onGuestBoardHung()
+          dispose() {
+            signs.clear()
+            galleryDoor.dispose()
+            lobby.dispose()
+          },
+        }
       }
 
-      const raiseComingSoon = (): void => {
-        const x = hall.layout.comingSoonX
-        if (x === null || comingSoon || !scenery) return
-        comingSoon = createComingSoon(scene, assets, scenery, x)
-        comingSoonNote = new ComingSoonNote(overlayHost, comingSoon.noteMark)
+      /** A gallery's paintings and pedestals come and go with it through `near`; the last one also holds Coming Soon. */
+      function galleryRoom(key: string): JoinedContents {
+        builtGalleries.add(key)
+        let comingSoon: ComingSoon | null = null
+        let note: ComingSoonNote | null = null
+        return {
+          hitTest: () => null,
+          update(frame) {
+            const x = hall.layout.comingSoonX
+            const span = hall.layout.rooms.find((r) => r.key === key)
+            if (!comingSoon && scenery && x !== null && span && x >= span.startX && x < span.endX) {
+              comingSoon = createComingSoon(scene, assets, scenery, x)
+              note = new ComingSoonNote(overlayHost, comingSoon.noteMark)
+            }
+            note?.sync(frame.camera, frame.viewport)
+          },
+          dispose() {
+            builtGalleries.delete(key)
+            note?.clear()
+            comingSoon?.dispose()
+          },
+        }
       }
 
-      const raiseCafe = (): void => {
-        const x = hall.layout.cafeX
-        if (x === null || cafe || !scenery) return
-        cafe = createCafe(scene, scenery, x)
-        cafeLink = new CafeLink(overlayHost, cafe.marks, CAFE_URL)
+      /** The cafe and the guest board beside it, with the beanbag that goes with the board. */
+      function cafeRoom(): JoinedContents {
+        let link: CafeLink | null = null
+        let sign: FunZoneSign | null = null
+        let notes: GuestBoardNotes | null = null
+        function raise(): void {
+          const cafeX = hall.layout.cafeX
+          const boardX = hall.layout.guestBoardX
+          if (cafe || !scenery || cafeX === null || boardX === null) return
+          cafe = createCafe(scene, scenery, cafeX)
+          link = new CafeLink(overlayHost, cafe.marks, CAFE_URL)
+          guestBoard = createGuestBoard(scene, assets, scenery, boardX)
+          sign = new FunZoneSign(overlayHost, guestBoard.signMark)
+          sitting = createSitting(
+            scenery,
+            guestBoard,
+            traversal,
+            ctx.character,
+            () => helm,
+            {
+              prepare: () => ctx.sound.prepare('jump'),
+              hop: () => ctx.sound.play('jump'),
+            },
+            { taken: () => presence?.taken('seat') ?? false, claim: (on) => presence?.want('seat', on) },
+          )
+          const layer = options.guestBoardNotes()
+          if (layer) notes = new GuestBoardNotes(layer, guestBoard.mark)
+          callbacks().onGuestBoardHung()
+        }
+        function tap(raycaster: THREE.Raycaster): boolean {
+          if (cafe?.hitTestCat(raycaster)) {
+            track('cafe_cat')
+            earn('secret', { feature: 'cafe_cat' })
+            ctx.sound.play('cafe-hello')
+            return true
+          }
+          if (guestBoard?.hitTestDesktop(raycaster)) {
+            track('sketch_open')
+            ctx.sound.play('click')
+            callbacks().onOpenComputer()
+            return true
+          }
+          if (sitting?.tap(raycaster)) {
+            track('beanbag')
+            earn('secret', { feature: 'beanbag' })
+            ctx.sound.play('click')
+            return true
+          }
+          if (guestBoard?.hitTest(raycaster)) {
+            track('guest_board')
+            ctx.sound.play('click')
+            callbacks().onOpenGuestBoard()
+            return true
+          }
+          return false
+        }
+        return {
+          hitTest: (raycaster, phase) => tapWith(phase, () => tap(raycaster)),
+          update(frame) {
+            raise()
+            link?.sync(frame.camera, frame.viewport)
+            notes?.sync(frame.camera, frame.viewport)
+            sign?.sync(frame.camera, frame.viewport)
+            if (cafe) ctx.sound.prepare('cafe-hello')
+            cafe?.update(frame.dt, traversal.cameraX)
+          },
+          dispose() {
+            sitting?.dispose()
+            link?.clear()
+            sign?.clear()
+            notes?.clear()
+            cafe?.dispose()
+            guestBoard?.dispose()
+            cafe = null
+            guestBoard = null
+            sitting = null
+          },
+        }
+      }
+
+      function giftShopRoom(): JoinedContents {
+        let giftShop: GiftShop | null = null
+        let signs: GiftShopSigns | null = null
+        return {
+          hitTest: () => null,
+          update(frame) {
+            const x = hall.layout.giftShopX
+            if (!giftShop && scenery && x !== null) {
+              giftShop = createGiftShop(scene, assets, scenery, x)
+              signs = new GiftShopSigns(overlayHost, giftShop.marks, GIFT_SHOP_URL)
+            }
+            signs?.sync(frame.camera, frame.viewport)
+          },
+          dispose() {
+            signs?.clear()
+            giftShop?.dispose()
+          },
+        }
+      }
+
+      function buildRoom(room: HallRoomSpan): JoinedContents {
+        switch (room.kind) {
+          case 'entrance':
+            return entranceRoom()
+          case 'gallery':
+            return galleryRoom(room.key)
+          case 'cafe':
+            return cafeRoom()
+          case 'giftShop':
+            return giftShopRoom()
+        }
+      }
+
+      // Rebuilt only when the layout changes, as more paintings arrive.
+      let joinedFor: HallLayout | null = null
+      let joinedRooms: JoinedRoom[] = []
+      function joined(): readonly JoinedRoom[] {
+        if (joinedFor === hall.layout) return joinedRooms
+        joinedFor = hall.layout
+        joinedRooms = hall.layout.rooms.map((room) => ({ ...room, build: () => buildRoom(room) }))
+        return joinedRooms
       }
 
       const requestScenery = (): void => {
@@ -273,33 +413,14 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         }).catch(() => {})
       }
 
-      function tap(raycaster: THREE.Raycaster): void {
-        if (galleryDoor.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
-          enterAtelier()
-          return
-        }
-
-        if (lobby.hitTestDoor(raycaster)) {
-          track('leave')
-          ctx.sound.play('click')
-          callbacks().onLeave()
-          return
-        }
-
-        if (lobby.hitTestCat(raycaster)) {
-          track('help')
-          earn('secret', { feature: 'help' })
-          ctx.sound.play('click')
-          callbacks().onOpenHelp()
-          return
-        }
-
+      /** Taps on what belongs to the whole hall: paintings, the coin, pedestals and the matcha. */
+      function tap(raycaster: THREE.Raycaster): boolean {
         if (hall.hitTestCoin(raycaster)) {
           track('coin')
           earn('coin')
           ctx.sound.play('coin')
           callbacks().onFindCoin()
-          return
+          return true
         }
 
         const hit = hall.hitTest(raycaster)
@@ -312,56 +433,30 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
             artistId: hit.mounted.display.artistId,
             pieceId: hit.pieceId,
           })
-          return
+          return true
         }
 
         const pedestal = hall.hitTestPedestal(raycaster)
         if (pedestal && helm?.tap(pedestal)) {
           track('helm')
           earn('secret', { feature: 'helm' })
-          return
+          return true
         }
         if (pedestal?.voice) {
           track('statue')
           earn('secret', { feature: 'statue' })
           ctx.sound.play(pedestal.voice)
           pedestal.chime()
-          return
+          return true
         }
 
         if (matcha?.tap(raycaster)) {
           track('matcha')
           earn('secret', { feature: 'matcha' })
           ctx.sound.play('click')
-          return
+          return true
         }
-
-        if (cafe?.hitTestCat(raycaster)) {
-          track('cafe_cat')
-          earn('secret', { feature: 'cafe_cat' })
-          ctx.sound.play('cafe-hello')
-          return
-        }
-
-        if (guestBoard?.hitTestDesktop(raycaster)) {
-          track('sketch_open')
-          ctx.sound.play('click')
-          callbacks().onOpenComputer()
-          return
-        }
-
-        if (sitting?.tap(raycaster)) {
-          track('beanbag')
-          earn('secret', { feature: 'beanbag' })
-          ctx.sound.play('click')
-          return
-        }
-
-        if (guestBoard?.hitTest(raycaster)) {
-          track('guest_board')
-          ctx.sound.play('click')
-          callbacks().onOpenGuestBoard()
-        }
+        return false
       }
 
       let restX: number | null = null
@@ -409,10 +504,9 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           if (hit) loadArtistPieces(hit.mounted.display.slug).catch(() => {})
         },
 
-        hitTest(raycaster, phase) {
-          if (phase !== 'tap' || traversal.isIntro) return null
-          return { silent: true, activate: () => tap(raycaster) }
-        },
+        hitTest: (raycaster, phase) => tapWith(phase, () => tap(raycaster)),
+
+        joined,
 
         beforeCharacterUpdate(frame) {
           if (restX === null && !traversal.isIntro) {
@@ -430,28 +524,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           helm?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
           matcha?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
 
-          hall.update(frame.now, frame.dt, traversal.cameraX)
+          backdrop.update(traversal.cameraX, ctx.rig.viewWidth)
+          hall.update(frame.now, frame.dt, traversal.cameraX, near)
           if (!ctx.isQuiet()) hall.releaseCoin()
-          raiseGiftShop()
-          raiseGuestBoard()
-          raiseCafe()
-          raiseComingSoon()
           placards.sync(hall.getMounted(), frame.camera, frame.viewport)
-          lobbySigns.sync(frame.camera, frame.viewport)
-          galleryDoor.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
-          giftShopSigns?.sync(frame.camera, frame.viewport)
-          cafeLink?.sync(frame.camera, frame.viewport)
-          guestBoardNotes?.sync(frame.camera, frame.viewport)
-          funZoneSign?.sync(frame.camera, frame.viewport)
-          comingSoonNote?.sync(frame.camera, frame.viewport)
-
-          lobby.update(frame.dt, traversal.cameraX)
-          const cafeX = hall.layout.cafeX
-          const nearCafe =
-            cafeX !== null && Math.abs(cafeX - traversal.cameraX) < CONFIG.virtualization.loadRadiusUnits
-          if (nearCafe) ctx.sound.prepare('cafe-hello')
           for (const voice of hall.nearbyVoices()) ctx.sound.prepare(voice)
-          cafe?.update(frame.dt, traversal.cameraX)
 
           if (hall.needsMore(traversal.cameraX)) void fetchNextSlice()
           if (frame.now - lastViewCheck >= VIEW_CHECK_MS) {
@@ -467,20 +544,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           stopWallet()
           follower.dispose()
           placards.clear()
-          lobbySigns.clear()
-          giftShopSigns?.clear()
-          cafeLink?.clear()
-          guestBoardNotes?.clear()
-          funZoneSign?.clear()
-          comingSoonNote?.clear()
           hall.dispose()
-          lobby.dispose()
-          galleryDoor.dispose()
-          giftShop?.dispose()
-          sitting?.dispose()
-          guestBoard?.dispose()
-          cafe?.dispose()
-          comingSoon?.dispose()
           backdrop.dispose()
           helm?.dispose()
           matcha?.dispose()

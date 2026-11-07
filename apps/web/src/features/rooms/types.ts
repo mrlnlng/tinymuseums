@@ -33,7 +33,8 @@ export type Floor = StripFloor
 export type Arrival = { kind: 'door'; door: string } | { kind: 'opening' }
 
 export interface Interaction {
-  activate(): void
+  /** Returning false means the tap wasn't this room's after all, so the stage asks the next one. */
+  activate(): void | boolean
   /** A room that plays its own tap sounds sets this, so the stage does not add a click. */
   silent?: boolean
 }
@@ -87,7 +88,24 @@ export interface RoomContents {
   update(frame: Frame): void
   /** Lifts or lowers the camera from the room's usual framing, in world units. */
   cameraRise?(): number
+  /** Rooms joined to this one wall to wall; the stage builds those near the camera and removes the rest. */
+  joined?(): readonly JoinedRoom[]
   dispose(): void
+}
+
+/** What a joined room builds: its own things, on the floor and in the presence of the room it joins. */
+export type JoinedContents = Pick<RoomContents, 'hitTest' | 'update' | 'dispose'> &
+  Partial<Pick<RoomContents, 'pointerDown' | 'beforeCharacterUpdate'>>
+
+/**
+ * A room joined wall to wall to the room the visitor entered: no door and no transition, so a row
+ * of joined rooms reads as one long room. Doors, by contrast, lead to a different place.
+ */
+export interface JoinedRoom {
+  key: string
+  startX: number
+  endX: number
+  build(ctx: RoomContext): JoinedContents
 }
 
 /** A room's art comes from `ROOM_ART[id]` in `art.ts`, so the stage can load it ahead of the room. */

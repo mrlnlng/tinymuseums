@@ -15,8 +15,9 @@ import { defaultStore } from '@/shared/lib/slots'
 import { ROOM_ART, type RoomArt } from './art'
 import { createArtCache } from './art-cache'
 import { linkedDoor } from './links'
+import { createNearby, type Nearby } from './nearby'
 import { createPerfMeter } from './perf'
-import type { Arrival, DoorRef, Frame, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
+import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
@@ -30,6 +31,8 @@ const PREFETCH_SCREENS = 1.5
 /** Wait this long after a room shows before loading the next one, so it doesn't compete with this room's own loading. */
 const PREFETCH_AFTER_READY_MS = 1500
 const PREFETCH_CHECK_MS = 250
+/** Joined rooms are built within one view width beyond the screen's edge and removed beyond two. */
+const JOINED_REACH = { loadScreens: 1, unloadScreens: 2 }
 
 export interface StageHosts {
   canvas: HTMLElement
@@ -69,6 +72,9 @@ interface Entry {
   readyAt: number
   scene: THREE.Scene | null
   contents: RoomContents | null
+  ctx: RoomContext | null
+  joined: Map<string, JoinedContents>
+  nearby: Nearby
   presence: Room | null
   holdsArt: boolean
   warm: boolean
@@ -115,6 +121,26 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
   })
   initPromise.catch(() => {})
 
+  /** The entered room and the joined rooms built around it, in that order. */
+  function partsOf(entry: Entry | null): (RoomContents | JoinedContents)[] {
+    if (!entry?.contents) return []
+    return [entry.contents, ...entry.joined.values()]
+  }
+
+  function syncJoined(entry: Entry, cameraX: number, viewWidth: number): void {
+    const rooms = entry.contents?.joined?.()
+    if (!rooms || !entry.ctx) return
+    entry.nearby.update(rooms, cameraX, viewWidth)
+    for (const [key, joined] of entry.joined) {
+      if (entry.nearby.isLoaded(key)) continue
+      joined.dispose()
+      entry.joined.delete(key)
+    }
+    for (const room of rooms) {
+      if (entry.nearby.isLoaded(room.key) && !entry.joined.has(room.key)) entry.joined.set(room.key, room.build(entry.ctx))
+    }
+  }
+
   function isCurrent(entry: Entry): boolean {
     return !isDisposed && current === entry && !entry.disposed
   }
@@ -131,7 +157,10 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
   function closeEntry(entry: Entry): void {
     if (entry.disposed) return
     entry.disposed = true
+    for (const joined of entry.joined.values()) joined.dispose()
+    entry.joined.clear()
     entry.contents?.dispose()
+    entry.ctx = null
     if (entry.holdsArt) {
       artCache.release(entry.room.id)
       entry.holdsArt = false
@@ -217,6 +246,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     }
 
     try {
+      entry.ctx = ctx
       entry.contents = entry.room.build(ctx, art)
     } catch (error) {
       if (isCurrent(entry)) {
@@ -238,6 +268,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       readyAt: Infinity,
       scene: null,
       contents: null,
+      ctx: null,
+      joined: new Map(),
+      nearby: createNearby(JOINED_REACH),
       presence: null,
       holdsArt: false,
       warm: false,
@@ -344,7 +377,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       pressY = event.clientY
       pressedAt = performance.now()
       aim(event)
-      current?.contents?.pointerDown?.(raycaster)
+      for (const part of partsOf(current)) part.pointerDown?.(raycaster)
     }
 
     function handlePointerUp(event: PointerEvent): void {
@@ -357,22 +390,23 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       if (!isTap) return
       isTap = false
       aim(event)
-      const contents = current?.contents
-      if (!contents) return
+      const parts = partsOf(current)
+      if (parts.length === 0) return
       // A tap on the character itself jumps, ahead of whatever stands behind it.
       const rect = renderer.domElement.getBoundingClientRect()
       if (character.isUnder(event.clientX - rect.left, event.clientY - rect.top) && traversal.jump()) return
-      const interaction = contents.hitTest(raycaster, 'tap')
-      if (!interaction) return
-      if (!interaction.silent) sound().play('click')
-      interaction.activate()
+      for (const part of parts) {
+        const interaction = part.hitTest(raycaster, 'tap')
+        if (!interaction) continue
+        if (!interaction.silent) sound().play('click')
+        if (interaction.activate() !== false) return
+      }
     }
 
     function handlePointerMove(event: PointerEvent): void {
       if (event.pointerType !== 'mouse' || event.buttons !== 0) return
       aim(event)
-      const contents = current?.contents
-      const live = !isQuiet() && contents !== null && contents !== undefined && contents.hitTest(raycaster) !== null
+      const live = !isQuiet() && partsOf(current).some((part) => part.hitTest(raycaster) !== null)
       renderer.domElement.style.cursor = live ? 'pointer' : ''
     }
 
@@ -416,7 +450,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       try {
         drawFrame(now, entry)
       } finally {
-        perf.frame(frameMs, performance.now() - now, entry?.ready ? entry.room.id : null)
+        perf.frame(frameMs, performance.now() - now, entry?.ready ? entry.room.id : null, traversal.cameraX)
       }
     }
 
@@ -474,8 +508,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
 
       passage.update(dt)
       rig.sync(traversal.cameraX, entry.contents.cameraRise?.() ?? 0)
+      syncJoined(entry, traversal.cameraX, rig.viewWidth)
       const frame: Frame = { now, dt, camera: rig.camera, viewport, quiet: isQuiet(entry) }
-      entry.contents.beforeCharacterUpdate?.(frame)
+      for (const part of partsOf(entry)) part.beforeCharacterUpdate?.(frame)
       if (traversal.takeJump()) {
         sound().prepare('jump')
         sound().play('jump')
@@ -490,7 +525,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         traversal.jumpPose,
       )
       entry.presence?.update(dt, rig.camera, viewport)
-      entry.contents.update(frame)
+      for (const part of partsOf(entry)) part.update(frame)
       sound().setWalking(!traversal.isAirborne && Math.abs(traversal.walkVelocity) > WALKING_SPEED)
       entry.frameCount += 1
       const idle = entry.handlers.isSuspended() || traversal.idleSeconds > QUIET_AFTER_SECONDS

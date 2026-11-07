@@ -46,6 +46,15 @@ interface MuseumProps {
   arrival: 'door' | 'stairs'
 }
 
+/** Development only: `?paintings=100` repeats the hall's paintings to try out a long hall. */
+function stretchedForTesting(slice: HallSliceDto): HallSliceDto {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined' || slice.slots.length === 0) return slice
+  const count = Number(new URLSearchParams(window.location.search).get('paintings'))
+  if (!Number.isInteger(count) || count <= slice.slots.length || count > 1000) return slice
+  const slots = Array.from({ length: count }, (_, index) => ({ ...slice.slots[index % slice.slots.length], index }))
+  return { ...slice, slots, nextIndex: null, totalSlots: count }
+}
+
 export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const guestBoardNotesRef = useRef<HTMLDivElement>(null)
 
@@ -121,7 +130,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
 
   const [hallRoom] = useState(() =>
     createHallRoom({
-      initialSlice,
+      initialSlice: stretchedForTesting(initialSlice),
       guestBoardNotes: () => guestBoardNotesRef.current,
       callbacks: () => callbacksRef.current,
     }),

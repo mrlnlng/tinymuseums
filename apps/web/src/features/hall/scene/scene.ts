@@ -122,8 +122,8 @@ export class HallScene {
     return visitorX > lastCenter - CONFIG.loading.prefetchAheadUnits
   }
 
-  update(now: number, dt: number, cameraX: number): void {
-    const { mountRadiusUnits, loadRadiusUnits } = CONFIG.virtualization
+  /** `near` says whether the gallery room holding a point is built; only its slots are kept. */
+  update(now: number, dt: number, cameraX: number, near: (x: number) => boolean): void {
     const wanted: { slot: SlotRuntime; distance: number }[] = []
     let mountedThisFrame = false
 
@@ -133,14 +133,15 @@ export class HallScene {
 
       const distance = Math.abs(centerX - cameraX)
 
-      if (distance > loadRadiusUnits) {
-        // An exhausted slot is reset too, so walking back gives it fresh attempts.
-        if (this.mounted.has(slot.index) || slot.status === 'error') this.unmount(slot.index)
+      if (!near(centerX)) {
+        // A texture that loaded but never went up is freed too, and an exhausted slot is reset so
+        // walking back gives it fresh attempts. A load still in flight is freed once it lands.
+        if (this.mounted.has(slot.index) || slot.status === 'ready' || slot.status === 'error') this.unmount(slot.index)
         continue
       }
 
       const mounted = this.mounted.get(slot.index)
-      if (distance <= mountRadiusUnits && slot.status !== 'ready' && !mounted && slot.piece.image.thumbhash) {
+      if (slot.status !== 'ready' && !mounted && slot.piece.image.thumbhash) {
         if (!mountedThisFrame) {
           this.mount(slot)
           mountedThisFrame = true
@@ -162,10 +163,6 @@ export class HallScene {
         continue
       }
 
-      if (distance > mountRadiusUnits) {
-        if (this.mounted.has(slot.index)) this.unmountMesh(slot.index)
-        continue
-      }
       if (slot.inRangeAt === undefined) slot.inRangeAt = now
 
       if (slot.status === 'ready' && !this.mounted.has(slot.index)) {
@@ -185,7 +182,7 @@ export class HallScene {
     }
 
     this.updateFades(now)
-    this.updatePedestals(dt, cameraX)
+    this.updatePedestals(dt, near)
     this.coin.update(dt)
   }
 
@@ -309,13 +306,9 @@ export class HallScene {
     this.mountedList = [...this.mounted.values()]
   }
 
-  private updatePedestals(dt: number, cameraX: number): void {
-    const { mountRadiusUnits } = CONFIG.virtualization
-
+  private updatePedestals(dt: number, near: (x: number) => boolean): void {
     for (let i = 0; i < this.layout.pedestalX.length; i++) {
-      const distance = Math.abs(this.layout.pedestalX[i] - cameraX)
-
-      if (distance > mountRadiusUnits) {
+      if (!near(this.layout.pedestalX[i])) {
         if (this.pedestals.has(i)) this.removePedestal(i)
         continue
       }

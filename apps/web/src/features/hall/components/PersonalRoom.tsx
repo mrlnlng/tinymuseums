@@ -68,7 +68,6 @@ interface Puff {
 
 const COZY = THEMES.cozy
 const SEEN_KEY = 'tm:room:seen'
-const DECORATED_KEY = 'tm:room:decorated'
 const HISTORY_LIMIT = 40
 const DRAG_START_PX = 6
 const MAX_TILT = 0.2
@@ -141,7 +140,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   const [puffs, setPuffs] = useState<Puff[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
-  const [isHintShown, setIsHintShown] = useState(false)
   const [offscreen, setOffscreen] = useState({ left: 0, right: 0 })
 
   const draftRef = useRef<Placement[]>(draft)
@@ -171,8 +169,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
 
   useEffect(() => {
     setSeen(readSeen())
-    setIsHintShown(canEdit && readLocal(DECORATED_KEY) !== '1')
-  }, [canEdit])
+  }, [])
 
   useEffect(
     () => () => {
@@ -525,7 +522,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     isEditingRef.current = true
     setNotice(null)
     setSaveState('saved')
-    setIsHintShown(false)
     setIsEditing(true)
     loadedRef.current = false
     let body: unknown
@@ -615,7 +611,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     }
     publishedRef.current = next
     savedRef.current = next
-    writeLocal(DECORATED_KEY, '1')
     setSaving(false)
     leaveEdit()
     controller.setPlacements(next)
@@ -894,7 +889,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     <>
       {canEdit && isReady && !isEditing ? (
         <div className="decor-enter-wrap">
-          {isHintShown ? <p className="decor-hint">Make it yours! Tap to decorate</p> : null}
           <button type="button" className="button decor-enter" onClick={() => void enterEdit()}>
             <span aria-hidden="true">{'✦'}</span> Decorate
           </button>

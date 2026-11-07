@@ -50,8 +50,9 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
   the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
   the bunny's tilted body for the rigs; headpieces are placed per character in `HEADPIECES` (`prepare-models.mjs`).
-- **Hints.** Near a piece or portrait not yet tried, one pill says what a tap does. A change
-  of outfit or character bursts sparkles over the visitor (not with reduced motion).
+- **Exploring.** Nothing tells the visitor what to tap; the twinkling stars over each piece and
+  portrait are the only invitation. A change of outfit or character bursts sparkles over the
+  visitor (not with reduced motion).
 - **Trying on.** Tap the dress (or the broom) or the bow. A few small stars twinkle over every
   piece still on its stand and over the portraits (static with reduced motion). A worn piece leaves its stand bare, as in 9.png; tap the bare form or the empty
   pillow to give it back. Either can be worn alone or both together. The floral dresses use the same try-on/return
@@ -229,3 +230,11 @@ Deliberate differences: the doorway and "Back to museum" in place of 7.png's sta
 and "Back to first floor"; the price tags and hints; and the collections added after these
 mocks (cardigan swatches, the otter portrait where 9.png has the bunny, floral, gold and
 accessories).
+
+## Price tags
+
+A piece the visitor does not own yet wears a shop price tag: a small upright card with clipped
+top corners, a reinforced hole, the florin coin and the price, hanging on a string loop tied at
+a dress's side, a headpiece's edge, or a portrait's lower corner, and swaying a little
+(`scene/hang-tag.ts`; still with reduced motion). Tags are drawn into the scene, not the page,
+so the visitor walks in front of them.

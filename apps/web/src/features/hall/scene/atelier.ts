@@ -1,11 +1,11 @@
 import * as THREE from 'three'
 import manifest from '@/generated/asset-manifest.json'
 import { FREE_CHARACTERS, itemIdFor, priceOf } from '@tiny/core/economy'
-import { florinLabel } from '@/features/economy/lib/claim'
 import { builtUrl } from '@/shared/lib/assets'
 import { plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
 import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
+import { createHangTag, type HangTag, type HangTagStyle } from './hang-tag'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { SpotPainting } from '@tiny/core'
@@ -125,8 +125,8 @@ interface Piece {
   /** What a tap on the empty stand hits, to give the piece back. */
   bare: Painted[]
   button: HTMLButtonElement
-  hint: { x: number; y: number }
-  hintText(available: boolean): string
+  /** Where a note about the piece shows, in mock px. */
+  at: { x: number; y: number }
   target: number
   shown: number
 }
@@ -160,7 +160,16 @@ export function createAtelierRoom(
 ): AtelierRoom {
   const shell = new THREE.Group()
   scene.add(shell)
-  const tap = window.matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click'
+  // Price tags are drawn into the scene in the buttons' font, with the florin coin.
+  const liveTags = new Set<HangTag>()
+  let swayClock = 0
+  const coin = new Image()
+  coin.crossOrigin = 'anonymous'
+  const tagStyle: HangTagStyle = { font: getComputedStyle(host).getPropertyValue('--font-button').trim() || 'sans-serif', coin }
+  const redrawTags = () => { for (const tag of liveTags) tag.redraw() }
+  coin.addEventListener('load', redrawTags)
+  coin.src = builtUrl(manifest.images['coin-large'].x2.src)
+  void document.fonts?.load(`30px ${tagStyle.font}`).then(redrawTags, () => {})
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   /** A picture by its centre and width in mock px. */
@@ -274,12 +283,6 @@ export function createAtelierRoom(
   const noteSpot = place(note, { x: 0, y: 0, width: 260 }, 0.075).mark
   let noteFor = 0
 
-  // One hint, by the nearest piece the visitor has not tried yet.
-  const hint = document.createElement('p')
-  hint.className = 'atelier-hint'
-  hint.setAttribute('aria-hidden', 'true')
-  const hintSpot = place(hint, { x: 0, y: 0, width: 300 }, 0.085).mark
-  const tried = new Set<string>()
 
   // What the visitor wears, owns and is; each room reads these when it is built.
   let worn: string | null = null
@@ -297,7 +300,8 @@ export function createAtelierRoom(
     const pieces: Piece[] = []
     const displays: Display[] = []
     const glints: BuiltRoom['glints'] = []
-    const priceTags: { node: HTMLDivElement; label: HTMLSpanElement; item: () => string }[] = []
+    const priceTags: { tag: HangTag; item: () => string }[] = []
+    const cleanup: (() => void)[] = []
 
     function button(label: string, className: string, spot: Spot, click: () => void): HTMLButtonElement {
       const node = document.createElement('button')
@@ -308,18 +312,14 @@ export function createAtelierRoom(
       own(spot, node, 0.09)
       return node
     }
-    function priceTag(item: () => string, spot: Spot): void {
-      const node = document.createElement('div')
-      node.className = 'atelier-price'
-      node.hidden = true
-      const icon = document.createElement('img')
-      icon.className = 'atelier-price-coin'
-      icon.alt = ''
-      icon.src = builtUrl(manifest.images['coin-large'].x2.src)
-      const label = document.createElement('span')
-      node.append(icon, label)
-      own(spot, node, 0.062)
-      priceTags.push({ node, label, item })
+    /** A price tag hanging from the piece by its string, tied at `knot` (mock px). */
+    function priceTag(item: () => string, knot: { x: number; y: number }): void {
+      const tag = createHangTag(tagStyle, { x: wx(knot.x), y: wy(knot.y) }, units(23), 0.45)
+      tag.setVisible(false)
+      group.add(tag.pivot)
+      liveTags.add(tag)
+      cleanup.push(() => { liveTags.delete(tag); tag.dispose() })
+      priceTags.push({ tag, item })
     }
     // A few small stars twinkle over each piece still on its stand, and over each portrait.
     function glint(spot: Spot, aspect: number, shown: () => boolean): void {
@@ -341,7 +341,7 @@ export function createAtelierRoom(
     }
 
     /** A headpiece resting on a cushion or a shelf; tapping where it lay gives it back. */
-    function headpiece(spot: { id: string; image: string; y: number; width: number; rotation: number }, x: number, stand: Painted[], standName: string): void {
+    function headpiece(spot: { id: string; image: string; y: number; width: number; rotation: number }, x: number, stand: Painted[]): void {
       const mesh = picture(group, spot.image as AtelierImage, { x, y: spot.y, width: spot.width, z: 0.36 })
       mesh.rotation.z = spot.rotation
       const item: ClothingItem = { slot: 'bow', id: spot.id }
@@ -352,13 +352,12 @@ export function createAtelierRoom(
         meshes: [mesh],
         bare: [...stand, mesh],
         button: node,
-        hint: { x, y: spot.y - 70 },
-        hintText: (available) => available ? `${tap} to try on ${itemName(item).toLowerCase()}` : `${tap} the ${standName} to give it back`,
+        at: { x, y: spot.y - 70 },
         target: 1,
         shown: 1,
       }
       pieces.push(piece)
-      priceTag(() => itemIdFor('bow', spot.id), { x, y: spot.y + 58, width: 125 })
+      priceTag(() => itemIdFor('bow', spot.id), { x: x + spot.width * 0.28, y: spot.y + 8 })
       glint({ x, y: spot.y, width: Math.max(90, spot.width) }, 1.6, () => piece.target > 0)
     }
 
@@ -378,12 +377,12 @@ export function createAtelierRoom(
         const id = tag.item()
         const price = priceOf(id)
         const show = owned !== null && price !== null && !owned.has(id)
-        tag.node.hidden = !show
-        if (show && price !== null) tag.label.textContent = florinLabel(price)
+        tag.tag.setVisible(show)
+        if (show && price !== null) tag.tag.setLabel(String(price))
       }
     }
 
-    return { pieces, displays, button, priceTag, glint, headpiece, built: (): BuiltRoom => ({ pieces, displays, glints, refresh }) }
+    return { pieces, displays, button, priceTag, glint, headpiece, built: (): BuiltRoom => ({ pieces, displays, glints, refresh, dispose: () => { for (const fn of cleanup) fn() } }) }
   }
 
   function buildEntrance(group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void): BuiltRoom {
@@ -408,7 +407,7 @@ export function createAtelierRoom(
       ) as Painted
       hollow.position.set(wx(compartment.x), wy(compartment.y), 0.255)
       group.add(hollow)
-      kit.headpiece(spot, spot.x, [hollow], 'cabinet')
+      kit.headpiece(spot, spot.x, [hollow])
     }
     return kit.built()
   }
@@ -511,13 +510,12 @@ export function createAtelierRoom(
         meshes,
         bare: [bare],
         button: node,
-        hint: { x, y: 150 },
-        hintText: (available) => available ? `${tap} to try on ${itemName(item).toLowerCase()}` : `${tap} the form to give it back`,
+        at: { x, y: 150 },
         target: 1,
         shown: 1,
       }
       pieces.push(piece)
-      priceTag(() => itemIdFor('costume', item.id), { x, y: 290, width: 150 })
+      priceTag(() => itemIdFor('costume', item.id), { x: x + 50, y: 262 })
       glint({ x, y: 300, width: 210 }, 0.95, () => piece.target > 0)
     }
     const formDx = collection.forms.length === 2 ? T.pair.formDx : 0
@@ -527,7 +525,7 @@ export function createAtelierRoom(
     const pillarX = C + T.pillar.dx + out
     standing(group, 'column', pillarX, atelier.column.bottomY, atelier.column.height, atelier.column.z)
     const pillow = picture(group, pillar.pillow.image, { x: pillarX, y: pillar.pillow.y, width: pillar.pillow.width, z: 0.34 })
-    for (const spot of pillar.pieces) kit.headpiece(spot, pillarX + spot.dx, [pillow], 'cushion')
+    for (const spot of pillar.pieces) kit.headpiece(spot, pillarX + spot.dx, [pillow])
     if (pillar.fishBag) picture(group, 'fishBag', { ...atelier.fishBag, x: pillarX + atelier.fishBag.dx })
 
     const portrait = collection.portrait
@@ -553,16 +551,18 @@ export function createAtelierRoom(
       }
       displays.push(display)
       if (!(FREE_CHARACTERS as readonly string[]).includes(kind)) {
-        priceTag(() => itemIdFor('character', kind), { x: portraitSpot.x, y: portraitSpot.y + (collection.fish ? 161 : 105), width: 120 })
+        priceTag(() => itemIdFor('character', kind), { x: portraitSpot.x + portrait.width * 0.38, y: portraitSpot.y + portrait.width * 0.4 })
       }
       glint(portraitSpot, 1, () => true)
     }
 
+    const contents = kit.built()
     return {
-      ...kit.built(),
+      ...contents,
       dispose() {
         alive = false
         for (const texture of loaded) texture.dispose()
+        contents.dispose?.()
       },
     }
   }
@@ -635,11 +635,6 @@ export function createAtelierRoom(
     },
 
     setWorn(costume, bowId) {
-      if (reflected) {
-        for (const piece of allPieces()) {
-          if (piece.wornBy(worn, wornBow) !== piece.wornBy(costume, bowId)) tried.add(piece.item().id)
-        }
-      }
       worn = costume
       wornBow = bowId
       refreshAll()
@@ -649,7 +644,6 @@ export function createAtelierRoom(
     },
 
     setVisitor(kind) {
-      if (visitorKind && visitorKind !== kind) tried.add('portraits')
       visitorKind = kind
       refreshAll()
     },
@@ -658,8 +652,8 @@ export function createAtelierRoom(
       note.textContent = `${itemName(item)} doesn't fit ${CHARACTER_NAMES[kind]} yet`
       const piece = allPieces().find((p) => p.item().id === item.id)
       if (piece) {
-        noteSpot.x = wx(piece.hint.x)
-        noteSpot.y = wy(piece.hint.y + 80)
+        noteSpot.x = wx(piece.at.x)
+        noteSpot.y = wy(piece.at.y + 80)
       }
       noteFor = 2.6
     },
@@ -684,6 +678,11 @@ export function createAtelierRoom(
     },
 
     update(dt, visitorX) {
+      // Price tags sway a little on their strings.
+      swayClock += dt
+      if (!reducedMotion) {
+        for (const tag of liveTags) tag.pivot.rotation.z = 0.035 * Math.sin(swayClock * 1.2 + tag.pivot.position.x * 1.7)
+      }
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
       const pieces = allPieces()
@@ -697,28 +696,6 @@ export function createAtelierRoom(
       for (const room of built.values()) for (const glint of room.glints) glint.node.hidden = !glint.shown()
       noteFor = Math.max(0, noteFor - dt)
 
-      let text = ''
-      let best = Infinity
-      for (const piece of pieces) {
-        const distance = Math.abs(visitorX - wx(piece.hint.x))
-        if (tried.has(piece.item().id) || distance > 1.25 || distance >= best) continue
-        best = distance
-        text = piece.hintText(piece.target > 0)
-        hintSpot.x = wx(piece.hint.x)
-        hintSpot.y = wy(piece.hint.y)
-      }
-      if (!tried.has('portraits')) {
-        for (const display of allDisplays()) {
-          const distance = Math.abs(visitorX - wx(display.spot.x))
-          if (distance > 1.1 || distance >= best) continue
-          best = distance
-          text = `${tap} to walk as ${CHARACTER_NAMES[display.offered]}`
-          hintSpot.x = wx(display.spot.x)
-          hintSpot.y = wy(display.spot.y - 72)
-        }
-      }
-      if (text) hint.textContent = text
-      hint.style.setProperty('--show', text && noteFor <= 0 ? '1' : '0')
       note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
 
       // A portrait hops as the visitor comes near, an invitation to step into it.

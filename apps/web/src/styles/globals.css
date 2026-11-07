@@ -2731,23 +2731,6 @@ form > .account-switch {
 .atelier-swatch-cardigan-forest-green { --swatch: #269648; }
 .atelier-swatch-cardigan-navy-blue { --swatch: #2442a8; }
 .atelier-swatch-cardigan-butter-yellow { --swatch: #fac034; }
-.atelier-hint {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin: 0;
-  padding: 0.4em 0.75em;
-  border-radius: 999px;
-  background: rgb(58 7 7 / 0.82);
-  border: 1px solid #c8954f;
-  color: #fbd99a;
-  font-family: var(--font-button);
-  text-align: center;
-  line-height: 1.25;
-  opacity: var(--show, 0) !important;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
 .atelier-sparkle {
   position: absolute;
   z-index: 5;
@@ -3204,30 +3187,6 @@ form > .account-switch {
 }
 
 /* Florins: atelier price tags, purse, and the keep panel. */
-.atelier-price {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.2em;
-  padding: 0.25em 0.55em;
-  border-radius: 999px;
-  border: 1px solid #c8954f;
-  background: #fbe8c8;
-  color: #4b2311;
-  font-family: var(--font-button);
-  line-height: 1;
-  white-space: nowrap;
-  box-shadow: 0 0.12em 0.4em rgb(30 4 4 / 0.45);
-  pointer-events: none;
-}
-.atelier-price[hidden] { display: none; }
-.atelier-price-coin {
-  width: 1.05em;
-  height: 1.05em;
-  object-fit: contain;
-}
 .atelier-purse {
   position: absolute;
   top: calc(58px + env(safe-area-inset-top));
@@ -3459,29 +3418,6 @@ form > .account-switch {
 
 .decor-enter:hover { transform: translateY(-2px); }
 .decor-enter:active { transform: translateY(3px); box-shadow: 0 2px 0 #d9708f, 0 4px 10px rgb(109 64 46 / 18%); }
-
-.decor-hint {
-  position: relative;
-  margin: 0;
-  padding: 7px 12px;
-  border-radius: 12px;
-  background: #fff6e6;
-  border: 2px solid var(--plaque);
-  color: var(--ink);
-  font-size: 13px;
-  box-shadow: 0 4px 12px rgb(109 64 46 / 16%);
-  animation: decor-bob 1.6s ease-in-out infinite;
-}
-
-.decor-hint::after {
-  content: '';
-  position: absolute;
-  right: 28px;
-  bottom: -8px;
-  border: 7px solid transparent;
-  border-top-color: var(--plaque);
-  border-bottom: 0;
-}
 
 @keyframes decor-bob {
   0%, 100% { transform: translateY(0); }
@@ -3993,7 +3929,6 @@ form > .account-switch {
 
 @media (prefers-reduced-motion: reduce) {
   .decor-drawer,
-  .decor-hint,
   .decor-new,
   .decor-meter-hearts span.is-full,
   .decor-toast { animation: none; }

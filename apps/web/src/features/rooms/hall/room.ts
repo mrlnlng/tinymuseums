@@ -4,7 +4,7 @@ import type { Item } from '@tiny/core/presence/wire'
 import { outfit } from '@tiny/core/slots'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
-import { loadAssets, loadScenery, manifest, type Assets, type Scenery } from '@/features/hall/scene/assets'
+import { loadScenery, manifest, type Scenery } from '@/features/hall/scene/assets'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
@@ -12,7 +12,7 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
-import { loadGalleryDoor, loadGalleryPillar, GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
+import { GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { createLobby } from '@/features/hall/scene/lobby'
 import { createLobbyGalleryDoor } from '@/features/hall/scene/lobby-gallery-door'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
@@ -31,6 +31,7 @@ import { followOutfit, lookOf, ownedLook } from '@/features/hall/scene/wardrobe'
 import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
+import type { HallArt } from '../art'
 import type { RoomDef } from '../types'
 
 const BACKDROP_LENGTH = 600
@@ -67,13 +68,6 @@ export interface HallRoomOptions {
   callbacks: () => HallCallbacks
 }
 
-interface HallArt {
-  assets: Assets
-  door: HTMLImageElement
-  pillar: HTMLImageElement
-  renderer: THREE.WebGLRenderer
-}
-
 /** The pedestals whose helmet another visitor is wearing. */
 function takenStands(items: Item[]): Set<number> {
   const stands = new Set<number>()
@@ -92,22 +86,6 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
 
     initialLook() {
       return ownedLook(lookOf(defaultStore().getSlot(outfit).snapshot()), getWalletSnapshot())
-    },
-
-    async load(renderer) {
-      if (!renderer) throw new Error('The hall needs the renderer to load its art.')
-      const [assets, door, pillar] = await Promise.all([
-        loadAssets(renderer),
-        loadGalleryDoor(),
-        loadGalleryPillar(),
-      ])
-      return { assets, door, pillar, renderer }
-    },
-
-    unload({ assets }) {
-      for (const texture of Object.values(assets.textures)) texture.dispose()
-      for (const sprite of assets.pedestals) sprite.texture.dispose()
-      for (const sprite of assets.helpCat) sprite.texture.dispose()
     },
 
     build(ctx, { assets, door, pillar, renderer }) {
@@ -408,7 +386,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         },
 
         isReady(now) {
-          if (ctx.arrival.kind === 'door' && now - openingStart < 2800) return false
+          if (ctx.arrival.kind === 'door' && !ctx.warm && now - openingStart < 2800) return false
           if (now - openingStart > OPENING_MAX_WAIT_MS) return true
           const { loaded, total } = hall.stats()
           return fontsReady && loaded >= Math.min(1, total)

@@ -53,6 +53,8 @@ export interface RoomContext {
   rig: CameraRig
   sound: RoomSound
   arrival: Arrival
+  /** The room's art was already loaded when the visitor arrived, so there is no loading wait to show. */
+  warm: boolean
   /** Walk out through one of this room's doors; the stage follows the link to the next room. */
   leave(door: string): void
   /** True while taps should be ignored: loading, passing through a door, or a dialog is open. */
@@ -88,18 +90,16 @@ export interface RoomContents {
   dispose(): void
 }
 
+/** A room's art comes from `ROOM_ART[id]` in `art.ts`, so the stage can load it ahead of the room. */
 export interface RoomDef<Art = unknown> {
   id: RoomId
   className?: string
   clearColor: string
-  /** Keep the loading screen up at least this long, so its animation reads even when cached. */
+  /** Keep the loading screen up at least this long when the art had to load, so its animation reads. */
   minLoadingMs?: number
   /** The room's isReady alone decides when it shows, without waiting for fonts or the character rig. */
   gatesItself?: boolean
   doors: Record<string, DoorDef>
-  /** Receives the renderer when a room's art needs GPU upload while loading. */
-  load(renderer?: THREE.WebGLRenderer): Promise<Art>
-  unload?(art: Art): void
   /** The look the visitor starts in; the hall drops pieces its wallet does not own. */
   initialLook?(): Look
   build(ctx: RoomContext, art: Art): RoomContents

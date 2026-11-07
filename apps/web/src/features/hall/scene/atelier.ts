@@ -634,7 +634,6 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
         if (material.map?.userData.ownedByBoard) material.map.dispose()
         material.dispose()
       })
-      disposeAtelierArt(art)
       for (const { node } of controls) node.remove()
     },
   }

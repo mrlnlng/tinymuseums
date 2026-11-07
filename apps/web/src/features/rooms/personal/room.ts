@@ -1,5 +1,5 @@
 import type { Placement } from '@tiny/core/rooms'
-import { GALLERY_DOOR, createGalleryDoor, loadGalleryDoor } from '@/features/hall/scene/gallery-door'
+import { GALLERY_DOOR, createGalleryDoor } from '@/features/hall/scene/gallery-door'
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
 import type { DecorController } from '../decorate/controller'
 import { cozyLevel } from '../decorate/logic'
@@ -7,10 +7,8 @@ import {
   cozyTheme,
   createCozyBackdrop,
   createPlacementLayer,
-  disposeCozyArt,
-  loadCozyArt,
-  type CozyArt,
 } from '../themes/cozy'
+import type { PersonalArt } from '../art'
 import type { RoomDef } from '../types'
 
 const DOOR_X = 0.95
@@ -20,11 +18,6 @@ const MAX_X = 19.4
 /** Covers the wardrobe badge on the borrowed atelier doorway. */
 const DOOR_SIGN = { x: DOOR_X, y: GALLERY_DOOR.lobbyBase + GALLERY_DOOR.height - 0.36, width: 1.15 }
 const NAME_SIGN = { x: 3.5, y: 4.1, width: 4.2 }
-
-interface PersonalArt {
-  cozy: CozyArt
-  door: HTMLImageElement
-}
 
 export interface PersonalRoomOptions {
   slug: string
@@ -53,15 +46,6 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
     gatesItself: false,
     doors: {
       hall: { x: DOOR_X, clearX: DOOR_X + DOOR_CLEAR },
-    },
-
-    async load() {
-      const [cozy, door] = await Promise.all([loadCozyArt(), loadGalleryDoor()])
-      return { cozy, door }
-    },
-
-    unload({ cozy }) {
-      disposeCozyArt(cozy)
     },
 
     build(ctx, { cozy, door }) {

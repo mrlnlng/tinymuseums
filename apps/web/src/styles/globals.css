@@ -4140,3 +4140,18 @@ form > .account-switch {
   .decor-toast { font-size: 13px; }
   .decor-enter-wrap { bottom: calc(10px + env(safe-area-inset-bottom)); }
 }
+
+.perf-readout {
+  position: fixed;
+  left: 8px;
+  bottom: 56px;
+  z-index: 9999;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.72);
+  color: #b8f5c2;
+  font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+  white-space: pre;
+}

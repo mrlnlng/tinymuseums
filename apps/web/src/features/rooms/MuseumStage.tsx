@@ -10,7 +10,9 @@ import {
   type ReactNode,
   type SetStateAction,
 } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { hrefFor } from './links'
 import { createStage, type Stage } from './stage'
 import type { Arrival, DoorRef, RoomDef } from './types'
 
@@ -75,6 +77,9 @@ export function useRoom<Art>({ room, arrival, isSuspended = () => false, onExit 
   const context = useContext(StageContext)
   if (!context) throw new Error('useRoom must be used inside MuseumStage')
   const { stage, setActiveRoom } = context
+  const router = useRouter()
+  const routerRef = useRef(router)
+  routerRef.current = router
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,6 +101,7 @@ export function useRoom<Art>({ room, arrival, isSuspended = () => false, onExit 
       onReady: () => setIsReady(true),
       onError: (message) => setError(message),
       onExit: (to) => onExitRef.current(to),
+      onApproach: (to) => routerRef.current.prefetch(hrefFor(to)),
     })
     setActiveRoom(room)
 

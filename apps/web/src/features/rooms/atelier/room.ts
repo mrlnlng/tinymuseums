@@ -1,17 +1,13 @@
 import { outfit } from '@tiny/core/slots'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
 import { walletReady } from '@/features/economy/lib/ownership'
-import {
-  createAtelierRoom,
-  disposeAtelierArt,
-  loadAtelierArt,
-  type AtelierArt,
-} from '@/features/hall/scene/atelier'
+import { createAtelierRoom } from '@/features/hall/scene/atelier'
 import { CONFIG } from '@/features/hall/scene/config'
-import { GALLERY_DOOR, loadGalleryDoor } from '@/features/hall/scene/gallery-door'
+import { GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { createWardrobe, followOutfit, type Wardrobe } from '@/features/hall/scene/wardrobe'
 import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
+import type { AtelierArtwork } from '../art'
 import type { RoomDef } from '../types'
 
 const SPARKLE_TINTS = ['#fbd99a', '#f7a8c4', '#fff4dc']
@@ -41,11 +37,6 @@ function sparkle(host: HTMLElement): void {
   window.setTimeout(() => burst.remove(), 1100)
 }
 
-interface AtelierArtwork {
-  art: AtelierArt
-  door: HTMLImageElement
-}
-
 export const atelierRoom: RoomDef<AtelierArtwork> = {
   id: 'atelier',
   className: 'atelier',
@@ -53,15 +44,6 @@ export const atelierRoom: RoomDef<AtelierArtwork> = {
   minLoadingMs: 2800,
   doors: {
     gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear },
-  },
-
-  async load() {
-    const [art, door] = await Promise.all([loadAtelierArt(), loadGalleryDoor()])
-    return { art, door }
-  },
-
-  unload({ art }) {
-    disposeAtelierArt(art)
   },
 
   build(ctx, { art, door }) {

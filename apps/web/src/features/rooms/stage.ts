@@ -12,14 +12,24 @@ import { Traversal } from '@/features/hall/scene/traversal'
 import { lookOf } from '@/features/hall/scene/wardrobe'
 import { joinRoom, type Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
+import { ROOM_ART, type RoomArt } from './art'
+import { createArtCache } from './art-cache'
 import { linkedDoor } from './links'
-import type { Arrival, DoorRef, Frame, RoomContents, RoomContext, RoomDef, RoomSound } from './types'
+import { createPerfMeter } from './perf'
+import type { Arrival, DoorRef, Frame, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
 const WALKING_SPEED = 0.12
 const MAX_RIG_WAIT_MS = 8000
 const QUIET_AFTER_SECONDS = 2
+/** How long a room's art stays loaded after the visitor leaves it or walks away from its door. */
+const KEEP_ART_MS = 60_000
+/** Start loading the next room once the visitor is this many screen widths from its door. */
+const PREFETCH_SCREENS = 1.5
+/** Wait this long after a room shows before loading the next one, so it doesn't compete with this room's own loading. */
+const PREFETCH_AFTER_READY_MS = 1500
+const PREFETCH_CHECK_MS = 250
 
 export interface StageHosts {
   canvas: HTMLElement
@@ -32,6 +42,8 @@ export interface StageHandlers {
   onReady(): void
   onError(message: string): void
   onExit(to: DoorRef): void
+  /** The visitor is close to a door; the page can prefetch the route behind it. */
+  onApproach?(to: DoorRef): void
 }
 
 export interface StageRoom {
@@ -58,11 +70,15 @@ interface Entry {
   scene: THREE.Scene | null
   contents: RoomContents | null
   presence: Room | null
-  art: unknown
-  hasArt: boolean
+  holdsArt: boolean
+  warm: boolean
   disposed: boolean
   frameCount: number
+  approached: Set<string>
+  prefetchCheckAt: number
 }
+
+
 
 interface Runtime {
   renderer: THREE.WebGLRenderer
@@ -80,6 +96,13 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
   let runtime: Runtime | null = null
   let current: Entry | null = null
   let frameHandle = 0
+  let doorStartedAt: number | null = null
+  const artCache = createArtCache<RoomId, unknown>({
+    load: (id) => (ROOM_ART[id] as RoomArt<unknown>).load(renderer),
+    unload: (id, loaded) => (ROOM_ART[id] as RoomArt<unknown>).unload(loaded),
+    keepMs: KEEP_ART_MS,
+  })
+  const perf = createPerfMeter(hosts.overlay)
 
   const renderer = new THREE.WebGLRenderer({ antialias: false })
   const initPromise = initialize().then((value) => {
@@ -109,9 +132,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     if (entry.disposed) return
     entry.disposed = true
     entry.contents?.dispose()
-    if (entry.hasArt) {
-      entry.room.unload?.(entry.art)
-      entry.hasArt = false
+    if (entry.holdsArt) {
+      artCache.release(entry.room.id)
+      entry.holdsArt = false
     }
     entry.presence?.dispose()
     entry.presence = null
@@ -121,15 +144,14 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
   }
 
   async function open(entry: Entry): Promise<void> {
-    const loading = entry.room.load(renderer).then(
-      (art) => ({ ok: true as const, art }),
-      (error: unknown) => ({ ok: false as const, error }),
-    )
+    const heldArt = artCache.acquire(entry.room.id)
+    entry.holdsArt = true
+    entry.warm = heldArt.loaded
+    const loading = heldArt.loading
     let stage: Runtime
     try {
       stage = await initPromise
     } catch (error) {
-      void loading.then((result) => { if (result.ok) entry.room.unload?.(result.art) })
       if (isCurrent(entry)) {
         entry.handlers.onError(String(error))
         revealFloorTransition()
@@ -138,10 +160,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       }
       return
     }
-    if (!isCurrent(entry)) {
-      void loading.then((result) => { if (result.ok) entry.room.unload?.(result.art) })
-      return
-    }
+    if (!isCurrent(entry)) return
 
     stage.passage.reset()
     stage.traversal.reset(0)
@@ -161,12 +180,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       return
     }
     const { art } = result
-    if (!isCurrent(entry)) {
-      entry.room.unload?.(art)
-      return
-    }
-    entry.art = art
-    entry.hasArt = true
+    if (!isCurrent(entry)) return
 
     const look = entry.room.initialLook?.()
     if (look) void stage.character.wear(look).catch(() => {})
@@ -187,12 +201,16 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         setWalking: (walking) => sound().setWalking(walking),
       },
       arrival: entry.arrival,
+      warm: entry.warm,
       leave(door) {
         const at = entry.room.doors[door]
         if (!at) return
+        const to = linkedDoor({ room: entry.room.id, door })
+        if (to) artCache.prefetch(to.room)
         stage.passage.leave(() => {
-          const to = linkedDoor({ room: entry.room.id, door })
-          if (to) entry.handlers.onExit(to)
+          if (!to) return
+          doorStartedAt = performance.now()
+          entry.handlers.onExit(to)
         }, at)
       },
       isQuiet: () => isQuiet(entry),
@@ -221,10 +239,12 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       scene: null,
       contents: null,
       presence: null,
-      art: undefined,
-      hasArt: false,
+      holdsArt: false,
+      warm: false,
       disposed: false,
       frameCount: 0,
+      approached: new Set(),
+      prefetchCheckAt: 0,
     }
     const previous = current
     current = entry
@@ -372,9 +392,35 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       hosts.character.style.visibility = shown ? '' : 'hidden'
     }
 
+    /** Loads the art behind any door the visitor is near, so walking through it is quick. */
+    function prefetchNearDoors(entry: Entry, now: number): void {
+      if (now < entry.prefetchCheckAt || now - entry.readyAt < PREFETCH_AFTER_READY_MS) return
+      entry.prefetchCheckAt = now + PREFETCH_CHECK_MS
+      const reach = rig.viewWidth * PREFETCH_SCREENS
+      for (const [name, door] of Object.entries(entry.room.doors)) {
+        if (Math.abs(traversal.x - door.x) > reach) continue
+        const to = linkedDoor({ room: entry.room.id, door: name })
+        if (!to) continue
+        artCache.prefetch(to.room)
+        if (!entry.approached.has(name)) {
+          entry.approached.add(name)
+          entry.handlers.onApproach?.(to)
+        }
+      }
+    }
+
     function renderFrame(now: number): void {
       frameHandle = requestAnimationFrame(renderFrame)
+      const frameMs = now - lastFrameAt
       const entry = current
+      try {
+        drawFrame(now, entry)
+      } finally {
+        perf.frame(frameMs, performance.now() - now, entry?.ready ? entry.room.id : null)
+      }
+    }
+
+    function drawFrame(now: number, entry: Entry | null): void {
       pixelRatio.sample(now - lastFrameAt, now - (entry?.readyAt ?? Infinity) > 3000)
       const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
       lastFrameAt = now
@@ -389,11 +435,14 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         const waited = now - entry.startedAt
         if (
           (entry.room.gatesItself || (fontsReady && (rigSettled || waited >= MAX_RIG_WAIT_MS))) &&
-          waited >= (entry.room.minLoadingMs ?? 0) &&
+          waited >= (entry.warm ? 0 : entry.room.minLoadingMs ?? 0) &&
           (!entry.contents.isReady || entry.contents.isReady(now))
         ) {
           entry.ready = true
           entry.readyAt = now
+          const viaDoor = doorStartedAt !== null
+          perf.opened(entry.room.id, now - (doorStartedAt ?? entry.startedAt), entry.warm, viaDoor)
+          doorStartedAt = null
           entry.handlers.onReady()
           revealFloorTransition()
           const placed = entry.contents.onShown?.()
@@ -420,6 +469,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
             document.querySelector('[aria-modal="true"]') !== null,
         )
         traversal.update(dt, entry.contents.floor.minX, entry.contents.floor.maxX())
+        prefetchNearDoors(entry, now)
       }
 
       passage.update(dt)
@@ -446,6 +496,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       const idle = entry.handlers.isSuspended() || traversal.idleSeconds > QUIET_AFTER_SECONDS
       if (idle && entry.frameCount % 2 === 1) return
       renderer.render(entry.scene, rig.camera)
+      perf.rendered(renderer.info)
     }
     frameHandle = requestAnimationFrame(renderFrame)
 
@@ -483,6 +534,8 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       const entry = current
       current = null
       if (entry) closeEntry(entry)
+      artCache.clear()
+      perf.dispose()
       runtime?.dispose()
       runtime = null
     },

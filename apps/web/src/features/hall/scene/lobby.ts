@@ -143,7 +143,6 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
     },
 
     dispose() {
-      for (const texture of catFrames) texture.dispose()
       disposeBoards(scene, group)
     },
   }

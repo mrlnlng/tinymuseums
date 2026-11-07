@@ -29,9 +29,9 @@ export const VISIT_FEATURES = {
   costume_on: 'Costume tried on',
   costume_off: 'Costume returned',
   character: 'Changed character',
-  coins_earned: 'Florins earned',
-  daily_cap_reached: 'Florins daily cap reached',
-  coins_invite_shown: 'Florins member invite shown',
+  coins_earned: 'Stamps earned',
+  daily_cap_reached: 'Stamps daily cap reached',
+  coins_invite_shown: 'Stamps member invite shown',
   item_kept: 'Wardrobe item kept',
 } as const
 

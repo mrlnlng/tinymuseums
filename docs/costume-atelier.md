@@ -35,7 +35,7 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   portraits. Accessories without a room of their own rest in the cabinet's two compartments:
   the blue cap and the daisy clip (`CONFIG.atelier.cabinetPieces`). Then one room per collection, each laid out exactly like Bruce's booth
   (`bruce_mock_scene.png`, `ROOM_TEMPLATE`): a painting in the blue frame on the left wall, its
-  name on a hanging tag lit from under the curtain, the form on a blue platform in flowers, a
+  name on a hanging tag lit from under the curtain, the form on a blue platform, a
   portrait over a ribbon, a painting in the cream frame, and a column with its cushion. A room
   with two forms stands them 150 px either side of centre and moves its walls out by 140 px,
   keeping the template's gaps. Each room hangs its own swags from its left wall, so every tag
@@ -45,7 +45,8 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   blue dress and the dress with its red cardigan, the otter, the flower crown.
   **The Gold Collection**: the gold sequin set alone and with its cape, the bunny portrait (no
   character), the three hibiscus. **Bruce's Chronicles**: the garden and pond paintings, the
-  tutu, Bruce over a blue ribbon and a fish, the fish in a bag. The cardigans
+  tutu on a platform set in flowers (Jazlyn's own touch, so only her booth has them, raised to
+  hug the platform as in her mock), Bruce over a blue ribbon and a fish, the fish in a bag. The cardigans
   have no room now; one already worn or owned is still worn. Every headpiece
   shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
   the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
@@ -234,7 +235,7 @@ accessories).
 ## Price tags
 
 A piece the visitor does not own yet wears a shop price tag: a small upright card with clipped
-top corners, a reinforced hole, the florin coin and the price, hanging on a string loop tied at
+top corners, a reinforced hole, the stamp and the price, hanging on a string loop tied at
 a dress's side, a headpiece's edge, or a portrait's lower corner, and swaying a little
 (`scene/hang-tag.ts`; still with reduced motion). Tags are drawn into the scene, not the page,
 so the visitor walks in front of them.

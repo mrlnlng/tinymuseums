@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Placement } from '@tiny/core/rooms'
 import { priceOf } from '@tiny/core/economy'
-import { buy, florinLabel, useWallet } from '@/features/economy'
+import { buy, STAMP_URL, stampLabel, useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { cozyPropImageUrl } from '../themes/cozy'
 import { categoryOf, cozyLevel, propLabel, shopPropIds, trayPropIds, type DrawerCategory } from './logic'
@@ -117,7 +117,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
       later(() => setJustBought((current) => (current === itemRef ? null : current)), 1400)
       return
     }
-    setShopNote(outcome === 'insufficient' ? 'Not enough florins for that yet.' : 'That could not be bought just now.')
+    setShopNote(outcome === 'insufficient' ? 'Not enough stamps for that yet.' : 'That could not be bought just now.')
   }
 
   async function copyLink(): Promise<void> {
@@ -234,8 +234,8 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
               </span>
             ) : null}
             {entry.id === 'shop' && wallet.isMember ? (
-              <span className="decor-chip-coins" aria-label={florinLabel(balance)}>
-                {'\u0192'} {balance}
+              <span className="decor-chip-coins" aria-label={stampLabel(balance)}>
+                <img src={STAMP_URL} alt="" className="decor-chip-stamp" /> {balance}
               </span>
             ) : null}
           </button>
@@ -312,7 +312,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
                   disabled={buying !== null || short > 0}
                   onClick={() => void keep(itemRef)}
                 >
-                  {buying === itemId ? '…' : short > 0 ? `${florinLabel(price)}` : `Buy · ${florinLabel(price)}`}
+                  {buying === itemId ? '…' : short > 0 ? stampLabel(price) : `Buy · ${stampLabel(price)}`}
                 </button>
               </div>
             )

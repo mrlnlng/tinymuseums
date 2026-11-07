@@ -13,7 +13,9 @@ const HOLE = { x: 80, y: 64, r: 9 }
 
 export interface HangTagStyle {
   font: string
-  coin: HTMLImageElement | null
+  /** The currency mark drawn over the price, and its width over its height. */
+  stamp: HTMLImageElement | null
+  stampAspect: number
 }
 
 export interface HangTag {
@@ -95,8 +97,9 @@ export function createHangTag(style: HangTagStyle, knot: { x: number; y: number 
     ctx.arc(HOLE.x, HOLE.y, HOLE.r - 2, 0, Math.PI * 2)
     ctx.fill()
 
-    const coin = 46
-    if (style.coin?.complete && style.coin.naturalWidth > 0) ctx.drawImage(style.coin, W / 2 - coin / 2, 94, coin, coin)
+    const markHeight = 54
+    const markWidth = markHeight * style.stampAspect
+    if (style.stamp?.complete && style.stamp.naturalWidth > 0) ctx.drawImage(style.stamp, W / 2 - markWidth / 2, 90, markWidth, markHeight)
     ctx.fillStyle = '#6b3a1e'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'

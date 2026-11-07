@@ -51,7 +51,3 @@ export function buildClaim(
   if (!parsed) return null
   return { key: parsed.claimKey, day: parsed.day, request }
 }
-
-export function florinLabel(amount: number): string {
-  return `${amount} ${amount === 1 ? 'florin' : 'florins'}`
-}

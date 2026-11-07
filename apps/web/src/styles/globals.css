@@ -3186,7 +3186,7 @@ form > .account-switch {
   cursor: pointer;
 }
 
-/* Florins: atelier price tags, purse, and the keep panel. */
+/* Stamps, the museum's currency: atelier price tags, purse, and the keep panel. */
 .atelier-purse {
   position: absolute;
   top: calc(152px + env(safe-area-inset-top));
@@ -3679,11 +3679,19 @@ form > .account-switch {
 }
 
 .decor-chip-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   padding: 1px 7px;
   border-radius: 99px;
-  background: #ffe9a8;
-  color: #8a5a00;
+  background: #fde3ea;
+  color: #8f3556;
   font-size: 11px;
+}
+
+.decor-chip-stamp {
+  width: 12px;
+  height: 14px;
 }
 
 .decor-cards {
@@ -4117,7 +4125,12 @@ form > .account-switch {
   .decor-card { width: 80px; font-size: 10.5px; }
   .decor-card-art { width: 56px; height: 48px; }
   .decor-card-art img { max-width: 56px; max-height: 44px; }
-  .decor-cards { min-height: 100px; }
+  .decor-chip-stamp {
+  width: 12px;
+  height: 14px;
+}
+
+.decor-cards { min-height: 100px; }
   .decor-toast { font-size: 13px; }
   .decor-enter-wrap { bottom: calc(10px + env(safe-area-inset-bottom)); }
 }

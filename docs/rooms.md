@@ -44,7 +44,7 @@ There are two kinds of room:
   paintings become hand-placed too.
 - **Personal rooms**: each signed-in member has one. It stores what they collect
   in the game and is decorated with it. Items can be earned in play or bought
-  with florins.
+  with stamps.
 
 Decisions:
 - **Placement is free within zones.** Items drag anywhere inside a zone that
@@ -112,7 +112,7 @@ style.
 - [x] Computer desktop and Color Recall use the frame. SketchGuess keeps its own markup, because its
   animated bunny sits above the header
 - [x] First depth minigame, Pond (`features/pondgame`): walk around a pond with arrows/WASD or by
-  tapping, cast at the rim, and reel on the bite. Weighted fish table; florins on close
+  tapping, cast at the rim, and reel on the bite. Weighted fish table; stamps on close
   (`game: 'pond'`). Opens from the computer desktop
 - [ ] Later, if a game needs it: multiplayer inside minigames (presence would then carry depth)
 
@@ -142,7 +142,7 @@ style.
   (`?key=<token>`), and anyone with the link can visit, including in presence. A home button in
   the museum HUD leads there for now, standing in for a door; a door can be drawn later.
 - **Collectibles**: catalog items with kind `prop` (`prop:cabinet`, …). The starter props are
-  free and granted when the room is created; the rest are bought with florins through the
+  free and granted when the room is created; the rest are bought with stamps through the
   existing `buy`. Fish from the pond game are collectible props too, granted on first catch.
 
 ### Phase 5: themes, zones and arrangements
@@ -159,7 +159,7 @@ style.
 
 ### Phase 6: decorating mode
 - [x] Edit mode for personal rooms (`PersonalRoom.tsx` + `features/rooms/decorate/`): a tray on the right
-  (a bottom sheet on narrow screens) with Your things and a florin Shop
+  (a bottom sheet on narrow screens) with Your things and a stamp Shop
 - [x] Drag to place with zone highlighting and clamping; move, pan, select, Put away, and arrow-key nudge
 - [x] Autosaved draft → Publish; the server checks permissions (owner artist: shared rooms; member:
   their own room). The owner's hall gets a list-based Arrange hall panel (`HallArranger.tsx`)
@@ -167,7 +167,7 @@ style.
 ### Phase 7: personal rooms
 - [x] A personal room per member (`cozy` theme), created on the first visit to `/museum/home` with
   starter props (shelf, carpet, red pillow)
-- [x] Collectibles: `prop:*` catalog items bought with florins; fish trophies granted on the first catch in
+- [x] Collectibles: `prop:*` catalog items bought with stamps; fish trophies granted on the first catch in
   Pond (`/api/wallet/collect`)
 - [x] A My room button in the hall's top-right chrome (standing in for a drawn door), and a door
   back to the hall inside the room

@@ -43,6 +43,8 @@ export interface CollectionRoom {
   portrait: { own: CharacterKind; image: string; width: number } | { own: null; image: string; width: number }
   ribbon: 'ribbon' | 'ribbonBlue'
   fish?: boolean
+  /** Flowers around the form's platform: Jazlyn's own touch for Bruce's booth. */
+  flowers?: boolean
   pillar: {
     pillow: { image: 'pillowBlue' | 'pillowRed'; y: number; width: number }
     pieces: readonly HeadpieceSpot[]
@@ -129,6 +131,7 @@ export const COLLECTIONS: readonly CollectionRoom[] = [
     portrait: { own: 'bruce', image: 'portraitBruce', width: 116 },
     ribbon: 'ribbonBlue',
     fish: true,
+    flowers: true,
     pillar: {
       pillow: { image: 'pillowRed', y: 433, width: 210 },
       pieces: [],

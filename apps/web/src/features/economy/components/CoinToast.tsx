@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import AssetImage from '@/shared/components/AssetImage'
 import { openAccount } from '@/features/account/lib/account'
 import { useSound } from '@/features/sound/components/SoundProvider'
-import { florinLabel } from '../lib/claim'
+import { stampLabel } from '../lib/stamp'
+import Stamp from './Stamp'
 import { subscribeEvents, type EconomyEvent } from '../store'
 import styles from './CoinToast.module.css'
 
@@ -64,15 +64,15 @@ export default function CoinToast() {
       {toast.kind === 'earned' ? (
         <>
           <span className={styles.coinWrap}>
-            <AssetImage name="coin-large" className={styles.coin} />
+            <Stamp className={styles.coin} />
           </span>
-          <span>+{florinLabel(toast.amount)}</span>
+          <span>+{stampLabel(toast.amount)}</span>
         </>
       ) : toast.kind === 'capped' ? (
-        <span>The piggy bank is full for today</span>
+        <span>Your stamp book is full for today</span>
       ) : (
         <button type="button" className={styles.invite} onClick={openAccount}>
-          Members collect florins for this. <span className={styles.join}>Join to keep them.</span>
+          Members collect stamps for this. <span className={styles.join}>Join to keep them.</span>
         </button>
       )}
     </div>

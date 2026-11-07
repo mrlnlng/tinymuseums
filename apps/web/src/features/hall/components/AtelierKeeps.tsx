@@ -5,7 +5,7 @@ import { outfit } from '@tiny/core/slots'
 import { itemIdFor, priceOf } from '@tiny/core/economy'
 import { openAccount } from '@/features/account/lib/account'
 import { useWallet, buy, Purse, allowedCharacter, owns, walletReady } from '@/features/economy'
-import { florinLabel } from '@/features/economy/lib/claim'
+import { stampLabel } from '@/features/economy/lib/stamp'
 import { useSlot } from '@/shared/lib/slots'
 import { CHARACTER_NAMES, keepName } from '../scene/atelier'
 import { lookOf } from '../scene/wardrobe'
@@ -108,13 +108,13 @@ export default function AtelierKeeps() {
                   setBuying(thing.itemId)
                   const result = await buy(thing.itemId)
                   setBuying(null)
-                  say(result === 'ok' ? 'Kept!' : result === 'insufficient' ? 'Not enough florins yet' : "Couldn't keep that")
+                  say(result === 'ok' ? 'Kept!' : result === 'insufficient' ? 'Not enough stamps yet' : "Couldn't keep that")
                 })()
               }}
             >
               {enough
-                ? `Keep ${thing.name} · ${florinLabel(thing.price)}`
-                : `${thing.name} · ${thing.price - balance} more ${thing.price - balance === 1 ? 'florin' : 'florins'} to keep`}
+                ? `Keep ${thing.name} · ${stampLabel(thing.price)}`
+                : `${thing.name} · ${thing.price - balance} more ${thing.price - balance === 1 ? 'stamp' : 'stamps'} to keep`}
             </button>
           )
         })}

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import manifest from '@/generated/asset-manifest.json'
 import { FREE_CHARACTERS, itemIdFor, priceOf } from '@tiny/core/economy'
+import { STAMP_ASPECT, STAMP_URL } from '@/features/economy/lib/stamp'
 import { builtUrl } from '@/shared/lib/assets'
 import { plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
@@ -160,15 +161,14 @@ export function createAtelierRoom(
 ): AtelierRoom {
   const shell = new THREE.Group()
   scene.add(shell)
-  // Price tags are drawn into the scene in the buttons' font, with the florin coin.
+  // Price tags are drawn into the scene in the buttons' font, with a stamp.
   const liveTags = new Set<HangTag>()
   let swayClock = 0
-  const coin = new Image()
-  coin.crossOrigin = 'anonymous'
-  const tagStyle: HangTagStyle = { font: getComputedStyle(host).getPropertyValue('--font-button').trim() || 'sans-serif', coin }
+  const stamp = new Image()
+  const tagStyle: HangTagStyle = { font: getComputedStyle(host).getPropertyValue('--font-button').trim() || 'sans-serif', stamp, stampAspect: STAMP_ASPECT }
   const redrawTags = () => { for (const tag of liveTags) tag.redraw() }
-  coin.addEventListener('load', redrawTags)
-  coin.src = builtUrl(manifest.images['coin-large'].x2.src)
+  stamp.addEventListener('load', redrawTags)
+  stamp.src = STAMP_URL
   void document.fonts?.load(`30px ${tagStyle.font}`).then(redrawTags, () => {})
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -496,7 +496,7 @@ export function createAtelierRoom(
       group.add(bare)
       const pw = units(platform.width)
       group.add(plane(pw, pw / aspectOf('platformBlue'), art.platformBlue, wx(x), wy(platform.y), platform.z))
-      picture(group, 'flowerBush', { ...atelier.bush, x: x + atelier.bush.dx })
+      if (collection.flowers) picture(group, 'flowerBush', { ...atelier.bush, x: x + atelier.bush.dx })
       const dress = plane(canvasWidth, canvasHeight, art[spot.image as AtelierImage], bare.position.x, bare.position.y, mannequin.z + 0.01) as Painted
       dress.material.depthWrite = false
       group.add(dress)

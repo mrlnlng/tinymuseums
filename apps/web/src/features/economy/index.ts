@@ -20,7 +20,6 @@ export {
 export { allowedCharacter, owns, walletReady, type OwnedSnapshot } from './lib/ownership'
 export {
   buildClaim,
-  florinLabel,
   newRunId,
   tzOffsetNow,
   type BuiltClaim,
@@ -29,3 +28,4 @@ export {
   type EarnSource,
   type GameSource,
 } from './lib/claim'
+export { STAMP_ASPECT, STAMP_URL, stampLabel } from './lib/stamp'

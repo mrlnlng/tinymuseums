@@ -208,7 +208,9 @@ export const CONFIG = {
     // Shared by every collection room.
     broom: { dx: 77, y: 522, width: 115, z: 0.42 },
     fishBag: { dx: -3, y: 352, width: 93, z: 0.36 },
-    bush: { dx: 20, y: 659, width: 451, z: 0.4 },
+    // Bruce's booth only. Sized and raised as in bruce_mock_scene.png, so the flowers hug the
+    // platform and hide the shadow under it.
+    bush: { dx: -11, y: 627, width: 371, z: 0.4 },
     column: { bottomY: 680, height: 225, z: 0.3 },
     mannequin: { feetY: 610, height: 450, z: 0.35, canvas: { padX: 62, padTop: 45, form: [173, 525] } },
     platformBlue: { y: 632, width: 276, z: 0.32 },

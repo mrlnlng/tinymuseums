@@ -28,8 +28,10 @@ export const ITEMS: Record<string, CatalogItem> = {
   'costume:floral-cardigan': { price: 120, kind: 'piece', collection: 'dress' },
   'costume:gold-sequin': { price: 120, kind: 'piece', collection: 'dress' },
   'costume:gold-cape': { price: 180, kind: 'piece', collection: 'set' },
+  'costume:tutu': { price: 120, kind: 'piece', collection: 'dress' },
 
   'character:otter': { price: 250, kind: 'character', collection: 'character' },
+  'character:bruce': { price: 250, kind: 'character', collection: 'character' },
 
   'prop:mirror': { price: 45, kind: 'prop', collection: 'wall' },
   'prop:painting': { price: 55, kind: 'prop', collection: 'wall' },

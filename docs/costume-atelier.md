@@ -36,7 +36,10 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   cushion holding four colour swatches, a mirror, then **The Floral Collection**: two spotlit mannequins, one in the blue dress
   and one in the dress with its red cardigan, with the flower crown on a cushion between them; then **The Gold
   Collection**: two spotlit forms, the gold sequin set alone and with its cape; then **The Accessory Collection**:
-  the blue cap, the three hibiscus sharing one cushion, and the daisy clip, each on a column. Every headpiece
+  the blue cap, the three hibiscus sharing one cushion, and the daisy clip, each on a column; then
+  **Bruce's Chronicles** (`bruce_mock_scene.png`): the hanging tag under a spotlight, the garden painting in its blue
+  frame, the form in the tutu on a blue platform in flowers, Bruce's portrait over a blue ribbon and a fish, the pond
+  painting, and the fish in a bag on a red cushion. Every headpiece
   shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
   the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
   the bunny's tilted body for the rigs; headpieces are placed per character in `HEADPIECES` (`prepare-models.mjs`).
@@ -185,3 +188,36 @@ stand. Screenshots and comparison sheets are under `output/fit-review/`.
 The crown on the cushion uses a room-only rotation and lower centre to rest both
 rose ends on the fabric; the character-worn crown keeps its original artwork and
 head attachment.
+
+## Bruce's Chronicles
+
+From `costume_atelier_asset_v4`. The booth is the mock drawn at 0.82 of its own pixels around
+the form (`CONFIG.atelier.bruce`). The form, column and platforms keep the room's sizes. The
+blue ribbon is the pink one dyed. The chandelier in that pack is in no mock, so it is not hung.
+
+**Bruce** is a character (250 coins), from `bruce_costume/rigs/bruce/bruce_v2_rig_tutu.glb`
+(`public/assets/bruce-rig.glb`). It wears only the tutu so far (`FITS`); the other pieces stay on
+their stands with a note until they are fitted to its body. Adding `bruce` to `CHARACTERS` means
+the presence worker must be redeployed before other visitors can see Bruce.
+
+**The tutu** is two rigid planes on the hips, drawn once for Bruce and scaled per body by the
+artist (`bruce_costume/HANDOFF.md`, `fit.json`). `prepare-models.mjs` grafts it from the
+handoff's bunny, cat and otter exports (`*-rig-*-tutu.glb`) and sets the bunny's and otter's
+screen-left arm to draw order 3.2, behind the skirt, as the handoff asks. On the form it is
+`tutu-display.png` over the floral form (`mannequin-tutu.png`).
+
+## Checked against the mocks (2026-11-07)
+
+Each mock was rendered at its own framing (the perf readout's `view`) and measured piece by
+piece. In 7.png and 8.png Kiki's dress is drawn one mock pixel per art pixel, and the
+spotlights are the art at 1:1 with their tops just above the screen. Both are drawn that way
+now. The form canvas is wider (`padX` 62) so the larger dress fits. The tutu stands on the
+plain form, as in Bruce's mock. The swags are sized and spaced as in Bruce's mock, with their
+top band carried on above them for tall screens. The second spare form stands bare without a
+platform or light, as in 9.png. `ribbon.png` lost a strip of the portrait frame that was cut
+from the mock with it.
+
+Deliberate differences: the doorway and "Back to museum" in place of 7.png's staircase rail
+and "Back to first floor"; the price tags and hints; and the collections added after these
+mocks (cardigan swatches, the otter portrait where 9.png has the bunny, floral, gold and
+accessories).

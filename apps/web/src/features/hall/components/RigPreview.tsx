@@ -12,7 +12,7 @@ const PROPS = [
   { name: 'matcha' as const, attachment: CONFIG.matcha.held },
 ]
 
-const NEXT: Record<CharacterKind, CharacterKind> = { bunny: 'cat', cat: 'otter', otter: 'bunny' }
+const NEXT: Record<CharacterKind, CharacterKind> = { bunny: 'cat', cat: 'otter', otter: 'bruce', bruce: 'bunny' }
 
 export default function RigPreview() {
   const host = useRef<HTMLDivElement>(null)

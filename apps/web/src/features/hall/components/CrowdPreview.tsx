@@ -6,7 +6,7 @@ import { createRigState, stepRigState } from '../scene/rig-motion'
 
 // Development only: N rigs walking at once, each with its own WebGL context or all drawn into
 // one layer (?mode=layer|separate&n=8), to measure what remote visitors would cost.
-const KINDS: CharacterKind[] = ['bunny', 'cat', 'otter']
+const KINDS: CharacterKind[] = ['bunny', 'cat', 'otter', 'bruce']
 
 interface Stats {
   mode: string

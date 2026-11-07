@@ -66,7 +66,7 @@ const CARDIGAN_NAMES: Record<Cardigan, string> = {
   'cardigan-butter-yellow': 'butter yellow',
 }
 const isCardigan = (id: string | null): id is Cardigan => (CARDIGANS as readonly (string | null)[]).includes(id)
-export const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter' }
+export const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter', bruce: 'Bruce' }
 
 export function itemName({ slot, id }: ClothingItem): string {
   if (isCardigan(id)) return `The ${CARDIGAN_NAMES[id]} cardigan`
@@ -78,6 +78,7 @@ export function itemName({ slot, id }: ClothingItem): string {
   if ((HIBISCUS as readonly string[]).includes(id)) return `The ${id.slice('hibiscus-'.length)} hibiscus`
   if (id === 'blue-cap') return 'The blue cap'
   if (id === 'daisy-clip') return 'The daisy clip'
+  if (id === 'tutu') return "Bruce's tutu"
   return slot === 'bow' ? "Kiki's bow" : "Kiki's dress"
 }
 
@@ -156,9 +157,10 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   group.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
     signY, sign.z, sign.width, sign.height))
 
-  const spotlightWidth = atelier.spotlight.height * aspectOf('spotlight')
-  function spotlight(x: number): void {
-    const light = plane(spotlightWidth, atelier.spotlight.height, art.spotlight, wx(x), atelier.ceiling - atelier.spotlight.height / 2, atelier.spotlight.z)
+  const spotlightHeight = units(atelier.spotlight.height)
+  const spotlightWidth = spotlightHeight * aspectOf('spotlight')
+  function spotlight(x: number, top = atelier.spotlight.top): void {
+    const light = plane(spotlightWidth, spotlightHeight, art.spotlight, wx(x), wy(top) - spotlightHeight / 2, atelier.spotlight.z)
     ;(light.material as THREE.MeshBasicMaterial).depthWrite = false
     group.add(light)
   }
@@ -183,12 +185,18 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const swagStep = swagWidth - units(curtainSwags.overlap)
   const swagsFrom = wx(curtains.left) + curtainWidth - units(curtainSwags.overlap)
   const swagsTo = drapeRight - drapeWidth + units(curtainSwags.overlap)
-  const swagCount = Math.max(0, Math.ceil((swagsTo - swagsFrom) / swagStep))
-  // Spread evenly; the swags run on behind the drape to where the widest screen ends.
-  const swagGap = swagCount > 1 ? (swagsTo - swagsFrom - swagWidth) / (swagCount - 1) : 0
-  for (let i = 0; i < swagCount; i++) {
-    group.add(plane(swagWidth, swagHeight, art.curtainSwag, swagsFrom + swagWidth / 2 + i * swagGap, atelier.ceiling - swagHeight / 2, curtainSwags.z))
+  // The swags run on behind the drape to where the widest screen ends.
+  const swagAnchor = wx(curtainSwags.startX)
+  const firstSwag = swagAnchor - Math.ceil((swagAnchor - swagsFrom) / swagStep) * swagStep
+  for (let left = firstSwag; left < swagsTo; left += swagStep) {
+    group.add(plane(swagWidth, swagHeight, art.curtainSwag, left + swagWidth / 2, wy(curtainSwags.top) - swagHeight / 2, curtainSwags.z))
   }
+  // Tall screens see above the swags; their top band carries on in its own colour.
+  const bandBottom = wy(curtainSwags.top) - 0.03
+  const bandTop = atelier.ceiling + 2
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(swagsTo - firstSwag, bandTop - bandBottom), new THREE.MeshBasicMaterial({ color: 0x951806 }))
+  band.position.set((firstSwag + swagsTo) / 2, (bandTop + bandBottom) / 2, curtainSwags.z - 0.005)
+  group.add(band)
 
   picture('shelf', atelier.shelf)
   picture('cabinet', atelier.cabinet)
@@ -269,6 +277,26 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
       floralPieces.push({ item: { slot: 'bow', id }, mesh, bare: pillow, x: stand.x + dx, y, width: Math.min(190, width + 10), shown: 1, target: 1 })
     }
   }
+  const { bruce } = atelier
+  for (const { frame, painting, fill, ...spot } of bruce.frames) {
+    picture(painting, { ...spot, width: spot.width * fill, z: 0.19 })
+    picture(frame, { ...spot, z: 0.2 })
+  }
+  picture('bruceTag', bruce.tag)
+  picture('ribbonBlue', bruce.ribbon)
+  picture('fishWall', bruce.fish)
+  pillar(bruce.pillar.x)
+  picture('pillowRed', { x: bruce.pillar.x, ...bruce.pillar.pillow, z: 0.34 })
+  picture('fishBag', bruce.fishBag)
+  const tutuBare = form(bruce.form.x, bruce.form.feetY, false, false)
+  spotlight(bruce.spotlight.x, bruce.spotlight.top)
+  picture('platformBlue', { x: bruce.form.x, ...bruce.platform })
+  picture('flowerBush', bruce.bush)
+  const tutu = plane(canvasWidth, canvasHeight, art.tutu, tutuBare.position.x, tutuBare.position.y, mannequin.z + 0.01) as Painted
+  tutu.material.depthWrite = false
+  group.add(tutu)
+  floralPieces.push({ item: { slot: 'costume', id: 'tutu' }, mesh: tutu, bare: tutuBare, x: bruce.form.x, y: 330, width: 220, shown: 1, target: 1 })
+
   const cardigan = new THREE.Mesh(
     new THREE.PlaneGeometry(canvasWidth, canvasHeight),
     new THREE.MeshBasicMaterial({ map: art.cardiganRed, transparent: true, depthWrite: false }),
@@ -355,13 +383,14 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   hint.setAttribute('aria-hidden', 'true')
   place(hint, { x: 0, y: 0, width: 300 }, 0.085)
   const hintSpot = controls[controls.length - 1].mark
-  type HintKey = 'dress' | 'bow' | 'cardigan' | 'portrait0' | 'portrait1'
+  type HintKey = 'dress' | 'bow' | 'cardigan' | 'portrait0' | 'portrait1' | 'portrait2'
   const hintSpots: { key: HintKey; x: number; y: number }[] = [
     { key: 'dress', x: featuredX, y: 140 },
     { key: 'bow', x: atelier.bowPillar.bow.x, y: 318 },
     { key: 'portrait0', x: frames[0].spot.x, y: frames[0].spot.y + 72 },
     { key: 'cardigan', x: cardiganStand.x, y: 232 },
     { key: 'portrait1', x: frames[1].spot.x, y: frames[1].spot.y - 78 },
+    { key: 'portrait2', x: frames[2].spot.x, y: frames[2].spot.y - 72 },
   ]
   const tried = new Set<HintKey>()
   const tap = window.matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click'
@@ -369,7 +398,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     if (key === 'dress') return target.dress > 0 ? `${tap} the dress to try it on` : `${tap} the form to give it back`
     if (key === 'bow') return target.bow > 0 ? `${tap} the bow to try it on` : `${tap} the cushion to give it back`
     if (key === 'cardigan') return target.cardigan > 0 ? `${tap} to try it on, or pick a colour` : `${tap} the form to give it back`
-    return `${tap} to walk as ${CHARACTER_NAMES[frames[key === 'portrait0' ? 0 : 1].offered]}`
+    return `${tap} to walk as ${CHARACTER_NAMES[frames[Number(key.slice('portrait'.length))].offered]}`
   }
   const exit = control('Back to museum', 'lobby-sign gallery-door-cue atelier-exit', {
     x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
@@ -421,7 +450,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   }
   for (const frame of frames) {
     if ((FREE_CHARACTERS as readonly string[]).includes(frame.own)) continue
-    priceTag(() => itemIdFor('character', frame.own), { x: frame.spot.x, y: frame.spot.y + 86, width: 120 })
+    priceTag(() => itemIdFor('character', frame.own), { x: frame.spot.x, y: ('priceY' in frame.spot && frame.spot.priceY) || frame.spot.y + 86, width: 120 })
   }
 
   let owned: Set<string> | null = null
@@ -506,7 +535,7 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     setVisitor(kind) {
-      if (visitorKind && visitorKind !== kind) { tried.add('portrait0'); tried.add('portrait1') }
+      if (visitorKind && visitorKind !== kind) frames.forEach((_, i) => tried.add(`portrait${i}` as HintKey))
       visitorKind = kind
       frames.forEach((frame, i) => {
         frame.offered = kind === frame.own ? 'bunny' : frame.own

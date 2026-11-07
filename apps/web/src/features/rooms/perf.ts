@@ -5,6 +5,8 @@ export interface PerfSnapshot {
   room: string | null
   /** Where the camera is on the room's floor, in world units. */
   cameraX: number
+  /** What the camera shows, in world units. */
+  view: { left: number; right: number; top: number; bottom: number } | null
   fps: number
   frameMs: { avg: number; worst: number }
   stageMs: { avg: number; worst: number }
@@ -19,7 +21,7 @@ export interface PerfSnapshot {
 }
 
 export interface PerfMeter {
-  frame(frameMs: number, stageMs: number, room: string | null, cameraX: number): void
+  frame(frameMs: number, stageMs: number, room: string | null, cameraX: number, camera?: THREE.OrthographicCamera): void
   rendered(info: THREE.WebGLInfo): void
   opened(room: string, ms: number, warm: boolean, viaDoor: boolean): void
   dispose(): void
@@ -47,6 +49,7 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
   let info = { drawCalls: 0, triangles: 0, textures: 0, geometries: 0 }
   let room: string | null = null
   let camera = 0
+  let view: PerfSnapshot['view'] = null
   let lastOpen: PerfSnapshot['lastOpen'] = null
 
   function snapshot(): PerfSnapshot {
@@ -59,6 +62,7 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
     return {
       room,
       cameraX: camera,
+      view,
       fps: frames.length,
       frameMs: { avg: sum('frameMs') / n, worst: worst('frameMs') },
       stageMs: { avg: sum('stageMs') / n, worst: worst('stageMs') },
@@ -98,9 +102,10 @@ export function createPerfMeter(overlay: HTMLElement): PerfMeter {
   }
 
   return {
-    frame(frameMs, stageMs, current, cameraX) {
+    frame(frameMs, stageMs, current, cameraX, ortho) {
       room = current
       camera = cameraX
+      if (ortho) view = { left: ortho.left + ortho.position.x, right: ortho.right + ortho.position.x, top: ortho.top + ortho.position.y, bottom: ortho.bottom + ortho.position.y }
       frames.push({ at: performance.now(), frameMs, stageMs })
       if (frames.length > 240) frames = frames.slice(-120)
     },

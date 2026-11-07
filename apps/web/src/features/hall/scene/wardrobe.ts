@@ -10,7 +10,7 @@ export const CARDIGANS = ['cardigan-red', 'cardigan-forest-green', 'cardigan-nav
 export const HIBISCUS = ['hibiscus-blue', 'hibiscus-yellow', 'hibiscus-pink'] as const
 export const COSTUMES = [
   'kiki', ...CARDIGANS, 'blue-floral', 'floral-cardigan', 'flower-crown',
-  'gold-sequin', 'gold-cape', ...HIBISCUS, 'blue-cap', 'daisy-clip',
+  'gold-sequin', 'gold-cape', ...HIBISCUS, 'blue-cap', 'daisy-clip', 'tutu',
 ] as const
 
 /** The costumes fitted to each character's rig; the others stay on their stands. */
@@ -18,6 +18,7 @@ export const FITS: Record<CharacterKind, readonly string[]> = {
   bunny: COSTUMES,
   cat: COSTUMES,
   otter: COSTUMES,
+  bruce: ['tutu'],
 }
 
 export function lookOf(outfit: Outfit): Look {

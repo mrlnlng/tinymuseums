@@ -1101,16 +1101,19 @@
   "ktx2": null,
   "models": {
     "bunnyRig": {
-      "src": "bunny-rig-v2-dressed.951585a174.glb"
+      "src": "bunny-rig-v2-dressed.d691adb203.glb"
     },
     "bunnyRigBow": {
       "src": "bunny-rig-bow.021c8341a1.png"
     },
     "catRig": {
-      "src": "cat-rig-dressed.bd6b53f16d.glb"
+      "src": "cat-rig-dressed.d11353a936.glb"
     },
     "otterRig": {
-      "src": "otter-rig-dressed.4f9eebda56.glb"
+      "src": "otter-rig-dressed.33d2cfd2ae.glb"
+    },
+    "bruceRig": {
+      "src": "bruce-rig-dressed.ea7dfc2b00.glb"
     }
   },
   "atelier": {
@@ -1129,6 +1132,16 @@
       "width": 489,
       "height": 517
     },
+    "curtainSwag": {
+      "src": "atelier-curtain-swag.cf15e01072.webp",
+      "width": 425,
+      "height": 198
+    },
+    "curtainDrape": {
+      "src": "atelier-curtain-drape.30dc2c96bd.webp",
+      "width": 428,
+      "height": 756
+    },
     "shelf": {
       "src": "atelier-shelf.e0f45775d4.webp",
       "width": 422,
@@ -1140,14 +1153,14 @@
       "height": 388
     },
     "jewelryBox": {
-      "src": "atelier-jewelry-box.a83281b0db.webp",
-      "width": 480,
-      "height": 301
+      "src": "atelier-jewelry-box.fa6f961a95.webp",
+      "width": 1651,
+      "height": 1036
     },
     "perfume": {
-      "src": "atelier-perfume.b705309c95.webp",
-      "width": 360,
-      "height": 358
+      "src": "atelier-perfume.54dcb972ef.webp",
+      "width": 1043,
+      "height": 1036
     },
     "portraitWink": {
       "src": "atelier-portrait-wink.a866216bf6.webp",
@@ -1170,18 +1183,18 @@
       "height": 540
     },
     "ribbon": {
-      "src": "atelier-ribbon.e3991eb0fd.webp",
-      "width": 80,
-      "height": 41
+      "src": "atelier-ribbon.75b71bdd77.webp",
+      "width": 63,
+      "height": 35
     },
     "mannequin": {
-      "src": "atelier-mannequin-bare.d623f7011f.webp",
-      "width": 789,
+      "src": "atelier-mannequin-bare.1e5581e10e.webp",
+      "width": 891,
       "height": 1710
     },
     "mannequinDress": {
-      "src": "atelier-mannequin-dress.02d3bdf640.webp",
-      "width": 789,
+      "src": "atelier-mannequin-dress.46629fab8f.webp",
+      "width": 891,
       "height": 1710
     },
     "cardiganRed": {
@@ -1205,18 +1218,18 @@
       "height": 1710
     },
     "floralMannequin": {
-      "src": "atelier-mannequin-floral-bare.0600212ad3.webp",
-      "width": 789,
+      "src": "atelier-mannequin-floral-bare.5e78970bb0.webp",
+      "width": 891,
       "height": 1710
     },
     "blueFloral": {
-      "src": "atelier-mannequin-blue-floral.032f93a8df.webp",
-      "width": 789,
+      "src": "atelier-mannequin-blue-floral.79263c83fd.webp",
+      "width": 891,
       "height": 1710
     },
     "floralCardigan": {
-      "src": "atelier-mannequin-floral-cardigan.7e1f5cf783.webp",
-      "width": 789,
+      "src": "atelier-mannequin-floral-cardigan.4cf0c1549a.webp",
+      "width": 891,
       "height": 1710
     },
     "flowerCrown": {
@@ -1225,13 +1238,13 @@
       "height": 397
     },
     "goldSequin": {
-      "src": "atelier-mannequin-gold-sequin.2c95c9d6f9.webp",
-      "width": 789,
+      "src": "atelier-mannequin-gold-sequin.aecbc66ebd.webp",
+      "width": 891,
       "height": 1710
     },
     "goldCape": {
-      "src": "atelier-mannequin-gold-cape.16f0386fd2.webp",
-      "width": 789,
+      "src": "atelier-mannequin-gold-cape.673b6d0ff3.webp",
+      "width": 891,
       "height": 1710
     },
     "hibiscusBlue": {
@@ -1304,20 +1317,70 @@
       "width": 190,
       "height": 474
     },
+    "tutu": {
+      "src": "atelier-mannequin-tutu.bfe1d272a8.webp",
+      "width": 891,
+      "height": 1710
+    },
+    "bruceTag": {
+      "src": "atelier-bruce-tag.9cacff52b9.webp",
+      "width": 261,
+      "height": 226
+    },
+    "bruceFrameBlue": {
+      "src": "atelier-bruce-frame-blue.a2a4d13c8b.webp",
+      "width": 1060,
+      "height": 1417
+    },
+    "bruceFrameCream": {
+      "src": "atelier-bruce-frame-cream.1d503a308d.webp",
+      "width": 131,
+      "height": 170
+    },
+    "brucePaintingGarden": {
+      "src": "atelier-bruce-painting-garden.5e8fa2982d.webp",
+      "width": 172,
+      "height": 242
+    },
+    "brucePaintingPond": {
+      "src": "atelier-bruce-painting-pond.1dfb129cc4.webp",
+      "width": 96,
+      "height": 145
+    },
+    "portraitBruce": {
+      "src": "atelier-portrait-bruce.a537591905.webp",
+      "width": 74,
+      "height": 69
+    },
+    "ribbonBlue": {
+      "src": "atelier-ribbon-blue.66a016446c.webp",
+      "width": 63,
+      "height": 35
+    },
+    "fishWall": {
+      "src": "atelier-fish-wall.c2e846c47b.webp",
+      "width": 418,
+      "height": 249
+    },
+    "fishBag": {
+      "src": "atelier-fish-bag.60946cdde6.webp",
+      "width": 534,
+      "height": 798
+    },
+    "flowerBush": {
+      "src": "atelier-flower-bush.0ec05515e3.webp",
+      "width": 548,
+      "height": 198
+    },
+    "platformBlue": {
+      "src": "atelier-platform-blue.f282cd7bcc.webp",
+      "width": 219,
+      "height": 55
+    },
     "plaque": {
       "src": "plaque@2x.495da8a967.webp",
       "width": 811,
       "height": 400
-    },
-    "curtainSwag": {
-      "src": "atelier-curtain-swag.cf15e01072.webp",
-      "width": 425,
-      "height": 198
-    },
-    "curtainDrape": {
-      "src": "atelier-curtain-drape.30dc2c96bd.webp",
-      "width": 428,
-      "height": 756
     }
   },
   "galleryDoor": {

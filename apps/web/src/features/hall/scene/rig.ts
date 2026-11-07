@@ -5,7 +5,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { modelUrl } from '@/shared/lib/assets'
 import type { RigState } from './rig-motion'
 
-export type CharacterKind = 'bunny' | 'cat' | 'otter'
+export type CharacterKind = 'bunny' | 'cat' | 'otter' | 'bruce'
 
 interface Frame {
   width: number
@@ -17,7 +17,7 @@ interface Frame {
 }
 
 interface RigSpec {
-  model: 'bunnyRig' | 'catRig' | 'otterRig'
+  model: 'bunnyRig' | 'catRig' | 'otterRig' | 'bruceRig'
   // A fixed frame in layer-canvas px, rather than reframing each animated pose. The standing
   // character spans spriteTop to feet, which callers size like the old sprite's full box; the
   // rest leaves room for ear twitches, the turn hop, the shadow and costumes. centerX is the
@@ -58,6 +58,14 @@ const SPECS: Record<CharacterKind, RigSpec> = {
     blink: { groups: [['otter_eye_L'], ['otter_eye_R']] },
     feet: [{ bone: 'leg_L', x: 705, y: 2150 }, { bone: 'leg_R', x: 1200, y: 2116 }],
     shadow: { x: 900, y: 2150, width: 880, height: 110 },
+  },
+  bruce: {
+    model: 'bruceRig',
+    frame: { width: 1740, top: 100, bottom: 2262, spriteTop: 250, feet: 2162, centerX: 834 },
+    squashY: 2143,
+    blink: { groups: [['bruce_eye_L'], ['bruce_eye_R']] },
+    feet: [{ bone: 'leg_L', x: 685, y: 2140 }, { bone: 'leg_R', x: 1133, y: 2080 }],
+    shadow: { x: 910, y: 2140, width: 880, height: 110 },
   },
 }
 

@@ -289,10 +289,34 @@ bunny = await goldOutfits(bunny, 'bunny')
 cat = await goldOutfits(cat, 'cat')
 otter = await goldOutfits(otter, 'otter')
 
+// The tutu handoff fitted one drawing to every body (bruce_costume/HANDOFF.md). Its screen-left
+// arm goes behind the skirt, which nothing else overlaps, so that order is set for good.
+function withDrawOrders(glb, orders) {
+  const jsonLength = glb.readUInt32LE(12)
+  const json = JSON.parse(glb.subarray(20, 20 + jsonLength).toString('utf8'))
+  for (const node of json.nodes) if (node.name in orders) node.extras = { ...node.extras, draw_order: orders[node.name] }
+  let body = Buffer.from(JSON.stringify(json), 'utf8')
+  body = Buffer.concat([body, Buffer.alloc((4 - (body.length % 4)) % 4, 0x20)])
+  const rest = glb.subarray(20 + jsonLength)
+  const header = Buffer.alloc(20)
+  header.writeUInt32LE(0x46546c67, 0)
+  header.writeUInt32LE(2, 4)
+  header.writeUInt32LE(20 + body.length + rest.length, 8)
+  header.writeUInt32LE(body.length, 12)
+  header.writeUInt32LE(0x4e4f534a, 16)
+  return Buffer.concat([header, body, rest])
+}
+bunny = withDrawOrders(graftCostume(bunny, await master('bunny-rig-v2-tutu.glb'), {
+  relabel: (extras) => ({ ...extras, hides: 'bowtie' }),
+}), { bunny_arm_L: 3.2 })
+cat = graftCostume(cat, await master('cat-rig-tutu.glb'))
+otter = withDrawOrders(graftCostume(otter, await master('otter-rig-tutu.glb')), { otter_arm_L: 3.2 })
+
 const models = {
   bunnyRig: await rig('bunny-rig-v2-dressed', bunny),
   catRig: await rig('cat-rig-dressed', cat),
   otterRig: await rig('otter-rig-dressed', otter),
+  bruceRig: await rig('bruce-rig-dressed', await master('bruce-rig.glb')),
   bunnyRigBow: { src: await write('bunny-rig-bow', 'png', await master('bunny-rig-bow.png')) },
 }
 
@@ -338,6 +362,18 @@ const atelier = {
   bow: await image('bow'),
   painting: await image('painting'),
   mirror: await image('mirror'),
+  tutu: await image('mannequin-tutu'),
+  bruceTag: await image('bruce-tag'),
+  bruceFrameBlue: await image('bruce-frame-blue'),
+  bruceFrameCream: await image('bruce-frame-cream'),
+  brucePaintingGarden: await image('bruce-painting-garden'),
+  brucePaintingPond: await image('bruce-painting-pond'),
+  portraitBruce: await image('portrait-bruce'),
+  ribbonBlue: await image('ribbon-blue'),
+  fishWall: await image('fish-wall'),
+  fishBag: await image('fish-bag'),
+  flowerBush: await image('flower-bush'),
+  platformBlue: await image('platform-blue', { lossless: true }),
 }
 
 const path = new URL('src/generated/asset-manifest.json', root)

@@ -1,7 +1,7 @@
 import { defineSlot } from './define.ts'
 import { latest, record, type Latest } from './merge.ts'
 
-export const CHARACTERS = ['bunny', 'cat', 'otter'] as const
+export const CHARACTERS = ['bunny', 'cat', 'otter', 'bruce'] as const
 export type CharacterChoice = (typeof CHARACTERS)[number]
 
 export interface Outfit {

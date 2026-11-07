@@ -450,7 +450,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       try {
         drawFrame(now, entry)
       } finally {
-        perf.frame(frameMs, performance.now() - now, entry?.ready ? entry.room.id : null, traversal.cameraX)
+        perf.frame(frameMs, performance.now() - now, entry?.ready ? entry.room.id : null, traversal.cameraX, rig.camera)
       }
     }
 

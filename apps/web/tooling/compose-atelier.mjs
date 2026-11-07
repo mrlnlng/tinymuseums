@@ -2,7 +2,7 @@ import sharp from 'sharp'
 
 // Bare and dressed mannequins share one canvas, so wearing a costume only swaps the texture.
 // Units are the master mannequin's pixels (173 × 525); the output is drawn at SCALE.
-export const MANNEQUIN_CANVAS = { padX: 45, padTop: 45, scale: 3, form: { width: 173, height: 525 } }
+export const MANNEQUIN_CANVAS = { padX: 62, padTop: 45, scale: 3, form: { width: 173, height: 525 } }
 
 const root = new URL('../public/assets/', import.meta.url)
 const { padX, padTop, scale, form } = MANNEQUIN_CANVAS
@@ -22,12 +22,13 @@ async function compose(name, layers) {
 
 const body = { input: await resized('atelier/mannequin.png', form.width * scale), left: padX * scale, top: padTop * scale }
 
-// The display dress from the mocks (mannequin_kiki/kiki_costume.png), its neckline at the form's.
-const dressWidth = 230 * scale
+// The display dress from the mocks (mannequin_kiki/kiki_costume.png). In 7.png and 8.png it is
+// drawn one mock pixel per art pixel on a form 454 px tall, its top 59 form px below the knob.
+const dressWidth = Math.round(246 * (form.height / 454) * scale)
 const dress = await resized('atelier/kiki-dress-display.png', dressWidth)
 
 await compose('mannequin-bare', [body])
-const dressLayer = { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 68) * scale }
+const dressLayer = { input: dress, left: Math.round(centerX - dressWidth / 2), top: (padTop + 59) * scale }
 await compose('mannequin-dress', [dressLayer])
 
 // The atelier's bare Ionic column is the helmet pedestal cut below the stand's plate.
@@ -61,8 +62,10 @@ const torso = Buffer.from(`<svg width="1668" height="2388">
 const blank = () => sharp({ create: { ...sourceSize, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
 const bare = await blank().composite([{ input: torso }, { input: neckAndStand }]).png().toBuffer()
 const blue = await sharp(bare).composite([{ input: await sharp(new URL('atelier/blue-floral-dress-display.png', root).pathname).toBuffer() }]).png().toBuffer()
+// The floral forms span 974 source px across 263 canvas units; wider canvases take in more on each side.
+const floralWidth = Math.round(974 * (width / scale) / 263)
 async function floralForm(name, input) {
-  await sharp(input).extract({ left: 345, top: 74, width: 974, height: 2110 })
+  await sharp(input).extract({ left: Math.round(345 - (floralWidth - 974) / 2), top: 74, width: floralWidth, height: 2110 })
     .resize(width, height, { fit: 'fill' }).png({ compressionLevel: 9 })
     .toFile(new URL(`atelier/${name}.png`, root).pathname)
 }
@@ -76,3 +79,13 @@ for (const name of ['flower-crown', 'hibiscus-blue', 'hibiscus-yellow', 'hibiscu
   await sharp(new URL(`atelier/${name}.png`, root).pathname).trim()
     .png({ compressionLevel: 9 }).toFile(new URL(`atelier/${name}-trimmed.png`, root).pathname)
 }
+
+// In bruce_mock_scene.png the tutu is on the plain form, 0.261 form px per art px, the art's
+// corner at (-131.4, -57.7) form px from the form's top left.
+const tutuScale = 0.2611 * scale
+const tutuSized = await sharp(new URL('atelier/tutu-display.png', root).pathname)
+  .resize({ width: Math.round(1668 * tutuScale), kernel: 'lanczos3' }).png().toBuffer()
+const tutu = await sharp(tutuSized)
+  .extract({ left: Math.round((131.4 - padX) * scale), top: Math.round((57.7 - padTop) * scale), width, height })
+  .png().toBuffer()
+await compose('mannequin-tutu', [body, { input: tutu, left: 0, top: 0 }])

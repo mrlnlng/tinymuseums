@@ -43,6 +43,8 @@ export interface Character {
   /** A little hop, as other visitors see when this one says something. */
   bounce(): void
   perch(perch: Perch | null): void
+  /** Whether a point in viewport pixels is on the middle of the character, as last drawn. */
+  isUnder(x: number, y: number): boolean
   attach(attachment: Attachment, out: Pose): Pose
   update(
     dt: number,
@@ -164,6 +166,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let moving = false
   let screenX = 0
   let screenY = 0
+  let drawnHeight = 0
   let scale = 1
   let currentHeight = ''
   let currentTransform = ''
@@ -219,6 +222,11 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
 
     perch(perch) {
       perched = perch
+    },
+
+    isUnder(x, y) {
+      // The middle of the body only, so the edges of doors and stands behind stay tappable.
+      return Math.abs(x - screenX) <= drawnHeight * 0.28 && Math.abs(y - screenY) <= drawnHeight * 0.45
     },
 
     bounce() {
@@ -294,6 +302,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       const frustumHeight = camera.top - camera.bottom
       const worldHeight = perched ? perched.height : CONFIG.character.height
       const heightPx = (worldHeight / frustumHeight) * viewport.height
+      drawnHeight = heightPx
       // The same hop as remote-visitors.ts draws when others say something.
       const bounce = performance.now() - bouncedAt
       if (bounce < BOUNCE_MS) screenY -= Math.sin((Math.PI * bounce) / BOUNCE_MS) * heightPx * 0.08

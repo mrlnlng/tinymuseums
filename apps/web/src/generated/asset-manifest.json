@@ -1308,6 +1308,16 @@
       "src": "plaque@2x.495da8a967.webp",
       "width": 811,
       "height": 400
+    },
+    "curtainSwag": {
+      "src": "atelier-curtain-swag.cf15e01072.webp",
+      "width": 425,
+      "height": 198
+    },
+    "curtainDrape": {
+      "src": "atelier-curtain-drape.30dc2c96bd.webp",
+      "width": 428,
+      "height": 756
     }
   },
   "galleryDoor": {

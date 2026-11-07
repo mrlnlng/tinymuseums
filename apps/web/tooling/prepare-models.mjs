@@ -301,6 +301,8 @@ const atelier = {
   wallpaper: await image('wallpaper'),
   carpet: await image('carpet'),
   curtains: await image('curtains'),
+  curtainSwag: await image('curtain-swag'),
+  curtainDrape: await image('curtain-drape'),
   shelf: await image('shelf'),
   cabinet: await image('cabinet', { lossless: true }),
   jewelryBox: await image('jewelry-box'),

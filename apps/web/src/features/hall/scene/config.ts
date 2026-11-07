@@ -180,6 +180,11 @@ export const CONFIG = {
     wall: { left: -10, right: 30, tile: 2.2 },
     carpet: { height: 1.25 },
     curtains: { left: -40, width: 520, z: 0.5 },
+    // The same drape art at the same scale: swags along the ceiling to a drape closing the far
+    // end, mirrored, its right edge on the screen's edge when the camera reaches the end.
+    // widestHalf is half the widest view it allows for; the swags run that far.
+    curtainSwags: { width: 452, overlap: 14, z: 0.49 },
+    curtainDrape: { width: 455, widestHalf: 6.5, z: 0.5 },
     title: { x: 330, y: 147, width: 390 },
     shelf: { x: 330, y: 207, width: 424, z: 0.2 },
     plaque: { x: 320, y: 317, width: 380 },

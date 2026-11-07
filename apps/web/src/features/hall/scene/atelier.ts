@@ -168,6 +168,28 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
   const curtainHeight = curtainWidth / aspectOf('curtains')
   group.add(plane(curtainWidth, curtainHeight, art.curtains, wx(curtains.left) + curtainWidth / 2, atelier.ceiling - curtainHeight / 2, curtains.z))
 
+  const { curtainDrape, curtainSwags } = atelier
+  const drapeWidth = units(curtainDrape.width)
+  const drapeHeight = drapeWidth / aspectOf('curtainDrape')
+  // The drape closes the far end at the screen's edge, so sync() places it once the view's width is known.
+  const drape = plane(drapeWidth, drapeHeight, art.curtainDrape, atelier.max, atelier.ceiling - drapeHeight / 2, curtainDrape.z)
+  drape.scale.x = -1
+  group.add(drape)
+  let drapeForHalf = -1
+  const drapeRight = atelier.max + curtainDrape.widestHalf
+
+  const swagWidth = units(curtainSwags.width)
+  const swagHeight = swagWidth / aspectOf('curtainSwag')
+  const swagStep = swagWidth - units(curtainSwags.overlap)
+  const swagsFrom = wx(curtains.left) + curtainWidth - units(curtainSwags.overlap)
+  const swagsTo = drapeRight - drapeWidth + units(curtainSwags.overlap)
+  const swagCount = Math.max(0, Math.ceil((swagsTo - swagsFrom) / swagStep))
+  // Spread evenly; the swags run on behind the drape to where the widest screen ends.
+  const swagGap = swagCount > 1 ? (swagsTo - swagsFrom - swagWidth) / (swagCount - 1) : 0
+  for (let i = 0; i < swagCount; i++) {
+    group.add(plane(swagWidth, swagHeight, art.curtainSwag, swagsFrom + swagWidth / 2 + i * swagGap, atelier.ceiling - swagHeight / 2, curtainSwags.z))
+  }
+
   picture('shelf', atelier.shelf)
   picture('cabinet', atelier.cabinet)
   picture('jewelryBox', atelier.jewelryBox)
@@ -505,6 +527,11 @@ export function createAtelierRoom(scene: THREE.Scene, art: AtelierArt, host: HTM
     },
 
     sync(camera, viewport, enabled) {
+      const half = (camera.right - camera.left) / 2
+      if (half !== drapeForHalf) {
+        drapeForHalf = half
+        drape.position.x = atelier.max + Math.min(half, curtainDrape.widestHalf) - drapeWidth / 2
+      }
       const perUnit = viewport.width / (camera.right - camera.left)
       note.hidden = noteFor <= 0
       for (const { node, mark, font } of controls) {

@@ -339,6 +339,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       aim(event)
       const contents = current?.contents
       if (!contents) return
+      // A tap on the character itself jumps, ahead of whatever stands behind it.
+      const rect = renderer.domElement.getBoundingClientRect()
+      if (character.isUnder(event.clientX - rect.left, event.clientY - rect.top) && traversal.jump()) return
       const interaction = contents.hitTest(raycaster, 'tap')
       if (!interaction) return
       if (!interaction.silent) sound().play('click')

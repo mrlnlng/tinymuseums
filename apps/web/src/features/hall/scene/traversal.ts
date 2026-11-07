@@ -56,7 +56,7 @@ export class Traversal {
         // Space on a focused button presses the button instead.
         if (target?.closest('button, a, [role="button"]')) return
         if (key === ' ') e.preventDefault()
-        if (!this.locked && this.heldAt === null) this.jumpQueued = true
+        this.jump()
         return
       }
       this.keys.add(key)
@@ -239,6 +239,14 @@ export class Traversal {
       this.height === 0 &&
       Math.abs(this.velocity) < 0.01
     this.idleSeconds = resting ? this.idleSeconds + dt : 0
+  }
+
+  /** Queues a jump; false when the character cannot jump now (held, locked or in the air). */
+  jump(): boolean {
+    if (this.locked || this.heldAt !== null || this.height > 0) return false
+    this.jumpQueued = true
+    this.idleSeconds = 0
+    return true
   }
 
   /** True once for each jump that leaves the floor, for its sound. */

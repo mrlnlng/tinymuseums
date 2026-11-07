@@ -93,6 +93,11 @@ export interface Rig {
   /** `at` is the top-left corner in CSS pixels, for a rig drawn into a layer. */
   render(state: RigState, dt: number, height: number, pixelRatio: number, at?: { left: number; top: number }): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
+  /**
+   * The floor shadow from the last render, in canvas heights from the canvas's middle and the
+   * feet. The rig fades its own shadow out in the air, where the caller draws this one on the floor.
+   */
+  readonly floorShadow: { x: number; y: number; width: number; height: number }
   dispose(): void
 }
 
@@ -408,9 +413,13 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   const head = model.getObjectByName('head')
   const chest = model.getObjectByName('chest')
   const ears = ['ear_L', 'ear_R'].map((name) => model.getObjectByName(name))
+  const [armBack, armFront] = ['arm_L', 'arm_R'].map((name) => model.getObjectByName(name))
+  const [legBack, legFront] = ['leg_L', 'leg_R'].map((name) => model.getObjectByName(name))
+  const tail = model.getObjectByName('tail')
+  const floorShadow = { x: 0, y: 0, width: 0, height: 0 }
   // The mixer only rewrites a bone when its clip value changes, so idle offsets are undone
   // before the next update. They stay applied between renders for attachments.
-  const posed = [hips, head, ...ears].flatMap((node) =>
+  const posed = [hips, head, ...ears, armBack, armFront, legBack, legFront, tail].flatMap((node) =>
     node ? [{ node, scale: new THREE.Vector3(), quaternion: new THREE.Quaternion() }] : [],
   )
   const zAxis = new THREE.Vector3(0, 0, 1)
@@ -429,6 +438,26 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
 
   function rotateInPlane(bone: THREE.Object3D | undefined, angle: number): void {
     if (bone && angle) bone.quaternion.premultiply(turnQuaternion.setFromAxisAngle(zAxis, angle))
+  }
+
+  // Angles are for a character facing right; the mirrored model turns them for the left.
+  function poseJump(air: number, rise: number, squash: number): void {
+    // Positive turns a bone counterclockwise on screen: ears lean back, legs and arms swing forward.
+    const deg = -Math.PI / 180
+    // Ears and tail trail the motion: swept back going up, floating forward coming down.
+    const trail = 24 * rise * air
+    // A crouch or a landing tips the ears forward.
+    const dip = 70 * Math.min(0, squash)
+    rotateInPlane(ears[0], deg * (trail + 6 * air + dip))
+    rotateInPlane(ears[1], deg * (trail - 4 * air + dip))
+    rotateInPlane(tail, deg * -18 * rise * air)
+    rotateInPlane(head, deg * 7 * rise * air)
+    // Arms fly up and out, more on the way down; legs tuck, the front one forward.
+    const reach = (32 + 14 * Math.max(0, -rise)) * air
+    rotateInPlane(armFront, deg * reach)
+    rotateInPlane(armBack, deg * -reach)
+    rotateInPlane(legFront, deg * (18 + 8 * rise) * air)
+    rotateInPlane(legBack, deg * -(22 + 10 * rise) * air)
   }
 
   // The chest and its parents only rotate in the drawing plane.
@@ -496,7 +525,9 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       const across = Math.sin((state.turn * Math.PI) / 2)
       const sign = across >= 0 ? 1 : -1
       const hop = 1 - across * across
-      model.scale.set(sign * Math.max(0.04, Math.abs(across)), 1 + 0.05 * hop, 1)
+      // A jump squashes the body against the floor and stretches it in the air, keeping its volume.
+      const squash = state.squash
+      model.scale.set(sign * Math.max(0.04, Math.abs(across)) * (1 - 0.6 * squash), (1 + 0.05 * hop) * (1 + squash), 1)
       model.position.y = squashY * (1 - model.scale.y) + 0.03 * hop
       // Keep the body, not the mirror line, in the middle of the frame for either facing.
       camera.position.x = bodyX * model.scale.x
@@ -519,6 +550,8 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
         const flick = twitch < 0.2 ? Math.sin((Math.PI * twitch) / 0.2) : -0.5 * Math.sin((Math.PI * (twitch - 0.2)) / 0.16)
         rotateInPlane(ears[twitchEar], (Math.PI / 180) * 8 * flick * (twitchEar === 0 ? 1 : -1) * idle)
       }
+
+      if (state.air > 0 || squash !== 0) poseJump(state.air, state.rise, squash)
 
       if (clock >= nextBlink) {
         blinkAt = clock
@@ -555,7 +588,11 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       lift += 0.03 * hop
       shadow.position.x = shadowAt.x * model.scale.x
       shadow.scale.set(Math.max(0.6, Math.abs(across)) * (1 - 2.5 * lift), 1 - 2.5 * lift, 1)
-      shadowMaterial.opacity = Math.max(0, 1 - 6 * lift)
+      shadowMaterial.opacity = Math.max(0, 1 - 6 * lift) * (1 - state.air)
+      floorShadow.x = ((spec.shadow.x - frame.centerX) * model.scale.x) / frameHeight
+      floorShadow.y = (spec.shadow.y - frame.feet) / frameHeight
+      floorShadow.width = (spec.shadow.width * Math.max(0.6, Math.abs(across))) / frameHeight
+      floorShadow.height = spec.shadow.height / frameHeight
 
       if (layer) {
         // WebGL counts up from the bottom left.
@@ -566,6 +603,8 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       renderer.render(scene, camera)
       lastFacing = sign < 0 ? 'left' : 'right'
     },
+
+    floorShadow,
 
     projectAttachment(anchor, out) {
       let socket = anchors.get(anchor)

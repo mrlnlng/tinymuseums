@@ -1,4 +1,5 @@
 import { CONFIG } from './config'
+import type { JumpPose } from './rig-motion'
 
 export class Traversal {
   cameraX = 0
@@ -27,6 +28,20 @@ export class Traversal {
   idleSeconds = 0
 
   private worldPerPixel = 0.0084
+  private viewWidth = 9
+
+  // While the keys drive the bunny, the camera stops pulling it back to the middle.
+  private steering = false
+  private stride = 0
+
+  /** How far the bunny is off the floor, in world units. */
+  height = 0
+  private rise = 0
+  private jumpQueued = false
+  private jumped = false
+  private crouchedFor = -1
+  private landedFor = -1
+  private readonly pose: JumpPose = { squash: 0, rise: 0, lift: 0, airborne: false }
 
   private detachWindow = () => {}
 
@@ -36,7 +51,15 @@ export class Traversal {
       if (target?.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('[aria-modal="true"]')) return
       this.idleSeconds = 0
       if (e.repeat) return
-      this.keys.add(e.key.toLowerCase())
+      const key = e.key.toLowerCase()
+      if (JUMP_KEYS.has(key)) {
+        // Space on a focused button presses the button instead.
+        if (target?.closest('button, a, [role="button"]')) return
+        if (key === ' ') e.preventDefault()
+        if (!this.locked && this.heldAt === null) this.jumpQueued = true
+        return
+      }
+      this.keys.add(key)
     }
     const keyup = (e: KeyboardEvent) => this.keys.delete(e.key.toLowerCase())
     const blur = () => this.keys.clear()
@@ -54,6 +77,7 @@ export class Traversal {
       this.idleSeconds = 0
       if (this.locked) return
       this.following = false
+      this.steering = false
       this.dragging = true
       this.lastPointerX = e.clientX
       this.dragVelocity = 0
@@ -89,6 +113,7 @@ export class Traversal {
         if (this.locked) return
         e.preventDefault()
         this.following = false
+        this.steering = false
         const amount = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
         const step = amount * this.worldPerPixel * CONFIG.move.wheelFactor
         this.cameraX += step
@@ -117,6 +142,8 @@ export class Traversal {
       this.keys.clear()
       this.dragging = false
       this.velocity = 0
+      this.stride = 0
+      this.jumpQueued = false
     }
   }
 
@@ -128,11 +155,16 @@ export class Traversal {
   hold(x: number | null, follow = false): void {
     this.heldAt = x
     this.following = x !== null && follow
+    if (x !== null) this.steering = false
     if (x !== null) this.walking = true
   }
 
   get isHeld(): boolean {
     return this.heldAt !== null && this.x === this.heldAt && !this.walking
+  }
+
+  get isSteered(): boolean {
+    return this.keyInput() !== 0
   }
 
   get isFollowing(): boolean {
@@ -143,8 +175,9 @@ export class Traversal {
     return this.introducing
   }
 
-  setWorldPerPixel(value: number): void {
-    if (Number.isFinite(value) && value > 0) this.worldPerPixel = value
+  setView(worldPerPixel: number, viewWidth: number): void {
+    if (Number.isFinite(worldPerPixel) && worldPerPixel > 0) this.worldPerPixel = worldPerPixel
+    if (Number.isFinite(viewWidth) && viewWidth > 0) this.viewWidth = viewWidth
   }
 
   reset(x: number): void {
@@ -158,6 +191,12 @@ export class Traversal {
     this.heldAt = null
     this.following = false
     this.dragging = false
+    this.steering = false
+    this.stride = 0
+    this.height = 0
+    this.rise = 0
+    this.crouchedFor = -1
+    this.landedFor = -1
   }
 
   playIntro(startX: number, targetX: number): void {
@@ -168,18 +207,26 @@ export class Traversal {
     this.walkVelocity = 0
     this.walking = true
     this.introducing = true
+    this.steering = false
+    this.stride = 0
   }
 
   update(dt: number, min: number, max: number): void {
-    if (!this.locked) this.moveCamera(dt, min, max)
-    this.walkToward(dt)
+    const input = this.keyInput()
+    if (!this.locked && this.heldAt === null && (input !== 0 || (this.steering && this.stride !== 0))) {
+      this.steer(dt, input, min, max)
+    } else if (!this.locked) {
+      this.moveCamera(dt, min, max)
+    }
+    if (!this.steering) this.walkToward(dt)
     this.enforceLeash()
+    this.updateJump(dt)
     if (this.following) {
       this.cameraX = this.x
       this.velocity = 0
     }
 
-    this.walkVelocity = this.walking && dt > 0 ? (this.x - this.lastFootX) / dt : 0
+    this.walkVelocity = (this.walking || this.steering) && dt > 0 ? (this.x - this.lastFootX) / dt : 0
     this.lastFootX = this.x
 
     if (this.introducing && !this.walking) this.introducing = false
@@ -189,19 +236,108 @@ export class Traversal {
       !this.dragging &&
       !this.walking &&
       this.keys.size === 0 &&
+      this.height === 0 &&
       Math.abs(this.velocity) < 0.01
     this.idleSeconds = resting ? this.idleSeconds + dt : 0
   }
 
-  private moveCamera(dt: number, min: number, max: number): void {
+  /** True once for each jump that leaves the floor, for its sound. */
+  takeJump(): boolean {
+    const jumped = this.jumped
+    this.jumped = false
+    return jumped
+  }
+
+  get isAirborne(): boolean {
+    return this.height > 0
+  }
+
+  /** The squash, stretch and height of the jump, for the character's pose. */
+  get jumpPose(): JumpPose {
+    const { height, gravity, crouchSeconds, landSeconds, squash, stretch, landSquash } = CONFIG.jump
+    const launch = Math.sqrt(2 * gravity * height)
+    const pose = this.pose
+    pose.airborne = this.height > 0
+    pose.lift = this.height / height
+    pose.rise = pose.airborne ? clamp(this.rise / launch, -1, 1) : 0
+    if (this.crouchedFor >= 0) {
+      pose.squash = -squash * Math.sin((Math.PI / 2) * Math.min(1, this.crouchedFor / crouchSeconds))
+    } else if (pose.airborne) {
+      pose.squash = stretch * Math.abs(pose.rise)
+    } else if (this.landedFor >= 0) {
+      // Squash on touching down, then a small overshoot back to standing.
+      const t = this.landedFor / landSeconds
+      pose.squash = -landSquash * Math.cos(t * Math.PI * 1.5) * (1 - t)
+    } else {
+      pose.squash = 0
+    }
+    return pose
+  }
+
+  private updateJump(dt: number): void {
+    const { height, gravity, crouchSeconds, landSeconds } = CONFIG.jump
+    const canJump = !this.locked && this.heldAt === null
+    if (this.jumpQueued && this.height === 0 && this.crouchedFor < 0 && canJump) this.crouchedFor = 0
+    this.jumpQueued = false
+
+    if (this.crouchedFor >= 0) {
+      if (!canJump) this.crouchedFor = -1
+      else if ((this.crouchedFor += dt) >= crouchSeconds) {
+        this.crouchedFor = -1
+        this.landedFor = -1
+        this.rise = Math.sqrt(2 * gravity * height)
+        this.height = this.rise * dt
+        this.jumped = true
+      }
+    }
+
+    if (this.landedFor >= 0 && (this.landedFor += dt) >= landSeconds) this.landedFor = -1
+    if (this.height === 0) return
+    this.rise -= gravity * dt
+    this.height += this.rise * dt
+    if (this.height <= 0) {
+      this.height = 0
+      this.rise = 0
+      this.landedFor = 0
+    }
+  }
+
+  private keyInput(): number {
     const left = this.keys.has('arrowleft') || this.keys.has('a')
     const right = this.keys.has('arrowright') || this.keys.has('d')
-    const input = (right ? 1 : 0) - (left ? 1 : 0)
+    return (right ? 1 : 0) - (left ? 1 : 0)
+  }
 
-    if (input !== 0) {
-      this.following = false
-      this.velocity += input * CONFIG.move.accel * dt
-    } else if (!this.dragging) {
+  private steer(dt: number, input: number, min: number, max: number): void {
+    const { keyWalkSpeed, keyAccel, lookAhead } = CONFIG.move
+    this.steering = true
+    this.following = false
+    this.walking = false
+    this.velocity = 0
+
+    const change = input * keyWalkSpeed - this.stride
+    const most = keyAccel * dt
+    this.stride += clamp(change, -most, most)
+    this.x += this.stride * dt
+    if (this.x <= min || this.x >= max) {
+      this.x = clamp(this.x, min, max)
+      this.stride = 0
+    }
+
+    // The camera holds still until the bunny comes within lookAhead of the edge it walks toward.
+    // Near the room's ends the window narrows, so the camera still reaches the end walls.
+    const slack = Math.max(0, this.viewWidth / 2 - this.viewWidth * lookAhead)
+    const ahead = Math.min(slack, this.x - min)
+    const behind = Math.min(slack, max - this.x)
+    const want = clamp(this.cameraX, this.x - behind, this.x + ahead)
+    const gap = want - this.cameraX
+    // A bunny already outside the window (after a drag) is caught up gently, not snapped to.
+    const next = Math.abs(gap) > 0.5 ? this.cameraX + gap * Math.min(1, dt * 12) : want
+    this.cameraX = clamp(next, min, max)
+  }
+
+  private moveCamera(dt: number, min: number, max: number): void {
+    if (!this.dragging) {
       this.velocity -= this.velocity * Math.min(1, CONFIG.move.damping * dt)
     }
 
@@ -242,7 +378,7 @@ export class Traversal {
   }
 
   private enforceLeash(): void {
-    if (this.heldAt !== null || !this.leashed) return
+    if (this.heldAt !== null || !this.leashed || this.steering) return
     const max = CONFIG.character.maxTrailDistance
     const gap = this.cameraX - this.x
     if (Math.abs(gap) <= max) return
@@ -251,6 +387,8 @@ export class Traversal {
     this.walking = true
   }
 }
+
+const JUMP_KEYS = new Set([' ', 'w', 'arrowup'])
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v

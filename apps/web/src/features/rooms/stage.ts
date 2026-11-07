@@ -3,6 +3,7 @@ import { outfit } from '@tiny/core/slots'
 import { revealFloorTransition } from '@/features/hall/lib/floor-transition'
 import { loadCharacterSprites, type CharacterSprites } from '@/features/hall/scene/assets'
 import { CameraRig } from '@/features/hall/scene/cameras'
+import { CONFIG } from '@/features/hall/scene/config'
 import { createCharacter, type Character } from '@/features/hall/scene/character'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
@@ -254,7 +255,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       viewport.height = height
       renderer.setSize(width, height)
       rig.resize(width, height)
-      traversal.setWorldPerPixel(rig.viewWidth / width)
+      traversal.setView(rig.viewWidth / width, rig.viewWidth)
     }
 
     const traversal = new Traversal()
@@ -422,10 +423,22 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       rig.sync(traversal.cameraX, entry.contents.cameraRise?.() ?? 0)
       const frame: Frame = { now, dt, camera: rig.camera, viewport, quiet: isQuiet(entry) }
       entry.contents.beforeCharacterUpdate?.(frame)
-      character.update(dt, traversal.x, traversal.walkVelocity, rig.camera, viewport)
+      if (traversal.takeJump()) {
+        sound().prepare('jump')
+        sound().play('jump')
+      }
+      character.update(
+        dt,
+        traversal.x,
+        traversal.walkVelocity,
+        rig.camera,
+        viewport,
+        CONFIG.character.centerY + traversal.height,
+        traversal.jumpPose,
+      )
       entry.presence?.update(dt, rig.camera, viewport)
       entry.contents.update(frame)
-      sound().setWalking(Math.abs(traversal.walkVelocity) > WALKING_SPEED)
+      sound().setWalking(!traversal.isAirborne && Math.abs(traversal.walkVelocity) > WALKING_SPEED)
       entry.frameCount += 1
       const idle = entry.handlers.isSuspended() || traversal.idleSeconds > QUIET_AFTER_SECONDS
       if (idle && entry.frameCount % 2 === 1) return

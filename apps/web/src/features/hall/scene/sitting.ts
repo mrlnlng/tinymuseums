@@ -103,6 +103,11 @@ export function createSitting(
         state = 'leaving'
       }
 
+      if (state === 'approaching' && traversal.isSteered) {
+        standUp()
+        return
+      }
+
       if (state === 'approaching') {
         if (!traversal.isHeld) return
         state = 'rising'
@@ -118,7 +123,7 @@ export function createSitting(
           progress = 0
           return
         }
-        if (Math.abs(cameraX - seat.x) > halfViewWidth + seatHalfWidth) {
+        if (traversal.isSteered || Math.abs(cameraX - seat.x) > halfViewWidth + seatHalfWidth) {
           state = 'leaving'
           progress = 0
         }

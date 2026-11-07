@@ -4,7 +4,7 @@ import type { Attachment } from './carried'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 import type { CharacterKind, Rig, RigAttachmentPose } from './rig'
-import { createRigState, rigFacing, stepRigState } from './rig-motion'
+import { createRigState, GROUNDED, rigFacing, stepRigState, type JumpPose } from './rig-motion'
 
 export interface Pose {
   x: number
@@ -51,6 +51,7 @@ export interface Character {
     camera: THREE.OrthographicCamera,
     viewport: Viewport,
     centerY?: number,
+    jump?: JumpPose,
   ): void
   dispose(): void
 }
@@ -70,6 +71,13 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   // Unsized it would show at the image's full size; update() sizes it and shows it.
   sprite.hidden = true
   host.appendChild(sprite)
+
+  // The rig's own shadow rises with its canvas, so a jump leaves this one on the floor.
+  const floorShadow = document.createElement('div')
+  floorShadow.className = 'hall-floor-shadow'
+  floorShadow.hidden = true
+  host.appendChild(floorShadow)
+  let shadowStyle = ''
 
   let canvas = document.createElement('canvas')
   canvas.className = 'hall-bunny hall-bunny-rig'
@@ -206,6 +214,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       opacity = next
       canvas.style.opacity = next
       sprite.style.opacity = next
+      floorShadow.style.opacity = next
     },
 
     perch(perch) {
@@ -248,15 +257,17 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       return out
     },
 
-    update(dt, x, velocity, camera, viewport, centerY = CONFIG.character.centerY) {
+    update(dt, x, velocity, camera, viewport, centerY = CONFIG.character.centerY, jump = GROUNDED) {
       const speed = Math.abs(velocity)
-      moving = !perched && speed > 0.12
+      const steps = !perched && speed > 0.12
+      // In the air the legs hold the jumping pose instead of stepping.
+      moving = steps && !jump.airborne
+      if (steps) facing = velocity > 0 ? 'right' : 'left'
 
       distance += speed * dt
       if (perched) {
         setFrame(perched.image)
       } else if (moving) {
-        facing = velocity > 0 ? 'right' : 'left'
         const frames = cycle(facing)
         const step = Math.floor(distance * CONFIG.character.cyclesPerUnit * frames.length)
         setFrame(frames[((step % frames.length) + frames.length) % frames.length])
@@ -267,7 +278,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       usingRig = rig !== null && !perched
       // Play the approved one-second clip at its authored speed. The old sprite
       // distance clock accelerated the rig's ears and body more than twofold.
-      if (rig) stepRigState(motion, dt, moving, facing, speed / CONFIG.move.maxSpeed, rig.cycleSeconds)
+      if (rig) stepRigState(motion, dt, moving, facing, speed / CONFIG.move.maxSpeed, rig.cycleSeconds, jump)
       // The approved clip already supplies its own bob; do not add the old sprite bob.
       const float = moving && !usingRig
         ? Math.sin(distance * CONFIG.character.cyclesPerUnit * Math.PI * 2) * CONFIG.character.bob
@@ -292,9 +303,11 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         sprite.style.height = height
       }
 
+      const squash = jump.squash
       const transform =
         `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0)` +
-        ' translate(-50%, -50%)'
+        ' translate(-50%, -50%)' +
+        (squash ? ` scale(${(1 - 0.6 * squash).toFixed(3)}, ${(1 + squash).toFixed(3)})` : '')
       if (transform !== currentTransform) {
         currentTransform = transform
         sprite.style.transform = transform
@@ -318,6 +331,30 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             canvas.style.transform = nextTransform
           }
           rig.render(motion, dt, canvasHeight, window.devicePixelRatio)
+          if (motion.air > 0) {
+            // Where the feet would stand, without the jump's height.
+            projected.set(x, centerY - jump.lift * CONFIG.jump.height, 0).project(camera)
+            const floorY = (-projected.y * 0.5 + 0.5) * viewport.height + heightPx / 2
+            const box = rig.floorShadow
+            // Smaller and fainter the higher the jump.
+            const away = Math.min(1, jump.lift)
+            const width = box.width * canvasHeight * (1 - 0.45 * away)
+            const height = box.height * canvasHeight * (1 - 0.45 * away)
+            const left = screenX + box.x * canvasHeight - width / 2
+            const top = floorY + box.y * canvasHeight - height / 2
+            const style =
+              `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0)|${width.toFixed(1)}|${height.toFixed(1)}|` +
+              (motion.air * (1 - 0.4 * away)).toFixed(3)
+            if (style !== shadowStyle) {
+              shadowStyle = style
+              const [transform, w, h, strength] = style.split('|')
+              floorShadow.style.transform = transform
+              floorShadow.style.width = `${w}px`
+              floorShadow.style.height = `${h}px`
+              floorShadow.style.setProperty('--strength', strength)
+            }
+            if (floorShadow.hidden) floorShadow.hidden = false
+          }
           canvas.dataset.facing = rigFacing(motion)
           canvas.dataset.state = moving ? 'walk' : 'idle'
           canvas.dataset.kind = rig.kind
@@ -329,6 +366,9 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         }
       }
       canvas.hidden = !usingRig
+      if (!usingRig || motion.air === 0) {
+        if (!floorShadow.hidden) floorShadow.hidden = true
+      }
       // The sprites are the plain bunny; anyone else stays hidden until their rig is drawing.
       sprite.hidden = usingRig || (!rigFailed && look.kind !== 'bunny')
     },
@@ -339,6 +379,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       rig?.dispose()
       canvas.remove()
       sprite.remove()
+      floorShadow.remove()
     },
   }
 }

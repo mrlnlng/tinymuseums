@@ -465,6 +465,21 @@ code.token {
   pointer-events: none;
   z-index: 2;
 }
+/* Matches the rig's own shadow, which fades as this one takes over on the floor. */
+.hall-floor-shadow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.hall-floor-shadow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--strength, 1);
+  background: radial-gradient(closest-side, rgb(60 30 20 / 0.45), rgb(60 30 20 / 0.28) 60%, rgb(60 30 20 / 0));
+}
 .swipe-hint {
   position: absolute;
   top: 8%;

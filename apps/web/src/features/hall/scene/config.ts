@@ -37,11 +37,25 @@ export const CONFIG = {
   },
 
   move: {
-    accel: 9,
     maxSpeed: 2.4,
     maxScrollSpeed: 7.0,
     damping: 7.0,
     wheelFactor: 0.4,
+    keyWalkSpeed: 3.4,
+    keyAccel: 40,
+    // The share of the view kept clear ahead of a bunny walked with the keys.
+    lookAhead: 0.3,
+  },
+
+  jump: {
+    height: 0.55,
+    gravity: 22,
+    // A short crouch before leaving the floor, and the squash on landing.
+    crouchSeconds: 0.07,
+    landSeconds: 0.22,
+    squash: 0.14,
+    stretch: 0.1,
+    landSquash: 0.16,
   },
 
   lobby: {

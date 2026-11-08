@@ -9,7 +9,7 @@ import {
   type WalletSnapshot,
 } from './store'
 
-const serverSnapshot: WalletSnapshot = { isMember: false, balance: null, items: [], today: null }
+const serverSnapshot: WalletSnapshot = { isMember: false, balance: null, items: [], bait: {}, today: null }
 
 export function useWallet(): WalletSnapshot {
   return useSyncExternalStore(subscribeWallet, getWalletSnapshot, () => serverSnapshot)

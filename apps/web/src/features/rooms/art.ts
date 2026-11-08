@@ -3,6 +3,7 @@ import { disposeAtelierArt, loadAtelierArt, type AtelierArt } from '@/features/h
 import { loadAssets, type Assets } from '@/features/hall/scene/assets'
 import { loadGalleryDoor, loadGalleryPillar } from '@/features/hall/scene/gallery-door'
 import { disposeCozyArt, loadCozyArt, type CozyArt } from './themes/cozy'
+import { disposePondArt, loadPondArt, type PondArt } from './pond/art'
 import type { RoomId } from './types'
 
 /**
@@ -36,6 +37,7 @@ export interface ArtByRoom {
   hall: HallArt
   atelier: AtelierArtwork
   personal: PersonalArt
+  pond: PondArt
 }
 
 export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
@@ -66,6 +68,14 @@ export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
     },
     unload({ cozy }) {
       disposeCozyArt(cozy)
+    },
+  },
+  pond: {
+    async load(renderer) {
+      return loadPondArt(renderer)
+    },
+    unload(art) {
+      disposePondArt(art)
     },
   },
 }

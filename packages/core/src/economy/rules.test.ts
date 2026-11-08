@@ -100,3 +100,20 @@ test('malformed requests and unknown sources are invalid', () => {
     assert.equal(at(request), null)
   }
 })
+
+test('the exchange source turns a multiple of ten pearls into stamps, capped daily', () => {
+  assert.deepEqual(
+    at({ source: 'exchange', pearls: 30, claimId: 'exchange-1', tzOffsetMinutes: 0 }),
+    {
+      source: 'exchange',
+      claimKey: 'exchange:2026-11-01:exchange-1',
+      day: '2026-11-01',
+      requested: 3,
+      dailyCap: 20,
+    },
+  )
+  assert.equal(at({ source: 'exchange', pearls: 30 })?.requested, 3)
+  for (const pearls of [0, -10, 15, 10.5, Number.NaN, '20', null]) {
+    assert.equal(at({ source: 'exchange', pearls }), null)
+  }
+})

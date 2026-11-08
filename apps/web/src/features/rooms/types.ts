@@ -7,7 +7,7 @@ import type { Pose, Room } from '@/features/presence/lib/join-room'
 import type { VisitorScenery } from '@/features/presence/scene/remote-visitors'
 import type { EffectName } from '@/features/sound/hooks/useSoundEffects'
 
-export type RoomId = 'hall' | 'atelier' | 'personal'
+export type RoomId = 'hall' | 'atelier' | 'personal' | 'pond'
 
 export interface DoorRef {
   room: RoomId

@@ -4,6 +4,7 @@ import { after, test } from 'node:test'
 import { deleteMember, signUp } from '../src/domain/members.ts'
 import {
   buy,
+  buyBait,
   claim,
   claimBatch,
   collect,
@@ -11,6 +12,7 @@ import {
   getWallet,
   grantNote,
   grantWelcome,
+  useBait,
   type ClaimResult,
 } from '../src/domain/wallet.ts'
 import { closePool, query, queryOne } from '../src/infra/db.ts'
@@ -32,6 +34,15 @@ async function member(): Promise<string> {
   const result = await signUp(`wallet-${randomId()}@example.test`, PASSWORD)
   assert.ok('member' in result, `sign-up failed: ${JSON.stringify(result)}`)
   return result.member.id
+}
+
+
+async function grantPearls(memberId: string, amount: number): Promise<void> {
+  await query(
+    `insert into pond_state (member_id, pearls) values ($1, $2)
+     on conflict (member_id) do update set pearls = pond_state.pearls + excluded.pearls`,
+    [memberId, amount],
+  )
 }
 
 function gameRequest(game: 'colorrecall' | 'sketch', score: number, runId = `run-${randomId()}`) {
@@ -98,6 +109,7 @@ test('the welcome purse is created lazily and granted once', async () => {
   assert.deepEqual(await getWallet(id, today), {
     balance: 0,
     items: [],
+    bait: {},
     today: { coin: 0, games: 0, note: 0 },
   })
   assert.deepEqual(await grantWelcome(id), { granted: 60, balance: 60, capped: false })
@@ -167,6 +179,7 @@ test('the account export includes the wallet ledger', async () => {
     exported.items.map((item) => [item.item_id, item.price]),
     [['bow:kiki', 60]],
   )
+  assert.deepEqual(exported.bait, [])
   for (const entry of [...exported.claims, ...exported.items]) {
     assert.ok(!Number.isNaN(Date.parse(entry.at)))
   }
@@ -244,9 +257,66 @@ test('buying an owned item again does not charge twice', async () => {
   const id = await member()
   await grantWelcome(id)
   const first = await buy(id, 'bow:kiki')
-  assert.deepEqual(first, { balance: 0, items: ['bow:kiki'] })
-  assert.deepEqual(await buy(id, 'bow:kiki'), { balance: 0, items: ['bow:kiki'] })
+  assert.deepEqual(first, { balance: 0, items: ['bow:kiki'], bait: {} })
+  assert.deepEqual(await buy(id, 'bow:kiki'), { balance: 0, items: ['bow:kiki'], bait: {} })
   await assertInvariant(id)
+})
+
+test('buying bait spends pearls and stacks the pack count', async () => {
+  const id = await member()
+  await grantPearls(id, 50)
+  const first = await buyBait(id, 'shrimp')
+  assert.ok('state' in first)
+  assert.equal(first.state.pearls, 30)
+  assert.deepEqual(first.state.bait, { shrimp: 5 })
+  const second = await buyBait(id, 'shrimp')
+  assert.ok('state' in second)
+  assert.equal(second.state.pearls, 10)
+  assert.deepEqual(second.state.bait, { shrimp: 10 })
+  assert.deepEqual(await buyBait(id, 'worm'), { error: 'unknown_bait' })
+  assert.deepEqual(await buyBait(id, 'nope'), { error: 'unknown_bait' })
+  assert.equal((await getWallet(id, today)).balance, 0)
+})
+
+test('buying bait is refused when pearls are short', async () => {
+  const id = await member()
+  assert.deepEqual(await buyBait(id, 'cupcake'), { error: 'insufficient' })
+  const wallet = await getWallet(id, today)
+  assert.equal(wallet.balance, 0)
+  assert.deepEqual(wallet.bait, {})
+})
+
+test('using bait spends one except for the unlimited worm', async () => {
+  const id = await member()
+  assert.deepEqual(await useBait(id, 'worm'), { balance: 0, items: [], bait: {} })
+  assert.deepEqual(await useBait(id, 'shrimp'), { error: 'no_bait' })
+
+  await grantWelcome(id)
+  await grantPearls(id, 40)
+  await buyBait(id, 'cupcake')
+  assert.deepEqual(await useBait(id, 'worm'), { balance: 60, items: [], bait: { cupcake: 3 } })
+  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: { cupcake: 2 } })
+  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: { cupcake: 1 } })
+  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: {} })
+  assert.deepEqual(await useBait(id, 'cupcake'), { error: 'no_bait' })
+})
+
+test('concurrent bait uses never spend more than the pack', async () => {
+  const id = await member()
+  await grantPearls(id, 20)
+  await buyBait(id, 'berry')
+
+  const results = await Promise.all(Array.from({ length: 8 }, () => useBait(id, 'berry')))
+  assert.equal(results.filter((result) => 'balance' in result).length, 5)
+  assert.equal(results.filter((result) => 'error' in result).length, 3)
+  assert.deepEqual((await getWallet(id, today)).bait, {})
+})
+
+test('the account export includes bait stock', async () => {
+  const id = await member()
+  await grantPearls(id, 40)
+  await buyBait(id, 'cupcake')
+  assert.deepEqual((await exportWallet(id)).bait, [{ bait_id: 'cupcake', count: 3 }])
 })
 
 test('a fish prop is collected once for free', async () => {
@@ -254,11 +324,13 @@ test('a fish prop is collected once for free', async () => {
   assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
     balance: 0,
     items: ['prop:fish-minnow'],
+    bait: {},
     collected: true,
   })
   assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
     balance: 0,
     items: ['prop:fish-minnow'],
+    bait: {},
     collected: false,
   })
   const wallet = await getWallet(id, today)
@@ -373,14 +445,16 @@ test('the balance invariant holds after 200 random operations', async () => {
   }
 })
 
-test('deleting a member cascades to the wallet, claims and items', async () => {
+test('deleting a member cascades to the wallet, claims, items and bait', async () => {
   const id = await member()
   await grantWelcome(id)
   await claim(id, { source: 'coin', tzOffsetMinutes: 0 }, now)
   assert.ok('balance' in (await buy(id, 'bow:kiki')))
+  await grantPearls(id, 20)
+  assert.ok('state' in (await buyBait(id, 'shrimp')))
 
   assert.equal(await deleteMember(id, PASSWORD), true)
-  for (const table of ['wallets', 'coin_claims', 'wallet_items']) {
+  for (const table of ['wallets', 'coin_claims', 'wallet_items', 'wallet_bait', 'pond_state']) {
     const rows = await query(`select 1 from ${table} where member_id = $1`, [id])
     assert.equal(rows.length, 0, `${table} still has rows`)
   }

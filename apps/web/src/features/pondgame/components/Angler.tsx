@@ -1,0 +1,129 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { outfit } from '@tiny/core/slots'
+import { getWalletSnapshot } from '@/features/economy/store'
+import type { Look } from '@/features/hall/scene/character'
+import type { CharacterKind, Rig, RigAttachment, RigAttachmentPose } from '@/features/hall/scene/rig'
+import { createRigState } from '@/features/hall/scene/rig-motion'
+import { FITS, lookOf, ownedLook } from '@/features/hall/scene/wardrobe'
+import { assetUrl } from '@/shared/lib/assets'
+import { defaultStore } from '@/shared/lib/slots'
+
+/** Each rig's front paw in its rest pose, in the author's layer canvas, measured from the models. */
+const GRIP: Record<CharacterKind, RigAttachment> = {
+  bunny: { bone: 'arm_R', x: 1422, y: 1417, width: 1, rotation: 0 },
+  cat: { bone: 'arm_R', x: 1416, y: 1442, width: 1, rotation: 0 },
+  otter: { bone: 'arm_R', x: 1403, y: 1460, width: 1, rotation: 0 },
+  bruce: { bone: 'arm_R', x: 1386, y: 1490, width: 1, rotation: 0 },
+}
+
+export interface Box {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+/** The visitor's own character and outfit, as the room dresses them. */
+export function currentLook(): Look {
+  const look = ownedLook(lookOf(defaultStore().getSlot(outfit).snapshot()), getWalletSnapshot())
+  const fitted = (id: string | null) => (id !== null && FITS[look.kind].includes(id) ? id : null)
+  return { kind: look.kind, costume: fitted(look.costume), bow: fitted(look.bow) }
+}
+
+/**
+ * The visitor at the water's edge, drawn with their own rig so a cat or an otter fishes as itself.
+ * `box` is the standing figure's box as fractions of the world; the paw is reported in world fractions.
+ */
+export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boolean; onPaw(paw: { x: number; y: number } | null): void }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [frame, setFrame] = useState<Box | null>(null)
+  const [failed, setFailed] = useState(false)
+  const onPawRef = useRef(onPaw)
+  onPawRef.current = onPaw
+
+  useEffect(() => {
+    const host = hostRef.current
+    const world = host?.parentElement
+    if (!host || !world) return
+    // A fresh canvas per mount: a disposed rig loses its WebGL context with it.
+    const canvas = document.createElement('canvas')
+    host.append(canvas)
+    const look = currentLook()
+    let rig: Rig | null = null
+    let disposed = false
+    let raf = 0
+    let timer = 0
+    const motion = createRigState('right')
+    const pose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
+
+    void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then((loaded) => {
+      if (disposed) { loaded.dispose(); return }
+      loaded.setCostume(look.costume, look.bow)
+      rig = loaded
+      // The rig's standing height fills the sprite's box, feet on its bottom edge.
+      const height = box.height * loaded.spriteScale
+      const worldAspect = world.clientWidth / Math.max(1, world.clientHeight)
+      const width = (height * loaded.aspect) / worldAspect
+      setFrame({ left: box.left + box.width / 2 - width / 2, top: box.top + box.height - height * loaded.feet, width, height })
+      let last = performance.now()
+      let reported = 0
+      const draw = (now: number) => {
+        if (!rig || disposed) return
+        const dt = Math.min(0.05, (now - last) / 1000)
+        last = now
+        const px = canvas.clientHeight
+        if (px > 0) {
+          rig.render(motion, reduced ? 0 : dt, px, window.devicePixelRatio)
+          // The paw breathes a little; report it now and then, not every frame.
+          if (now - reported > 250 && rig.projectAttachment(GRIP[look.kind], pose)) {
+            reported = now
+            const c = canvas.getBoundingClientRect()
+            const w = world.getBoundingClientRect()
+            onPawRef.current({ x: (c.left + pose.x - w.left) / w.width, y: (c.top + pose.y - w.top) / w.height })
+          }
+        }
+        if (!reduced) raf = requestAnimationFrame(draw)
+        else timer = window.setTimeout(() => { raf = requestAnimationFrame(draw) }, 500)
+      }
+      raf = requestAnimationFrame(draw)
+    }).catch((error: unknown) => {
+      console.warn('[pond] angler rig unavailable; showing the bunny', error)
+      onPawRef.current(null)
+      if (!disposed) setFailed(true)
+    })
+
+    return () => {
+      disposed = true
+      cancelAnimationFrame(raf)
+      window.clearTimeout(timer)
+      rig?.dispose()
+      canvas.remove()
+    }
+  }, [box.left, box.top, box.width, box.height, reduced])
+
+  return (
+    <>
+      <div
+        ref={hostRef}
+        className="pond-angler"
+        aria-hidden="true"
+        style={frame ? {
+          left: `${frame.left * 100}%`,
+          top: `${frame.top * 100}%`,
+          width: `${frame.width * 100}%`,
+          height: `${frame.height * 100}%`,
+        } : { visibility: 'hidden', inset: 0 }}
+      />
+      {failed ? (
+        <div
+          className="pond-bunny"
+          style={{ left: `${box.left * 100}%`, top: `${box.top * 100}%`, width: `${box.width * 100}%`, height: `${box.height * 100}%` }}
+        >
+          <img src={assetUrl('bunny-right')} alt="" draggable={false} />
+        </div>
+      ) : null}
+    </>
+  )
+}

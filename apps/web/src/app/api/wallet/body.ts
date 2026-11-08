@@ -23,7 +23,7 @@ export function tzOffsetOf(value: unknown): number {
 }
 
 function routeBanned(source: unknown): boolean {
-  return source === 'welcome' || source === 'note'
+  return source === 'welcome' || source === 'note' || source === 'exchange'
 }
 
 export function parseWalletClaim(
@@ -52,4 +52,11 @@ export function parseWalletClaim(
 export function itemIdOf(body: unknown): string | null {
   if (!isRecord(body)) return null
   return typeof body.itemId === 'string' && body.itemId.length > 0 ? body.itemId : null
+}
+
+export function baitIdOf(body: unknown, fallback: string | null = null): string | null {
+  if (!isRecord(body) || !('bait' in body) || body.bait === undefined || body.bait === null) {
+    return fallback
+  }
+  return typeof body.bait === 'string' && body.bait.length > 0 ? body.bait : null
 }

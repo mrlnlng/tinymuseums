@@ -56,6 +56,10 @@ export const ITEMS: Record<string, CatalogItem> = {
   'prop:fish-carp': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
   'prop:fish-koi': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
   'prop:fish-golden-koi': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
+  'prop:fish-star-snapper': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
+  'prop:fish-crab': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
+  'prop:fish-puffer': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
+  'prop:fish-blobfish': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
 }
 
 export const STARTER_PROPS = ['prop:carpet', 'prop:pillow-red', 'prop:shelf'] as const

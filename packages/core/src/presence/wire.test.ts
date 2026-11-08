@@ -43,13 +43,14 @@ test('room names are a known base plus an instance', () => {
   assert.deepEqual(parseRoom('hall-e12-s0'), { base: 'hall-e12', instance: 0 })
   assert.deepEqual(parseRoom('atelier-s3'), { base: 'atelier', instance: 3 })
   assert.deepEqual(parseRoom('r-abc12345-s2'), { base: 'r-abc12345', instance: 2 })
+  assert.deepEqual(parseRoom('pond-s0'), { base: 'pond', instance: 0 })
   assert.equal(roomName('atelier', 3), 'atelier-s3')
   assert.equal(roomName('r-abc12345', 2), 'r-abc12345-s2')
   for (const bad of ['hall-s0', 'atelier', 'lobby-s0', 'atelier-s100', 'hall-e1-s0/../x', 'r-ABC12345-s0', 'r-abc1234-s0', 'r-abc123456-s0', 'r-abc12345']) assert.equal(parseRoom(bad), null, bad)
 })
 
 test('a personal room slug is a valid presence base', () => {
-  for (const base of ['hall-e12', 'atelier', 'r-abc12345']) assert.equal(validRoomBase(base), true, base)
+  for (const base of ['hall-e12', 'atelier', 'pond', 'r-abc12345']) assert.equal(validRoomBase(base), true, base)
   for (const base of ['hall', 'r-abc1234', 'r-abc123456', 'r-ABC12345', 'r-abc12345-s0']) assert.equal(validRoomBase(base), false, base)
 })
 
@@ -76,8 +77,9 @@ test('messages, claims, hello and leave are accepted besides state', () => {
   assert.deepEqual(parseClientMessage('{"t":"hello","v":1,"ticket":"a.b"}'), { t: 'hello', v: 1, ticket: 'a.b' })
   assert.deepEqual(parseClientMessage('{"t":"leave"}'), { t: 'leave' })
   assert.deepEqual(parseClientMessage('{"t":"claim","item":"seat"}'), { t: 'claim', item: 'seat' })
+  assert.deepEqual(parseClientMessage('{"t":"claim","item":"pond-spot-2"}'), { t: 'claim', item: 'pond-spot-2' })
   assert.deepEqual(parseClientMessage('{"t":"release","item":"helm-12"}'), { t: 'release', item: 'helm-12' })
-  for (const item of ['cup', 'helm-', 'helm-x', 'helm-12345', '__proto__']) assert.equal(parseClientMessage(JSON.stringify({ t: 'claim', item })), null, item)
+  for (const item of ['cup', 'helm-', 'helm-x', 'helm-12345', 'pond-spot-4', '__proto__']) assert.equal(parseClientMessage(JSON.stringify({ t: 'claim', item })), null, item)
   for (const bad of ['', 'nope', '[]', '{"t":"chat","text":"hi"}', 'x'.repeat(2000)]) assert.equal(parseClientMessage(bad), null)
 })
 

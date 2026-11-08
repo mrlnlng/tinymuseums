@@ -7,6 +7,7 @@ export const SOURCES = {
   art: { amount: 5, limit: 'once' },
   game: { perScore: true, limit: 'daily', cap: 25 },
   note: { amount: 5, limit: 'daily' },
+  exchange: { amount: 1, limit: 'daily', cap: 20 },
 } as const
 
 export type SourceId = keyof typeof SOURCES
@@ -29,6 +30,15 @@ export const GAMES = ['colorrecall', 'sketch', 'pond'] as const
 export type GameId = (typeof GAMES)[number]
 
 export const GAME_DAILY_CAP = SOURCES.game.cap
+export const EXCHANGE_PEARLS_PER_STAMP = 10
+export const EXCHANGE_DAILY_STAMPS = SOURCES.exchange.cap
+
+let exchangeSeq = 0
+
+function exchangeClaimKey(now: Date): string {
+  exchangeSeq += 1
+  return `${now.getTime().toString(36)}-${exchangeSeq.toString(36)}`
+}
 
 const RUN_ID = /^[A-Za-z0-9_-]{8,40}$/
 
@@ -100,6 +110,25 @@ export function validateClaim(request: unknown, now: Date): ParsedClaim | null {
       day,
       requested: score as number,
       dailyCap: GAME_DAILY_CAP,
+    }
+  }
+
+  if (source === 'exchange') {
+    const pearls = request.pearls
+    if (!Number.isSafeInteger(pearls) || (pearls as number) <= 0) return null
+    if ((pearls as number) % EXCHANGE_PEARLS_PER_STAMP !== 0) return null
+    const day = localDay(offsetOf(request), now)
+    const claimId = request.claimId
+    const key =
+      typeof claimId === 'string' && /^[A-Za-z0-9_-]{8,40}$/.test(claimId)
+        ? claimId
+        : exchangeClaimKey(now)
+    return {
+      source,
+      claimKey: `exchange:${day}:${key}`,
+      day,
+      requested: (pearls as number) / EXCHANGE_PEARLS_PER_STAMP,
+      dailyCap: EXCHANGE_DAILY_STAMPS,
     }
   }
 

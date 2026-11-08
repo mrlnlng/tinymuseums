@@ -48,7 +48,17 @@ const COZY_FLOOR_PROPS = [
 ] as const
 
 /** Fish trophies are plaques: they hang on the wall, or lean on the floor. */
-const COZY_TROPHIES = ['fish-minnow', 'fish-perch', 'fish-carp', 'fish-koi', 'fish-golden-koi'] as const
+const COZY_TROPHIES = [
+  'fish-minnow',
+  'fish-perch',
+  'fish-carp',
+  'fish-koi',
+  'fish-golden-koi',
+  'fish-star-snapper',
+  'fish-crab',
+  'fish-puffer',
+  'fish-blobfish',
+] as const
 
 function propsOn(zone: string, props: readonly (readonly [string, number])[]): Record<string, PropSpec> {
   return Object.fromEntries(props.map(([id, width]) => [id, { zones: [zone], width }]))

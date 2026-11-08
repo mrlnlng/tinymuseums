@@ -24,3 +24,10 @@ create table if not exists wallet_items (
   at         timestamptz not null default now(),
   primary key (member_id, item_id)
 );
+
+create table if not exists wallet_bait (
+  member_id  uuid not null references members(id) on delete cascade,
+  bait_id    text not null,
+  count      integer not null check (count >= 0),
+  primary key (member_id, bait_id)
+);

@@ -23,7 +23,7 @@ export const MINIGAMES = [
   {
     id: 'pond',
     title: 'Pond',
-    blurb: 'Walk around the pond and catch a fish.',
+    blurb: 'Head out to the moonlit pond.',
     icon: '🎣',
   },
 ] as const satisfies readonly Minigame[]

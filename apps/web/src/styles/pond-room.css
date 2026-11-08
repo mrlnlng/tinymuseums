@@ -1,0 +1,1887 @@
+/* The pond room: panels, HUD, ticker, fishdex and the shared variant treatments.
+   The fishing view keeps its own .pond-* styles in globals.css. */
+
+/* ---------- Panel shell ---------- */
+
+.pond-room-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+
+.pond-room-panel-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(13 18 30 / 62%);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.pond-room-panel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 480px);
+  max-height: min(780px, calc(100dvh - 24px));
+  padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
+  border: 2px solid #5b3a25;
+  border-top: 9px solid var(--script);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7ea 100%);
+  box-shadow: 0 18px 50px rgb(9 13 24 / 55%), inset 0 0 0 2px rgb(255 255 255 / 55%);
+  color: var(--ink);
+  text-align: left;
+}
+
+.pond-room-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed rgb(139 86 65 / 22%);
+}
+
+.pond-room-panel-heading { min-width: 0; }
+
+.pond-room-panel-subtitle {
+  margin: 0 0 3px;
+  color: var(--ink-soft);
+  font-family: var(--font-button);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pond-room-panel-title {
+  margin: 0;
+  color: var(--script);
+  font-family: var(--font-title);
+  font-size: clamp(24px, 5vw, 30px);
+  line-height: 1;
+}
+
+.pond-room-panel-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.pond-room-panel-close:hover { opacity: 0.82; }
+
+.pond-room-panel-close:focus-visible {
+  outline: 3px solid #662f14;
+  outline-offset: 2px;
+}
+
+.pond-room-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px 2px 2px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #d9b99c transparent;
+}
+
+.pond-room-panel-body::-webkit-scrollbar { width: 8px; }
+.pond-room-panel-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d9b99c;
+}
+
+/* ---------- Shared little pieces ---------- */
+
+.pond-room-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid #d9b99c;
+  border-radius: 999px;
+  background: #f4e4d1;
+}
+
+.pond-room-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7d4d35;
+  font-family: var(--font-button);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pond-room-tab:hover { background: #f9c9d7; }
+
+.pond-room-tab.is-active {
+  background: var(--pink);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px rgb(109 64 46 / 20%), 0 1px 0 #fff;
+}
+
+.pond-room-tab:focus-visible,
+.pond-room-period:focus-visible,
+.pond-room-odds-bait:focus-visible {
+  outline: 3px solid #662f14;
+  outline-offset: 2px;
+}
+
+.pond-room-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 15px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pink);
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgb(109 64 46 / 22%);
+  transition: background 0.15s, transform 0.1s;
+}
+
+.pond-room-button:hover:not(:disabled) { background: var(--pink-deep); }
+.pond-room-button:active:not(:disabled) { transform: translateY(1px); }
+
+.pond-room-button:focus-visible {
+  outline: 3px solid #662f14;
+  outline-offset: 2px;
+}
+
+.pond-room-button:disabled { opacity: 0.48; cursor: not-allowed; }
+
+.pond-room-button.is-quiet {
+  border: 2px solid rgb(139 86 65 / 25%);
+  background: transparent;
+}
+
+.pond-room-note {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--pink-deep);
+  border-radius: 0 8px 8px 0;
+  background: #fff3f6;
+  color: #8a4d5f;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pond-room-notice {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.pond-room-notice.is-ok {
+  border: 1px solid #b9d6b3;
+  background: #e6f2e4;
+  color: #3f6344;
+}
+
+.pond-room-notice.is-warn {
+  border: 1px solid #e8c3a9;
+  background: #fbe9dd;
+  color: #8a4a2c;
+}
+
+.pond-room-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 2px dashed rgb(139 86 65 / 25%);
+  border-radius: 12px;
+  background: #fff8ec;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.pond-room-empty p { margin: 0; }
+
+.pond-room-fineprint {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* ---------- Leaderboard ---------- */
+
+.pond-room-panel-body.is-leaderboard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pond-room-board {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.pond-room-board-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #d9b99c transparent;
+}
+
+.pond-room-board-scroll::-webkit-scrollbar { width: 7px; }
+.pond-room-board-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d9b99c;
+}
+
+.pond-room-periods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.pond-room-period {
+  padding: 4px 11px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #f3e5d4;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 10.5px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.pond-room-period.is-active {
+  border-color: #7a4a34;
+  background: #fffaf0;
+  color: var(--ink);
+}
+
+.pond-room-board-reset {
+  margin-left: auto;
+  color: var(--ink-soft);
+  font-family: var(--font-button);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.pond-room-board-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pond-room-board-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgb(139 86 65 / 12%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 55%);
+}
+
+.pond-room-board-row:first-child {
+  border-color: #e4c77f;
+  background: #fff4d8;
+}
+
+.pond-room-board-medal {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f0e2d0;
+  box-shadow: inset 0 -2px 0 rgb(109 64 46 / 18%);
+  color: #7d4d35;
+  font-family: var(--font-button);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pond-room-board-medal.is-gold {
+  background: linear-gradient(160deg, #fff3bd 0%, #edc557 58%, #cf9c26 100%);
+  box-shadow: inset 0 -2px 0 rgb(120 80 10 / 30%), 0 0 0 1px #b8871f;
+  color: #5a3a12;
+}
+
+.pond-room-board-medal.is-silver {
+  background: linear-gradient(160deg, #f7f8fa 0%, #cfd6de 58%, #9fa9b5 100%);
+  box-shadow: inset 0 -2px 0 rgb(70 80 92 / 24%), 0 0 0 1px #939daa;
+  color: #44505c;
+}
+
+.pond-room-board-medal.is-bronze {
+  background: linear-gradient(160deg, #f6d3b0 0%, #d79a5f 58%, #aa6d34 100%);
+  box-shadow: inset 0 -2px 0 rgb(90 50 18 / 28%), 0 0 0 1px #9a622f;
+  color: #55331a;
+}
+
+.pond-room-board-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pond-room-board-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 13px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pond-room-board-catch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+
+.pond-room-board-catch img {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.pond-room-board-catch span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pond-room-board-value {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pond-room-board-you {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 2px dashed rgb(139 86 65 / 25%);
+}
+
+.pond-room-board-you-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 2px solid #e0b7c8;
+  border-radius: 12px;
+  background: #fff0f5;
+}
+
+.pond-room-board-you-label {
+  color: var(--script);
+  font-family: var(--font-button);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pond-room-board-you-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-button);
+  font-size: 13px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pond-room-board-you-value {
+  font-family: var(--font-button);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pond-room-board-above {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 0 4px;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+}
+
+.pond-room-board-above li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pond-room-board-above-rank { flex: 0 0 28px; }
+
+.pond-room-board-above-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pond-room-board-above-value { white-space: nowrap; }
+
+.pond-room-board-pass {
+  margin: 8px 2px 0;
+  color: #7a4a34;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.pond-room-board-signin {
+  margin: 0;
+  padding: 9px 10px;
+  border-left: 3px solid var(--pink-deep);
+  border-radius: 0 8px 8px 0;
+  background: #fff3f6;
+  color: #8a4d5f;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* ---------- Fishmonger: bait ---------- */
+
+.pond-room-fishmonger { display: grid; gap: 10px; }
+
+.pond-room-shop { display: grid; gap: 8px; }
+
+.pond-room-bait {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid #e5ccb4;
+  border-radius: 12px;
+  background: #fffdf6;
+}
+
+.pond-room-bait-emoji {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f7e8d3;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pond-room-bait-info { min-width: 0; }
+
+.pond-room-bait-name {
+  margin: 0;
+  color: #7a4a34;
+  font-family: var(--font-title);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pond-room-bait-favours {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.pond-room-bait-meta {
+  margin: 3px 0 0;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.pond-room-bait.is-short .pond-room-bait-meta strong { color: var(--bad); }
+
+.pond-room-bait-buy { min-width: 62px; }
+
+/* ---------- Fishmonger: exchange ---------- */
+
+.pond-room-exchange { display: grid; gap: 10px; }
+
+.pond-room-exchange-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 2px dashed #d9b99c;
+  border-radius: 12px;
+  background: #fff9ef;
+  color: #7a4a34;
+  font-family: var(--font-button);
+  font-size: 16px;
+}
+
+.pond-room-exchange-balance {
+  margin: 0;
+  color: #8a5a42;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.pond-room-exchange-balance strong {
+  color: var(--ink);
+  font-family: var(--font-button);
+}
+
+.pond-room-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 2px solid #e5ccb4;
+  border-radius: 14px;
+  background: #fffdf6;
+}
+
+.pond-room-stepper-button {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 2px 0 rgb(109 64 46 / 20%);
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pond-room-stepper-button:hover:not(:disabled) { background: #ffb765; }
+.pond-room-stepper-button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pond-room-stepper-button:focus-visible {
+  outline: 3px solid #662f14;
+  outline-offset: 2px;
+}
+
+.pond-room-stepper-readout {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pond-room-stepper-pearls { color: var(--ink); font-size: 22px; line-height: 1; }
+.pond-room-stepper-stamps { color: var(--script); font-size: 22px; line-height: 1; }
+.pond-room-stepper-arrow { padding: 0 2px; color: var(--ink-soft); font-size: 18px; }
+
+.pond-room-exchange-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Fishmonger: odds ---------- */
+
+.pond-room-odds { display: grid; gap: 10px; }
+.pond-room-odds-head { display: grid; gap: 6px; }
+
+.pond-room-odds-title {
+  color: #7a4a34;
+  font-family: var(--font-title);
+  font-size: 18px;
+}
+
+.pond-room-odds-baits { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.pond-room-odds-bait {
+  padding: 4px 9px;
+  border: 1.5px solid #d9b99c;
+  border-radius: 999px;
+  background: #fffaf0;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.pond-room-odds-bait.is-active {
+  border-color: #b05c76;
+  background: #ffd7e2;
+  color: var(--ink);
+}
+
+.pond-room-odds-section {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5ccb4;
+  border-radius: 12px;
+  background: #fffdf7;
+}
+
+.pond-room-odds-heading {
+  margin: 0;
+  color: #7a4a34;
+  font-family: var(--font-title);
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.pond-room-odds-copy {
+  margin: 0;
+  color: #7d5a48;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.pond-room-odds-copy strong {
+  color: var(--ink);
+  font-family: var(--font-button);
+}
+
+.pond-room-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pond-room-tier {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border-left: 4px solid #c9a27f;
+  border-radius: 9px;
+  background: #f8ebdb;
+}
+
+.pond-room-tier.is-common { border-left-color: #8fa6a0; }
+.pond-room-tier.is-uncommon { border-left-color: #6f9c67; }
+.pond-room-tier.is-rare { border-left-color: #5e81b5; }
+.pond-room-tier.is-legendary { border-left-color: #c9822c; }
+
+.pond-room-tier-name {
+  color: #8a5a42;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pond-room-tier-value {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 15px;
+}
+
+.pond-room-variant-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pond-room-variant-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgb(139 86 65 / 15%);
+}
+
+.pond-room-variant-row:last-child { border-bottom: 0; }
+
+.pond-room-variant-swatch {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f3e6d5;
+}
+
+.pond-room-variant-swatch img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.pond-room-variant-name {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 12px;
+}
+
+.pond-room-variant-odds {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pond-room-variant-note {
+  grid-column: 2 / -1;
+  margin-top: -2px;
+  color: var(--ink-soft);
+  font-size: 9.5px;
+  line-height: 1.2;
+}
+
+.pond-room-meter {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f0dfc9;
+  box-shadow: inset 0 1px 2px rgb(90 60 40 / 18%);
+}
+
+.pond-room-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e6a3bb, #c22252);
+  transition: width 0.3s;
+}
+
+.pond-room-meter.is-wager > span { background: linear-gradient(90deg, #ffd38a, #e08b39); }
+.pond-room-meter.is-bounty > span { background: linear-gradient(90deg, #b8d9a8, #5c9c61); }
+
+/* ---------- Bounty board ---------- */
+
+.pond-room-bounties { display: grid; gap: 9px; }
+
+.pond-room-bounty-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pond-room-bounty-reset { color: var(--script); }
+
+.pond-room-bounty-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pond-room-bounty {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #e5ccb4;
+  border-radius: 12px;
+  background: #fffdf6;
+}
+
+.pond-room-bounty.is-done {
+  border-color: #b9d6b3;
+  background: #f7fbf3;
+}
+
+.pond-room-bounty.is-claimed { opacity: 0.76; }
+
+.pond-room-bounty-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pond-room-bounty-text {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+
+.pond-room-bounty-reward {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff1c9;
+  color: #7a5418;
+  font-family: var(--font-button);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.pond-room-bounty-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pond-room-bounty-progress { color: var(--ink-soft); font-size: 10px; }
+.pond-room-bounty-done { color: #4f8a63; font-family: var(--font-button); font-size: 10.5px; }
+.pond-room-bounty-pending { color: var(--ink-soft); font-size: 10.5px; }
+.pond-room-bounty-claim { padding: 6px 13px; font-size: 10px; }
+
+/* ---------- Fishdex ---------- */
+
+.pond-room-dex { display: grid; gap: 9px; }
+
+.pond-room-dex-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.pond-room-dex-count {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 13px;
+}
+
+.pond-room-dex-count strong { color: var(--script); font-size: 18px; }
+
+.pond-room-dex-sub { color: var(--ink-soft); font-size: 10px; }
+
+.pond-room-dex-grid {
+  display: grid;
+  grid-template-columns: minmax(44px, 0.9fr) repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  align-items: stretch;
+}
+
+.pond-room-dex-col {
+  padding-bottom: 2px;
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 8.5px;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.pond-room-dex-species {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  padding-right: 2px;
+}
+
+.pond-room-dex-species-name {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 9.5px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.pond-room-dex-species-tier {
+  color: var(--ink-soft);
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pond-room-dex-cell {
+  position: relative;
+  display: flex;
+  aspect-ratio: 1 / 1.18;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1px;
+  overflow: hidden;
+  padding: 3px 2px;
+  border: 1px solid #e5ccb4;
+  border-radius: 9px;
+  background: #fffdf7;
+}
+
+.pond-room-dex-cell.is-found { background: linear-gradient(#fffdf7, #fff5e4); }
+
+.pond-room-dex-cell.is-unknown {
+  border-color: #d8c3a9;
+  background: repeating-linear-gradient(45deg, #f2e8d8 0 5px, #ede1cf 5px 10px);
+}
+
+.pond-room-dex-cell-art {
+  display: grid;
+  width: 70%;
+  max-width: 40px;
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.pond-room-dex-cell-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pond-room-dex-cell-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.pond-room-dex-cell-count {
+  color: var(--ink);
+  font-family: var(--font-button);
+  font-size: 8px;
+}
+
+.pond-room-dex-cell-best { color: var(--ink-soft); font-size: 7.5px; }
+
+.pond-room-dex-cell-question {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgb(109 64 46 / 40%);
+  font-family: var(--font-title);
+  font-size: 18px;
+  text-shadow: 0 1px 3px rgb(255 255 255 / 60%);
+}
+
+/* Unfound fish stay silhouettes: no variant sparkle, sheen or glow. */
+.pond-room-dex-cell.is-unknown::before,
+.pond-room-dex-cell.is-unknown::after { content: none; }
+
+.pond-room-dex-cell.is-unknown .pond-room-dex-cell-art img {
+  filter: brightness(0) opacity(0.25);
+  animation: none;
+}
+
+/* ---------- Shared variant treatments ----------
+   Applied to any container around a fish image. The fishing view can reuse these
+   exact classes without duplicating the effects. */
+
+.pond-variant--shiny { position: relative; }
+
+.pond-variant--shiny img {
+  filter: hue-rotate(-10deg) saturate(1.18) brightness(1.03)
+    drop-shadow(0 0 5px rgb(160 240 255 / 72%));
+}
+
+.pond-variant--shiny::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 28%, #fff 0 1.4px, transparent 2px),
+    radial-gradient(circle at 70% 20%, #fff7c2 0 1.2px, transparent 1.9px),
+    radial-gradient(circle at 78% 66%, #fff 0 1.3px, transparent 2px),
+    radial-gradient(circle at 32% 74%, #fff7c2 0 1.1px, transparent 1.8px);
+  animation: pond-room-twinkle 1.8s ease-in-out infinite;
+  content: '';
+  pointer-events: none;
+}
+
+.pond-variant--golden { position: relative; overflow: hidden; }
+
+/* Keep the drawing's own colours; the gold lives in the rim and the clipped sheen. */
+.pond-variant--golden img {
+  filter: sepia(0.35) saturate(1.7) hue-rotate(-10deg) contrast(1.1) brightness(1.02)
+    drop-shadow(0 0 2px #8a5b06) drop-shadow(0 0 8px rgb(255 190 50 / 88%));
+}
+
+.pond-variant--golden::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(140deg, rgb(255 226 130 / 52%), transparent 42%, rgb(255 160 20 / 46%)),
+    radial-gradient(circle at 50% 45%, rgb(255 218 110 / 42%), transparent 70%);
+  animation: pond-room-gold-glow 2.8s ease-in-out infinite alternate;
+  content: '';
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.pond-variant--golden::after {
+  position: absolute;
+  inset: -30% -60%;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 238 160 / 66%) 50%, transparent 65%);
+  animation: pond-room-gold-sheen 3.2s ease-in-out infinite;
+  content: '';
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  transform: translateX(-60%);
+}
+
+.pond-variant--moonlit { position: relative; }
+
+.pond-variant--moonlit img {
+  opacity: 0.94;
+  filter: saturate(0.88) brightness(1.13) drop-shadow(0 0 5px rgb(198 225 255 / 85%));
+}
+
+.pond-variant--moonlit::after {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(210 232 255 / 42%), transparent 70%);
+  animation: pond-room-moon-glow 3s ease-in-out infinite;
+  content: '';
+  pointer-events: none;
+}
+
+.pond-variant--prismatic { position: relative; overflow: hidden; }
+
+.pond-variant--prismatic img {
+  filter: saturate(1.22) brightness(1.04) drop-shadow(0 0 6px rgb(214 178 255 / 78%));
+}
+
+/* The rainbow is an overlay, so the fish keeps its own colours underneath. */
+.pond-variant--prismatic::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, rgb(255 120 170 / 46%), rgb(255 214 92 / 46%), rgb(120 255 176 / 46%), rgb(110 190 255 / 46%), rgb(206 132 255 / 46%));
+  background-size: 300% 300%;
+  animation: pond-room-rainbow 3.6s linear infinite;
+  content: '';
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+@keyframes pond-room-twinkle {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes pond-room-gold-glow {
+  from { opacity: 0.42; }
+  to { opacity: 0.75; }
+}
+
+@keyframes pond-room-gold-sheen {
+  0% { transform: translateX(-60%); }
+  55%, 100% { transform: translateX(60%); }
+}
+
+@keyframes pond-room-rainbow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+@keyframes pond-room-moon-glow {
+  0%, 100% { opacity: 0.4; transform: scale(0.92); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+
+@keyframes pond-room-prismatic {
+  from { filter: saturate(1.22) brightness(1.04) drop-shadow(0 0 6px rgb(255 170 230 / 72%)); }
+  to { filter: saturate(1.22) brightness(1.04) drop-shadow(0 0 6px rgb(160 210 255 / 72%)); }
+}
+
+/* ---------- Room HUD ---------- */
+
+.pond-room-hud-button-icon { font-size: 15px; line-height: 1; }
+
+.pond-room-hud-pearls-count {
+  font-family: var(--font-button);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.pond-room-hud-pearls-label {
+  color: #8a5a42;
+  font-family: var(--font-button);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ---------- Big-catch ticker ---------- */
+
+.pond-room-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: pond-room-ticker-scroll 60s linear infinite;
+}
+
+.pond-room-ticker-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-right: 18px;
+}
+
+.pond-room-ticker-item {
+  color: #e9e2cf;
+  font-family: var(--font-button);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pond-room-ticker-item.is-legendary {
+  color: #ffd76a;
+  text-shadow: 0 0 8px rgb(255 193 61 / 55%);
+}
+
+.pond-room-ticker-item.is-new {
+  padding: 4px 8px;
+  border-radius: 999px;
+  animation: pond-room-ticker-new 2.4s ease-out both;
+}
+
+.pond-room-ticker-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes pond-room-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes pond-room-ticker-new {
+  from { background: rgb(255 210 78 / 42%); color: #fff8df; }
+  to { background: transparent; }
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 520px) {
+  .pond-room-panel {
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .pond-room-panel-card {
+    width: 100%;
+    max-height: calc(100dvh - 16px);
+    padding: 12px 12px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 14px;
+    border-top-width: 8px;
+  }
+
+  .pond-room-panel-title { font-size: 24px; }
+  .pond-room-panel-subtitle { font-size: 9px; }
+  .pond-room-panel-body { padding-top: 10px; }
+
+  .pond-room-tab { padding: 6px 4px; font-size: 9.5px; }
+  .pond-room-period { padding: 3px 9px; font-size: 9.5px; }
+
+  .pond-room-board-row {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .pond-room-board-medal { width: 24px; height: 24px; font-size: 11px; }
+  .pond-room-board-name { font-size: 12px; }
+  .pond-room-board-catch { font-size: 9.5px; }
+  .pond-room-board-catch img { width: 19px; height: 19px; }
+  .pond-room-board-value { font-size: 11px; }
+  .pond-room-board-you-head { gap: 6px; padding: 7px; }
+  .pond-room-board-you-name { font-size: 12px; }
+  .pond-room-board-you-value { font-size: 11px; }
+  .pond-room-board-above { font-size: 10px; }
+
+  .pond-room-bait {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .pond-room-bait-emoji { width: 38px; height: 38px; font-size: 19px; }
+  .pond-room-bait-name { font-size: 18px; }
+  .pond-room-bait-favours { font-size: 10px; }
+  .pond-room-bait-meta { font-size: 9px; }
+  .pond-room-button { padding: 7px 12px; font-size: 10px; }
+
+  .pond-room-exchange-head { font-size: 14px; padding: 10px; }
+  .pond-room-stepper { padding: 8px; }
+  .pond-room-stepper-button { width: 34px; height: 34px; font-size: 20px; }
+  .pond-room-stepper-pearls,
+  .pond-room-stepper-stamps { font-size: 19px; }
+
+  .pond-room-tier-value { font-size: 14px; }
+  .pond-room-variant-name { font-size: 11px; }
+  .pond-room-variant-odds { font-size: 10px; }
+
+  .pond-room-dex-grid {
+    grid-template-columns: minmax(38px, 0.85fr) repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .pond-room-dex-col { font-size: 7.5px; }
+  .pond-room-dex-species-name { font-size: 8.5px; }
+  .pond-room-dex-species-tier { font-size: 7px; }
+  .pond-room-dex-cell-count { font-size: 7.5px; }
+  .pond-room-dex-cell-best { font-size: 7px; }
+
+  
+  
+
+  .pond-room-hud-pearls-count { font-size: 14px; }
+  .pond-room-hud-pearls-label { font-size: 7.5px; }
+  
+
+  
+
+  .pond-room-ticker-item { font-size: 10px; }
+  .pond-room-ticker-group { gap: 14px; padding-right: 14px; }
+
+  .pond-room-board-reset { width: 100%; margin-left: 0; }
+}
+
+@media (max-width: 380px) {
+  .pond-room-dex-col { font-size: 7px; letter-spacing: 0; }
+  .pond-room-dex-species-tier { display: none; }
+  .pond-room-bait-buy { min-width: 52px; }
+  .pond-room-panel-title { font-size: 22px; }
+  .pond-room-board-list { gap: 3px; }
+  .pond-room-board-row { padding: 5px 6px; }
+  .pond-room-board-you { padding-top: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-room-ticker-track,
+  .pond-room-ticker-item.is-new,
+  .pond-variant--shiny::after,
+  .pond-variant--golden::before,
+  .pond-variant--golden::after,
+  .pond-variant--moonlit::after,
+  .pond-variant--prismatic::after {
+    animation: none !important;
+  }
+
+  .pond-room-meter > span { transition: none; }
+  .pond-room-button { transition: none; }
+}
+
+/* ---------- Room chrome ---------- */
+
+.pond-room-hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 26;
+  display: flex;
+  gap: 8px;
+}
+
+.pond-room-hud-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 0 rgb(43 26 15 / 25%));
+}
+.pond-room-hud-icon:hover { opacity: 0.82; }
+.pond-room-hud-icon:focus-visible { outline: 3px solid #fff3c4; outline-offset: 2px; }
+
+.pond-room-hud-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: #ffd34d;
+}
+
+.pond-room-pearls {
+  position: absolute;
+  top: 12px;
+  right: 96px;
+  z-index: 26;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 5px;
+  border: 2.5px solid #c22252;
+  border-radius: 999px;
+  background: #fff8ea;
+  box-shadow: 0 3px 0 rgb(43 26 15 / 22%);
+  color: var(--ink);
+}
+.pond-room-pearls-count { min-width: 2ch; font-family: var(--font-button); font-size: 15px; line-height: 1; }
+.pond-room-pearls.is-guest .pond-room-pearls-count { color: var(--ink-soft); font-size: 12px; }
+
+/* Ripples mark where a line can go in; they are the fishing spots. */
+.pond-room-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: block;
+  min-width: 56px;
+  aspect-ratio: 120 / 44;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.pond-room-ripple svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pond-room-ripple-arc {
+  fill: none;
+  stroke: #c4f2ff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: pond-room-ripple 2.6s ease-out infinite;
+  animation-delay: var(--ripple-delay, 0s);
+}
+.pond-room-ripple-arc.is-b { animation-delay: calc(var(--ripple-delay, 0s) - 0.9s); }
+.pond-room-ripple-arc.is-c { animation-delay: calc(var(--ripple-delay, 0s) - 1.7s); }
+.pond-room-ripple:hover .pond-room-ripple-arc { stroke: #fff; }
+.pond-room-ripple:focus-visible { outline: 3px solid #fff3c4; outline-offset: 4px; border-radius: 50%; }
+.pond-room-ripple.is-taken { visibility: hidden; pointer-events: none; }
+
+@keyframes pond-room-ripple {
+  0% { opacity: 0; transform: scale(0.55); }
+  25% { opacity: 0.95; }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* Big catches from the whole pond, one toast at a time. */
+.pond-room-toasts {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  z-index: 25;
+  width: min(560px, calc(100% - 24px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.pond-room-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5px 14px 5px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #fff8ea;
+  box-shadow: 0 3px 0 rgb(43 26 15 / 22%), 0 8px 20px rgb(0 0 0 / 25%);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.2;
+  animation: pond-room-toast-in 0.26s cubic-bezier(0.2, 1, 0.4, 1) both;
+}
+.pond-room-toast strong { font-family: var(--font-button); font-weight: 400; }
+.pond-room-toast img { flex: none; width: 22px; height: 16px; object-fit: contain; }
+.pond-room-toast.is-golden {
+  border-color: #c99528;
+  background: #fff5d6;
+  box-shadow: 0 3px 0 rgb(43 26 15 / 22%), 0 0 16px rgb(231 185 78 / 70%);
+}
+.pond-room-toast.is-leaving { animation: pond-room-toast-out 0.26s ease-in both; }
+
+@keyframes pond-room-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pond-room-toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-room-ripple-arc { animation: none; opacity: 0.7; }
+  .pond-room-toast { animation: none !important; }
+}
+
+/* Small objects on the bank, independent of the original pond artwork. */
+.museum.pond { overflow: clip; }
+.pond-landmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.pond-landmark-label {
+  position: absolute;
+  top: 13%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  height: 11%;
+  transform: translateX(-50%);
+  color: #65412c;
+  font-family: var(--font-body);
+}
+.pond-landmark:hover > svg,
+.pond-landmark:focus-visible > svg { transform: translateY(-4px); filter: drop-shadow(0 0 5px #fff2b9); }
+.pond-landmark:focus-visible { outline: 3px solid #fff3c4; outline-offset: 6px; border-radius: 12px; }
+.pond-landmark:disabled { pointer-events: none; }
+.pond-landmark.has-reward::after { position: absolute; top: 20%; right: 12%; display: grid; place-items: center; width: 23px; height: 23px; border: 2px solid #80562c; border-radius: 50%; background: #ffdc75; color: #674536; font: 16px var(--font-body); content: '!'; }
+
+/* Reading surfaces use Sniglet at actual reading sizes, with script reserved for headings. */
+.pond-room-panel-card { --font-button: var(--font-body); font-family: var(--font-body); }
+.pond-room-panel-subtitle { font-size: 10px; letter-spacing: .1em; }
+.pond-room-panel-intro { margin: 8px 0 0; color: #8b6351; font-size: 13px; line-height: 1.4; }
+.pond-room-panel-title { line-height: 1.4; }
+.pond-room-panel-close { width: 44px; height: 44px; }
+.pond-room-panel-close > svg { width: 32px; height: 32px; }
+.pond-room-panel-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5ccb4; }
+.pond-room-panel-footer .pond-room-button { min-height: 44px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.pond-room-signin { min-height: 44px; padding: 8px 2px; border: 0; background: none; color: #a52b50; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font: 12px var(--font-body); }
+.pond-room-signin:focus-visible { outline: 3px solid #662f14; outline-offset: 2px; }
+.pond-notice-tabs { display: flex; gap: 8px; padding-top: 14px; }
+.pond-notice-tabs > button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px; border: 1.5px solid #d9b99c; border-radius: 8px; background: #f9f0df; color: #79503a; font: 13px var(--font-body); cursor: pointer; }
+.pond-notice-tabs > button[aria-selected="true"] { border-color: #a94e68; background: #ffe3eb; color: #78253f; box-shadow: inset 0 -2px 0 #d4869d; }
+.pond-notice-tabs > button:focus-visible { outline: 3px solid #662f14; outline-offset: 2px; }
+.pond-room-tab { min-height: 42px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.pond-room-note, .pond-room-notice, .pond-room-empty { font-size: 13px; line-height: 1.5; }
+.pond-room-bait-favours { font-size: 12px; }
+.pond-room-bait-meta, .pond-room-fineprint { font-size: 11px; line-height: 1.5; }
+.pond-room-bait-buy { min-height: 44px; font-size: 12px; text-transform: none; }
+.pond-room-period { min-height: 36px; font-size: 12px; }
+.pond-room-board-name { font-size: 14px; }
+.pond-room-bounty-text { font-family: var(--font-body); font-size: 15px; }
+.pond-room-bounty-meta { gap: 6px; font-size: 11px; line-height: 1.5; }
+.pond-room-bounty-reset { font-size: 11px; }
+.pond-room-bounty-claim { min-height: 44px; font-size: 12px; text-transform: none; }
+.pond-room-pearls.is-guest { cursor: pointer; }
+.pond-room-pearls:disabled { opacity: 1; }
+.pond-room-pearls:focus-visible { outline: 3px solid #fff3c4; outline-offset: 3px; }
+
+/* Keep the fishing controls familiar, with a readable hint and an explicit return. */
+.pond-bank-return { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 12px; border: 2px solid #8b5641; border-radius: 999px; background: #fff3d9; box-shadow: 0 2px 0 #67453640; color: var(--ink); font: 13px var(--font-body); cursor: pointer; }
+.pond-bank-return:hover { background: #ffe4ba; }
+.pond-bank-return:focus-visible { outline: 3px solid #fff3c4; outline-offset: 3px; }
+.pond-fishing .pond-hint { font-family: var(--font-body); font-size: 13px; }
+.pond-fishing .pond-bait-name { font-family: var(--font-body); font-size: 12px; }
+.pond-fishing .pond-panel-title { font-family: var(--font-body); font-size: 13px; }
+.pond-fishing .pond-icon-button { width: 44px; height: 44px; }
+.pond-fishing .pond-icon-button > svg { width: 32px; height: 32px; }
+@media (max-height: 520px) and (min-width: 600px) {
+  .pond-landmark-label {
+    position: absolute;
+    top: 13%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70%;
+    height: 11%;
+    transform: translateX(-50%);
+    color: #65412c;
+    font-family: var(--font-body); }
+}
+
+/* Painted woodland sprites share the game's authored outlines and gouache texture. */
+.pond-landmark-art { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; transition: filter .18s ease; }
+.pond-landmark:hover .pond-landmark-art,
+.pond-landmark:focus-visible .pond-landmark-art { filter: drop-shadow(0 0 3px #fff1b778); }
+@media (prefers-reduced-motion: reduce) { .pond-landmark-art { transition: none; } }
+/* Lettering sits on the painted board's blank header, not on a floating UI card. */
+.pond-merchant-welcome { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; background: #f4ebd9; color: #76503b; font: 13px/1.5 var(--font-body); }
+.pond-landmark.is-fishdex:hover .pond-landmark-label { background: none; }
+
+/* The original animated otter welcomes visitors beside the bait counter. */
+.pond-shopkeeper {
+  position: absolute;
+  left: -25%;
+  bottom: -3.4%;
+  width: 50%;
+  height: auto;
+  aspect-ratio: 1640 / 2180;
+  pointer-events: auto;
+}
+.pond-shopkeeper > canvas { display: block; width: 100%; height: auto; }
+.pond-shopkeeper-bubble {
+  position: absolute;
+  bottom: 96%;
+  left: 50%;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: min(220px, 60vw);
+  padding: 8px 12px 9px;
+  border: 2.5px solid #50291d;
+  border-radius: 16px;
+  background: #fff8ea;
+  box-shadow: 0 3px 0 #50291d33;
+  color: #5a3524;
+  font: 13px/1.35 var(--font-body);
+  text-align: left;
+  opacity: 0;
+  transform: translate(calc(-50% + var(--shift, 0px)), 6px) scale(.92);
+  transform-origin: 50% 100%;
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+.pond-shopkeeper-bubble::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-right: 2.5px solid #50291d;
+  border-bottom: 2.5px solid #50291d;
+  background: #fff8ea;
+  transform: translate(calc(-50% - var(--shift, 0px)), -7px) rotate(45deg);
+  content: '';
+}
+.pond-shopkeeper-bubble strong { color: #3f7d78; font-size: 11px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.pond-shopkeeper-bubble.is-shown { opacity: 1; transform: translate(calc(-50% + var(--shift, 0px)), 0) scale(1); }
+@media (prefers-reduced-motion: reduce) { .pond-shopkeeper-bubble { transition: none; } }
+.pond-landmark:hover .pond-shopkeeper,
+.pond-landmark:focus-visible .pond-shopkeeper { filter: brightness(1.08); }
+/* Pointer taps and drags are resolved by the room; these retain native keyboard semantics. */
+.museum.pond .pond-landmark,
+.museum.pond .pond-room-ripple,
+.museum.pond .pond-shopkeeper { pointer-events: none; }
+.pond-landmark.is-hovered .pond-shopkeeper { filter: brightness(1.08); }
+.pond-room-ripple.is-hovered .pond-room-ripple-arc { stroke: #fff; }
+
+.pond-shopkeeper:not([data-ready="true"]) { visibility: hidden; }
+
+.pond-room-ripple-arc { stroke: #e6fbff; stroke-width: 3.6; filter: drop-shadow(0 0 2px #9fe6ff); }
+.pond-room-ripple-bobber { transform-box: fill-box; transform-origin: 50% 100%; animation: pond-room-bobber 2.2s ease-in-out infinite; animation-delay: var(--ripple-delay, 0s); }
+.pond-room-ripple.is-hovered .pond-room-ripple-bobber,
+.pond-room-ripple:hover .pond-room-ripple-bobber { filter: drop-shadow(0 0 4px #fff3c4); }
+@keyframes pond-room-bobber {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(3px) rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pond-room-ripple-bobber { animation: none; }
+}
+
+/* ---------- Pondside panels: a wooden frame round a parchment sheet, like the props ---------- */
+
+.pond-room-panel {
+  --pond-line: #50291d;
+  --pond-wood: #d48c46;
+  --pond-wood-dark: #b06f33;
+  --pond-paper: #fff7e6;
+  --pond-ink: #5a3524;
+  --pond-ink-soft: #8a6249;
+  --pond-teal: #4f8f8c;
+  --pond-teal-deep: #3b7270;
+  --pond-carved: #6e3b1c;
+}
+.pond-room-panel .pond-room-panel-card {
+  width: min(100%, 470px);
+  height: min(700px, calc(100dvh - 24px));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border: 11px solid transparent;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, #fffaf0, var(--pond-paper) 40%, #fbecd2) padding-box,
+    repeating-linear-gradient(174deg, transparent 0 10px, rgb(122 64 22 / 20%) 10px 12px, transparent 12px 26px) border-box,
+    linear-gradient(180deg, #e6a259, var(--pond-wood) 45%, var(--pond-wood-dark)) border-box;
+  box-shadow:
+    0 0 0 3px var(--pond-line),
+    inset 0 0 0 3px var(--pond-line),
+    0 22px 54px rgb(5 8 20 / 62%);
+  color: var(--pond-ink);
+}
+
+/* The header is a carved plank, lettered like the signs on the bank. */
+.pond-room-panel .pond-room-panel-header {
+  align-items: center;
+  margin: 3px 3px 0;
+  padding: 10px 12px 11px 18px;
+  border-bottom: 3px solid var(--pond-line);
+  background:
+    repeating-linear-gradient(178deg, transparent 0 9px, rgb(122 64 22 / 16%) 9px 11px, transparent 11px 21px),
+    linear-gradient(180deg, #f0b46a, #d99350);
+}
+.pond-room-panel .pond-room-panel-subtitle { color: #7a4520; opacity: .85; }
+.pond-room-panel .pond-room-panel-title {
+  color: var(--pond-carved);
+  font-family: var(--font-sniglet), var(--font-body);
+  font-size: clamp(26px, 6vw, 32px);
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: 0 2px 0 rgb(255 214 150 / 85%), 0 -1px 0 rgb(63 32 14 / 45%);
+}
+.pond-room-panel .pond-room-panel-intro { margin-top: 3px; color: #6a3d1f; font-size: 13px; }
+.pond-room-panel .pond-room-panel-close {
+  width: 42px;
+  height: 42px;
+  border: 2.5px solid var(--pond-line);
+  background: var(--pond-paper);
+  box-shadow: 0 3px 0 rgb(80 41 29 / 40%);
+  color: var(--pond-line);
+}
+.pond-room-panel .pond-room-panel-close > svg { width: 26px; height: 26px; }
+.pond-room-panel .pond-room-panel-close:hover { background: #fff; opacity: 1; }
+
+.pond-room-panel .pond-notice-tabs { padding: 14px 16px 0; }
+.pond-room-panel .pond-room-panel-body { padding: 14px 14px 6px 16px; scrollbar-color: #d6b48d transparent; }
+.pond-room-panel .pond-room-panel-footer { margin: 0; padding: 10px 16px 14px; border-top: 2px dashed rgb(139 86 65 / 28%); }
+
+/* Tabs and buttons take the stall's teal awning. */
+.pond-room-panel .pond-notice-tabs > button,
+.pond-room-panel .pond-room-tab {
+  border: 2px solid #c9a27b;
+  border-radius: 12px;
+  background: #f6e6c8;
+  color: var(--pond-ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.pond-room-panel .pond-room-tabs { gap: 6px; padding: 0; border: 0; background: none; }
+.pond-room-panel .pond-room-tab:hover,
+.pond-room-panel .pond-notice-tabs > button:hover { background: #fbefd8; }
+.pond-room-panel .pond-notice-tabs > button[aria-selected="true"],
+.pond-room-panel .pond-room-tab.is-active {
+  border-color: var(--pond-line);
+  background: var(--pond-teal);
+  box-shadow: inset 0 -3px 0 var(--pond-teal-deep);
+  color: #fff8ea;
+}
+.pond-room-panel .pond-room-button {
+  border: 2px solid var(--pond-line);
+  background: var(--pond-teal);
+  box-shadow: 0 3px 0 rgb(80 41 29 / 45%);
+  color: #fff8ea;
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pond-room-panel .pond-room-button:hover:not(:disabled) { background: #5aa29e; }
+.pond-room-panel .pond-room-button:disabled { border-color: #b89a80; background: #e7d6bd; box-shadow: none; color: #8a6249; opacity: 1; }
+.pond-room-panel .pond-room-button.is-quiet { border-color: #b98a5e; background: transparent; box-shadow: none; color: var(--pond-ink); }
+.pond-room-panel .pond-room-button.is-quiet:hover { background: #f6e6c8; }
+.pond-room-panel .pond-room-signin { color: var(--pond-teal-deep); }
+
+.pond-room-panel .pond-room-note { border-left-color: var(--pond-teal); background: #e9f3ef; color: #2f5d5b; font-size: 13px; }
+.pond-room-panel .pond-room-empty { border-color: #d8bd9b; color: var(--pond-ink-soft); }
+
+/* Bounties are paper slips pinned to the board. */
+.pond-room-panel .pond-room-bounty-list { gap: 14px; padding-top: 6px; }
+.pond-room-panel .pond-room-bounty {
+  position: relative;
+  padding: 16px 14px 12px;
+  border: 2px solid #d8bd9b;
+  border-radius: 4px 4px 10px 10px;
+  background: #fffdf7;
+  box-shadow: 0 3px 0 rgb(139 86 65 / 18%);
+  transform: rotate(-.6deg);
+}
+.pond-room-panel .pond-room-bounty:nth-child(2n) { transform: rotate(.7deg); }
+.pond-room-panel .pond-room-bounty::before {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--pond-line);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff9d8f, #e0564f 60%);
+  transform: translateX(-50%);
+  content: '';
+}
+.pond-room-panel .pond-room-bounty:nth-child(3n + 2)::before { background: radial-gradient(circle at 35% 35%, #9fd6cf, #4f8f8c 60%); }
+.pond-room-panel .pond-room-bounty:nth-child(3n)::before { background: radial-gradient(circle at 35% 35%, #ffe7a1, #e6b23c 60%); }
+.pond-room-panel .pond-room-bounty.is-done { border-color: #8fbf9c; background: #f4fbf3; }
+.pond-room-panel .pond-room-bounty-text { color: var(--pond-ink); font-family: var(--font-body); font-size: 15px; font-weight: 400; }
+.pond-room-panel .pond-room-bounty-reward { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 5px; border: 1.5px solid #e2c48f; border-radius: 999px; background: #fff3d6; color: #6e4a1c; font: 13px var(--font-body); }
+
+/* Shop rows read like labelled jars on the counter. */
+.pond-room-panel .pond-room-bait { border: 2px solid #d8bd9b; border-radius: 14px; background: #fffdf7; box-shadow: 0 3px 0 rgb(139 86 65 / 14%); }
+.pond-room-panel .pond-room-bait-name { color: var(--pond-carved); font-family: var(--font-sniglet), var(--font-body); font-size: 17px; font-weight: 800; }
+.pond-room-panel .pond-room-bait-emoji { border: 2px solid #e2c9a6; background: #fbefd8; }
+.pond-room-panel .pond-room-bait.is-free { background: #f4fbf3; border-color: #a9cfb2; }
+.pond-room-bait-free { padding: 6px 12px; border: 2px dashed #6fa77e; border-radius: 999px; color: #3f7a52; font: 13px var(--font-body); }
+.pond-room-panel .pond-room-bait-buy { min-width: 74px; }
+.pond-room-panel .pond-merchant-welcome { display: grid; gap: 3px; border: 2px solid #d8bd9b; border-radius: 14px 14px 14px 4px; background: #fffdf7; color: var(--pond-ink); }
+.pond-room-panel .pond-merchant-welcome strong { color: var(--pond-teal-deep); font-size: 11px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+
+/* The journal is lined notebook paper. */
+.pond-room-panel .pond-room-panel-card.is-fishdex {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgb(79 143 140 / 16%) 27px 28px) padding-box,
+    linear-gradient(180deg, #fffaf0, var(--pond-paper)) padding-box,
+    repeating-linear-gradient(174deg, transparent 0 10px, rgb(122 64 22 / 20%) 10px 12px, transparent 12px 26px) border-box,
+    linear-gradient(180deg, #e6a259, var(--pond-wood) 45%, var(--pond-wood-dark)) border-box;
+}
+.pond-room-panel .pond-room-dex-cell { border-color: #d8bd9b; }
+
+@media (max-width: 520px) {
+  .pond-room-panel .pond-room-panel-card { border-width: 8px; border-radius: 22px; }
+  .pond-room-panel .pond-room-panel-header { padding: 8px 10px 9px 14px; }
+}
+.pond-room-panel svg [fill="#c22252"] { fill: var(--pond-teal-deep); }
+.pond-room-panel svg [stroke="#c22252"] { stroke: var(--pond-teal-deep); }
+.pond-room-panel .pond-room-panel-close svg [fill="#c22252"] { fill: var(--pond-carved); }
+.pond-room-panel .pond-notice-tabs > button[aria-selected="true"] svg [fill="#c22252"] { fill: #fff8ea; }
+.pond-room-panel .pond-notice-tabs > button[aria-selected="true"] svg [fill="#fff"] { fill: var(--pond-teal-deep); }
+.pond-room-panel .pond-room-bounty-reset { color: var(--pond-teal-deep); }
+.pond-room-panel .pond-room-bounty-meta { color: var(--pond-ink-soft); }
+.pond-room-panel .pond-room-panel-body.is-leaderboard .pond-room-tab { min-height: 34px; padding: 5px 8px; border-radius: 999px; font-size: 12px; }
+.pond-room-panel .pond-room-period.is-active { border-color: var(--pond-line); background: #fff3d6; color: var(--pond-ink); }
+.pond-room-panel .pond-room-board-you-head { border-color: #a9cfc9; background: #eef7f4; }
+.pond-room-panel .pond-room-board-you-label { color: var(--pond-teal-deep); }
+.pond-room-panel .pond-room-board-row:first-child { background: #fff3d6; }
+.pond-room-panel .pond-room-odds-title,
+.pond-room-panel .pond-room-odds-heading,
+.pond-room-panel .pond-room-exchange-head { color: var(--pond-carved); font-family: var(--font-sniglet), var(--font-body); font-weight: 800; }
+.pond-room-panel .pond-room-odds-bait { border-color: #c9a27b; background: #f6e6c8; color: var(--pond-ink); font-family: var(--font-body); }
+.pond-room-panel .pond-room-odds-bait.is-active { border-color: var(--pond-line); background: var(--pond-teal); color: #fff8ea; }
+.pond-room-panel .pond-room-stepper-stamps { color: var(--pond-teal-deep); }
+
+/* Fishing: warnings sit by the button you are pressing, and losses land mid-scene. */
+.pond-fishing .pond-hint.is-warn { border-color: #8f2c26; background: #ffe2dc; color: #8f2c26; font-size: 15px; }
+.pond-fishing .pond-toast { top: 36%; }
+.pond-reveal-breakdown { font-size: 11px; text-align: center; }
+.pond-reveal-breakdown summary { display: inline-block; padding: 2px 8px; border-radius: 999px; color: var(--ink-soft); cursor: pointer; list-style: none; text-decoration: underline dotted; text-underline-offset: 3px; }
+.pond-reveal-breakdown summary::-webkit-details-marker { display: none; }
+.pond-reveal-breakdown[open] summary { display: none; }
+.pond-pearl-icon {
+  display: inline-block;
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  border: 1.5px solid #8f6a4c;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 32%, #fff 0 18%, #f3ead8 45%, #cdbb9c 100%);
+  vertical-align: -0.2em;
+}
+.pond-reveal-pearls { gap: 6px; font-size: 20px; }
+.pond-chain-line { font-size: 13px; line-height: 1.4; }
+/* Keep the whole bunny in frame when the painting is wider than the screen. */
+@media (min-aspect-ratio: 1 / 1) {
+  .pond-fishing .pond-world { left: 15%; transform: translateX(-15%); }
+}
+.pond-room-panel .pond-room-dex-count strong { color: var(--pond-teal-deep); }
+
+/* Standing at a spot, its float tugs as if something is down there. */
+.pond-room-ripple.is-near .pond-room-ripple-bobber { animation: pond-room-bobber-tug 1.1s ease-in-out infinite; }
+.pond-room-ripple.is-near .pond-room-ripple-arc { stroke: #fff; animation-duration: 1.6s; }
+@keyframes pond-room-bobber-tug {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  35% { transform: translateY(5px) rotate(5deg); }
+  55% { transform: translateY(1px) rotate(-2deg); }
+}
+@media (prefers-reduced-motion: reduce) { .pond-room-ripple.is-near .pond-room-ripple-bobber { animation: none; } }
+
+/* No UI boxes on the bank: a focused prop warms in the scene (see room.ts) instead. */
+.museum.pond .pond-landmark:focus-visible,
+.museum.pond .pond-room-ripple:focus-visible { outline: none; }
+.museum.pond .pond-room-ripple:focus-visible .pond-room-ripple-bobber { filter: drop-shadow(0 0 4px #fff3c4); }
+@media (max-aspect-ratio: 1 / 1) {
+  .pond-fishing .pond-world { left: 17%; transform: translateX(-17%); }
+}
+/* The visitor's own rig at the water's edge. */
+.pond-angler { position: absolute; z-index: 5; display: block; pointer-events: none; }
+.pond-angler > canvas { display: block; width: 100%; height: 100%; }

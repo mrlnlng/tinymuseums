@@ -30,3 +30,25 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `coming-soon.png` | `frame.png` over a drawn curtain with a blank pinned note (the hall writes "Coming soon" on it), same canvas as `frame.png`, quantised |
 | `atelier/ribbon-blue.png` | `atelier/ribbon.png` with its pinks turned to the blue of the bow in `bruce_mock_scene.png` |
 | `atelier/curtain-swag.png`, `atelier/curtain-drape.png` | `Welcome_to_my10.png` and `Welcome_to_my12.png`, stray specks removed, trimmed |
+| `pond/scene.png` | `fishing_scene/Untitled_Artwork-122.png`, full canvas, 1600px wide, quantised |
+| `pond/lily.png`, `pond/splash.png` | `fishing_scene/Untitled_Artwork-123.png` and `-124.png`, white removed with colour-to-alpha, trimmed to the art, quantised |
+| `pond/fish-star-snapper.png` … `pond/fish-blobfish.png` | `fish_caught/Untitled_Artwork-125.png` … `-128.png`, trimmed, max 600px long side, quantised |
+| `pond/layout.json` | lily and splash boxes as fractions of the 2388×1668 scene |
+
+## Fishing forest illustrations
+
+`pond/forest-door.png`, `forest-noticeboard.png`, `forest-fisherman.png` and
+`forest-journal.png` are new reference-guided illustrations made with the built-in
+image generation tool. They use the original fashion doorway, pond and character
+art as style references. The original files were retained unchanged. Matching
+`.webp` files are alpha-preserving runtime exports.
+
+Prompts, references and sequential in-game review notes are in
+[`docs/pond-asset-art-direction.md`](../../../../docs/pond-asset-art-direction.md).
+
+The fishing forest now uses the original animated otter as its shopkeeper, with
+`pond/fishing-apron.webp` attached to its chest. `pond/forest-bait-shop.webp`
+replaces the generated fisherman/basket in the scene, and
+`pond/forest-noticeboard-wood.webp` supplies the board's wooden header. Source
+PNGs and the exact built-in image_gen prompts are recorded in the
+[art direction notes](../../../../docs/pond-asset-art-direction.md#5-current-revision-original-otter-bait-stall-and-quiet-exploration).

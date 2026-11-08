@@ -3,7 +3,7 @@ import type { Placement, ThemeSpec } from '@tiny/core'
 import { THEMES } from '@tiny/core/rooms'
 import manifest from '@/generated/asset-manifest.json'
 import { CONFIG } from '@/features/hall/scene/config'
-import { builtUrl } from '@/shared/lib/assets'
+import { assetUrl, builtUrl, type AssetName } from '@/shared/lib/assets'
 
 type AtelierImage = keyof typeof manifest.atelier
 
@@ -66,10 +66,26 @@ const FISH: Record<string, { body: string; belly: string; fin: string; patches?:
   'fish-golden-koi': { body: '#e8b93e', belly: '#f8e6a3', fin: '#c7951e', patches: '#fff3c4' },
 }
 
-function sourceFor(ref: string): { image: AtelierImage } | { url: string } | { fish: string } | null {
+// The pond fish are drawn art, so they hang beside the older painted plaques.
+const POND_TROPHIES: Record<string, AssetName> = {
+  'fish-star-snapper': 'pond/fish-star-snapper',
+  'fish-crab': 'pond/fish-crab',
+  'fish-puffer': 'pond/fish-puffer',
+  'fish-blobfish': 'pond/fish-blobfish',
+}
+
+const PLAQUE_WIDTH = 256
+const PLAQUE_HEIGHT = 192
+/** The room left inside the plaque's frame for a fish drawing. */
+const PLAQUE_ART_WIDTH = 216
+const PLAQUE_ART_HEIGHT = 140
+
+function sourceFor(ref: string): { image: AtelierImage } | { url: string } | { fish: string } | { pond: AssetName } | null {
   const image = ATELIER_PROPS[ref]
   if (image) return { image }
   if (ref === 'cat') return { url: CAT_URL }
+  const pond = POND_TROPHIES[ref]
+  if (pond) return { pond }
   if (ref in FISH) return { fish: ref }
   return null
 }
@@ -96,14 +112,9 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width:
   ctx.closePath()
 }
 
-/** A fish trophy on a small wooden plaque; the room has no art for these. */
-function fishTexture(ref: string): THREE.Texture {
-  const colors = FISH[ref]
-  const canvas = document.createElement('canvas')
-  canvas.width = 256
-  canvas.height = 192
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('A fish trophy could not be drawn.')
+/** The wooden plaque that every fish trophy hangs on. */
+function plaqueCanvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
+  const [canvas, ctx] = drawingOn(PLAQUE_WIDTH, PLAQUE_HEIGHT)
 
   roundedRect(ctx, 8, 12, 240, 168, 14)
   ctx.fillStyle = '#8c5a33'
@@ -123,6 +134,14 @@ function fishTexture(ref: string): THREE.Texture {
     ctx.stroke()
   }
   ctx.restore()
+
+  return [canvas, ctx]
+}
+
+/** A fish trophy painted on the plaque; the older room has no art for these. */
+function fishTexture(ref: string): THREE.Texture {
+  const colors = FISH[ref]
+  const [canvas, ctx] = plaqueCanvas()
 
   ctx.save()
   ctx.translate(4, 0)
@@ -185,6 +204,31 @@ function fishTexture(ref: string): THREE.Texture {
   ctx.restore()
 
   return canvasTexture(canvas)
+}
+
+/** A pond catch drawn on the same plaque, keeping the art's own aspect ratio. */
+async function pondTrophyTexture(ref: string, name: AssetName): Promise<THREE.Texture> {
+  const art = await loadTexture(assetUrl(name))
+  const [canvas, ctx] = plaqueCanvas()
+  const image = art.image as HTMLImageElement
+  const width = image.naturalWidth || image.width
+  const height = image.naturalHeight || image.height
+  if (width > 0 && height > 0) {
+    const scale = Math.min(PLAQUE_ART_WIDTH / width, PLAQUE_ART_HEIGHT / height)
+    const drawWidth = width * scale
+    const drawHeight = height * scale
+    ctx.drawImage(
+      image,
+      (PLAQUE_WIDTH - drawWidth) / 2,
+      (PLAQUE_HEIGHT - drawHeight) / 2,
+      drawWidth,
+      drawHeight,
+    )
+  }
+  art.dispose()
+  const texture = canvasTexture(canvas)
+  PROP_IMAGE_CACHE.set(ref, canvas.toDataURL())
+  return texture
 }
 
 function canvasTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
@@ -268,7 +312,9 @@ export async function loadCozyArt(): Promise<CozyArt> {
           ? await loadTexture(builtUrl(manifest.atelier[source.image].src))
           : 'url' in source
             ? await loadTexture(builtUrl(source.url))
-            : fishTexture(source.fish)
+            : 'pond' in source
+              ? await pondTrophyTexture(ref, source.pond)
+              : fishTexture(source.fish)
         return [ref, texture] as const
       }),
     ),
@@ -405,6 +451,9 @@ export function cozyPropImageUrl(ref: string): string | null {
     url = builtUrl(manifest.atelier[source.image].src)
   } else if ('url' in source) {
     url = builtUrl(source.url)
+  } else if ('pond' in source) {
+    // Until the plaque is drawn, show the raw catch rather than no picture.
+    return assetUrl(source.pond)
   } else {
     const texture = fishTexture(source.fish)
     url = (texture.image as HTMLCanvasElement).toDataURL()

@@ -14,6 +14,7 @@ import {
   newPlacementId,
   paintingOrder,
   propLabel,
+  cozyWorth,
   reasonLabel,
   samePlacements,
   shopPropIds,
@@ -146,7 +147,34 @@ test('reasonLabel and propLabel give readable text', () => {
   assert.match(reasonLabel('not_owned'), /own/)
   assert.equal(reasonLabel('nonsense'), 'That could not be saved.')
   assert.equal(propLabel('fish-golden-koi'), 'Golden koi trophy')
+  assert.equal(propLabel('fish-star-snapper'), 'Star snapper trophy')
+  assert.equal(propLabel('fish-crab'), 'Crab trophy')
+  assert.equal(propLabel('fish-puffer'), 'Pufferfish trophy')
+  assert.equal(propLabel('fish-blobfish'), 'Sir Blobfish trophy')
   assert.equal(propLabel('some-new-prop'), 'some new prop')
+})
+
+test('the blobfish is the rare pond trophy; the other pond fish are ordinary', () => {
+  assert.equal(cozyWorth('fish-golden-koi'), 8)
+  assert.equal(cozyWorth('fish-blobfish'), 8)
+  for (const ref of ['fish-star-snapper', 'fish-crab', 'fish-puffer', 'fish-koi']) {
+    assert.equal(cozyWorth(ref), 4)
+  }
+})
+
+test('old and new fish trophies all hang on the wall or lean on the floor', () => {
+  const refs = [
+    'fish-minnow',
+    'fish-perch',
+    'fish-carp',
+    'fish-koi',
+    'fish-golden-koi',
+    'fish-star-snapper',
+    'fish-crab',
+    'fish-puffer',
+    'fish-blobfish',
+  ]
+  for (const ref of refs) assert.deepEqual(THEMES.cozy.props[ref]?.zones, ['wall', 'floor'])
 })
 
 test('cozy level climbs as things are placed, and trophies count for more', () => {

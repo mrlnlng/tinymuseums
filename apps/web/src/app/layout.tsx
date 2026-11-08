@@ -11,6 +11,7 @@ import VitalsReporter from '@/shared/components/VitalsReporter'
 import VisitTracker from '@/shared/components/VisitTracker'
 import { assetCssVariables } from '@/shared/lib/assets'
 import '../styles/globals.css'
+import '../styles/pond-room.css'
 
 const inspiratiq = localFont({
   src: '../../public/fonts/Inspiratiq_tiny_museum-Regular.otf',

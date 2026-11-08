@@ -87,6 +87,19 @@ export interface RigAttachmentPose {
   rotation: number
 }
 
+/** A painted layer pinned to a bone, placed in the author's 1668 × 2388 layer canvas. */
+export interface RigPiece {
+  bone: string
+  image: string
+  x: number
+  y: number
+  width: number
+  height: number
+  drawOrder: number
+  /** Model parts the piece replaces, such as a hair clip under a hat. */
+  hides?: readonly string[]
+}
+
 export interface Rig {
   readonly kind: CharacterKind
   /** Canvas width over height. */
@@ -98,6 +111,13 @@ export interface Rig {
   readonly cycleSeconds: number
   readonly costumes: readonly string[]
   setCostume(id: string | null, bow?: string | null): void
+  /** Dresses this rig in pieces that are not part of the shared wardrobe. */
+  wear(pieces: readonly RigPiece[]): Promise<void>
+  /**
+   * Repaints this rig's own body layers pixel by pixel, for a character such as an NPC that must
+   * not look like a visitor. Rigs drawn into a shared layer share textures and are left alone.
+   */
+  repaint(pixel: (rgba: Uint8ClampedArray, at: number) => void): void
   /** `at` is the top-left corner in CSS pixels, for a rig drawn into a layer. */
   render(state: RigState, dt: number, height: number, pixelRatio: number, at?: { left: number; top: number }): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
@@ -496,6 +516,55 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
     cycleSeconds: clip.duration,
     costumes: [...costumeParts.keys()],
     setCostume,
+    async wear(pieces) {
+      const maps = await Promise.all(pieces.map((piece) => new THREE.TextureLoader().loadAsync(piece.image)))
+      pieces.forEach((piece, index) => {
+        const map = paintedMap(maps[index])
+        own.textures.add(map)
+        const bone = model.getObjectByName(piece.bone)
+        const inverse = restInverse.get(piece.bone)
+        if (!bone || !inverse) return
+        const geometry = new THREE.PlaneGeometry(piece.width / 1000, piece.height / 1000)
+        own.geometries.add(geometry)
+        const material = paintedMaterial(map)
+        own.materials.add(material)
+        const mesh = new THREE.Mesh(geometry, material)
+        mesh.renderOrder = piece.drawOrder
+        mesh.frustumCulled = false
+        mesh.position.copy(canvasToModel(piece.x + piece.width / 2, piece.y + piece.height / 2))
+        mesh.applyMatrix4(inverse)
+        bone.add(mesh)
+        for (const name of piece.hides ?? []) {
+          const part = model.getObjectByName(name)
+          if (part) part.visible = false
+        }
+      })
+    },
+    repaint(pixel) {
+      if (layer) return
+      model.traverse((node) => {
+        if (!(node instanceof THREE.Mesh) || node.userData.layer !== 'character') return
+        const material = node.material as THREE.MeshBasicMaterial
+        const source = material.map?.image as CanvasImageSource & { width: number; height: number } | undefined
+        if (!material.map || !source) return
+        const canvas = document.createElement('canvas')
+        canvas.width = source.width
+        canvas.height = source.height
+        const paint = canvas.getContext('2d', { willReadFrequently: true })
+        if (!paint) return
+        paint.drawImage(source, 0, 0)
+        const image = paint.getImageData(0, 0, canvas.width, canvas.height)
+        for (let at = 0; at < image.data.length; at += 4) {
+          if (image.data[at + 3] > 0) pixel(image.data, at)
+        }
+        paint.putImageData(image, 0, 0)
+        const map = paintedMap(new THREE.CanvasTexture(canvas))
+        map.flipY = material.map.flipY
+        own.textures.add(map)
+        material.map = map
+        material.needsUpdate = true
+      })
+    },
     render(state, dt, nextHeight, pixelRatio, at) {
       const nextRatio = Math.min(3, Math.max(2, pixelRatio))
       const nextWidth = nextHeight * frame.width / frameHeight
@@ -557,6 +626,14 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       if (twitchAt >= 0 && twitch < 0.36) {
         const flick = twitch < 0.2 ? Math.sin((Math.PI * twitch) / 0.2) : -0.5 * Math.sin((Math.PI * (twitch - 0.2)) / 0.16)
         rotateInPlane(ears[twitchEar], (Math.PI / 180) * 8 * flick * (twitchEar === 0 ? 1 : -1) * idle)
+      }
+
+      if (state.bend) {
+        const rad = Math.PI / 180
+        rotateInPlane(head, rad * (state.bend.head ?? 0))
+        rotateInPlane(armBack, rad * (state.bend.armBack ?? 0))
+        rotateInPlane(armFront, rad * (state.bend.armFront ?? 0))
+        rotateInPlane(tail, rad * (state.bend.tail ?? 0))
       }
 
       if (state.air > 0 || squash !== 0) poseJump(state.air, state.rise, squash)

@@ -28,7 +28,6 @@ const loadWalkthrough = () => import('@/features/artwork/components/Walkthrough'
 const loadSketchGuess = () => import('@/features/sketchguess/components/SketchGuess')
 const loadGameDesktop = () => import('@/features/minigames/components/GameDesktop')
 const loadColorRecall = () => import('@/features/colorgame/components/ColorRecall')
-const loadPondGame = () => import('@/features/pondgame/components/PondGame')
 const loadHallArranger = () => import('@/features/rooms/decorate/HallArranger')
 
 const GuestBoard = dynamic(loadGuestBoard, { ssr: false })
@@ -38,7 +37,6 @@ const Walkthrough = dynamic(loadWalkthrough, { ssr: false })
 const SketchGuess = dynamic(loadSketchGuess, { ssr: false })
 const GameDesktop = dynamic(loadGameDesktop, { ssr: false })
 const ColorRecall = dynamic(loadColorRecall, { ssr: false })
-const PondGame = dynamic(loadPondGame, { ssr: false })
 const HallArranger = dynamic(loadHallArranger, { ssr: false })
 
 interface MuseumProps {
@@ -169,10 +167,18 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
     setSketchGame(null)
   }, [])
 
-  const pickGame = useCallback((id: MinigameId) => {
-    if (id === 'sketch') setSketchSession((n) => n + 1)
-    setOpenGame(id)
-  }, [])
+  const pickGame = useCallback(
+    (id: MinigameId) => {
+      if (id === 'pond') {
+        setOpenGame(null)
+        router.push('/museum/pond')
+        return
+      }
+      if (id === 'sketch') setSketchSession((n) => n + 1)
+      setOpenGame(id)
+    },
+    [router],
+  )
 
   useEffect(() => {
     if (!isSuspended) return
@@ -258,12 +264,6 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       <AnimatePresence>
         {openGame === 'color' ? (
           <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {openGame === 'pond' ? (
-          <PondGame key="pond-game" onClose={() => setOpenGame('desktop')} />
         ) : null}
       </AnimatePresence>
 

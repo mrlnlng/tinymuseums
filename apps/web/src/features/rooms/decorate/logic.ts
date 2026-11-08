@@ -188,6 +188,10 @@ const PROP_NAMES: Record<string, string> = {
   'fish-carp': 'Carp trophy',
   'fish-koi': 'Koi trophy',
   'fish-golden-koi': 'Golden koi trophy',
+  'fish-star-snapper': 'Star snapper trophy',
+  'fish-crab': 'Crab trophy',
+  'fish-puffer': 'Pufferfish trophy',
+  'fish-blobfish': 'Sir Blobfish trophy',
 }
 
 export function propLabel(ref: string): string {
@@ -205,7 +209,7 @@ const WORTH: Record<string, number> = { carpet: 3, cabinet: 3, cat: 3, shelf: 3,
 
 /** How much a placed thing adds to a room's coziness; trophies are prized. */
 export function cozyWorth(ref: string): number {
-  if (ref.startsWith('fish-')) return ref === 'fish-golden-koi' ? 8 : 4
+  if (ref.startsWith('fish-')) return ref === 'fish-golden-koi' || ref === 'fish-blobfish' ? 8 : 4
   return WORTH[ref] ?? 2
 }
 

@@ -53,6 +53,10 @@ const expected: Record<string, number> = {
   'prop:fish-carp': 0,
   'prop:fish-koi': 0,
   'prop:fish-golden-koi': 0,
+  'prop:fish-star-snapper': 0,
+  'prop:fish-crab': 0,
+  'prop:fish-puffer': 0,
+  'prop:fish-blobfish': 0,
 }
 
 const slots: readonly string[] = ['bow', 'costume', 'character', 'prop']

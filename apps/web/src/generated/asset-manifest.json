@@ -433,6 +433,111 @@
         "h": 8,
         "src": "wallpaper.18f31684c5.webp"
       }
+    },
+    "pond/fish-blobfish": {
+      "w": 600,
+      "h": 436,
+      "x2": {
+        "w": 400,
+        "h": 291,
+        "src": "pond-fish-blobfish@2x.34610f97fe.webp",
+        "avif": "pond-fish-blobfish@2x.ab072cbd7a.avif"
+      },
+      "x3": {
+        "w": 600,
+        "h": 436,
+        "src": "pond-fish-blobfish@3x.1dc8c2cc52.webp"
+      }
+    },
+    "pond/fish-crab": {
+      "w": 581,
+      "h": 459,
+      "x2": {
+        "w": 387,
+        "h": 306,
+        "src": "pond-fish-crab@2x.a25c94291e.webp",
+        "avif": "pond-fish-crab@2x.1c170d5dd7.avif"
+      },
+      "x3": {
+        "w": 581,
+        "h": 459,
+        "src": "pond-fish-crab@3x.0cbec9a5d9.webp"
+      }
+    },
+    "pond/fish-puffer": {
+      "w": 442,
+      "h": 323,
+      "x2": {
+        "w": 294,
+        "h": 215,
+        "src": "pond-fish-puffer@2x.7b4b89aae0.webp",
+        "avif": "pond-fish-puffer@2x.fde2c2f21c.avif"
+      },
+      "x3": {
+        "w": 442,
+        "h": 323,
+        "src": "pond-fish-puffer@3x.5c648af4da.webp"
+      }
+    },
+    "pond/fish-star-snapper": {
+      "w": 600,
+      "h": 248,
+      "x2": {
+        "w": 399,
+        "h": 165,
+        "src": "pond-fish-star-snapper@2x.90ed8edd9c.webp",
+        "avif": "pond-fish-star-snapper@2x.f030a87051.avif"
+      },
+      "x3": {
+        "w": 600,
+        "h": 248,
+        "src": "pond-fish-star-snapper@3x.95596a6e07.webp"
+      }
+    },
+    "pond/lily": {
+      "w": 438,
+      "h": 267,
+      "x2": {
+        "w": 292,
+        "h": 178,
+        "src": "pond-lily@2x.4f03027752.webp",
+        "avif": "pond-lily@2x.7e16c9e021.avif"
+      },
+      "x3": {
+        "w": 438,
+        "h": 267,
+        "src": "pond-lily@3x.7c5d4876f6.webp"
+      }
+    },
+    "pond/scene": {
+      "w": 2388,
+      "h": 1668,
+      "x2": {
+        "w": 1592,
+        "h": 1112,
+        "src": "pond-scene@2x.56b923a4e0.webp",
+        "avif": "pond-scene@2x.4cfa391cad.avif"
+      },
+      "x3": {
+        "w": 2388,
+        "h": 1668,
+        "src": "pond-scene@3x.384057cc3e.webp",
+        "avif": "pond-scene@3x.117779c237.avif"
+      }
+    },
+    "pond/splash": {
+      "w": 178,
+      "h": 189,
+      "x2": {
+        "w": 119,
+        "h": 126,
+        "src": "pond-splash@2x.7ccddb4da5.webp"
+      },
+      "x3": {
+        "w": 178,
+        "h": 189,
+        "src": "pond-splash@3x.91cb09be07.webp"
+      }
     }
   },
   "atlases": {

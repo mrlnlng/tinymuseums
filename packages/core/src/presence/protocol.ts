@@ -34,8 +34,8 @@ export interface Motion {
  * Things only one visitor at a time may have: the beanbag and each pedestal's helmet. The
  * room decides who holds them; the café's cups are not here, since it serves everyone.
  */
-export type Item = 'seat' | `helm-${number}`
-const ITEM = /^(seat|helm-\d{1,4})$/
+export type Item = 'seat' | `helm-${number}` | `pond-spot-${1 | 2 | 3}`
+const ITEM = /^(seat|helm-\d{1,4}|pond-spot-[1-3])$/
 export const MAX_HOLDS = 2
 
 export function isItem(value: unknown): value is Item {
@@ -66,9 +66,9 @@ export type ServerMessage =
   | { t: 'full' }
   | { t: 'denied' }
 
-const BASE = /^(hall-e\d{1,9}|atelier|r-[a-z0-9]{8})$/
+const BASE = /^(hall-e\d{1,9}|atelier|pond|r-[a-z0-9]{8})$/
 /** A room base, then `-s<instance>`. */
-const ROOM = /^(hall-e\d{1,9}|atelier|r-[a-z0-9]{8})-s(\d{1,2})$/
+const ROOM = /^(hall-e\d{1,9}|atelier|pond|r-[a-z0-9]{8})-s(\d{1,2})$/
 export const MAX_INSTANCE = 99
 
 export function validRoomBase(base: unknown): base is string {

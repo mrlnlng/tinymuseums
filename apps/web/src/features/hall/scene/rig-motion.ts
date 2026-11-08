@@ -22,6 +22,8 @@ export interface RigState {
   air: number
   /** How far off the floor, as a fraction of the jump's height. */
   lift: number
+  /** Extra in-plane turns in degrees, counterclockwise for a right-facing rig, for NPC idles. */
+  bend?: { head?: number; armBack?: number; armFront?: number; tail?: number }
 }
 
 /** The jump as the traversal sees it, handed to stepRigState each frame. */

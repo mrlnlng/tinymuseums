@@ -17,6 +17,7 @@ export interface WalletSnapshot {
   isMember: boolean
   balance: number | null
   items: string[]
+  bait: Record<string, number>
   today: WalletView['today'] | null
 }
 
@@ -36,10 +37,6 @@ export type EconomyEvent = EarnedEvent | InviteEvent
 
 export type BuyOutcome = 'ok' | 'insufficient' | 'error'
 
-export type CollectOutcome =
-  | { ok: true; collected: boolean; fish: string }
-  | { ok: false; reason: 'guest' | 'error' }
-
 export { allowedCharacter, owns, walletReady } from './lib/ownership.ts'
 
 const CARRY_KEY = 'tm:economy:carry'
@@ -47,7 +44,8 @@ const OUTBOX_KEY = 'tm:economy:outbox'
 const INVITE_KEY = 'tm:economy:invite-shown'
 const BATCH = 64
 
-const NON_MEMBER: WalletSnapshot = { isMember: false, balance: null, items: [], today: null }
+const EMPTY_BAIT: Record<string, number> = {}
+const NON_MEMBER: WalletSnapshot = { isMember: false, balance: null, items: [], bait: EMPTY_BAIT, today: null }
 const EMPTY_TODAY: WalletView['today'] = { coin: 0, games: 0, note: 0 }
 
 let started = false
@@ -136,12 +134,14 @@ function publish(): void {
           isMember: true,
           balance: wallet?.balance ?? null,
           items: wallet?.items ?? [],
+          bait: wallet?.bait ?? EMPTY_BAIT,
           today: wallet?.today ?? null,
         }
   const changed =
     next.isMember !== snapshot.isMember ||
     next.balance !== snapshot.balance ||
     next.items !== snapshot.items ||
+    next.bait !== snapshot.bait ||
     next.today !== snapshot.today
   snapshot = next
   if (changed) for (const listener of walletListeners) listener()
@@ -174,6 +174,7 @@ function setBalance(balance: number): void {
   wallet = {
     balance,
     items: wallet?.items ?? [],
+    bait: wallet?.bait ?? EMPTY_BAIT,
     today: wallet?.today ?? EMPTY_TODAY,
   }
   publish()
@@ -233,21 +234,20 @@ function isClaimReply(value: unknown): value is {
   )
 }
 
-function isBuyReply(value: unknown): value is { balance: number; items: string[] } {
+function isBaitCounts(value: unknown): value is Record<string, number> {
+  return isRecord(value) && Object.values(value).every((count) => typeof count === 'number')
+}
+
+function isBuyReply(
+  value: unknown,
+): value is { balance: number; items: string[]; bait: Record<string, number> } {
   return (
     isRecord(value) &&
     typeof value.balance === 'number' &&
     Array.isArray(value.items) &&
-    value.items.every((item) => typeof item === 'string')
+    value.items.every((item) => typeof item === 'string') &&
+    isBaitCounts(value.bait)
   )
-}
-
-function isCollectReply(
-  value: unknown,
-): value is { balance: number; items: string[]; collected: boolean; fish: string } {
-  if (!isBuyReply(value)) return false
-  const record = value as Record<string, unknown>
-  return typeof record.collected === 'boolean' && typeof record.fish === 'string'
 }
 
 function isWalletView(value: unknown): value is WalletView {
@@ -256,6 +256,7 @@ function isWalletView(value: unknown): value is WalletView {
     typeof value.balance === 'number' &&
     Array.isArray(value.items) &&
     value.items.every((item) => typeof item === 'string') &&
+    isBaitCounts(value.bait) &&
     isRecord(value.today) &&
     typeof value.today.coin === 'number' &&
     typeof value.today.games === 'number' &&
@@ -470,55 +471,12 @@ export async function buy(itemId: string): Promise<BuyOutcome> {
   wallet = {
     balance: body.balance,
     items: body.items,
+    bait: body.bait,
     today: wallet?.today ?? EMPTY_TODAY,
   }
   publish()
   track('item_kept')
   return 'ok'
-}
-
-/** Asks the server for a cast ticket; null for guests or when offline. */
-export async function castLine(): Promise<string | null> {
-  ensureStarted()
-  const id = memberId
-  if (id === null) return null
-  try {
-    const response = await fetch('/api/pond/cast', { method: 'POST', headers: { 'X-TM-Member': id } })
-    if (!response.ok) return null
-    const body: unknown = await response.json().catch(() => null)
-    const ticket = typeof body === 'object' && body !== null ? (body as { ticket?: unknown }).ticket : null
-    return typeof ticket === 'string' ? ticket : null
-  } catch {
-    return null
-  }
-}
-
-/** Reels in the catch for a cast ticket; the server decides which fish it was. */
-export async function collect(ticket: string | null): Promise<CollectOutcome> {
-  ensureStarted()
-  const id = memberId
-  if (id === null) return { ok: false, reason: 'guest' }
-  if (ticket === null) return { ok: false, reason: 'error' }
-  let response: Response
-  try {
-    response = await fetch('/api/wallet/collect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-TM-Member': id },
-      body: JSON.stringify({ ticket }),
-    })
-  } catch {
-    return { ok: false, reason: 'error' }
-  }
-  if (!response.ok) return { ok: false, reason: 'error' }
-  const body: unknown = await response.json().catch(() => null)
-  if (memberId !== id || !isCollectReply(body)) return { ok: false, reason: 'error' }
-  wallet = {
-    balance: body.balance,
-    items: body.items,
-    today: wallet?.today ?? EMPTY_TODAY,
-  }
-  publish()
-  return { ok: true, collected: body.collected, fish: body.fish }
 }
 
 export function subscribeEvents(listener: (event: EconomyEvent) => void): () => void {

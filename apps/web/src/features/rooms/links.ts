@@ -7,6 +7,7 @@ const LINKS: readonly (readonly [DoorRef, DoorRef])[] = [
 /** Doors that leave the room system for a page of their own. */
 const EXITS: readonly (readonly [DoorRef, DoorRef])[] = [
   [{ room: 'personal', door: 'hall' }, { room: 'hall', door: 'entrance' }],
+  [{ room: 'pond', door: 'hall' }, { room: 'hall', door: 'entrance' }],
 ]
 
 const isDoor = (door: DoorRef, room: DoorRef['room'], name: string) => door.room === room && door.door === name
@@ -26,5 +27,6 @@ export function hrefFor(to: DoorRef): string {
   if (isDoor(to, 'hall', 'atelier')) return '/museum?from=atelier'
   if (isDoor(to, 'atelier', 'gallery')) return '/museum/atelier'
   if (isDoor(to, 'hall', 'entrance')) return '/museum'
+  if (isDoor(to, 'pond', 'hall')) return '/museum'
   return '/museum'
 }

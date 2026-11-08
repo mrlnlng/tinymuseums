@@ -32,7 +32,8 @@ interface Pose {
 
 const POSE: Record<'wide' | 'narrow', Pose> = {
   wide: { right: 0.207, bottom: 0.82, height: 0.3, rodLength: 640, ink: 1 },
-  narrow: { right: 0.28, bottom: 0.82, height: 0.24, rodLength: 470, ink: 0.8 },
+  // On the bank in front of the water's left lobe (the room's own feet line), far enough right to stay on a phone.
+  narrow: { right: 0.24, bottom: 0.895, height: 0.24, rodLength: 580, ink: 0.8 },
 }
 
 /** The water's outline, traced from the scene and inset, so shadows never swim onto the grass. */

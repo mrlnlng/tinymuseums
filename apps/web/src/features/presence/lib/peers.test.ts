@@ -65,3 +65,13 @@ test('pose flags come through to the drawn visitor', () => {
   const [visitor] = table.visitors(100)
   assert.deepEqual([visitor.sit, visitor.helm, visitor.cup], [true, true, false])
 })
+
+test('depth is drawn between updates too, and is the front when a visitor never sends it', () => {
+  const table = new PeerTable()
+  table.heard({ ...peer(1, 0), d: 0.2 }, 1000)
+  table.heard({ ...peer(2, 0), d: 0.6 }, 1200)
+  assert.ok(Math.abs(table.visitors(1100 + INTERPOLATION_DELAY_MS)[0].d - 0.4) < 1e-9)
+  const flat = new PeerTable()
+  flat.heard(peer(1, 0), 0)
+  assert.equal(flat.visitors(1000)[0].d, 0)
+})

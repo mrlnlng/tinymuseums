@@ -195,3 +195,9 @@ test('one address may hold only a few sockets waiting for their ticket', () => {
   assert.equal(tooManyWaiting(waiting.slice(1), '203.0.113.9'), false)
   assert.equal(tooManyWaiting([...waiting.slice(1), { ...waiting[0], pid: 'admitted0001' }], '203.0.113.9'), false)
 })
+
+test('a visitor’s depth reaches the others with their state', () => {
+  const outcome = onMessage(joined(), { ...state(1, 3), d: 0.5 } as ClientMessage, 0, [])
+  const message = outcome.send && 'message' in outcome.send ? outcome.send.message : null
+  assert.equal(message && 'd' in message ? message.d : undefined, 0.5)
+})

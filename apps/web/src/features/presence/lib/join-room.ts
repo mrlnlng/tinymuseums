@@ -16,6 +16,10 @@ export interface Pose {
   sit: boolean
   helm: boolean
   cup: boolean
+  /** A room that moves the visitor itself reports their depth, speed and facing. */
+  d?: number
+  vx?: number
+  facing?: 1 | -1
 }
 
 const STANDING: Pose = { sit: false, helm: false, cup: false }

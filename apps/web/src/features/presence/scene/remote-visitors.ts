@@ -28,7 +28,11 @@ export interface VisitorScenery {
   seat?: { x: number; y: number; height: number; plain: HTMLImageElement; helm: HTMLImageElement }
   helm?: Prop
   cup?: Prop
+  /** A room with depth: where a visitor at depth d stands and how small they are, and the local visitor's own depth. */
+  depth?: { self: number; place(d: number): { lift: number; scale: number } }
 }
+
+const FLAT = { lift: 0, scale: 1 }
 
 interface Sprite {
   element: HTMLImageElement
@@ -219,6 +223,8 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
       for (const visitor of visitors) nearest.push(visitor)
       nearest.sort((a, b) => Math.abs(a.x - selfX) - Math.abs(b.x - selfX))
       nearest.length = Math.min(nearest.length, MAX_SHOWN)
+      // Further back first, so nearer visitors are drawn over them.
+      if (scenery?.depth) nearest.sort((a, b) => b.d - a.d)
       arrivals(nearest.length, now)
       keep.clear()
       for (const visitor of nearest) keep.add(visitor.pid)
@@ -311,14 +317,18 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           headY = screenY - seatPx / 2
         } else {
           entry.perch.element.hidden = true
-          projected.set(visitor.x, CONFIG.character.centerY, 0).project(camera)
+          const place = scenery?.depth?.place(visitor.d) ?? FLAT
+          const standPx = heightPx * place.scale
+          const centerY = CONFIG.character.centerY + (place.scale - 1) * (CONFIG.character.height / 2) + place.lift
+          projected.set(visitor.x, centerY, 0).project(camera)
           screenX = (projected.x * 0.5 + 0.5) * viewport.width
           const screenY = (-projected.y * 0.5 + 0.5) * viewport.height
-          const canvasHeight = rig ? heightPx * rig.spriteScale : heightPx
-          const canvasWidth = rig ? canvasHeight * rig.aspect : heightPx
+          const canvasHeight = rig ? standPx * rig.spriteScale : standPx
+          const canvasWidth = rig ? canvasHeight * rig.aspect : standPx
           const left = screenX - canvasWidth / 2
           const onScreen = left < viewport.width && left + canvasWidth > 0
-          entry.tag.hidden = rig === null || !onScreen || Math.abs(visitor.x - selfX) < BEHIND_SELF
+          const behind = Math.abs(visitor.x - selfX) < BEHIND_SELF && Math.abs(visitor.d - (scenery?.depth?.self ?? 0)) < 0.15
+          entry.tag.hidden = rig === null || !onScreen || behind
           if (!rig || !onScreen) {
             hideSprites(entry)
             entry.bubble.hidden = true
@@ -327,7 +337,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
 
           const speed = Math.abs(visitor.vx)
           stepRigState(entry.motion, dt, speed > 0.12, visitor.facing > 0 ? 'right' : 'left', speed / CONFIG.move.maxSpeed, rig.cycleSeconds)
-          const top = screenY + heightPx / 2 - canvasHeight * rig.feet - hop
+          const top = screenY + standPx / 2 - canvasHeight * rig.feet - hop
           rig.render(entry.motion, dt, canvasHeight, ratio, { left, top })
 
           // Carried things ride the same anchors as on the local visitor (Character.attach).
@@ -346,7 +356,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
             pose.rotation = anchor.rotation + pose.rotation / pose.flip
             showProp(target, prop, pose)
           }
-          headY = screenY - heightPx / 2 - hop
+          headY = screenY - standPx / 2 - hop
         }
 
         entry.tag.style.transform = `translate3d(${screenX.toFixed(1)}px, ${(headY - 6).toFixed(1)}px, 0) translate(-50%, -100%)`

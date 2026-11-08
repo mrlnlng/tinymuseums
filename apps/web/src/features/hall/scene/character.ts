@@ -54,6 +54,8 @@ export interface Character {
     viewport: Viewport,
     centerY?: number,
     jump?: JumpPose,
+    /** Shrinks the character standing further into a room with depth. */
+    depthScale?: number,
   ): void
   dispose(): void
 }
@@ -265,7 +267,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       return out
     },
 
-    update(dt, x, velocity, camera, viewport, centerY = CONFIG.character.centerY, jump = GROUNDED) {
+    update(dt, x, velocity, camera, viewport, centerY = CONFIG.character.centerY, jump = GROUNDED, depthScale = 1) {
       const speed = Math.abs(velocity)
       const steps = !perched && speed > 0.12
       // In the air the legs hold the jumping pose instead of stepping.
@@ -300,7 +302,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       screenY = (-projected.y * 0.5 + 0.5) * viewport.height
 
       const frustumHeight = camera.top - camera.bottom
-      const worldHeight = perched ? perched.height : CONFIG.character.height
+      const worldHeight = perched ? perched.height : CONFIG.character.height * depthScale
       const heightPx = (worldHeight / frustumHeight) * viewport.height
       drawnHeight = heightPx
       // The same hop as remote-visitors.ts draws when others say something.
@@ -342,7 +344,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
           rig.render(motion, dt, canvasHeight, window.devicePixelRatio)
           if (motion.air > 0) {
             // Where the feet would stand, without the jump's height.
-            projected.set(x, centerY - jump.lift * CONFIG.jump.height, 0).project(camera)
+            projected.set(x, centerY - jump.lift * CONFIG.jump.height * depthScale, 0).project(camera)
             const floorY = (-projected.y * 0.5 + 0.5) * viewport.height + heightPx / 2
             const box = rig.floorShadow
             // Smaller and fainter the higher the jump.

@@ -13,6 +13,7 @@ interface Sample {
   at: number
   x: number
   vx: number
+  d: number
 }
 
 interface Entry {
@@ -41,6 +42,8 @@ export interface RemoteVisitor {
   x: number
   /** Their walking speed, for the walk cycle. */
   vx: number
+  /** How far into the room they stand, 0 at its front. */
+  d: number
   said: { text: string; at: number } | null
 }
 
@@ -63,7 +66,7 @@ export class PeerTable {
   heard(peer: Peer, now: number): void {
     const entry = this.entries.get(peer.pid)
     if (entry && peer.seq <= entry.seq) return
-    const sample = { at: now, x: peer.x, vx: peer.vx }
+    const sample = { at: now, x: peer.x, vx: peer.vx, d: peer.d ?? 0 }
     if (!entry) {
       this.entries.set(peer.pid, {
         pid: peer.pid, name: peer.name, look: peer.look, facing: peer.facing,
@@ -83,7 +86,7 @@ export class PeerTable {
     // After a quiet spell, they were standing where they were until just before this update;
     // without this the walk would start from a point seconds back and lurch forward.
     const last = entry.samples[entry.samples.length - 1]
-    if (now - last.at > QUIET_GAP_MS) entry.samples.push({ at: now - RESUME_MS, x: last.x, vx: 0 })
+    if (now - last.at > QUIET_GAP_MS) entry.samples.push({ at: now - RESUME_MS, x: last.x, vx: 0, d: last.d })
     entry.samples.push(sample)
     while (entry.samples.length > SAMPLES) entry.samples.shift()
   }
@@ -113,28 +116,28 @@ export class PeerTable {
     const at = now - INTERPOLATION_DELAY_MS
     const visitors: RemoteVisitor[] = []
     for (const entry of this.entries.values()) {
-      const { x, vx } = positionAt(entry.samples, at)
+      const { x, vx, d } = positionAt(entry.samples, at)
       visitors.push({
         pid: entry.pid, name: entry.name, look: entry.look, facing: entry.facing,
-        sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, said: entry.said,
+        sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, d, said: entry.said,
       })
     }
     return visitors
   }
 }
 
-function positionAt(samples: Sample[], at: number): { x: number; vx: number } {
+function positionAt(samples: Sample[], at: number): { x: number; vx: number; d: number } {
   const first = samples[0]
-  if (at <= first.at) return { x: first.x, vx: first.vx }
+  if (at <= first.at) return { x: first.x, vx: first.vx, d: first.d }
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1]
     const b = samples[i]
     if (at <= b.at) {
       const t = (at - a.at) / (b.at - a.at)
-      return { x: a.x + (b.x - a.x) * t, vx: a.vx + (b.vx - a.vx) * t }
+      return { x: a.x + (b.x - a.x) * t, vx: a.vx + (b.vx - a.vx) * t, d: a.d + (b.d - a.d) * t }
     }
   }
   const last = samples[samples.length - 1]
   const ahead = Math.min(at - last.at, MAX_EXTRAPOLATION_MS) / 1000
-  return { x: last.x + last.vx * ahead, vx: last.vx }
+  return { x: last.x + last.vx * ahead, vx: last.vx, d: last.d }
 }

@@ -101,3 +101,12 @@ test('server messages are checked on the client too', async () => {
   assert.deepEqual(parseServerMessage('{"t":"refused","reason":"contact"}'), { t: 'refused', reason: 'contact' })
   assert.equal(parseServerMessage('{"t":"refused","reason":"because"}'), null)
 })
+
+test('depth into a room is carried when sent, and left out when not', () => {
+  const state = { t: 'state', x: 1, vx: 0, facing: 1, look, sit: false, helm: false, cup: false, seq: 1 }
+  assert.deepEqual(parseClientMessage(JSON.stringify({ ...state, d: 0.42 })), { ...state, d: 0.42 })
+  assert.deepEqual(parseClientMessage(JSON.stringify(state)), state)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, d: 1.5 })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, d: -0.1 })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, d: '0.5' })), null)
+})

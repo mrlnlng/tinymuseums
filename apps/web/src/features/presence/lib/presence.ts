@@ -82,6 +82,8 @@ export interface Self {
   sit: boolean
   helm: boolean
   cup: boolean
+  /** Depth into the room, where the room has one. */
+  d?: number
 }
 
 export interface PresenceOptions {
@@ -263,7 +265,8 @@ export function createPresence(options: PresenceOptions): Presence {
 
   function sendState(self: Self, at: number): void {
     seq = Math.max(seq + 1, Math.floor(wallClock()))
-    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, sit: self.sit, helm: self.helm, cup: self.cup, seq })
+    const depth = self.d ? { d: Math.round(Math.min(1, Math.max(0, self.d)) * 1000) / 1000 } : {}
+    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, sit: self.sit, helm: self.helm, cup: self.cup, ...depth, seq })
     lastSent = { ...self, look: { ...self.look }, at }
   }
 
@@ -276,6 +279,7 @@ export function createPresence(options: PresenceOptions): Presence {
     const since = lastSent ? at - lastSent.at : Infinity
     const lookChanged = !lastSent || !sameLook(lastSent.look, self.look) || !samePose(lastSent, self)
     const moved = !lastSent || Math.abs(self.x - lastSent.x) > 0.01 || lastSent.facing !== self.facing ||
+      Math.abs((self.d ?? 0) - (lastSent.d ?? 0)) > 0.005 ||
       (Math.abs(self.vx) > MOVING) !== (Math.abs(lastSent.vx) > MOVING)
     const due =
       since >= HEARTBEAT_MS ||

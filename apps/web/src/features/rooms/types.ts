@@ -34,6 +34,14 @@ export interface StripFloor {
 
 export type Floor = StripFloor
 
+/** Where a room with depth draws the visitor: raised toward the horizon and shrunk with distance. */
+export interface Stance {
+  lift: number
+  scale: number
+  /** Overrides the walk speed the legs and facing follow, for walking into the picture. */
+  walk: number | null
+}
+
 /** How the visitor came in: through a linked door, or the room's own opening (the hall's front door). */
 export type Arrival = { kind: 'door'; door: string } | { kind: 'opening' }
 
@@ -91,6 +99,8 @@ export interface RoomContents {
   /** `tap` asks for the click interaction; without it the stage is testing hover. */
   hitTest(raycaster: THREE.Raycaster, phase?: 'hover' | 'tap'): Interaction | null
   update(frame: Frame): void
+  /** Where the visitor stands in depth; rooms without it keep the visitor on the floor line. */
+  stance?(): Stance | null
   /** Lifts or lowers the camera from the room's usual framing, in world units. */
   cameraRise?(): number
   /** Rooms joined to this one wall to wall; the stage builds those near the camera and removes the rest. */

@@ -8,7 +8,10 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
 import type { Room } from '@/features/presence/lib/join-room'
 import layout from '../../../../public/assets/pond/layout.json'
-import { FOREST_GATE, POND_LANDMARKS } from './landmarks'
+import { FOREST_GATE, POND_LANDMARKS, type PondLandmark } from './landmarks'
+import { FAR_LIFT, depthAtLift, liftAt, pathX, scaleAt } from './depth'
+import { MAX_DEPTH, Walker, depthOf, pondFloor, toFloor } from './walk'
+import { pathSprite } from './paths'
 import { createShopkeeper } from './shopkeeper'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
@@ -40,6 +43,30 @@ const EXIT_X = FOREST_GATE.x
 const ARRIVE_X = FOREST_GATE.arrivalX
 const EXIT_REACH = FOREST_GATE.reach
 const SPOT_REACH = 0.65
+const PATH_REACH = 0.6
+/** How deep the visitor stands to use a prop, just short of the treeline it stands on. */
+const STAND_DEPTH = 0.86
+/** Below this the visitor is on the bank, where the fishing spots and the gate are. */
+const BANK_DEPTH = 0.1
+const KEY_SPEED = 3
+const FLOOR = pondFloor(SCENE_WIDTH, MIN_X, MAX_X, EXIT_X + 1.25)
+const MOVE_KEYS: Record<string, [number, number]> = {
+  arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0],
+  arrowup: [0, 1], w: [0, 1], arrowdown: [0, -1], s: [0, -1],
+}
+
+/** Where a landmark's sprite sits once its depth has shrunk and raised it. */
+function placement(landmark: PondLandmark) {
+  const scale = scaleAt(landmark.depth)
+  const width = landmark.width * scale
+  return { scale, width, height: width / landmark.aspect, bottom: GROUND_Y + liftAt(landmark.depth) + landmark.baseY * scale }
+}
+
+/** The sprite's extent across the screen in world units, with Marlow beside the bait counter. */
+function extent(landmark: PondLandmark): { left: number; right: number } {
+  const { width } = placement(landmark)
+  return { left: landmark.x - width * (landmark.kind === 'fishmonger' ? 0.75 : 0.5), right: landmark.x + width / 2 }
+}
 
 export const POND_SPOTS = [0.3, 0.5, 0.68].map((fraction) => ({
   x: fraction * SCENE_WIDTH,
@@ -83,6 +110,7 @@ const RIPPLE_SVG = `<svg viewBox="0 0 120 44" aria-hidden="true">
 
 
 type Target = { kind: 'spot'; index: number } | { kind: 'exit' }
+
 
 interface PlaneOptions {
   width: number
@@ -230,21 +258,28 @@ export function createPondRoom({
         y: yAt(layout.lily.y + layout.lily.h / 2),
         z: -0.35,
       })
+      const pathTextures: THREE.Texture[] = []
+      for (const landmark of POND_LANDMARKS) {
+        if (!landmark.path) continue
+        const sprite = pathSprite(landmark.path, art.grass)
+        pathTextures.push(sprite.texture)
+        add({
+          width: sprite.width,
+          height: sprite.height,
+          material: new THREE.MeshBasicMaterial({ map: sprite.texture, transparent: true, depthWrite: false }),
+          x: sprite.x,
+          y: GROUND_Y + sprite.lift,
+          z: -0.3,
+        })
+      }
       const landmarkMaterials = new Map<string, THREE.MeshBasicMaterial>()
       for (const landmark of POND_LANDMARKS) {
-        const height = landmark.width / landmark.aspect
+        const { width, height, bottom } = placement(landmark)
         const material = new THREE.MeshBasicMaterial({
           map: art.landmarks[landmark.kind], transparent: true, depthWrite: false, alphaTest: 0.01,
         })
         landmarkMaterials.set(landmark.kind, material)
-        add({
-          width: landmark.width,
-          height,
-          material,
-          x: landmark.x,
-          y: GROUND_Y + landmark.baseY + height / 2,
-          z: -0.2,
-        })
+        add({ width, height, material, x: landmark.x, y: bottom + height / 2, z: -0.2 })
       }
       ctx.scene.add(group)
 
@@ -277,8 +312,8 @@ export function createPondRoom({
         button.append(hitArea)
         button.addEventListener('click', () => {
           if (ctx.isQuiet() || activeSpot !== null || pendingSpot !== null) return
-          if (landmark.kind === 'exit') ctx.leave('hall')
-          else callbacks.onPanel(landmark.kind)
+          if (landmark.kind === 'exit') leave()
+          else approach(landmark)
         })
         ctx.overlay.append(button)
         return { button, landmark }
@@ -312,8 +347,19 @@ export function createPondRoom({
       let presence: Room | null = null
       let activeSpot: number | null = null
       let pendingSpot: number | null = null
-      let nudgeTo: number | null = null
       let current: Target | null = null
+      const walker = new Walker(FLOOR, ctx.traversal.x)
+      const held = new Map<string, [number, number]>()
+      /** What happens at the end of the walk, and the prop being walked to. */
+      let arrival: (() => void) | null = null
+      let heading: PondLandmark | null = null
+      let following = true
+      let cameraWas = ctx.traversal.cameraX
+      const mark = document.createElement('span')
+      mark.className = 'pond-step-mark'
+      mark.setAttribute('aria-hidden', 'true')
+      ctx.overlay.append(mark)
+      let markAt: { x: number; depth: number; age: number } | null = null
       const bankPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)
       const pointer = new THREE.Vector3()
 
@@ -328,19 +374,112 @@ export function createPondRoom({
         ctx.traversal.hold(null)
       }
 
-      function goTo(target: Target): void {
-        if (ctx.isQuiet() || activeSpot !== null || pendingSpot !== null) return
-        if (target.kind === 'exit') {
-          ctx.leave('hall')
+      function busy(): boolean {
+        return ctx.isQuiet() || activeSpot !== null
+      }
+
+      /** Walk across the grass to a point, then do whatever arriving there means. */
+      function walkTo(x: number, depth: number, then: (() => void) | null = null, to: PondLandmark | null = null, via = [] as ReturnType<typeof toFloor>[]): void {
+        if (busy()) return
+        pendingSpot = null
+        walker.walkTo(x, depth, via)
+        arrival = then
+        heading = to
+        following = true
+        if (!walker.walking) finishWalk()
+      }
+
+      function finishWalk(): void {
+        const then = arrival
+        arrival = null
+        heading = null
+        then?.()
+      }
+
+      function openPanel(landmark: PondLandmark): void {
+        if (busy() || pendingSpot !== null) return
+        callbacks.onPanel(landmark.kind as PondPanelKind)
+      }
+
+      /** Go to a prop to use it: up its path from the bank, or straight across the grass when already back there. */
+      function approach(landmark: PondLandmark): void {
+        const { path, standX } = landmark
+        if (!path || standX === undefined) return
+        const via = walker.depth < 0.35
+          ? [0.04, 0.2, 0.4, 0.6, 0.76].map((d) => toFloor(pathX(path, d), d))
+          : []
+        walkTo(standX, STAND_DEPTH, () => openPanel(landmark), landmark, via)
+      }
+
+      function leave(): void {
+        if (walker.depth > BANK_DEPTH || Math.abs(walker.x - EXIT_X) > 2.5) walkTo(ARRIVE_X, 0, () => ctx.leave('hall'))
+        else if (!busy()) ctx.leave('hall')
+      }
+
+      /** Move the visitor for this frame: along a tapped route, with the keys, or after the camera's pull. */
+      function move(dt: number, quiet: boolean): void {
+        const traversal = ctx.traversal
+        if (quiet || activeSpot !== null) {
+          // Doors and the fishing view move the visitor along the bank themselves.
+          if (Math.abs(traversal.x - walker.x) > 1e-3) walker.place(traversal.x)
+          walker.stride = 0
+          cameraWas = traversal.cameraX
           return
         }
-        if (!spotFree(target.index)) return
-        pendingSpot = target.index
-        ctx.traversal.hold(POND_SPOTS[target.index].x, true)
+        let across = 0
+        let into = 0
+        for (const [x, d] of held.values()) {
+          across += x
+          into += d
+        }
+        let moved: boolean
+        if (across !== 0 || into !== 0) {
+          arrival = null
+          heading = null
+          pendingSpot = null
+          following = true
+          moved = walker.steer(dt, Math.sign(across), Math.sign(into), KEY_SPEED)
+        } else if (walker.walking) {
+          // A drag during a walk lets the view go where the visitor drags it.
+          if (Math.abs(traversal.cameraX - cameraWas) > 0.02) following = false
+          moved = walker.step(dt, CONFIG.move.maxSpeed)
+          if (!walker.walking) finishWalk()
+        } else {
+          following = false
+          moved = walker.follow(traversal.x, dt)
+        }
+        traversal.x = walker.x
+        if (following) {
+          traversal.cameraX = walker.x
+          traversal.velocity = 0
+        }
+        if (moved) traversal.idleSeconds = 0
+        cameraWas = traversal.cameraX
+      }
+
+      function goTo(target: Target): void {
+        if (busy() || pendingSpot !== null) return
+        if (target.kind === 'exit') {
+          leave()
+          return
+        }
+        const index = target.index
+        if (!spotFree(index)) return
+        // Step onto the spot before opening the fishing view, so the visitor is visibly there.
+        walkTo(POND_SPOTS[index].x, 0, () => {
+          pendingSpot = null
+          if (!spotFree(index) || busy()) return
+          presence?.want(itemFor(index), true)
+          activeSpot = index
+          ctx.traversal.hold(POND_SPOTS[index].x, true)
+          callbacks.onFish(index)
+        })
+        pendingSpot = index
       }
 
       function nearest(): Target | null {
-        const x = ctx.traversal.x
+        if (walker.depth > BANK_DEPTH) return null
+        const x = walker.x
         if (Math.abs(x - EXIT_X) < EXIT_REACH) return { kind: 'exit' }
         let best: Target | null = null
         let bestGap = SPOT_REACH
@@ -354,12 +493,17 @@ export function createPondRoom({
         return best
       }
 
-      /** Anything the visitor stands in front of, or at its approach point. */
+      /** The prop the visitor stands beside, or at the foot of whose path they wait. */
       function nearbyLandmark() {
-        const x = ctx.traversal.x
-        return landmarks.find(({ landmark }) => Math.abs(x - landmark.standX) < 0.75
-          || Math.abs(x - landmark.x) < landmark.width / 2 + 0.15
-          || (landmark.kind === 'fishmonger' && Math.abs(x - (landmark.x - landmark.width * 0.5)) < 0.7))
+        const { x, depth } = walker
+        return landmarks.find(({ landmark }) => {
+          if (!landmark.path || landmark.standX === undefined) {
+            return depth < BANK_DEPTH && Math.abs(x - landmark.x) < landmark.width / 2 + 0.15
+          }
+          const beside = depth > STAND_DEPTH - 0.2 && Math.abs(x - landmark.standX) < 0.75
+          const atFoot = depth < BANK_DEPTH && Math.abs(x - landmark.path.foot) < PATH_REACH
+          return beside || atFoot
+        })
       }
 
 
@@ -380,29 +524,54 @@ export function createPondRoom({
       }
       window.addEventListener('keydown', keydown)
 
+      // The arrows and WASD walk the visitor about the grass, so the stage's own keys (and W's jump) give way.
+      const moveKeys = (event: KeyboardEvent) => {
+        const key = event.key.toLowerCase()
+        const step = MOVE_KEYS[key]
+        if (!step) return
+        if (event.type === 'keyup') {
+          held.delete(key)
+          return
+        }
+        if (isTyping(event.target) || document.querySelector('[aria-modal="true"]') || busy()) return
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        held.set(key, step)
+      }
+      const letGo = () => held.clear()
+      window.addEventListener('keydown', moveKeys, { capture: true })
+      window.addEventListener('keyup', moveKeys, { capture: true })
+      window.addEventListener('blur', letGo)
+
       control.release = releaseSpot
 
       return {
         floor: { kind: 'strip', minX: MIN_X, maxX: () => MAX_X },
 
-        presence: { key: 'pond' },
+        // Others see the visitor at their depth, walking and facing as they do here.
+        presence: {
+          key: 'pond',
+          pose: () => ({ sit: false, helm: false, cup: false, d: walker.depth, vx: walker.stride, facing: walker.facing }),
+          scenery: () => ({ depth: { self: walker.depth, place: (d: number) => ({ lift: liftAt(d), scale: scaleAt(d) }) } }),
+        },
+
+        stance() {
+          return { lift: liftAt(walker.depth), scale: scaleAt(walker.depth), walk: walker.stride }
+        },
 
         beforeCharacterUpdate(frame) {
-          const stop = POND_LANDMARKS.find((landmark) => landmark.frameX !== undefined
-            && Math.abs(ctx.traversal.x - landmark.standX) < 0.3
-            && Math.abs(ctx.traversal.walkVelocity) < 0.4)
+          move(frame.dt, frame.quiet)
           const wide = frame.camera.right - frame.camera.left > 7.5
-          let target = wide ? 1.35 : stop?.frameX ?? 0
-          // On a narrow screen the camera follows the visitor past the stall; ease it back so
-          // Marlow, who stands to the stall's left, stays in the picture.
-          const shop = POND_LANDMARKS.find((landmark) => landmark.kind === 'fishmonger')!
-          const halfView = (frame.camera.right - frame.camera.left) / 2
-          if (!wide && Math.abs(ctx.traversal.x - shop.x) < shop.width / 2 + 0.8) {
+          let target = wide ? 1.35 : 0
+          // On a narrow screen, keep the prop the visitor is walking to, or standing at, in the picture with them.
+          const focus = heading ?? (walker.depth > 0.5 ? nearbyLandmark()?.landmark : undefined)
+          if (!wide && focus?.path) {
+            const halfView = (frame.camera.right - frame.camera.left) / 2
             const center = frame.camera.position.x
-            const otterLeft = shop.x - shop.width * 0.75
-            const keepOtter = otterLeft - 0.1 - (center - halfView)
-            const keepVisitor = ctx.traversal.x + 0.55 - (center + halfView)
-            target = Math.max(keepVisitor, Math.min(0, keepOtter))
+            const { left, right } = extent(focus)
+            const keepLeft = Math.min(left, walker.x - 0.4) - 0.1 - (center - halfView)
+            const keepRight = Math.max(right, walker.x + 0.4) + 0.1 - (center + halfView)
+            target = keepRight > 0 ? keepRight : Math.min(0, keepLeft)
           }
           framingX = reducedMotion ? target : framingX + (target - framingX) * (1 - Math.exp(-frame.dt * 8))
           frame.camera.position.x += framingX
@@ -412,6 +581,7 @@ export function createPondRoom({
         onShown() {
           if (ctx.arrival.kind === 'opening') {
             ctx.traversal.reset(ARRIVE_X)
+            walker.place(ARRIVE_X, 0)
             return true
           }
         },
@@ -421,18 +591,18 @@ export function createPondRoom({
           if (activeSpot !== null) room.want(itemFor(activeSpot), true)
         },
 
-        hitTest(raycaster) {
+        hitTest(raycaster, phase) {
           // Let the stage distinguish a tap from a pan, including gestures starting on props.
           // DOM counterparts remain native buttons for keyboard and assistive technology.
           const at = raycaster.ray.intersectPlane(bankPlane, pointer)
           const object = at ? landmarks.find(({ landmark }) => {
-            const bottom = GROUND_Y + landmark.baseY
-            const inProp = Math.abs(at.x - landmark.x) <= landmark.width / 2
-              && at.y >= bottom && at.y <= bottom + landmark.width / landmark.aspect
+            const { width, height, bottom } = placement(landmark)
+            const inProp = Math.abs(at.x - landmark.x) <= width / 2
+              && at.y >= bottom && at.y <= bottom + height
             const inOtter = landmark.kind === 'fishmonger'
-              && at.x >= landmark.x - landmark.width * 0.75
-              && at.x <= landmark.x - landmark.width * 0.25
-              && at.y >= GROUND_Y && at.y <= GROUND_Y + 1.5
+              && at.x >= landmark.x - width * 0.75
+              && at.x <= landmark.x - width * 0.25
+              && at.y >= bottom && at.y <= bottom + width * 0.67
             return inProp || inOtter
           }) : undefined
           for (const { button } of landmarks) button.classList.toggle('is-hovered', button === object?.button)
@@ -444,44 +614,26 @@ export function createPondRoom({
             object.button.click()
           } }
           if (ripple) return { activate: () => ripple.button.click() }
-          return null
+          // A tap anywhere on the ground walks there; the water and treeline send the visitor to the nearest grass.
+          if (phase !== 'tap' || !at || busy() || at.y > GROUND_Y + FAR_LIFT + 0.25) return null
+          const depth = Math.min(MAX_DEPTH, Math.max(0, depthAtLift(at.y - GROUND_Y)))
+          return {
+            silent: true,
+            activate: () => {
+              walkTo(at.x, depth)
+              const end = walker.route[walker.route.length - 1]
+              if (end) markAt = { x: end.x, depth: depthOf(end), age: 0 }
+            },
+          }
         },
 
         update(frame) {
-          // Step onto the spot before opening the fishing view, so the visitor is visibly there.
-          if (pendingSpot !== null) {
-            const index = pendingSpot
-            if (Math.abs(ctx.traversal.x - POND_SPOTS[index].x) < 0.05) {
-              pendingSpot = null
-              if (!spotFree(index)) {
-                ctx.traversal.hold(null)
-              } else {
-                presence?.want(itemFor(index), true)
-                activeSpot = index
-                callbacks.onFish(index)
-              }
-            }
-          }
-
-          const settled = Math.abs(ctx.traversal.walkVelocity) < 0.4
+          const settled = Math.abs(walker.stride) < 0.4 && !walker.walking
           const ready = !frame.quiet && activeSpot === null && pendingSpot === null
           current = ready && settled ? nearest() : null
 
-          // Nobody gets to stand inside Marlow: a visitor who stops on him steps to whichever side is nearer.
-          const stall = POND_LANDMARKS.find((landmark) => landmark.kind === 'fishmonger')!
-          const otterX = stall.x - stall.width / 2
-          if (nudgeTo !== null && (ctx.traversal.isSteered || frame.quiet || pendingSpot !== null)) {
-            if (!frame.quiet && pendingSpot === null) ctx.traversal.hold(null)
-            nudgeTo = null
-          } else if (nudgeTo !== null && Math.abs(ctx.traversal.x - nudgeTo) < 0.02) {
-            ctx.traversal.hold(null)
-            nudgeTo = null
-          } else if (nudgeTo === null && ready && settled && !ctx.traversal.isSteered && Math.abs(ctx.traversal.x - otterX) < 0.5) {
-            nudgeTo = ctx.traversal.x >= otterX ? otterX + 0.75 : otterX - 0.75
-            ctx.traversal.hold(nudgeTo, true)
-          }
           // Whatever the visitor walks up to warms in the lamplight; there is no UI to read.
-          const near = ready ? nearbyLandmark()?.landmark : undefined
+          const near = ready && settled ? nearbyLandmark()?.landmark : undefined
           glow = reducedMotion ? 1 : (glow + frame.dt * 2.2) % (Math.PI * 2)
           const warmth = reducedMotion ? 0.6 : 0.45 + 0.35 * Math.sin(glow)
 
@@ -491,11 +643,17 @@ export function createPondRoom({
             if (!frame.quiet && (button.classList.contains('is-hovered') || button.matches(':focus-visible'))) material?.color.set('#ffe4ba')
             else if (landmark === near) material?.color.copy(white).lerp(lamplight, warmth)
             else material?.color.set('#ffffff')
-            projected.set(landmark.x, GROUND_Y + landmark.baseY, 0.03).project(frame.camera)
-            const width = landmark.width * perUnit
+            const placed = placement(landmark)
+            projected.set(landmark.x, placed.bottom, 0.03).project(frame.camera)
+            const width = placed.width * perUnit
             if (landmark.kind === 'fishmonger') {
               const onStage = projected.x > -1.6 && projected.x < 1.6
-              const visitor = onStage && !frame.quiet ? ctx.traversal.x - (landmark.x - landmark.width / 2) : null
+              // Marlow greets whoever comes up to his stall, but only where he can be seen saying it.
+              const otterX = landmark.x - placed.width / 2
+              const otterShown = Math.abs(projected.x - (placed.width / 2) * (2 / (frame.camera.right - frame.camera.left))) < 0.9
+              const offset = walker.x - otterX
+              const coming = otterShown && !frame.quiet && walker.depth > 0.45 && Math.abs(offset) < 1.9
+              const visitor = coming ? Math.sign(offset) * Math.min(1, Math.abs(offset)) : null
               shopkeeper.update(width, frame.quiet ? 0 : frame.dt, onStage, reducedMotion, visitor)
             }
             const sx = frame.viewport.left + (projected.x * 0.5 + 0.5) * frame.viewport.width
@@ -511,6 +669,20 @@ export function createPondRoom({
             button.setAttribute('aria-disabled', String(frame.quiet))
             button.tabIndex = fullyVisible && !frame.quiet ? 0 : -1
           })
+          // A brief ring in the grass where a tap sent the visitor.
+          if (markAt && (markAt.age += frame.dt) < 0.7 && walker.walking) {
+            const scale = scaleAt(markAt.depth)
+            projected.set(markAt.x, GROUND_Y + liftAt(markAt.depth), 0).project(frame.camera)
+            const sx = frame.viewport.left + (projected.x * 0.5 + 0.5) * frame.viewport.width
+            const sy = frame.viewport.top + (-projected.y * 0.5 + 0.5) * frame.viewport.height
+            writeStyle(mark, 'width', `${(0.55 * scale * perUnit).toFixed(1)}px`)
+            writeStyle(mark, 'transform', `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`)
+            mark.style.setProperty('--age', (markAt.age / 0.7).toFixed(3))
+            mark.hidden = false
+          } else {
+            markAt = null
+            mark.hidden = true
+          }
           for (const { button, spot, index } of ripples) {
             const free = activeSpot !== index && spotFree(index)
             button.classList.toggle('is-taken', !free)
@@ -526,6 +698,11 @@ export function createPondRoom({
           stopWallet()
           follower.dispose()
           window.removeEventListener('keydown', keydown)
+          window.removeEventListener('keydown', moveKeys, { capture: true })
+          window.removeEventListener('keyup', moveKeys, { capture: true })
+          window.removeEventListener('blur', letGo)
+          mark.remove()
+          for (const texture of pathTextures) texture.dispose()
           if (control.release === releaseSpot) control.release = () => {}
           if (control.setBountyReady === setBountyReady) control.setBountyReady = () => {}
           if (activeSpot !== null) presence?.want(itemFor(activeSpot), false)

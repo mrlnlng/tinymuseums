@@ -27,6 +27,8 @@ export interface Motion {
   /** Wearing a helmet from a pedestal, or holding a cup from the café. */
   helm: boolean
   cup: boolean
+  /** How far into a room with depth, from its front (0) to its back (1); absent means the front. */
+  d?: number
   seq: number
 }
 
@@ -115,7 +117,10 @@ function parseMotion(m: Record<string, unknown>): Motion | null {
   const helm = flag(m.helm)
   const cup = flag(m.cup)
   if (sit === null || helm === null || cup === null) return null
-  return { x, vx, facing, look, sit, helm, cup, seq }
+  const { d } = m
+  if (d === undefined) return { x, vx, facing, look, sit, helm, cup, seq }
+  if (typeof d !== 'number' || !(d >= 0 && d <= 1)) return null
+  return { x, vx, facing, look, sit, helm, cup, d, seq }
 }
 
 /** Unknown fields are dropped, so whatever a client adds never reaches other visitors. */

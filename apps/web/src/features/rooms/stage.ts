@@ -535,18 +535,22 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         sound().prepare('jump')
         sound().play('jump')
       }
+      const stance = entry.contents.stance?.()
+      const scale = stance?.scale ?? 1
+      const walk = stance?.walk ?? traversal.walkVelocity
       character.update(
         dt,
         traversal.x,
-        traversal.walkVelocity,
+        walk,
         rig.camera,
         viewport,
-        CONFIG.character.centerY + traversal.height,
+        CONFIG.character.centerY + (scale - 1) * (CONFIG.character.height / 2) + (stance?.lift ?? 0) + traversal.height * scale,
         traversal.jumpPose,
+        scale,
       )
       entry.presence?.update(dt, rig.camera, viewport)
       for (const part of partsOf(entry)) part.update(frame)
-      sound().setWalking(!traversal.isAirborne && Math.abs(traversal.walkVelocity) > WALKING_SPEED)
+      sound().setWalking(!traversal.isAirborne && Math.abs(walk) > WALKING_SPEED)
       entry.frameCount += 1
       const idle = entry.handlers.isSuspended() || traversal.idleSeconds > QUIET_AFTER_SECONDS
       if (idle && entry.frameCount % 2 === 1) return

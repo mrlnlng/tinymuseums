@@ -147,7 +147,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     loadTexture('pond/scene', renderer),
     loadTexture('pond/lily', renderer),
     ...POND_LANDMARKS.map(async (landmark) => {
-      const texture = await new THREE.TextureLoader().loadAsync(landmark.image)
+      const texture = await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image))
       texture.colorSpace = THREE.SRGBColorSpace
       texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4
       return texture

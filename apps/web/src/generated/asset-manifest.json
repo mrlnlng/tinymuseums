@@ -538,6 +538,69 @@
         "h": 189,
         "src": "pond-splash@3x.91cb09be07.webp"
       }
+    },
+    "pond/forest-door": {
+      "w": 810,
+      "h": 1100,
+      "x2": {
+        "w": 810,
+        "h": 1100,
+        "src": "pond-forest-door@2x.7f156efd4c.webp"
+      }
+    },
+    "pond/forest-noticeboard-signed": {
+      "w": 1122,
+      "h": 1402,
+      "x2": {
+        "w": 1122,
+        "h": 1402,
+        "src": "pond-forest-noticeboard-signed@2x.ad3fbefcb2.webp"
+      }
+    },
+    "pond/forest-bait-shop-signed": {
+      "w": 1254,
+      "h": 1254,
+      "x2": {
+        "w": 1254,
+        "h": 1254,
+        "src": "pond-forest-bait-shop-signed@2x.9f257158ce.webp"
+      }
+    },
+    "pond/forest-journal-signed": {
+      "w": 1536,
+      "h": 1024,
+      "x2": {
+        "w": 1536,
+        "h": 1024,
+        "src": "pond-forest-journal-signed@2x.e1dd5456ad.webp"
+      }
+    },
+    "pond/shopkeeper-apron": {
+      "w": 623,
+      "h": 655,
+      "x2": {
+        "w": 623,
+        "h": 655,
+        "src": "pond-shopkeeper-apron@2x.b8078dd6cc.webp"
+      }
+    },
+    "pond/shopkeeper-hat": {
+      "w": 1133,
+      "h": 804,
+      "x2": {
+        "w": 1133,
+        "h": 804,
+        "src": "pond-shopkeeper-hat@2x.ef968f77d5.webp"
+      }
+    },
+    "pond/shopkeeper-rod": {
+      "w": 206,
+      "h": 1273,
+      "x2": {
+        "w": 206,
+        "h": 1273,
+        "src": "pond-shopkeeper-rod@2x.c94d2f0036.webp"
+      }
     }
   },
   "atlases": {

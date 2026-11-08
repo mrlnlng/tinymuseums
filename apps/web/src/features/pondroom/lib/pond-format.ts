@@ -1,4 +1,5 @@
 /** Table and formatting facts for the pond room's panels. Kept client-side only. */
+import { assetUrl } from '@/shared/lib/assets'
 
 export const POND_SPECIES = [
   { id: 'star-snapper', name: 'Star snapper', tier: 'common', medianCm: 22 },
@@ -86,8 +87,12 @@ export function catchLabel(species: string | null | undefined, variant: string |
   return variant && variant !== 'normal' ? `${variantLabel(variant)} ${name}` : name
 }
 
+const FISH_ART = ['star-snapper', 'crab', 'puffer', 'blobfish'] as const
+
+/** The catch's drawing from the asset manifest; species without their own art show the snapper. */
 export function fishArt(species: string | null | undefined): string {
-  return `/assets/pond/fish-${species ?? 'star-snapper'}.png`
+  const art = FISH_ART.find((id) => id === species) ?? 'star-snapper'
+  return assetUrl(`pond/fish-${art}`)
 }
 
 export function formatInteger(value: number): string {

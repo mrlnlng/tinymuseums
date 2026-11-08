@@ -1,5 +1,6 @@
 import type { PondPanelKind } from './room'
 import type { PondPath } from './depth'
+import type { AssetName } from '@/shared/lib/assets'
 
 /** The woodland entrance shares the costume-gallery door's scale and interaction. */
 export const FOREST_GATE = { x: -5.6, arrivalX: -4.85, reach: 0.6 } as const
@@ -19,7 +20,8 @@ export interface PondLandmark {
   standX?: number
   title: string
   description: string
-  image: string
+  /** Built through the asset manifest, so it is served from the CDN with the rest of the art. */
+  image: AssetName
 }
 
 /** Door → notices → Marlow's stall → water → the journal's quieter woodland nook. */
@@ -33,7 +35,7 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
     aspect: 1076 / 1461,
     title: 'Back to the museum',
     description: 'The forest gate',
-    image: '/assets/pond/forest-door.webp',
+    image: 'pond/forest-door',
   },
   {
     kind: 'bounties',
@@ -46,7 +48,7 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
     standX: -2.3,
     title: 'Noticeboard',
     description: 'Today’s bounties & pond records',
-    image: '/assets/pond/forest-noticeboard-signed.webp',
+    image: 'pond/forest-noticeboard-signed',
   },
   {
     kind: 'fishmonger',
@@ -59,7 +61,7 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
     standX: 1.55,
     title: 'Bait shop',
     description: 'Buy bait & trade pearls',
-    image: '/assets/pond/forest-bait-shop-signed.webp',
+    image: 'pond/forest-bait-shop-signed',
   },
   {
     kind: 'fishdex',
@@ -72,6 +74,6 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
     standX: 11.6,
     title: 'Fish journal',
     description: 'Your catches & discoveries',
-    image: '/assets/pond/forest-journal-signed.webp',
+    image: 'pond/forest-journal-signed',
   },
 ]

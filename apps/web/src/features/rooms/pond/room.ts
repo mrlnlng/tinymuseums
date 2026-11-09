@@ -36,8 +36,9 @@ const yAt = (fractionFromTop: number) => IMAGE_BOTTOM_Y + (1 - fractionFromTop) 
 const EDGE_WIDTH = SCENE_WIDTH * EDGE_BAND * (EDGE_BANDS + EDGE_OVERLAP)
 const EDGE_REACH = SCENE_WIDTH * EDGE_BAND * EDGE_OVERLAP
 
-const MIN_X = -6.5
-const MAX_X = SCENE_WIDTH + 2.6
+const MIN_X = FOREST_GATE.x
+// End the bank just beyond the journal's path, instead of continuing into empty woodland.
+const MAX_X = 13
 /** The path back to the museum leaves from the left end of the bank. */
 const EXIT_X = FOREST_GATE.x
 const ARRIVE_X = FOREST_GATE.arrivalX
@@ -67,6 +68,9 @@ function extent(landmark: PondLandmark): { left: number; right: number } {
   const { width } = placement(landmark)
   return { left: landmark.x - width * (landmark.kind === 'fishmonger' ? 0.75 : 0.5), right: landmark.x + width / 2 }
 }
+
+const VIEW_LEFT = Math.min(...POND_LANDMARKS.map((landmark) => extent(landmark).left)) - 0.15
+const VIEW_RIGHT = Math.max(...POND_LANDMARKS.map((landmark) => extent(landmark).right)) + 0.15
 
 export const POND_SPOTS = [0.3, 0.5, 0.68].map((fraction) => ({
   x: fraction * SCENE_WIDTH,
@@ -438,11 +442,11 @@ export function createPondRoom({
           heading = null
           pendingSpot = null
           following = true
-          moved = walker.steer(dt, Math.sign(across), Math.sign(into), KEY_SPEED)
+          moved = walker.steer(dt, Math.sign(across), Math.sign(into), KEY_SPEED * traversal.jumpSpeedMultiplier)
         } else if (walker.walking) {
           // A drag during a walk lets the view go where the visitor drags it.
           if (Math.abs(traversal.cameraX - cameraWas) > 0.02) following = false
-          moved = walker.step(dt, CONFIG.move.maxSpeed)
+          moved = walker.step(dt, CONFIG.move.maxSpeed * traversal.jumpSpeedMultiplier)
           if (!walker.walking) finishWalk()
         } else {
           following = false
@@ -547,6 +551,10 @@ export function createPondRoom({
 
       return {
         floor: { kind: 'strip', minX: MIN_X, maxX: () => MAX_X },
+        cameraBounds: {
+          minX: VIEW_LEFT,
+          maxX: () => VIEW_RIGHT,
+        },
 
         // Others see the visitor at their depth, walking and facing as they do here.
         presence: {
@@ -561,8 +569,10 @@ export function createPondRoom({
 
         beforeCharacterUpdate(frame) {
           move(frame.dt, frame.quiet)
-          const wide = frame.camera.right - frame.camera.left > 7.5
-          let target = wide ? 1.35 : 0
+          const viewWidth = frame.camera.right - frame.camera.left
+          const wide = viewWidth > 7.5
+          // Ease out the wide-screen offset near the entrance so the whole gate remains visible.
+          let target = wide ? Math.min(1.35, Math.max(0, frame.camera.position.x - VIEW_LEFT - viewWidth / 2)) : 0
           // On a narrow screen, keep the prop the visitor is walking to, or standing at, in the picture with them.
           const focus = heading ?? (walker.depth > 0.5 ? nearbyLandmark()?.landmark : undefined)
           if (!wide && focus?.path) {

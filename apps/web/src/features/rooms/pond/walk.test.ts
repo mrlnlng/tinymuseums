@@ -2,9 +2,19 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { contains } from '../floor.ts'
 import { MAX_DEPTH, Walker, pondFloor, toFloor } from './walk.ts'
+import { FOREST_GATE, POND_LANDMARKS } from './landmarks.ts'
 
 const WIDTH = (8 * 2388) / 1668
-const area = pondFloor(WIDTH, -6.5, WIDTH + 2.6, -4.35)
+const area = pondFloor(WIDTH, FOREST_GATE.x, 13, FOREST_GATE.x + 1.25)
+
+test('the shortened bank ends at the gate and journal while every landmark stays reachable', () => {
+  assert.ok(!contains(area, toFloor(FOREST_GATE.x - 0.1, 0)))
+  assert.ok(!contains(area, toFloor(13.1, 0)))
+  assert.ok(contains(area, toFloor(FOREST_GATE.x, 0)))
+  for (const landmark of POND_LANDMARKS) {
+    if (landmark.standX !== undefined) assert.ok(contains(area, toFloor(landmark.standX, 0.86)), landmark.title)
+  }
+})
 
 test('the grass is walkable from the bank to the treeline, but not the pond', () => {
   assert.ok(contains(area, toFloor(-3, 0.5)))

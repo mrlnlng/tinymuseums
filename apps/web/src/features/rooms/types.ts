@@ -85,6 +85,8 @@ export interface Frame {
 
 export interface RoomContents {
   floor: Floor
+  /** Illustrated edges of the room; the whole camera window stays within these bounds. */
+  cameraBounds?: { minX: number; maxX(): number }
   presence: { key: string; ticketKey?: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
   /** Extra gate on top of the stage's own (fonts, character rig, minimum loading time). */
   isReady?(now: number): boolean

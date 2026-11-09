@@ -14,6 +14,7 @@ import { joinRoom, type Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { ROOM_ART, type RoomArt } from './art'
 import { createArtCache } from './art-cache'
+import { boundedCameraX } from './camera-bounds'
 import { linkedDoor } from './links'
 import { createNearby, type Nearby } from './nearby'
 import { createMinimap, MAP_PLACES } from './minimap'
@@ -521,16 +522,27 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
             entry.handlers.isSuspended() ||
             document.querySelector('[aria-modal="true"]') !== null,
         )
-        traversal.update(dt, entry.contents.floor.minX, entry.contents.floor.maxX())
+        traversal.update(dt, entry.contents.floor.minX, entry.contents.floor.maxX(), entry.contents.stance?.()?.walk ?? undefined)
         prefetchNearDoors(entry, now)
         minimap.update(traversal.x)
       }
 
       passage.update(dt)
+      const bounds = entry.contents.cameraBounds
+      if (bounds) {
+        const x = boundedCameraX(traversal.cameraX, rig.viewWidth, bounds.minX, bounds.maxX())
+        if (x !== traversal.cameraX) traversal.velocity = 0
+        traversal.cameraX = x
+      }
       rig.sync(traversal.cameraX, entry.contents.cameraRise?.() ?? 0)
       syncJoined(entry, traversal.cameraX, rig.viewWidth)
       const frame: Frame = { now, dt, camera: rig.camera, viewport, quiet: isQuiet(entry) }
       for (const part of partsOf(entry)) part.beforeCharacterUpdate?.(frame)
+      // Depth rooms can adjust their framing above; keep those offsets inside the same edges.
+      if (bounds) {
+        rig.camera.position.x = boundedCameraX(rig.camera.position.x, rig.viewWidth, bounds.minX, bounds.maxX())
+        rig.camera.updateMatrixWorld()
+      }
       if (traversal.takeJump()) {
         sound().prepare('jump')
         sound().play('jump')

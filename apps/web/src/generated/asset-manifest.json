@@ -1491,14 +1491,14 @@
       "height": 1710
     },
     "bruceTag": {
-      "src": "atelier-bruce-tag.9cacff52b9.webp",
-      "width": 261,
-      "height": 226
+      "src": "atelier-bruce-tag.a5f20f46ef.webp",
+      "width": 815,
+      "height": 706
     },
     "tagBlank": {
-      "src": "atelier-tag-blank.5615441ce4.webp",
-      "width": 261,
-      "height": 226
+      "src": "atelier-tag-blank.4e717ac2c9.webp",
+      "width": 815,
+      "height": 706
     },
     "placeholderPainting": {
       "src": "atelier-placeholder-painting.0adb3e13a1.webp",
@@ -1506,24 +1506,24 @@
       "height": 484
     },
     "bruceFrameBlue": {
-      "src": "atelier-bruce-frame-blue.a2a4d13c8b.webp",
-      "width": 1060,
-      "height": 1417
+      "src": "atelier-bruce-frame-blue.bc5e3050fa.webp",
+      "width": 709,
+      "height": 946
     },
     "bruceFrameCream": {
-      "src": "atelier-bruce-frame-cream.1d503a308d.webp",
-      "width": 131,
-      "height": 170
+      "src": "atelier-bruce-frame-cream.427000544a.webp",
+      "width": 409,
+      "height": 531
     },
     "brucePaintingGarden": {
-      "src": "atelier-bruce-painting-garden.5e8fa2982d.webp",
-      "width": 172,
-      "height": 242
+      "src": "atelier-bruce-painting-garden.92e39d218c.webp",
+      "width": 508,
+      "height": 728
     },
     "brucePaintingPond": {
-      "src": "atelier-bruce-painting-pond.1dfb129cc4.webp",
-      "width": 96,
-      "height": 145
+      "src": "atelier-bruce-painting-pond.1b20e649c4.webp",
+      "width": 281,
+      "height": 401
     },
     "portraitBruce": {
       "src": "atelier-portrait-bruce.a537591905.webp",

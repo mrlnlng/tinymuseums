@@ -100,7 +100,14 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
       })
 
       return {
-        floor: { kind: 'strip', minX: GALLERY_DOOR.atelierX, maxX: () => CONFIG.atelier.max },
+        floor: { kind: 'strip', minX: GALLERY_DOOR.atelierX, maxX: () => CONFIG.atelier.max - 0.45 },
+        cameraBounds: {
+          minX: GALLERY_DOOR.atelierX - Math.max(
+            GALLERY_DOOR.height * door.naturalWidth / door.naturalHeight,
+            CONFIG.lobby.sign.width,
+          ) / 2 - 0.15,
+          maxX: () => CONFIG.atelier.max + 0.15,
+        },
         presence: { key: 'atelier' },
         joined: () => joinedRooms,
 

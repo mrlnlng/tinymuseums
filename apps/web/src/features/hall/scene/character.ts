@@ -96,6 +96,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let rigTop = 0
   let rigHeight = ''
   let rigTransform = ''
+  let rigOrigin = ''
   let opacity = ''
   const rigPose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
   let look: Look = { ...initial }
@@ -143,6 +144,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       canvas.addEventListener('webglcontextlost', contextLost)
       rigHeight = ''
       rigTransform = ''
+      rigOrigin = ''
       previous?.dispose()
       previousCanvas.remove()
       return true
@@ -175,6 +177,19 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let perched: Perch | null = null
   let bouncedAt = -Infinity
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  let bodyRotation = 0
+
+  // Carried hats and cups follow the same body-centred turn as the rig canvas.
+  function turnAttachment(out: Pose): Pose {
+    if (!bodyRotation) return out
+    const angle = bodyRotation * Math.PI / 180
+    const dx = out.x - screenX
+    const dy = out.y - screenY
+    out.x = screenX + dx * Math.cos(angle) - dy * Math.sin(angle)
+    out.y = screenY + dx * Math.sin(angle) + dy * Math.cos(angle)
+    out.rotation += bodyRotation / out.flip
+    return out
+  }
 
   function setFrame(image: HTMLImageElement): void {
     currentImage = image
@@ -243,7 +258,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         out.width = rigPose.width
         out.flip = rigFacing(motion) === attachment.facing ? 1 : -1
         out.rotation = anchor.rotation + rigPose.rotation / out.flip
-        return out
+        return turnAttachment(out)
       }
       const { naturalWidth, naturalHeight } = currentImage
       if (perched?.seated) {
@@ -253,7 +268,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         out.width = sit.width * scale
         out.rotation = sit.rotation
         out.flip = sit.flip
-        return out
+        return turnAttachment(out)
       }
 
       const place = moving ? attachment.walk : attachment.idle
@@ -264,10 +279,11 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       out.width = attachment.width * scale
       out.rotation = place.rotation
       out.flip = asDrawn ? 1 : -1
-      return out
+      return turnAttachment(out)
     },
 
     update(dt, x, velocity, camera, viewport, centerY = CONFIG.character.centerY, jump = GROUNDED, depthScale = 1) {
+      bodyRotation = !perched && !reducedMotion ? (jump.flip ?? 0) : 0
       const speed = Math.abs(velocity)
       const steps = !perched && speed > 0.12
       // In the air the legs hold the jumping pose instead of stepping.
@@ -318,6 +334,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       const transform =
         `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0)` +
         ' translate(-50%, -50%)' +
+        (bodyRotation ? ` rotate(${bodyRotation.toFixed(2)}deg)` : '') +
         (squash ? ` scale(${(1 - 0.6 * squash).toFixed(3)}, ${(1 + squash).toFixed(3)})` : '')
       if (transform !== currentTransform) {
         currentTransform = transform
@@ -336,7 +353,13 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             rigHeight = nextHeight
             canvas.style.height = nextHeight
           }
-          const nextTransform = `translate3d(${rigLeft.toFixed(1)}px, ${rigTop.toFixed(1)}px, 0)`
+          const nextOrigin = `${(screenX - rigLeft).toFixed(1)}px ${(screenY - rigTop).toFixed(1)}px`
+          if (nextOrigin !== rigOrigin) {
+            rigOrigin = nextOrigin
+            canvas.style.transformOrigin = nextOrigin
+          }
+          const nextTransform = `translate3d(${rigLeft.toFixed(1)}px, ${rigTop.toFixed(1)}px, 0)` +
+            (bodyRotation ? ` rotate(${bodyRotation.toFixed(2)}deg)` : '')
           if (nextTransform !== rigTransform) {
             rigTransform = nextTransform
             canvas.style.transform = nextTransform

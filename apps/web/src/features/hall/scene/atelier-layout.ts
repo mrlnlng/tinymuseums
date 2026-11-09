@@ -58,8 +58,10 @@ export const ROOM_TEMPLATE = {
   /** The tag's board, where a room's name is written. */
   tagText: { dy: 113, width: 270 },
   spotlight: { dx: -27, top: -165 },
-  leftFrame: { dx: -371, y: 209, width: 350, fill: 0.73 },
-  rightFrame: { dx: 336, y: 148, width: 201, fill: 0.68 },
+  // Leave a small overlap behind the frame for the painting and placeholder aspects.
+  leftFrame: { dx: -371, y: 209, width: 350, fill: 0.74 },
+  // Overlap the new cream frame's opening, including its slightly lower centre.
+  rightFrame: { dx: 336, y: 148, width: 201, fill: 0.72 },
   portrait: { dx: 148, y: 211, z: 0.2 },
   ribbon: { dx: 151, y: 282, width: 60, z: 0.21 },
   fish: { dx: 155, y: 306, width: 118, z: 0.21 },

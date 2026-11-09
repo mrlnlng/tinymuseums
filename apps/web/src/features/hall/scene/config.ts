@@ -58,6 +58,7 @@ export const CONFIG = {
     squash: 0.14,
     stretch: 0.1,
     landSquash: 0.16,
+    combo: { count: 4, heightMultiplier: 1.35, speedMultiplier: 1.15, windowSeconds: 1.1 },
   },
 
   lobby: {

@@ -474,6 +474,22 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
 
       return {
         floor: { kind: 'strip', minX: CONFIG.lobby.minX, maxX: () => hall.layout.totalLength },
+        cameraBounds: {
+          minX: GALLERY_DOOR.lobbyX - Math.max(
+            GALLERY_DOOR.height * door.naturalWidth / door.naturalHeight,
+            CONFIG.lobby.sign.width,
+          ) / 2 - 0.15,
+          maxX: () => {
+            const { giftShopX, totalLength } = hall.layout
+            if (giftShopX === null) return totalLength
+            const { counter, note, sign } = CONFIG.giftShop
+            return giftShopX + Math.max(
+              counter.dx + counter.height * (scenery?.aspect.giftShop ?? 1) / 2,
+              note.dx + note.width / 2,
+              sign.dx + sign.width / 2,
+            ) + 0.15
+          },
+        },
 
         presence: {
           key: `hall-e${options.initialSlice.epochId}`,

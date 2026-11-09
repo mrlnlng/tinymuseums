@@ -1,5 +1,5 @@
-import { CONFIG } from './config'
-import type { JumpPose } from './rig-motion'
+import { CONFIG } from './config.ts'
+import type { JumpPose } from './rig-motion.ts'
 
 export class Traversal {
   cameraX = 0
@@ -41,6 +41,11 @@ export class Traversal {
   private jumped = false
   private crouchedFor = -1
   private landedFor = -1
+  private jumpChain = 0
+  private chainDirection = 0
+  private groundedFor = 0
+  private flipJump = false
+  private flipDirection = 0
   private readonly pose: JumpPose = { squash: 0, rise: 0, lift: 0, airborne: false }
 
   private detachWindow = () => {}
@@ -139,6 +144,7 @@ export class Traversal {
   setSuspended(suspended: boolean): void {
     this.suspended = suspended
     if (suspended) {
+      this.clearJumpChain()
       this.keys.clear()
       this.dragging = false
       this.velocity = 0
@@ -153,6 +159,7 @@ export class Traversal {
   }
 
   hold(x: number | null, follow = false): void {
+    if (x !== null) this.clearJumpChain()
     this.heldAt = x
     this.following = x !== null && follow
     if (x !== null) this.steering = false
@@ -197,9 +204,16 @@ export class Traversal {
     this.rise = 0
     this.crouchedFor = -1
     this.landedFor = -1
+    this.jumpQueued = false
+    this.jumped = false
+    this.flipJump = false
+    this.flipDirection = 0
+    this.groundedFor = 0
+    this.clearJumpChain()
   }
 
   playIntro(startX: number, targetX: number): void {
+    this.clearJumpChain()
     this.cameraX = targetX
     this.x = startX
     this.lastFootX = startX
@@ -211,7 +225,7 @@ export class Traversal {
     this.stride = 0
   }
 
-  update(dt: number, min: number, max: number): void {
+  update(dt: number, min: number, max: number, externalVelocity?: number): void {
     const input = this.keyInput()
     if (!this.locked && this.heldAt === null && (input !== 0 || (this.steering && this.stride !== 0))) {
       this.steer(dt, input, min, max)
@@ -220,7 +234,8 @@ export class Traversal {
     }
     if (!this.steering) this.walkToward(dt)
     this.enforceLeash()
-    this.updateJump(dt)
+    const velocity = externalVelocity ?? (dt > 0 ? (this.x - this.lastFootX) / dt : 0)
+    this.updateJump(dt, velocity)
     if (this.following) {
       this.cameraX = this.x
       this.velocity = 0
@@ -260,14 +275,28 @@ export class Traversal {
     return this.height > 0
   }
 
+  /** A little extra horizontal travel during the fourth moving jump. */
+  get jumpSpeedMultiplier(): number {
+    return this.flipJump && this.isAirborne ? CONFIG.jump.combo.speedMultiplier : 1
+  }
+
+  private clearJumpChain(): void {
+    this.jumpChain = 0
+    this.chainDirection = 0
+  }
+
   /** The squash, stretch and height of the jump, for the character's pose. */
   get jumpPose(): JumpPose {
     const { height, gravity, crouchSeconds, landSeconds, squash, stretch, landSquash } = CONFIG.jump
-    const launch = Math.sqrt(2 * gravity * height)
+    const launch = Math.sqrt(2 * gravity * height * (this.flipJump ? CONFIG.jump.combo.heightMultiplier : 1))
     const pose = this.pose
     pose.airborne = this.height > 0
     pose.lift = this.height / height
     pose.rise = pose.airborne ? clamp(this.rise / launch, -1, 1) : 0
+    const progress = clamp((1 - this.rise / launch) / 2, 0, 1)
+    pose.flip = this.flipJump && pose.airborne
+      ? this.flipDirection * 360 * progress * progress * (3 - 2 * progress)
+      : 0
     if (this.crouchedFor >= 0) {
       pose.squash = -squash * Math.sin((Math.PI / 2) * Math.min(1, this.crouchedFor / crouchSeconds))
     } else if (pose.airborne) {
@@ -282,9 +311,16 @@ export class Traversal {
     return pose
   }
 
-  private updateJump(dt: number): void {
-    const { height, gravity, crouchSeconds, landSeconds } = CONFIG.jump
+  private updateJump(dt: number, velocity: number): void {
+    const { height, gravity, crouchSeconds, landSeconds, combo } = CONFIG.jump
     const canJump = !this.locked && this.heldAt === null
+    const direction = Math.abs(velocity) > 0.12 ? Math.sign(velocity) : 0
+    if (this.height === 0) {
+      this.groundedFor += dt
+      if (!canJump || direction === 0 || direction !== this.chainDirection || this.groundedFor > combo.windowSeconds) {
+        this.clearJumpChain()
+      }
+    }
     if (this.jumpQueued && this.height === 0 && this.crouchedFor < 0 && canJump) this.crouchedFor = 0
     this.jumpQueued = false
 
@@ -293,7 +329,12 @@ export class Traversal {
       else if ((this.crouchedFor += dt) >= crouchSeconds) {
         this.crouchedFor = -1
         this.landedFor = -1
-        this.rise = Math.sqrt(2 * gravity * height)
+        this.jumpChain = direction === 0 ? 0 : this.jumpChain + 1
+        this.chainDirection = direction
+        this.flipJump = this.jumpChain === combo.count
+        this.flipDirection = direction
+        if (this.flipJump) this.jumpChain = 0
+        this.rise = Math.sqrt(2 * gravity * height * (this.flipJump ? combo.heightMultiplier : 1))
         this.height = this.rise * dt
         this.jumped = true
       }
@@ -307,6 +348,8 @@ export class Traversal {
       this.height = 0
       this.rise = 0
       this.landedFor = 0
+      this.groundedFor = 0
+      this.flipJump = false
     }
   }
 
@@ -323,7 +366,7 @@ export class Traversal {
     this.walking = false
     this.velocity = 0
 
-    const change = input * keyWalkSpeed - this.stride
+    const change = input * keyWalkSpeed * this.jumpSpeedMultiplier - this.stride
     const most = keyAccel * dt
     this.stride += clamp(change, -most, most)
     this.x += this.stride * dt
@@ -380,7 +423,7 @@ export class Traversal {
     }
     if (!this.walking) return
 
-    const speed = Math.min(CONFIG.move.maxSpeed, distance / arriveSeconds)
+    const speed = Math.min(CONFIG.move.maxSpeed * this.jumpSpeedMultiplier, distance / arriveSeconds)
     const step = Math.sign(gap) * speed * dt
     this.x = Math.abs(step) >= distance ? target : this.x + step
   }

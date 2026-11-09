@@ -32,6 +32,8 @@ export interface JumpPose {
   rise: number
   lift: number
   airborne: boolean
+  /** A forward somersault in screen degrees; sign is fixed at take-off. */
+  flip?: number
 }
 
 export const GROUNDED: JumpPose = { squash: 0, rise: 0, lift: 0, airborne: false }

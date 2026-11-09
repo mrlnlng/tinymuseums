@@ -35,6 +35,30 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `pond/fish-star-snapper.png` … `pond/fish-blobfish.png` | `fish_caught/Untitled_Artwork-125.png` … `-128.png`, trimmed, max 600px long side, quantised |
 | `pond/layout.json` | lily and splash boxes as fractions of the 2388×1668 scene |
 
+## Bruce's collection refresh (2026-11-08)
+
+The higher resolution originals are in `/home/shan/Downloads/mocks/2026-11-08`.
+Both the paintings and their separate frame layers come from the supplied framed
+images, without resizing. The frame openings are transparent so owner-selected
+paintings can still be displayed in them throughout the atelier.
+
+| Runtime master in `atelier/` | Source | Crop (left, top, width, height) |
+| --- | --- | --- |
+| `bruce-painting-garden.png` | `file1.png` | 101, 110, 508, 728 |
+| `bruce-frame-blue.png` | `file1.png` | Full canvas, 709×946; artwork opening removed |
+| `bruce-painting-pond.png` | `file.png` | 61, 69, 281, 401 |
+| `bruce-frame-cream.png` | `file.png` | Full canvas, 409×531; artwork opening removed |
+| `bruce-tag.png` | `file2.png` | Full canvas, 815×706 |
+| `tag-blank.png` | `file3.png` | Full canvas, 815×706 |
+
+Keep both signs on their shared canvas so the collection names stay aligned.
+Rebuild all six masters and their runtime exports from the repo root:
+
+```bash
+node apps/web/tooling/import-bruce-assets.mjs /home/shan/Downloads/mocks/2026-11-08
+node apps/web/tooling/prepare-models.mjs
+```
+
 ## Fishing forest illustrations
 
 `pond/forest-door.png`, `forest-noticeboard.png`, `forest-fisherman.png` and

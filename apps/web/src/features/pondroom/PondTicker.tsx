@@ -26,12 +26,13 @@ export default function PondTicker({ className }: PondTickerProps) {
   const queue = useRef<PondFeedItem[]>([])
   const known = useRef<Set<string> | null>(null)
   const busy = useRef(false)
-  const timers = useRef<number[]>([])
+  const timers = useRef<Set<number>>(new Set())
 
   useEffect(() => {
     let live = true
     const later = (fn: () => void, ms: number) => {
-      timers.current.push(window.setTimeout(fn, ms))
+      const timer = window.setTimeout(() => { timers.current.delete(timer); fn() }, ms)
+      timers.current.add(timer)
     }
 
     const next = () => {
@@ -61,8 +62,9 @@ export default function PondTicker({ className }: PondTickerProps) {
         if (recent) queue.current.push(recent)
       } else {
         const fresh = feed.filter((item) => !known.current!.has(item.id)).reverse()
-        for (const item of fresh) known.current.add(item.id)
-        queue.current.push(...fresh)
+        known.current = new Set(feed.map((item) => item.id))
+        queue.current.push(...fresh.filter(isGolden))
+        queue.current = queue.current.slice(-3)
       }
       if (!busy.current) next()
     }
@@ -73,7 +75,7 @@ export default function PondTicker({ className }: PondTickerProps) {
       live = false
       window.clearInterval(poll)
       for (const timer of timers.current) window.clearTimeout(timer)
-      timers.current = []
+      timers.current.clear()
     }
   }, [])
 

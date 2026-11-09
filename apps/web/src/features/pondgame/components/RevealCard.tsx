@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { assetUrl } from '@/shared/lib/assets'
+import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import type { CatchView } from '../lib/guest.ts'
 import type { PondSfx, PondSfxName } from '../lib/sfx.ts'
 import { chainOffer, missWagerLabel } from '../lib/risk.ts'
@@ -93,6 +94,11 @@ export default function RevealCard({
   onUseAsBait,
   onDismiss,
 }: RevealCardProps) {
+  const focusRef = useModalFocus()
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => focusRef.current?.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(frame)
+  }, [focusRef])
   const [settled, setSettled] = useState(false)
   const [chaining, setChaining] = useState(false)
   const settledRef = useRef(false)
@@ -150,6 +156,8 @@ export default function RevealCard({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.repeat || !['Enter', ' ', 'Escape'].includes(event.key)) return
+      if (event.key !== 'Escape' && event.target instanceof Element && event.target.closest('button, a, input, summary')) return
       event.preventDefault()
       event.stopImmediatePropagation()
       advance()
@@ -187,6 +195,8 @@ export default function RevealCard({
         .filter(Boolean)
         .join(' ')}
       data-pond-ui
+      ref={focusRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Caught a ${variant.label === 'Normal' ? '' : `${variant.label} `}${species.name}`}

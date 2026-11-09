@@ -2502,7 +2502,7 @@ form > .account-switch {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #0d1726;
+  background: #38592c;
   color: #f7efdc;
   touch-action: none;
   user-select: none;
@@ -2513,8 +2513,9 @@ form > .account-switch {
   position: absolute;
   left: 24%;
   bottom: clamp(80px, 13vh, 150px);
-  width: max(100%, calc(100dvh * 1.431126));
-  height: max(100%, calc(100dvw * 0.698742));
+  width: max(100%, calc(100dvh * var(--pond-aspect, 1.480475)));
+  height: auto;
+  aspect-ratio: var(--pond-aspect, 1.480475);
   transform: translateX(-24%);
   pointer-events: none;
 }
@@ -2523,6 +2524,7 @@ form > .account-switch {
 @media (max-aspect-ratio: 1 / 1) {
   .pond-fishing .pond-world {
     bottom: clamp(150px, 25dvh, 240px);
+    width: max(100%, calc(75dvh * var(--pond-aspect, 1.480475)));
   }
 
 }
@@ -2530,11 +2532,11 @@ form > .account-switch {
 /* Grass continues below the painting on screens taller than its crop. */
 .pond-world::after {
   position: absolute;
-  top: calc(100% - 2px);
+  top: calc(100% - 5vh);
   right: 0;
   left: 0;
-  height: 60vh;
-  background: #6c972f;
+  height: 65vh;
+  background: linear-gradient(180deg, transparent, #6c972f 5vh);
   content: '';
 }
 
@@ -2557,6 +2559,21 @@ form > .account-switch {
   animation: pond-lily-bob 7s ease-in-out infinite;
   pointer-events: none;
 }
+
+.pond-sparkles {
+  position: absolute;
+  z-index: 1;
+  object-fit: contain;
+  pointer-events: none;
+  animation: pond-garden-twinkle 10s ease-in-out infinite;
+}
+
+@keyframes pond-garden-twinkle {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+.pond-world.is-still .pond-sparkles { animation: none; opacity: 0.75; }
 
 .pond-shadow {
   position: absolute;
@@ -3798,6 +3815,7 @@ form > .account-switch {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pond-sparkles { animation: none; opacity: 0.75; }
   .pond-lily,
 .pond-shadow,
 .pond-bobber,
@@ -5532,7 +5550,7 @@ form > .account-switch {
   .minimap-you::before { animation: none; }
 }
 
-/* The moonlit pond room. */
+/* Monets Lily Pond. */
 .pond-room-loading {
   position: absolute;
   inset: 0;
@@ -5543,13 +5561,13 @@ form > .account-switch {
   justify-content: center;
   gap: 0.5em;
   background:
-    radial-gradient(ellipse 55% 45% at 50% 22%, rgb(184 206 255 / 14%), transparent 72%),
-    #101827;
+    radial-gradient(ellipse 55% 45% at 50% 22%, rgb(245 223 168 / 18%), transparent 72%),
+    #38592c;
   color: #e8e2cf;
   text-align: center;
 }
 
-.pond-room-loading-moon {
+.pond-room-loading-flower {
   color: #f3e6bd;
   font-size: clamp(44px, 12vw, 72px);
   line-height: 1;
@@ -5565,7 +5583,7 @@ form > .account-switch {
 
 .pond-room-loading-note {
   margin: 0;
-  color: #b9c4d6;
+  color: #d6e2bd;
   font-family: var(--font-button);
   font-size: clamp(12px, calc(var(--screen-width, 390px) * 0.036), 16px);
   letter-spacing: 0.1em;
@@ -5611,7 +5629,7 @@ form > .account-switch {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pond-room-loading-moon { animation: none; }
+  .pond-room-loading-flower { animation: none; }
 }
 
 /* Variant identity on the reveal card. The fish is masked to its outline, so glows

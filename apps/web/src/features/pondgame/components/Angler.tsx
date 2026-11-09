@@ -36,17 +36,23 @@ export function currentLook(): Look {
  * The visitor at the water's edge, drawn with their own rig so a cat or an otter fishes as itself.
  * `box` is the standing figure's box as fractions of the world; the paw is reported in world fractions.
  */
-export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boolean; onPaw(paw: { x: number; y: number } | null): void }) {
+export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boolean; onPaw(paw: { x: number; y: number } | null | undefined): void }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [frame, setFrame] = useState<Box | null>(null)
   const [failed, setFailed] = useState(false)
   const onPawRef = useRef(onPaw)
   onPawRef.current = onPaw
+  const boxRef = useRef(box)
+  boxRef.current = box
+  const reducedRef = useRef(reduced)
+  reducedRef.current = reduced
 
   useEffect(() => {
     const host = hostRef.current
     const world = host?.parentElement
     if (!host || !world) return
+    onPawRef.current(undefined)
+    setFrame(null)
     // A fresh canvas per mount: a disposed rig loses its WebGL context with it.
     const canvas = document.createElement('canvas')
     host.append(canvas)
@@ -62,29 +68,38 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
       if (disposed) { loaded.dispose(); return }
       loaded.setCostume(look.costume, look.bow)
       rig = loaded
-      // The rig's standing height fills the sprite's box, feet on its bottom edge.
-      const height = box.height * loaded.spriteScale
-      const worldAspect = world.clientWidth / Math.max(1, world.clientHeight)
-      const width = (height * loaded.aspect) / worldAspect
-      setFrame({ left: box.left + box.width / 2 - width / 2, top: box.top + box.height - height * loaded.feet, width, height })
       let last = performance.now()
       let reported = 0
+      let lastFrame = ''
       const draw = (now: number) => {
         if (!rig || disposed) return
         const dt = Math.min(0.05, (now - last) / 1000)
         last = now
+        // Resizing changes placement, not the rig's lifetime or WebGL context.
+        const box = boxRef.current
+        const height = box.height * rig.spriteScale
+        const worldAspect = world.clientWidth / Math.max(1, world.clientHeight)
+        const width = height * rig.aspect / worldAspect
+        const frame = { left: box.left + box.width / 2 - width / 2, top: box.top + box.height - height * rig.feet, width, height }
+        const key = `${frame.left},${frame.top},${frame.width},${frame.height}`
+        if (key !== lastFrame) {
+          lastFrame = key
+          onPawRef.current(undefined)
+          setFrame(frame)
+        }
         const px = canvas.clientHeight
-        if (px > 0) {
-          rig.render(motion, reduced ? 0 : dt, px, window.devicePixelRatio)
+        const c = canvas.getBoundingClientRect()
+        const w = world.getBoundingClientRect()
+        const placed = w.width > 0 && w.height > 0 && Math.abs(c.height - frame.height * w.height) < 1 && Math.abs(c.width - frame.width * w.width) < 1
+        if (px > 0 && placed) {
+          rig.render(motion, reducedRef.current ? 0 : dt, px, window.devicePixelRatio)
           // The paw breathes a little; report it now and then, not every frame.
           if (now - reported > 250 && rig.projectAttachment(GRIP[look.kind], pose)) {
             reported = now
-            const c = canvas.getBoundingClientRect()
-            const w = world.getBoundingClientRect()
             onPawRef.current({ x: (c.left + pose.x - w.left) / w.width, y: (c.top + pose.y - w.top) / w.height })
           }
         }
-        if (!reduced) raf = requestAnimationFrame(draw)
+        if (!reducedRef.current || !placed) raf = requestAnimationFrame(draw)
         else timer = window.setTimeout(() => { raf = requestAnimationFrame(draw) }, 500)
       }
       raf = requestAnimationFrame(draw)
@@ -101,7 +116,7 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
       rig?.dispose()
       canvas.remove()
     }
-  }, [box.left, box.top, box.width, box.height, reduced])
+  }, [])
 
   return (
     <>

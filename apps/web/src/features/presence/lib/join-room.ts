@@ -40,11 +40,12 @@ interface Options {
 }
 
 export interface Room {
-  update(dt: number, camera: THREE.OrthographicCamera, viewport: Viewport): void
+  update(dt: number, camera: THREE.OrthographicCamera, viewport: Viewport, draw?: boolean): void
   /** Ask the room for an item, or let it go. */
   want(item: Item, on: boolean): void
   /** Someone else in the room holds it. */
   taken(item: Item): boolean
+  owns(item: Item): boolean
   /** Items other visitors hold. */
   heldByOthers(): Item[]
   dispose(): void
@@ -101,7 +102,7 @@ export function joinRoom({ room, key, host, character, traversal, pose = () => S
   })
   const onKey = (event: KeyboardEvent) => {
     const target = event.target instanceof Element ? event.target : null
-    if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
+    if (event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
     if (target?.closest('input, textarea, select, button, [contenteditable="true"]') || document.querySelector('[aria-modal="true"]')) return
     if (event.key !== 'Enter' || presence.status !== 'open') return
     event.preventDefault()
@@ -110,16 +111,17 @@ export function joinRoom({ room, key, host, character, traversal, pose = () => S
   window.addEventListener('keydown', onKey)
 
   return {
-    update(dt, camera, viewport) {
+    update(dt, camera, viewport, draw = true) {
       if (Math.abs(traversal.walkVelocity) > 0.12) facing = traversal.walkVelocity > 0 ? 1 : -1
       presence.tick()
       setInRoom(presence.status === 'open')
       const visitors = presence.visitors()
       setPeople(visitors)
-      remote.update(dt, visitors, traversal.x, camera, viewport, scenery())
+      if (draw) remote.update(dt, visitors, traversal.x, camera, viewport, scenery())
     },
     want: presence.want,
     taken: presence.blocked,
+    owns: presence.owns,
     heldByOthers: presence.heldByOthers,
     dispose() {
       setInRoom(false)

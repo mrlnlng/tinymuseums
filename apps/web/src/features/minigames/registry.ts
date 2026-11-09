@@ -1,3 +1,5 @@
+import { POND_NAME } from '@/features/pondroom/lib/identity'
+
 export type MinigameId = 'sketch' | 'color' | 'pond'
 
 export interface Minigame {
@@ -22,8 +24,8 @@ export const MINIGAMES = [
   },
   {
     id: 'pond',
-    title: 'Pond',
-    blurb: 'Head out to the moonlit pond.',
+    title: POND_NAME,
+    blurb: 'Follow the garden path to the lily pond.',
     icon: '🎣',
   },
 ] as const satisfies readonly Minigame[]

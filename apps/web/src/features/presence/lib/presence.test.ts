@@ -359,3 +359,28 @@ test('reconnect fetches a fresh ticket, so a new name shows', async () => {
   assert.equal(a.tickets(), 2)
   assert.equal(a.presence.status, 'open')
 })
+
+test('a fishing spot is owned only after its claim is acknowledged, and cancellation releases it', async () => {
+  const rooms = new MemoryRooms()
+  const clock = new Clock()
+  const replies: (() => void)[] = []
+  const connect: Connect = (url, handlers) => rooms.connect(url, {
+    ...handlers,
+    message(text) {
+      if (JSON.parse(text).t === 'held') replies.push(() => handlers.message(text))
+      else handlers.message(text)
+    },
+  })
+  const a = visitor(rooms, clock, 'pidAAAA00990', { connect })
+  await clock.advance(300, 16, [a.presence.tick])
+  assert.equal(a.presence.status, 'open')
+  assert.equal(a.presence.owns('pond-spot-1'), false)
+  a.presence.want('pond-spot-1', true)
+  assert.equal(a.presence.owns('pond-spot-1'), false)
+  replies.shift()!()
+  assert.equal(a.presence.owns('pond-spot-1'), true)
+  a.presence.want('pond-spot-1', false)
+  replies.shift()!()
+  assert.equal(a.presence.owns('pond-spot-1'), false)
+  a.presence.dispose()
+})

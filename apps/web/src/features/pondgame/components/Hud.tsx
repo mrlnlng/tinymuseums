@@ -46,14 +46,14 @@ export default function Hud({
   return (
     <header className="pond-hud" data-pond-ui>
       <div className="pond-hud-left">
-        <div
+        {isMember ? <div
           className={isMember ? 'pond-pearls' : 'pond-pearls is-guest'}
           aria-label={isMember && pearls !== null ? `${pearls} pearls` : 'Pearls'}
           title={isMember ? 'Pearls' : 'Sign in to collect pearls'}
         >
           <PearlIcon size={18} />
           <span className="pond-pearls-count">{isMember ? (pearls !== null ? pearls.toLocaleString() : '…') : 'Sign in'}</span>
-        </div>
+        </div> : null}
         <div className="pond-chips" aria-live="polite">
           {streakLost ? (
             <span className="pond-chip is-streak is-lost" aria-label="Streak lost">

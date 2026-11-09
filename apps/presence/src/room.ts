@@ -85,8 +85,11 @@ export class Room extends DurableObject<Env> {
     if (outcome.close) this.close(socket, outcome.attachment, outcome.close.code, outcome.close.reason)
   }
 
-  async webSocketClose(socket: WebSocket): Promise<void> {
-    this.close(socket, attachmentOf(socket))
+  async webSocketClose(socket: WebSocket, code = 1000, reason = ''): Promise<void> {
+    // Complete the close handshake so browsers can reconnect without waiting for
+    // their CLOSING timeout. Reserved failure codes cannot be sent on the wire.
+    const reply = code >= 1000 && code <= 4999 && ![1004, 1005, 1006, 1015].includes(code) ? code : 1000
+    this.close(socket, attachmentOf(socket), reply, reason)
   }
 
   async webSocketError(socket: WebSocket): Promise<void> {

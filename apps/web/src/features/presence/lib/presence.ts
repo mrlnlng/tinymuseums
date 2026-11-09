@@ -122,6 +122,8 @@ export interface Presence {
   want(item: Item, on: boolean): void
   /** Someone else holds it. Alone, offline or walking alone, nothing is ever blocked. */
   blocked(item: Item): boolean
+  /** True after the server confirms our claim; offline play remains available. */
+  owns(item: Item): boolean
   /** Items held by other visitors in the room. */
   heldByOthers(): Item[]
   /** A fresh ticket, so a changed name reaches the others now. */
@@ -375,6 +377,10 @@ export function createPresence(options: PresenceOptions): Presence {
     blocked(item) {
       const holder = status === 'open' ? holds.get(item) : undefined
       return holder !== undefined && holder !== pid
+    },
+
+    owns(item) {
+      return status !== 'open' || holds.get(item) === pid
     },
 
     heldByOthers() {

@@ -90,6 +90,8 @@ export interface RoomContents {
   presence: { key: string; ticketKey?: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
   /** Extra gate on top of the stage's own (fonts, character rig, minimum loading time). */
   isReady?(now: number): boolean
+  /** An opaque activity covers this scene; keep presence alive without drawing the hidden world. */
+  isCovered?(): boolean
   /** Runs once the room is shown, before the visitor walks in. Returning true means the room placed the visitor itself. */
   onShown?(): boolean | void
   /** Runs after the camera syncs and before the character updates, every frame. */

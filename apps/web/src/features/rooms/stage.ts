@@ -543,6 +543,12 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         rig.camera.position.x = boundedCameraX(rig.camera.position.x, rig.viewWidth, bounds.minX, bounds.maxX())
         rig.camera.updateMatrixWorld()
       }
+      if (entry.contents.isCovered?.()) {
+        entry.presence?.update(dt, rig.camera, viewport, false)
+        for (const part of partsOf(entry)) part.update(frame)
+        sound().setWalking(false)
+        return
+      }
       if (traversal.takeJump()) {
         sound().prepare('jump')
         sound().play('jump')

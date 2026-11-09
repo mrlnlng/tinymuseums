@@ -1,11 +1,13 @@
 import * as THREE from 'three'
 import { assetUrl } from '@/shared/lib/assets'
 import { POND_LANDMARKS } from './landmarks'
+import layout from '../../../../public/assets/pond/layout.json'
 
-/** The pond's art: the night garden at full resolution, its lily pad, and crisp woodland extensions. */
+/** The daytime garden, its aligned overlays, and crisp woodland extensions. */
 export interface PondArt {
   scene: THREE.Texture
   lily: THREE.Texture
+  sparkles: THREE.Texture
   landmarks: Record<string, THREE.Texture>
   /** The woodland past the painting: original foliage and grass reused at full resolution. */
   edges: { left: THREE.Texture; right: THREE.Texture }
@@ -14,16 +16,16 @@ export interface PondArt {
   grass: string
 }
 
-const FALLBACK_SKY = '#141d31'
+const FALLBACK_SKY = '#38592c'
 const FALLBACK_GRASS = '#6c972f'
-const NIGHT = '13, 20, 46'
+const FOREST = '32, 69, 35'
 /** A unit of woodland width, as a fraction of the original painting. */
 export const EDGE_BAND = 0.19
 /** How many band widths the woodland covers, and how far it reaches back over the painting. */
 export const EDGE_BANDS = 5
 export const EDGE_OVERLAP = 0.85
 
-function loadTexture(name: 'pond/scene' | 'pond/lily', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
+function loadTexture(name: 'pond/scene' | 'pond/lily' | 'pond/sparkles', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
   return new THREE.TextureLoader()
     .loadAsync(assetUrl(name, { density: 3 }))
     .then((texture) => {
@@ -74,7 +76,7 @@ function colorAt(texture: THREE.Texture, v: number, fallback: string): string {
  */
 function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: string): THREE.Texture {
   const image = imageOf(texture)
-  const { width, height } = image ? sizeOf(image) : { width: 2388, height: 1668 }
+  const { width, height } = image ? sizeOf(image) : layout.scene
   const forestPx = Math.round(width * EDGE_BAND * EDGE_BANDS)
   const overlapPx = Math.round(width * EDGE_BAND * EDGE_OVERLAP)
   const canvas = document.createElement('canvas')
@@ -95,10 +97,11 @@ function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: s
     foliage.height = height
     const plants = foliage.getContext('2d')
     if (plants) {
-      plants.drawImage(image, 0, 0, width, height * 0.69,
-        0, 0, canvas.width, height * 0.69)
+      const foliageBottom = Math.min(...layout.water.map(([, y]) => y)) - 0.02
+      plants.drawImage(image, 0, 0, width, height * foliageBottom,
+        0, 0, canvas.width, height * foliageBottom)
       plants.globalCompositeOperation = 'destination-in'
-      const foot = plants.createLinearGradient(0, height * 0.61, 0, height * 0.69)
+      const foot = plants.createLinearGradient(0, height * (foliageBottom - 0.08), 0, height * foliageBottom)
       foot.addColorStop(0, '#000')
       foot.addColorStop(1, 'transparent')
       plants.fillStyle = foot
@@ -124,15 +127,15 @@ function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: s
     }
   }
 
-  // The distant boundary meets the room's night fill; the walkable forest stays bright.
+  // The distant boundary meets the canopy's green shade; the walkable forest stays bright.
   const inner = side === 'left' ? canvas.width : 0
   const outer = side === 'left' ? 0 : canvas.width
-  const night = ink.createLinearGradient(inner, 0, outer, 0)
-  night.addColorStop(0, `rgba(${NIGHT}, 0)`)
-  night.addColorStop(0.6, `rgba(${NIGHT}, 0)`)
-  night.addColorStop(0.82, `rgba(${NIGHT}, 0.18)`)
-  night.addColorStop(1, `rgba(${NIGHT}, 1)`)
-  ink.fillStyle = night
+  const shade = ink.createLinearGradient(inner, 0, outer, 0)
+  shade.addColorStop(0, `rgba(${FOREST}, 0)`)
+  shade.addColorStop(0.6, `rgba(${FOREST}, 0)`)
+  shade.addColorStop(0.82, `rgba(${FOREST}, 0.18)`)
+  shade.addColorStop(1, `rgba(${FOREST}, 1)`)
+  ink.fillStyle = shade
   ink.fillRect(0, 0, canvas.width, height)
 
   const result = new THREE.CanvasTexture(canvas)
@@ -146,6 +149,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
   const loads = [
     loadTexture('pond/scene', renderer),
     loadTexture('pond/lily', renderer),
+    loadTexture('pond/sparkles', renderer),
     ...POND_LANDMARKS.map(async (landmark) => {
       const texture = await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image))
       texture.colorSpace = THREE.SRGBColorSpace
@@ -160,12 +164,13 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     throw failed.reason
   }
   const textures = results.map((result) => (result as PromiseFulfilledResult<THREE.Texture>).value)
-  const [scene, lily] = textures
+  const [scene, lily, sparkles] = textures
   const grass = colorAt(scene, 0.995, FALLBACK_GRASS)
   return {
     scene,
     lily,
-    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 2]])),
+    sparkles,
+    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 3]])),
     edges: { left: edgeTexture(scene, 'left', grass), right: edgeTexture(scene, 'right', grass) },
     sky: colorAt(scene, 0.005, FALLBACK_SKY),
     grass,
@@ -176,6 +181,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
 export function disposePondArt(art: PondArt): void {
   art.scene.dispose()
   art.lily.dispose()
+  art.sparkles.dispose()
   art.edges.left.dispose()
   art.edges.right.dispose()
   for (const texture of Object.values(art.landmarks)) texture.dispose()

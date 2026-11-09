@@ -30,10 +30,29 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `coming-soon.png` | `frame.png` over a drawn curtain with a blank pinned note (the hall writes "Coming soon" on it), same canvas as `frame.png`, quantised |
 | `atelier/ribbon-blue.png` | `atelier/ribbon.png` with its pinks turned to the blue of the bow in `bruce_mock_scene.png` |
 | `atelier/curtain-swag.png`, `atelier/curtain-drape.png` | `Welcome_to_my10.png` and `Welcome_to_my12.png`, stray specks removed, trimmed |
-| `pond/scene.png` | `fishing_scene/Untitled_Artwork-122.png`, full canvas, 1600px wide, quantised |
-| `pond/lily.png`, `pond/splash.png` | `fishing_scene/Untitled_Artwork-123.png` and `-124.png`, white removed with colour-to-alpha, trimmed to the art, quantised |
+| `pond/scene.png` | `2026-11-08/fishing scene/Untitled_Artwork-129.png`, native 2995×2023 canvas |
+| `pond/sparkles.png`, `pond/splash.png`, `pond/lily.png` | `Untitled_Artwork-130.png`, `-131.png`, `-132.png`, alpha bounds trimmed; native transparency preserved |
 | `pond/fish-star-snapper.png` … `pond/fish-blobfish.png` | `fish_caught/Untitled_Artwork-125.png` … `-128.png`, trimmed, max 600px long side, quantised |
-| `pond/layout.json` | lily and splash boxes as fractions of the 2388×1668 scene |
+| `pond/layout.json` | source canvas dimensions, normalized overlay boxes, traced water and walking shoreline for the new garden |
+
+## Monets Lily Pond (2026-11-08)
+
+The four source images in `/home/shan/Downloads/mocks/2026-11-08/fishing scene`
+are aligned layers on one canvas. The scene replaces the night garden; the
+sparkles are ambient foliage highlights, the splash is an event effect for casts
+and bites, and the lily is a floating decoration at its authored position.
+The room and fishing view share the same scene, lily, sparkle placement and water
+geometry. Both retain the existing fishing rules and woodland landmarks.
+
+Reimport this drop and rebuild its content-hashed 2×/3× WebPs from the repo root:
+
+```bash
+node apps/web/tooling/import-fishing-assets.mjs '/home/shan/Downloads/mocks/2026-11-08/fishing scene'
+```
+
+The importer updates only these four manifest entries. It retains source resolution
+and transparency, records each overlay's original bounds before trimming, and
+stores the new shoreline in `pond/layout.json` so shadows and walking follow the art.
 
 ## Bruce's collection refresh (2026-11-08)
 

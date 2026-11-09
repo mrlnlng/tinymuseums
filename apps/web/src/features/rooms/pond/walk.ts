@@ -1,5 +1,6 @@
 import { findPath, nearestInside, slide, type FloorPoint, type WalkArea } from '../floor.ts'
 import { depthAtLift, scaleAt } from './depth.ts'
+import layout from '../../../../public/assets/pond/layout.json' with { type: 'json' }
 
 /**
  * The ground is walked in floor units: x across, and depth stretched to the length of grass
@@ -9,14 +10,10 @@ export const DEPTH_SPAN = 2.6
 /** The visitor stays in front of the props, which stand at depth 1. */
 export const MAX_DEPTH = 0.9
 
-const PICTURE = { height: 8, feet: 0.895 }
+const PICTURE = { height: 8, feet: layout.scene.feet }
 
 /** The pond and its mossy rim, traced from the painting as fractions of its width and height. */
-const POND_SHORE: readonly [number, number][] = [
-  [0.775, 0.69], [0.79, 0.73], [0.785, 0.76], [0.795, 0.79], [0.76, 0.81],
-  [0.7, 0.83], [0.6, 0.855], [0.5, 0.875], [0.4, 0.872], [0.3, 0.862], [0.25, 0.835], [0.225, 0.8],
-  [0.215, 0.775], [0.2, 0.75], [0.215, 0.73], [0.26, 0.69],
-]
+const POND_SHORE = layout.shore
 const SHORE_MARGIN = { x: 0.22, depth: 0.025 }
 
 export const toFloor = (x: number, depth: number): FloorPoint => ({ x, d: depth * DEPTH_SPAN })
@@ -25,11 +22,24 @@ export const depthOf = (p: FloorPoint): number => p.d / DEPTH_SPAN
 /** The grass from the bank back to the treeline, with the pond cut out of it and the gate's hedge closed off. */
 export function pondFloor(sceneWidth: number, minX: number, maxX: number, hedge: number): WalkArea {
   const centre = 0.495 * sceneWidth
-  const shore = POND_SHORE.map(([fx, fy]) => {
+  const traced = POND_SHORE.map(([fx, fy]) => {
     const x = fx * sceneWidth
     const depth = depthAtLift((PICTURE.feet - fy) * PICTURE.height) - SHORE_MARGIN.depth
-    return toFloor(x + Math.sign(x - centre) * SHORE_MARGIN.x, Math.min(MAX_DEPTH, Math.max(0.02, depth)))
+    return toFloor(x + Math.sign(x - centre) * SHORE_MARGIN.x, Math.max(0.02, depth))
   })
+  // Intersect the shoreline with the treeline. Clamping vertices alone can move
+  // a sloping bank sideways and accidentally leave a walkable triangle in the water.
+  const shore: FloorPoint[] = []
+  const far = MAX_DEPTH * DEPTH_SPAN
+  for (let i = 0; i < traced.length; i++) {
+    const point = traced[i]
+    const previous = traced[i - 1]
+    if (previous && (previous.d > far) !== (point.d > far)) {
+      const t = (far - previous.d) / (point.d - previous.d)
+      shore.push({ x: previous.x + (point.x - previous.x) * t, d: far })
+    }
+    if (point.d <= far) shore.push(point)
+  }
   // The rim's far corners reach the treeline, so the pond is a bay in the grass rather than an island.
   return {
     outline: [

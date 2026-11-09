@@ -17,18 +17,18 @@ import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
 
 /**
- * The moonlit pond is one painting, drawn 8 world units tall so a visitor (1.36 units) stands
+ * The garden is one painting, drawn 8 world units tall so a visitor (1.36 units) stands
  * at about a sixth of the bank. The pond-free edges continue into a crisp, walkable forest.
  */
-const IMAGE_WIDTH = 2388
-const IMAGE_HEIGHT = 1668
+const IMAGE_WIDTH = layout.scene.width
+const IMAGE_HEIGHT = layout.scene.height
 const SCENE_HEIGHT = 8
 export const SCENE_WIDTH = SCENE_HEIGHT * (IMAGE_WIDTH / IMAGE_HEIGHT)
 
 /** The visitor's feet line, the same as the other strips. */
 const GROUND_Y = CONFIG.character.centerY - CONFIG.character.height / 2
 /** The visitor stands on the near bank at 0.895 of the picture, just in front of the water (0.875). */
-const FEET_FRACTION_FROM_TOP = 0.895
+const FEET_FRACTION_FROM_TOP = layout.scene.feet
 const IMAGE_BOTTOM_Y = GROUND_Y - (1 - FEET_FRACTION_FROM_TOP) * SCENE_HEIGHT
 const IMAGE_CENTER_Y = IMAGE_BOTTOM_Y + SCENE_HEIGHT / 2
 const yAt = (fractionFromTop: number) => IMAGE_BOTTOM_Y + (1 - fractionFromTop) * SCENE_HEIGHT
@@ -76,7 +76,7 @@ export const POND_SPOTS = [0.3, 0.5, 0.68].map((fraction) => ({
   x: fraction * SCENE_WIDTH,
   /** Offset into the water so the visitor never covers their own fishing ripple. */
   waterX: fraction * SCENE_WIDTH + 0.75,
-  waterY: yAt(0.715),
+  waterY: yAt(layout.rippleY),
 }))
 
 export type PondPanelKind = 'leaderboard' | 'bounties' | 'fishmonger' | 'fishdex'
@@ -86,6 +86,8 @@ export interface PondCallbacks {
   onFish(spot: number): void
   /** A pondside object asked for a panel. */
   onPanel(kind: PondPanelKind): void
+  /** A spot was taken while this visitor was disconnected. */
+  onSpotLost?(): void
 }
 
 /** The React page calls this when the fishing view closes, so the room can let the spot go. */
@@ -151,15 +153,15 @@ function groundFill(grass: string, reach: number): THREE.Texture {
     const at = (x: number) => (x + reach) / total
     context.fillStyle = grass
     context.fillRect(0, 0, canvas.width, 1)
-    const night = context.createLinearGradient(0, 0, canvas.width, 0)
+    const shade = context.createLinearGradient(0, 0, canvas.width, 0)
     const forestEnd = SCENE_WIDTH * EDGE_BAND * EDGE_BANDS
-    night.addColorStop(0, 'rgba(13, 20, 46, 1)')
-    night.addColorStop(at(-forestEnd), 'rgba(13, 20, 46, 1)')
-    night.addColorStop(at(-forestEnd * 0.6), 'rgba(13, 20, 46, 0)')
-    night.addColorStop(at(SCENE_WIDTH + forestEnd * 0.6), 'rgba(13, 20, 46, 0)')
-    night.addColorStop(at(SCENE_WIDTH + forestEnd), 'rgba(13, 20, 46, 1)')
-    night.addColorStop(1, 'rgba(13, 20, 46, 1)')
-    context.fillStyle = night
+    shade.addColorStop(0, 'rgba(32, 69, 35, 1)')
+    shade.addColorStop(at(-forestEnd), 'rgba(32, 69, 35, 1)')
+    shade.addColorStop(at(-forestEnd * 0.6), 'rgba(32, 69, 35, 0)')
+    shade.addColorStop(at(SCENE_WIDTH + forestEnd * 0.6), 'rgba(32, 69, 35, 0)')
+    shade.addColorStop(at(SCENE_WIDTH + forestEnd), 'rgba(32, 69, 35, 1)')
+    shade.addColorStop(1, 'rgba(32, 69, 35, 1)')
+    context.fillStyle = shade
     context.fillRect(0, 0, canvas.width, 1)
   }
   const texture = new THREE.CanvasTexture(canvas)
@@ -184,7 +186,7 @@ export function createPondRoom({
   return {
     id: 'pond',
     className: 'pond',
-    clearColor: '#0d142e',
+    clearColor: '#38592c',
     minLoadingMs: 900,
     doors: {
       hall: { x: EXIT_X, clearX: ARRIVE_X, label: 'To the museum' },
@@ -209,7 +211,7 @@ export function createPondRoom({
       add({
         width: SCENE_WIDTH + reach * 2,
         height: 40,
-        material: new THREE.MeshBasicMaterial({ color: '#0d142e' }),
+        material: new THREE.MeshBasicMaterial({ color: art.grass }),
         x: SCENE_WIDTH / 2,
         y: IMAGE_CENTER_Y,
         z: -0.98,
@@ -263,6 +265,15 @@ export function createPondRoom({
         z: -0.35,
       })
       const pathTextures: THREE.Texture[] = []
+      const sparkleMaterial = new THREE.MeshBasicMaterial({ map: art.sparkles, transparent: true, depthWrite: false, opacity: 0.75 })
+      add({
+        width: layout.sparkles.w * SCENE_WIDTH,
+        height: layout.sparkles.h * SCENE_HEIGHT,
+        material: sparkleMaterial,
+        x: (layout.sparkles.x + layout.sparkles.w / 2) * SCENE_WIDTH,
+        y: yAt(layout.sparkles.y + layout.sparkles.h / 2),
+        z: -0.34,
+      })
       for (const landmark of POND_LANDMARKS) {
         if (!landmark.path) continue
         const sprite = pathSprite(landmark.path, art.grass)
@@ -351,6 +362,7 @@ export function createPondRoom({
       let presence: Room | null = null
       let activeSpot: number | null = null
       let pendingSpot: number | null = null
+      let claimingSpot: number | null = null
       let current: Target | null = null
       const walker = new Walker(FLOOR, ctx.traversal.x)
       const held = new Map<string, [number, number]>()
@@ -373,7 +385,9 @@ export function createPondRoom({
 
       function releaseSpot(): void {
         if (activeSpot !== null) presence?.want(itemFor(activeSpot), false)
+        if (claimingSpot !== null) presence?.want(itemFor(claimingSpot), false)
         activeSpot = null
+        claimingSpot = null
         pendingSpot = null
         ctx.traversal.hold(null)
       }
@@ -385,6 +399,11 @@ export function createPondRoom({
       /** Walk across the grass to a point, then do whatever arriving there means. */
       function walkTo(x: number, depth: number, then: (() => void) | null = null, to: PondLandmark | null = null, via = [] as ReturnType<typeof toFloor>[]): void {
         if (busy()) return
+        if (claimingSpot !== null) {
+          presence?.want(itemFor(claimingSpot), false)
+          claimingSpot = null
+          ctx.traversal.hold(null)
+        }
         pendingSpot = null
         walker.walkTo(x, depth, via)
         arrival = then
@@ -471,12 +490,10 @@ export function createPondRoom({
         if (!spotFree(index)) return
         // Step onto the spot before opening the fishing view, so the visitor is visibly there.
         walkTo(POND_SPOTS[index].x, 0, () => {
-          pendingSpot = null
-          if (!spotFree(index) || busy()) return
+          if (!spotFree(index) || busy()) { pendingSpot = null; return }
           presence?.want(itemFor(index), true)
-          activeSpot = index
+          claimingSpot = index
           ctx.traversal.hold(POND_SPOTS[index].x, true)
-          callbacks.onFish(index)
         })
         pendingSpot = index
       }
@@ -551,6 +568,7 @@ export function createPondRoom({
 
       return {
         floor: { kind: 'strip', minX: MIN_X, maxX: () => MAX_X },
+        isCovered: () => activeSpot !== null,
         cameraBounds: {
           minX: VIEW_LEFT,
           maxX: () => VIEW_RIGHT,
@@ -568,6 +586,7 @@ export function createPondRoom({
         },
 
         beforeCharacterUpdate(frame) {
+          sparkleMaterial.opacity = reducedMotion ? 0.75 : 0.7 + 0.2 * Math.sin(frame.now / 1700)
           move(frame.dt, frame.quiet)
           const viewWidth = frame.camera.right - frame.camera.left
           const wide = viewWidth > 7.5
@@ -638,6 +657,24 @@ export function createPondRoom({
         },
 
         update(frame) {
+          if (activeSpot !== null && !spotFree(activeSpot)) {
+            releaseSpot()
+            callbacks.onSpotLost?.()
+          }
+          if (claimingSpot !== null) {
+            const index = claimingSpot
+            if (!spotFree(index)) {
+              presence?.want(itemFor(index), false)
+              claimingSpot = null
+              pendingSpot = null
+              ctx.traversal.hold(null)
+            } else if (!presence || presence.owns(itemFor(index))) {
+              claimingSpot = null
+              pendingSpot = null
+              activeSpot = index
+              callbacks.onFish(index)
+            }
+          }
           const settled = Math.abs(walker.stride) < 0.4 && !walker.walking
           const ready = !frame.quiet && activeSpot === null && pendingSpot === null
           current = ready && settled ? nearest() : null

@@ -14,8 +14,8 @@ import {
 } from '../lib/machine.ts'
 import type { ShadowSize } from '../lib/tables.ts'
 
-/** SVG units; the world box has the scene's aspect ratio, so one unit is the same size both ways. */
-const STAGE = { width: 2388, height: 1668 }
+/** Stable rod drawing units, with the new painting's aspect ratio. */
+const STAGE = { width: 1668 * layout.scene.width / layout.scene.height, height: 1668 }
 const SPRITE = { width: 380, height: 552 }
 /** The raised right paw in bunny-right.png, measured from the sprite. */
 const PAW_IN_SPRITE = { x: 350, y: 238 }
@@ -37,8 +37,7 @@ const POSE: Record<'wide' | 'narrow', Pose> = {
 }
 
 /** The water's outline, traced from the scene and inset, so shadows never swim onto the grass. */
-const WATER_CLIP =
-  'polygon(21.7% 77.5%, 24.7% 76.6%, 27.7% 75.9%, 30.7% 72.9%, 33.7% 72.5%, 36.7% 72.1%, 39.7% 72%, 42.6% 72.1%, 45.5% 72%, 48.4% 72%, 51.1% 71.8%, 54% 71.7%, 56.9% 71.4%, 59.8% 71.3%, 62.8% 71.4%, 65.8% 71.4%, 68.8% 71.5%, 71.8% 72%, 74.8% 72.6%, 77.8% 78.2%, 76.3% 81.2%, 73.3% 84%, 70.3% 84.7%, 67.3% 85.1%, 64.3% 85.5%, 61.3% 85.9%, 58.3% 86.3%, 55.4% 86.4%, 52.6% 86.5%, 49.7% 86.7%, 46.9% 86.7%, 44.1% 86.8%, 41.1% 86.7%, 38.2% 86.8%, 35.2% 86.7%, 32.2% 86.2%, 29.2% 85.8%, 26.2% 85.2%, 23.2% 82.4%)'
+const WATER_CLIP = `polygon(${layout.water.map(([x, y]) => `${x * 100}% ${y * 100}%`).join(', ')})`
 
 const LILY_STYLE: CSSProperties = {
   left: `${layout.lily.x * 100}%`,
@@ -232,7 +231,7 @@ export default function Water({
 }: WaterProps) {
   const pose = POSE[narrow ? 'narrow' : 'wide']
   const box = bunnyBox(pose)
-  const [rigPaw, setRigPaw] = useState<{ x: number; y: number } | null>(null)
+  const [rigPaw, setRigPaw] = useState<{ x: number; y: number } | null | undefined>(undefined)
   const paw = rigPaw ? { x: rigPaw.x * STAGE.width, y: rigPaw.y * STAGE.height } : pawPoint(pose)
 
   const [ambient, setAmbient] = useState(() => makeAmbient(narrow))
@@ -325,8 +324,10 @@ export default function Water({
   const treasureVisible = Boolean(reel?.treasureRevealed && !reel.treasureGrabbed)
 
   return (
-    <div className={reduced ? 'pond-world is-still' : 'pond-world'} aria-hidden="true">
+    <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
       <img className="pond-scene" src={assetUrl('pond/scene', { density: 3 })} alt="" draggable={false} />
+      <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: 3 })} alt="" draggable={false}
+        style={{ left: `${layout.sparkles.x * 100}%`, top: `${layout.sparkles.y * 100}%`, width: `${layout.sparkles.w * 100}%`, height: `${layout.sparkles.h * 100}%` }} />
 
       <div className="pond-water" style={{ clipPath: WATER_CLIP }}>
         {ambient.map((entry) => (
@@ -404,7 +405,7 @@ export default function Water({
 
       {chest ? <span className="pond-chest-fly" /> : null}
 
-      <svg className="pond-rod" viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
+      <svg className="pond-rod" style={{ visibility: rigPaw === undefined ? 'hidden' : undefined }} viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="pond-bamboo" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#e0b077" />

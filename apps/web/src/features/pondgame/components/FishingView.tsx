@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { PondIcon } from '@/features/pondroom/lib/icons'
 import { setPondState as publishPondState } from '@/features/pondroom/lib/pond-state'
 import { usePondState } from '@/features/pondroom/lib/use-pond-state'
@@ -49,6 +50,7 @@ import Water from './Water'
 
 export interface PondGameProps {
   onClose: () => void
+  spotUnavailable?: boolean
   onCatch?: (species: FishId) => void
 }
 
@@ -91,7 +93,7 @@ function isTyping(target: EventTarget | null): boolean {
   )
 }
 
-export default function FishingView({ onClose, onCatch }: PondGameProps) {
+export default function FishingView({ onClose, onCatch, spotUnavailable = false }: PondGameProps) {
   const wallet = useWallet()
   const sound = useSound()
   const reduced = useReducedMotion() ?? false
@@ -102,15 +104,16 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
   const pondState = pondSnapshot.state
 
   const [state, setState] = useState<FishingState>(() => createFishingState())
-  const [narrow, setNarrow] = useState(false)
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-aspect-ratio: 1/1)').matches)
   const [selectedBait, setSelectedBaitState] = useState<BaitId>('worm')
-  const [easyReel, setEasyReel] = useState(false)
+  const [easyReel, setEasyReel] = useState(() => readLocal('tm:pond:easy-reel') === '1')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [reveal, setReveal] = useState<CatchView | null>(null)
   const [buying, setBuying] = useState<BaitId | null>(null)
   const [chest, setChest] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const actionRef = useRef<HTMLButtonElement>(null)
   const [lockedWager, setLockedWager] = useState<{ tier: FishTier; stake: number; multiplier: number } | null>(
     null,
   )
@@ -130,7 +133,7 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
   const guestRollRef = useRef<GuestRoll | null>(null)
   const memberCastRef = useRef(false)
   const reelSentRef = useRef(false)
-  const guestNoteShownRef = useRef(false)
+  const keyboardHoldingRef = useRef(false)
   const guestSpeciesSeenRef = useRef(new Set<FishId>())
   const guestVariantsSeenRef = useRef(new Set<string>())
   const guestBestRef = useRef(new Map<FishId, number>())
@@ -162,6 +165,25 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
   }, [sfx, sound.isEnabled, sound.volume])
 
   useEffect(() => () => sfx.dispose(), [sfx])
+
+  useEffect(() => { writeLocal('tm:pond:easy-reel', easyReel ? '1' : '0') }, [easyReel])
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => actionRef.current?.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      if (settingsOpen) setSettingsOpen(false)
+      else if (pickerOpen) setPickerOpen(false)
+      else if (!reveal) onClose()
+    }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [onClose, pickerOpen, reveal, settingsOpen])
 
   useEffect(() => {
     return () => {
@@ -210,6 +232,15 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
     ticketRef.current = { serial: castSerialRef.current, ticket: null }
     commit(createFishingState(selectedBaitRef.current))
   }, [commit])
+
+  useEffect(() => {
+    if (!spotUnavailable) return
+    // Ignore an in-flight reply after giving up a spot on reconnect.
+    castSerialRef.current += 1
+    setReveal(null)
+    setToast(null)
+    resetToIdle()
+  }, [resetToIdle, spotUnavailable])
 
   const refreshState = useCallback(async () => {
     if (!memberRef.current) return
@@ -516,10 +547,6 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
         treasure: roll.treasure,
       }),
     )
-    if (!guestNoteShownRef.current) {
-      guestNoteShownRef.current = true
-      showToast('Sign in to keep pearls & climb the leaderboard', undefined, 3400)
-    }
   }, [applyState, debug, handleCastError, lockedWager, sfx, showToast])
 
   const beginCharge = useCallback(() => {
@@ -537,6 +564,7 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
   }, [applyState, buyBait, sfx])
 
   const press = useCallback(() => {
+    if (spotUnavailable) { onClose(); return }
     const before = stateRef.current
     if (before.phase === 'reveal' || before.phase === 'landing') return
     sfx.unlock()
@@ -546,11 +574,12 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
     }
     if (before.phase === 'waiting' || before.phase === 'bite') {
       const next = tap(before)
+      if (next.phase === 'reeling') holdingRef.current = true
       if (next !== before) applyState(before, next)
       return
     }
     if (before.phase === 'reeling') holdingRef.current = true
-  }, [applyState, beginCharge, sfx])
+  }, [applyState, beginCharge, onClose, sfx, spotUnavailable])
 
   const releasePress = useCallback(() => {
     holdingRef.current = false
@@ -561,14 +590,18 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       if (stateRef.current.phase === 'reveal') return
       if (isTyping(event.target)) return
-      if (event.code !== 'Space' && event.key !== ' ') return
+      if (event.target instanceof Element && event.target.closest('summary, button:not(.pond-action), [role="dialog"] .pond-settings')) return
+      const castEnter = event.key === 'Enter' && event.target instanceof Element && event.target.closest('.pond-action')
+      if (event.code !== 'Space' && event.key !== ' ' && !castEnter) return
       if (event.repeat) return
       event.preventDefault()
+      keyboardHoldingRef.current = true
       press()
     }
     const onKeyUp = (event: KeyboardEvent) => {
-      if (event.code !== 'Space' && event.key !== ' ') return
+      if (!keyboardHoldingRef.current || (event.code !== 'Space' && event.key !== ' ' && event.key !== 'Enter')) return
       event.preventDefault()
+      keyboardHoldingRef.current = false
       releasePress()
     }
     window.addEventListener('keydown', onKeyDown)
@@ -583,6 +616,7 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
     const onUp = () => releasePress()
     const onBlur = () => {
       holdingRef.current = false
+      keyboardHoldingRef.current = false
     }
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onUp)
@@ -681,6 +715,7 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
       : null
 
   const action = (() => {
+    if (spotUnavailable) return { label: 'Back to bank', sub: 'Choose another ripple' }
     if (phase === 'idle') {
       if (mustBuy) return { label: `Buy ${selected.pack}`, sub: `${selected.cost} pearls` }
       return { label: 'Cast', sub: 'Hold to charge' }
@@ -696,6 +731,7 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
   })()
 
   const hint = (() => {
+    if (spotUnavailable) return 'Another visitor is fishing here now.'
     if (phase === 'idle') {
       if (mustBuy) return `Out of ${selected.name.toLowerCase()} — tap it to buy ${selected.pack} for ${selected.cost} pearls`
       return 'Hold to charge, let go in the gold zone'
@@ -775,32 +811,29 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
           onLock={lockWager}
           onCancel={() => setPickerOpen(false)}
         />
-        <p key={hint} className={state.reel?.runActive && phase === 'reeling' ? 'pond-hint is-warn' : 'pond-hint'} aria-live="polite">
-          {hint}
-        </p>
         <BaitTray
           counts={pondState?.bait ?? {}}
           selected={selectedBait}
           isMember={member}
           pearls={pondState?.pearls ?? null}
-          disabled={baitDisabled || buying !== null}
+          disabled={spotUnavailable || baitDisabled || buying !== null}
           buying={buying}
           onSelect={selectBait}
           onBuy={(bait) => void buyBait(bait)}
+          hint={hint}
+          warning={Boolean(state.reel?.runActive && phase === 'reeling')}
+          notice={toast}
+          extras={member ? <button
+            type="button"
+            className={['pond-shot', lockedWager ? 'is-locked' : ''].filter(Boolean).join(' ')}
+            aria-expanded={pickerOpen}
+            disabled={phase !== 'idle'}
+            onClick={openWagerPicker}
+          ><PondIcon name="target" size={22} /><span>{lockedWager ? 'Change call' : 'Call your shot'}</span></button> : null}
         >
           <div className="pond-actions">
             <button
-              type="button"
-              className={['pond-shot', lockedWager ? 'is-locked' : ''].filter(Boolean).join(' ')}
-              aria-expanded={pickerOpen}
-              disabled={!member || phase !== 'idle'}
-              title={member ? 'Bet pearls on what bites next' : 'Sign in to call your shot'}
-              onClick={openWagerPicker}
-            >
-              <PondIcon name="target" size={26} />
-              <span>{lockedWager ? 'Change call' : 'Call your shot'}</span>
-            </button>
-            <button
+              ref={actionRef}
               type="button"
               className={[
                 'pond-action',
@@ -842,13 +875,6 @@ export default function FishingView({ onClose, onCatch }: PondGameProps) {
           </div>
         </BaitTray>
       </div>
-
-      {toast ? (
-        <p className="pond-toast" role="status">
-          <span>{toast.message}</span>
-          {toast.note ? <small>{toast.note}</small> : null}
-        </p>
-      ) : null}
 
       {reveal ? (
         <RevealCard

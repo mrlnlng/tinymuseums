@@ -1901,3 +1901,26 @@
   pointer-events: none;
 }
 .pond-step-mark[hidden] { display: none; }
+
+/* Fishing keeps one action in view; the bait pouch opens only when requested. */
+.pond-panel-compact .pond-panel-bar { height: auto; min-height: 32px; padding: 7px 12px; }
+.pond-panel-compact .pond-panel-instruction { color: #fff3df; font: 12px/1.35 var(--font-body); }
+.pond-panel-compact .pond-panel-bar.is-warn { background: #8f3929; }
+.pond-panel-compact .pond-panel-body { position: relative; flex-direction: row; align-items: stretch; gap: 10px; padding: 9px 10px 12px; }
+.pond-panel-compact .pond-actions { flex: 1; min-width: 0; }
+.pond-panel-compact .pond-action { min-height: 64px; }
+.pond-free-bait, .pond-bait-pouch > summary { display: flex; align-items: center; gap: 7px; min-width: 88px; padding: 5px; color: var(--ink); font: 13px var(--font-body); }
+.pond-free-bait > span:first-child, .pond-bait-pouch > summary > span:first-child { font-size: 29px; }
+.pond-free-bait small, .pond-bait-pouch small { display: block; margin-top: 4px; color: var(--ink-soft); font-size: 10px; }
+.pond-bait-pouch > summary { height: 100%; border: 1.5px solid #c8a47f; border-radius: 10px; cursor: pointer; list-style: none; }
+.pond-bait-pouch > summary::-webkit-details-marker { display: none; }
+.pond-bait-pouch > summary:focus-visible { outline: 3px solid var(--script); outline-offset: 2px; }
+.pond-bait-options { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 35; width: min(360px, calc(100vw - 48px)); max-height: calc(100dvh - 180px); overflow-y: auto; padding: 10px; border: 2px solid #855b40; border-radius: 12px; background: #fff8ea; box-shadow: 0 6px 22px #40220d44; }
+.pond-bait-options .pond-bait-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.pond-bait-options .pond-bait-tile { width: 100%; min-width: 0; }
+.pond-bait-options .pond-shot { flex-direction: row; width: 100%; min-height: 40px; margin-top: 10px; }
+@media (max-height: 500px) {
+  .pond-panel-compact .pond-panel-body { padding: 6px 8px 8px; }
+  .pond-panel-compact .pond-action { min-height: 48px; }
+  .pond-panel-compact .pond-panel-bar { min-height: 26px; padding: 4px 10px; }
+}

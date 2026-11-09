@@ -5,6 +5,7 @@ import { openAccount } from '@/features/account/lib/account'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import type { PondPanelKind } from '@/features/rooms/pond/room'
+import { POND_NAME } from './lib/identity'
 import { SHOPKEEPER_NAME } from '@/features/rooms/pond/shopkeeper'
 import { usePondState } from './lib/use-pond-state'
 import { PondIcon } from './lib/icons'
@@ -71,7 +72,7 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
       <div ref={cardRef} className={`pond-room-panel-card is-${activeKind}`}>
         <header className="pond-room-panel-header">
           <div className="pond-room-panel-heading">
-            <p className="pond-room-panel-subtitle">The Moonlit Pond</p>
+            <p className="pond-room-panel-subtitle">{POND_NAME}</p>
             <h2 id="pond-room-panel-title" className="pond-room-panel-title">{title}</h2>
             <p className="pond-room-panel-intro">{SUBTITLES[activeKind]}</p>
           </div>

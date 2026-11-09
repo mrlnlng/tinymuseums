@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { PearlIcon } from '@/features/pondroom/lib/icons'
 import { BAIT, type BaitId } from '../lib/tables.ts'
 
@@ -13,6 +13,10 @@ export interface BaitTrayProps {
   buying: BaitId | null
   onSelect: (bait: BaitId) => void
   onBuy: (bait: BaitId) => void
+  hint: string
+  warning?: boolean
+  notice?: { message: string; note?: string } | null
+  extras?: ReactNode
   /** The cast and call-your-shot buttons, which sit in the panel beside the bait. */
   children?: ReactNode
 }
@@ -26,16 +30,31 @@ export default function BaitTray({
   buying,
   onSelect,
   onBuy,
+  hint,
+  warning,
+  notice,
+  extras,
   children,
 }: BaitTrayProps) {
+  const pouchRef = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    if (disabled && pouchRef.current) pouchRef.current.open = false
+  }, [disabled])
+  const bait = BAIT.find((entry) => entry.id === selected) ?? BAIT[0]
+  const count = bait.id === 'worm' ? '∞' : String(counts[bait.id] ?? 0)
   return (
-    <section className="pond-panel" aria-label="Bait and casting">
-      <div className="pond-panel-bar">
-        <span className="pond-panel-title">Select bait</span>
-        <span className="pond-panel-note">{isMember ? 'Run out? Tap a bait to buy a pack' : 'Guests fish with worms'}</span>
+    <section className="pond-panel pond-panel-compact" aria-label="Bait and casting">
+      <div className={warning ? 'pond-panel-bar is-warn' : 'pond-panel-bar'} role="status" aria-live="polite">
+        <span className="pond-panel-instruction">{notice ? <>{notice.message}{notice.note ? ` ${notice.note}` : ''}</> : hint}</span>
       </div>
       <div className="pond-panel-body">
-        <div className="pond-bait-row" role="group" aria-label="Choose bait">
+        {isMember ? <details className="pond-bait-pouch" ref={pouchRef}>
+          <summary aria-label="Choose bait" aria-disabled={disabled} onClick={(event) => { if (disabled) event.preventDefault() }}>
+            <span aria-hidden="true">{bait.glyph}</span>
+            <span>{bait.name}<small>{count} · Bait pouch</small></span>
+          </summary>
+          <div className="pond-bait-options">
+          <div className="pond-bait-row" role="group" aria-label="Choose bait">
           {BAIT.map((bait) => {
             const locked = !isMember && bait.id !== 'worm'
             const count = bait.id === 'worm' ? Infinity : counts[bait.id] ?? 0
@@ -69,6 +88,7 @@ export default function BaitTray({
                 onClick={() => {
                   if (empty) onBuy(bait.id)
                   else onSelect(bait.id)
+                  if (pouchRef.current) pouchRef.current.open = false
                 }}
               >
                 <span className="pond-bait-glyph" aria-hidden="true">
@@ -93,7 +113,12 @@ export default function BaitTray({
               </button>
             )
           })}
-        </div>
+          </div>
+          {extras}
+          </div>
+        </details> : <div className="pond-free-bait" aria-label="Free unlimited worms">
+          <span aria-hidden="true">🪱</span><span>Worm<small>Always free</small></span>
+        </div>}
         {children}
       </div>
     </section>

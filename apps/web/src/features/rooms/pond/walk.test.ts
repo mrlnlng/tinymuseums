@@ -3,8 +3,9 @@ import { test } from 'node:test'
 import { contains } from '../floor.ts'
 import { MAX_DEPTH, Walker, pondFloor, toFloor } from './walk.ts'
 import { FOREST_GATE, POND_LANDMARKS } from './landmarks.ts'
+import layout from '../../../../public/assets/pond/layout.json' with { type: 'json' }
 
-const WIDTH = (8 * 2388) / 1668
+const WIDTH = (8 * layout.scene.width) / layout.scene.height
 const area = pondFloor(WIDTH, FOREST_GATE.x, 13, FOREST_GATE.x + 1.25)
 
 test('the shortened bank ends at the gate and journal while every landmark stays reachable', () => {

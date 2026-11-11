@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import {
   clampWagerStake,
   formatPayout,
@@ -24,7 +24,7 @@ export interface WagerPickerProps {
 }
 
 /** Compact "Call your shot" picker. Odds and payouts come straight from the server state. */
-export default function WagerPicker({
+function WagerPicker({
   open,
   odds,
   pearls,
@@ -134,3 +134,5 @@ export default function WagerPicker({
     </section>
   )
 }
+
+export default memo(WagerPicker)

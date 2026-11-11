@@ -101,7 +101,7 @@ test('portrait casts land inside the visible left-bank crop', () => {
   }
 })
 
-test('the waiting state schedules 0.6–1.4s nibbles and a tap during one spooks the fish', () => {
+test('the waiting state schedules 0.5–1.1s nibbles and a tap during one spooks the fish', () => {
   for (const roll of [0, 0.5, 0.999]) {
     let state = armCast(
       releaseCast(startCharge(createFishingState())),
@@ -109,7 +109,7 @@ test('the waiting state schedules 0.6–1.4s nibbles and a tap during one spooks
       () => roll,
     )
     const gap = state.nibbleIn
-    assert.ok(gap >= 0.6 && gap <= 1.4)
+    assert.ok(gap >= 0.5 && gap <= 1.1)
     state = tick(state, FLIGHT_SECONDS + 0.01)
     assert.equal(state.phase, 'waiting')
     state = tick(state, gap)

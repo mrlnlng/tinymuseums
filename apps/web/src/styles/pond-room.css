@@ -1882,7 +1882,7 @@
 .museum.pond .pond-room-ripple:focus-visible { outline: none; }
 .museum.pond .pond-room-ripple:focus-visible .pond-room-ripple-bobber { filter: drop-shadow(0 0 4px #fff3c4); }
 @media (max-aspect-ratio: 1 / 1) {
-  .pond-fishing .pond-world { left: 17%; transform: translateX(-17%); }
+  .pond-fishing .pond-world { left: 20%; transform: translateX(-20%); }
 }
 /* The visitor's own rig at the water's edge. */
 .pond-angler { position: absolute; z-index: 5; display: block; pointer-events: none; }
@@ -1924,3 +1924,110 @@
   .pond-panel-compact .pond-action { min-height: 48px; }
   .pond-panel-compact .pond-panel-bar { min-height: 26px; padding: 4px 10px; }
 }
+
+/* Reeling: the line gauge sits right above the button being held, so the eyes never leave the thumb. */
+.pond-reel-meter {
+  width: min(100%, 520px);
+  padding: 7px 12px 9px;
+  border: 2.5px solid var(--pond-wood-dark);
+  border-radius: 14px;
+  background: var(--pond-cream);
+  box-shadow: var(--pond-plate-shadow), 0 10px 24px rgb(0 0 0 / 26%);
+  color: var(--ink);
+  touch-action: none;
+  user-select: none;
+  animation: pond-hint-in 0.18s ease-out both;
+}
+.pond-reel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; font: 13px/1.2 var(--font-button); }
+.pond-reel-count { color: #2f6f9c; font-variant-numeric: tabular-nums; }
+.pond-reel-meter.is-run .pond-reel-status,
+.pond-reel-meter.is-danger .pond-reel-status { color: #b3261e; }
+.pond-reel-track {
+  position: relative;
+  height: 22px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fff 0 85%, #f3a59e 85%);
+  overflow: hidden;
+}
+.pond-reel-safe { position: absolute; top: 0; bottom: 0; background: #9ccc65; }
+.pond-reel-gold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #e7b94e;
+  box-shadow: 0 0 10px rgb(231 185 78 / 80%);
+  animation: pond-gold-blink 0.6s ease-in-out infinite alternate;
+}
+.pond-reel-snap { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #b3261e; opacity: 0.55; }
+.pond-reel-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 6px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #fff;
+}
+.pond-reel-progress { position: relative; height: 7px; margin-top: 6px; border-radius: 999px; background: #e6dcc8; overflow: hidden; }
+.pond-reel-progress > span { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; background: #4aa3df; }
+.pond-reel-meter.is-run { border-color: #b3261e; animation: pond-reel-jolt 0.16s linear infinite; }
+.pond-reel-meter.is-danger .pond-reel-track { border-color: #b3261e; box-shadow: 0 0 0 3px rgb(179 38 30 / 25%); }
+@keyframes pond-reel-jolt {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* A word of praise where the float lands. */
+.pond-pop {
+  position: absolute;
+  z-index: 8;
+  padding: 3px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: #ffe082;
+  box-shadow: 0 3px 0 rgb(43 26 15 / 22%);
+  color: var(--ink);
+  font: 15px/1.2 var(--font-button);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  animation: pond-pop-rise 1s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes pond-pop-rise {
+  0% { opacity: 0; transform: translate(-50%, -60%) scale(0.6); }
+  18% { opacity: 1; transform: translate(-50%, -100%) scale(1.08); }
+  70% { opacity: 1; transform: translate(-50%, -130%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -165%) scale(0.96); }
+}
+.pond-fishing.lost-snap .pond-world { animation: pond-snap-shake 0.32s linear; }
+@keyframes pond-snap-shake {
+  0%, 100% { margin-left: 0; }
+  20% { margin-left: -7px; }
+  45% { margin-left: 6px; }
+  70% { margin-left: -4px; }
+  88% { margin-left: 2px; }
+}
+.pond-fishing .pond-panel-compact .pond-panel-instruction { font-size: 13.5px; }
+.pond-fishing .pond-action-sub { font-size: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .pond-reel-meter, .pond-reel-meter.is-run, .pond-fishing.lost-snap .pond-world { animation: none; }
+  .pond-pop { animation-timing-function: linear; }
+}
+.pond-fishing.is-still .pond-reel-meter.is-run,
+.pond-fishing.is-still.lost-snap .pond-world { animation: none; }
+
+/* Touch: the whole screen is the button, so nothing may select, scroll or call out under a held thumb. */
+.pond-fishing { -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+.pond-fishing.is-touch .pond-free-bait { display: none; }
+.pond-fishing.is-touch .pond-action { min-height: 68px; }
+.pond-fishing.is-touch .pond-reel-meter { width: 100%; padding: 9px 12px 11px; }
+.pond-fishing.is-touch .pond-reel-track { height: 28px; }
+.pond-fishing.is-touch .pond-reel-head { font-size: 14px; }
+.pond-reel-meter.is-cast .pond-reel-track { background: #fff; }
+.pond-reel-meter.is-cast .pond-reel-gold { animation: none; box-shadow: none; }
+.pond-reel-meter.is-cast.is-sweet { border-color: #c99528; box-shadow: 0 0 0 3px rgb(231 185 78 / 45%), 0 10px 24px rgb(0 0 0 / 26%); }
+.pond-reel-meter.is-cast.is-sweet .pond-reel-status { color: #9a6a08; }
+.pond-fishing.is-touch .pond-bang { font-size: 58px; }

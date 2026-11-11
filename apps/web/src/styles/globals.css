@@ -6115,82 +6115,6 @@ form > .account-switch {
 }
 .pond-toast small { color: var(--ink-soft); font-family: var(--font-body); font-size: 11px; }
 
-.pond-reel-meter {
-  position: absolute;
-  top: 46%;
-  right: max(16px, env(safe-area-inset-right));
-  z-index: 25;
-  width: 92px;
-  padding: 8px 8px 10px;
-  border: 2.5px solid var(--ink);
-  border-radius: 14px;
-  background: var(--pond-cream);
-  box-shadow: var(--pond-plate-shadow), 0 12px 26px rgb(0 0 0 / 28%);
-  color: var(--ink);
-  transform: translateY(-50%);
-}
-.pond-reel-head {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-family: var(--font-button);
-  font-size: 11px;
-}
-.pond-reel-head .is-danger { color: #c9302c; }
-.pond-reel-body { display: flex; align-items: stretch; justify-content: center; gap: 10px; }
-.pond-reel-track {
-  position: relative;
-  width: 24px;
-  height: clamp(120px, 26vh, 190px);
-  overflow: hidden;
-  border: 2.5px solid var(--ink);
-  border-radius: 12px;
-  background: #fff;
-}
-.pond-reel-track::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 10%;
-  background: #f3a59e;
-  content: '';
-}
-.pond-reel-safe { position: absolute; right: 0; left: 0; background: rgb(156 204 101 / 78%); }
-.pond-reel-gold {
-  position: absolute;
-  right: 0;
-  left: 0;
-  background: rgb(231 185 78 / 88%);
-  box-shadow: 0 0 10px rgb(231 185 78 / 80%);
-  animation: pond-gold-blink 0.6s ease-in-out infinite alternate;
-}
-.pond-reel-fill { position: absolute; right: 0; bottom: 0; left: 0; background: rgb(109 64 46 / 12%); }
-.pond-reel-marker {
-  position: absolute;
-  right: -2px;
-  left: -2px;
-  height: 4px;
-  margin-bottom: -2px;
-  border-radius: 2px;
-  background: var(--ink);
-  box-shadow: 0 0 0 2px #fff;
-}
-.pond-reel-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.pond-reel-progress {
-  position: relative;
-  flex: 1;
-  width: 10px;
-  overflow: hidden;
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  background: #fff;
-}
-.pond-reel-progress span { position: absolute; right: 0; bottom: 0; left: 0; background: #7cc4ff; }
-.pond-reel-progress-label { font-family: var(--font-button); font-size: 10px; }
-.pond-reel-status { margin: 8px 0 0; font-family: var(--font-button); font-size: 10.5px; line-height: 1.15; text-align: center; }
-.pond-reel-status.is-run { color: #c9302c; animation: pond-run-flash 0.3s ease-in-out infinite alternate; }
-
 @keyframes pond-chip-bump {
   0% { transform: scale(1); }
   40% { transform: scale(1.14); }
@@ -6229,8 +6153,6 @@ form > .account-switch {
   .pond-shot { width: 78px; }
   .pond-action { min-height: 58px; }
   .pond-action-label { font-size: 18px; }
-  .pond-reel-meter { top: 38%; right: max(8px, env(safe-area-inset-right)); width: 80px; padding: 6px 6px 8px; }
-  .pond-reel-track { height: clamp(100px, 20vh, 150px); }
   .pond-toast { top: 52px; font-size: 12px; }
 }
 
@@ -6238,7 +6160,6 @@ form > .account-switch {
   .pond-bait-tile { height: 58px; }
   .pond-bait-row { grid-template-columns: repeat(4, 60px); }
   .pond-action { min-height: 58px; }
-  .pond-reel-track { height: 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

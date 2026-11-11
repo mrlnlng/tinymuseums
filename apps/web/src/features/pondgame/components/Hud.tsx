@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { PearlIcon, PondIcon } from '@/features/pondroom/lib/icons'
 import { formatPayout, streakChip } from '../lib/risk.ts'
 import { TIER_LABEL, type FishTier } from '../lib/tables.ts'
@@ -26,7 +27,7 @@ export interface HudProps {
   onClose: () => void
 }
 
-export default function Hud({
+function Hud({
   pearls,
   lucky,
   streak,
@@ -118,3 +119,5 @@ export default function Hud({
     </header>
   )
 }
+
+export default memo(Hud)

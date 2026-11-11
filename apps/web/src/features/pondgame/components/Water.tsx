@@ -6,6 +6,7 @@ import Angler from './Angler'
 import layout from '../../../../public/assets/pond/layout.json'
 import {
   FLIGHT_SECONDS,
+  isPerfectPower,
   landingForPower,
   type FishingPhase,
   type FishingState,
@@ -214,6 +215,7 @@ export interface WaterProps {
   chest: boolean
   reduced: boolean
   narrow: boolean
+  pop: { id: number; text: string } | null
 }
 
 export default function Water({
@@ -228,6 +230,7 @@ export default function Water({
   chest,
   reduced,
   narrow,
+  pop,
 }: WaterProps) {
   const pose = POSE[narrow ? 'narrow' : 'wide']
   const box = bunnyBox(pose)
@@ -394,7 +397,7 @@ export default function Water({
 
       {showAim ? (
         <span
-          className={power >= 0.78 && power <= 0.92 ? 'pond-aim is-perfect' : 'pond-aim'}
+          className={isPerfectPower(power) ? 'pond-aim is-perfect' : 'pond-aim'}
           style={{ left: `${aim.x * 100}%`, top: `${aim.y * 100}%` }}
         />
       ) : null}
@@ -469,6 +472,12 @@ export default function Water({
             </span>
           ) : null}
         </>
+      ) : null}
+
+      {pop ? (
+        <span key={pop.id} className="pond-pop" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100 - 7}%` }}>
+          {pop.text}
+        </span>
       ) : null}
     </div>
   )

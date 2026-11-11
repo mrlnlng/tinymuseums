@@ -29,6 +29,10 @@ export const BITE_WINDOW = 1.25
 export const REEL_GRACE_SECONDS = 2.5
 export const PERFECT_HOOK_WINDOW = 0.25
 export const TREASURE_HOLD_SECONDS = 1.5
+/** A press shorter than this is a tap: the meter keeps sweeping and the next tap casts. */
+export const TAP_CAST_SECONDS = 0.2
+/** Tension from here up is about to snap the line. */
+export const DANGER_TENSION = 0.85
 
 export interface FishPoint {
   x: number
@@ -174,11 +178,11 @@ export function releaseCast(state: FishingState, narrow = false): FishingState {
 }
 
 function waitGap(random: () => number): number {
-  return 0.6 + Math.max(0, Math.min(1, random())) * 0.8
+  return 0.5 + Math.max(0, Math.min(1, random())) * 0.6
 }
 
 function biteGap(random: () => number): number {
-  return 0.9 + Math.max(0, Math.min(1, random())) * 1.2
+  return 0.8 + Math.max(0, Math.min(1, random())) * 0.9
 }
 
 function scheduleNext(state: FishingState, random: () => number): FishingState {

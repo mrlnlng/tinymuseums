@@ -298,8 +298,9 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
           <motion.div
             key="curtain"
             className="hall-curtain"
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
+            initial={{ '--curtain-open': 0 }}
+            exit={{ '--curtain-open': 1 }}
+            transition={{ duration: 1.15, ease: [0.65, 0, 0.35, 1] }}
           >
             {arrival === 'stairs' ? <AtelierLoading leaving /> : <HallSkeleton preload={false} />}
           </motion.div>

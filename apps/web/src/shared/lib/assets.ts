@@ -118,6 +118,9 @@ export function preloadImage(
 const CSS_IMAGES: AssetName[] = [
   'floor',
   'guestboard/arrow-left',
+  'hall/baseboard',
+  'hall/curtain',
+  'hall/wallpaper',
   'help-center',
   'plaque',
   'rope',

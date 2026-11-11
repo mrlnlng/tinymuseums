@@ -32,9 +32,17 @@ export function HallPreload() {
 }
 
 export default function HallSkeleton({ preload = true }: { preload?: boolean }) {
+  const valance = pictureSources('hall/curtain').src
   return (
     <div className="hall-skeleton" aria-hidden="true">
       {preload ? <HallPreload /> : null}
+      <div className="hall-skeleton-backing" />
+      <div className="hall-skeleton-drape is-left" />
+      <div className="hall-skeleton-drape is-right" />
+      <div
+        className="hall-skeleton-valance"
+        style={{ '--valance': `url(${valance})` } as React.CSSProperties}
+      />
       <span className="hall-skeleton-note script">Opening the doors…</span>
     </div>
   )

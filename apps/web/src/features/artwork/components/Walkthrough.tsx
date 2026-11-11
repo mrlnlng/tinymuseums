@@ -6,6 +6,7 @@ import type { PieceDto } from '@tiny/core'
 import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
+import { pictureSources } from '@/shared/lib/assets'
 import AssetImage from '@/shared/components/AssetImage'
 
 interface Props {
@@ -20,6 +21,11 @@ const SLIDE: Variants = {
   center: { x: 0, opacity: 1 },
   exit: (direction: number) => ({ x: direction > 0 ? -50 : 50, opacity: 0 }),
 }
+
+const BACKDROP_STYLE = {
+  '--wt-wall': `url(${pictureSources('hall/wallpaper').src})`,
+  '--wt-valance': `url(${pictureSources('hall/curtain').src})`,
+} as React.CSSProperties
 
 function NavArrow() {
   return (
@@ -208,6 +214,11 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
       style={{ '--frame-aspect': frame.ratio } as React.CSSProperties}
       data-wide={wide ? '' : undefined}
     >
+      <div className="wt-backdrop" aria-hidden="true" style={BACKDROP_STYLE}>
+        <div className="wt-beam" />
+        <div className="wt-valance" />
+      </div>
+
       <div className="wt-top">
         <button className="wt-icon" onClick={onClose} aria-label="Close">
           <XIcon />

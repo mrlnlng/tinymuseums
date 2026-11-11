@@ -859,6 +859,24 @@
         "h": 577,
         "src": "hall-christmas-tree@3x.f19bbb6d7e.webp"
       }
+    },
+    "landing/book": {
+      "w": 502,
+      "h": 395,
+      "x2": {
+        "w": 502,
+        "h": 395,
+        "src": "landing-book@2x.68a31a4188.webp"
+      }
+    },
+    "landing/cat": {
+      "w": 227,
+      "h": 405,
+      "x2": {
+        "w": 227,
+        "h": 405,
+        "src": "landing-cat@2x.4163b0a300.webp"
+      }
     }
   },
   "atlases": {

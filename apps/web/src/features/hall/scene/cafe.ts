@@ -3,6 +3,7 @@ import type { Scenery } from './assets'
 import { disposeBoards, plane, type Mark } from './board'
 import { pickPainted } from './hit'
 import { CONFIG } from './config'
+import { groundShadow } from './shadow'
 
 export interface CafeMarks {
   poster: Mark & { height: number }
@@ -21,6 +22,7 @@ export interface Cafe {
 export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Cafe {
   const { counter, sign, menu, poster, thanks, cat, catFrameMs } = CONFIG.cafe
   const group = new THREE.Group()
+  const shadows: THREE.Mesh[] = []
 
   const counterWidth = counter.height * scenery.aspect.cafeFront
   const counterMesh = plane(
@@ -32,6 +34,8 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
     counter.z,
   )
   group.add(counterMesh)
+  shadows.push(groundShadow(counterWidth * 0.9, x + counter.dx, Math.min(-0.02, counter.centerY - counter.height / 2 + 0.03)))
+  group.add(shadows[shadows.length - 1])
 
   group.add(
     plane(
@@ -138,6 +142,10 @@ export function createCafe(scene: THREE.Scene, scenery: Scenery, x: number): Caf
     },
 
     dispose() {
+      for (const shadow of shadows) {
+        group.remove(shadow)
+        shadow.geometry.dispose()
+      }
       disposeBoards(scene, group)
     },
   }

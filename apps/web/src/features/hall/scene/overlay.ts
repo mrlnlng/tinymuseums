@@ -91,8 +91,11 @@ export class Placards {
       if (!title) {
         title = document.createElement('div')
         title.className = 'placard-title script'
+        const ink = document.createElement('span')
+        ink.className = 'placard-title-ink'
+        ink.textContent = m.display.title
+        title.append(ink)
         this.sizes.observe(title)
-        title.textContent = m.display.title
         this.container.appendChild(title)
         this.titles.set(key, title)
       }
@@ -100,6 +103,15 @@ export class Placards {
       this.place(node, m.centerX, m.plaqueY, camera, viewport, plaquePx * 0.78, Math.max(7, plaquePx * 0.058), 'center')
 
       this.place(title, m.centerX, m.titleY, camera, viewport, titlePx, Math.max(12, titlePx * 0.069), 'bottom')
+
+      if (!title.classList.contains('is-shown')) {
+        const at = toScreen(m.centerX, m.titleY, camera, viewport)
+        // Well inside the view, so the lettering is seen being written rather than finishing off-screen.
+        const inset = viewport.width * 0.12
+        if (at && at.x >= viewport.left + inset && at.x <= viewport.left + viewport.width - inset) {
+          title.classList.add('is-shown')
+        }
+      }
     }
 
     for (const map of [this.nodes, this.titles]) {

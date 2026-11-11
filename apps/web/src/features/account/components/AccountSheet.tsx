@@ -4,11 +4,11 @@ import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useEffect, useRef, useState } from 'react'
 import { useMember } from '@/shared/lib/slots'
+import type { AccountMode as Mode } from '@/features/account/lib/account'
 import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
 import WalkAlone from '@/features/presence/components/WalkAlone'
 import Purse from '@/features/economy/components/Purse'
 
-type Mode = 'sign-in' | 'create'
 type View = 'menu' | 'name' | 'password' | 'delete'
 
 type Pending = { action: 'sign-out' } | { action: 'delete'; password: string }
@@ -26,10 +26,16 @@ const NAME_ERRORS: Record<NameError, string> = {
 }
 const DIRTY_WARNING = "Some of your saved things haven't reached the server yet — continuing would lose them."
 
-export default function AccountSheet({ onClose }: { onClose: () => void }) {
+export default function AccountSheet({
+  onClose,
+  initialMode = 'sign-in',
+}: {
+  onClose: () => void
+  initialMode?: Mode
+}) {
   const dialogRef = useModalFocus()
   const { member, refreshMember, signUp, signIn, changePassword, signOut, deleteAccount } = useMember()
-  const [mode, setMode] = useState<Mode>('sign-in')
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [view, setView] = useState<View>('menu')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -55,8 +61,11 @@ export default function AccountSheet({ onClose }: { onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const hadMember = useRef(member !== null)
   useEffect(() => {
-    if (member === null) {
+    const signedOut = hadMember.current && member === null
+    hadMember.current = member !== null
+    if (signedOut) {
       setMode('sign-in')
       setView('menu')
       setPending(null)

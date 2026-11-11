@@ -4,7 +4,9 @@ import { CONFIG } from './config'
 
 export interface Backdrop {
   /** Keeps the wall, floor and dressings under the camera, however long the room is. */
-  update(cameraX: number, viewWidth: number, viewTop: number): void
+  update(cameraX: number, viewWidth: number, viewTop: number, now: number): void
+  /** The valance's current placement, so the string lights can sit on its painted bulbs. */
+  curtain(): { top: number; height: number; tile: number; originX: number; lean: number; z: number }
   dispose(): void
 }
 
@@ -15,12 +17,53 @@ const SPAN_SCREENS = 3
 const FLOOR_HEIGHT = 2.6
 const WALL_HEIGHT = 30
 const CURTAIN_BAND_HEIGHT = 4
+const WALL_SHADE_Z = -0.47
+const FLOOR_SHADE_Z = -0.39
+
+/** Painted at a few times its nominal size so the washes stay smooth on dense screens. */
+function painted(width: number, height: number, draw: (ink: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ink = canvas.getContext('2d')
+  if (ink) draw(ink)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.minFilter = THREE.LinearMipmapLinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.anisotropy = 4
+  return texture
+}
+
+function wallShadeTexture(): THREE.CanvasTexture {
+  return painted(8, 256, (ink) => {
+    const wash = ink.createLinearGradient(0, 0, 0, 256)
+    wash.addColorStop(0, 'rgba(255, 196, 128, 0.13)')
+    wash.addColorStop(0.5, 'rgba(255, 196, 128, 0)')
+    wash.addColorStop(0.72, 'rgba(38, 4, 16, 0)')
+    wash.addColorStop(1, 'rgba(38, 4, 16, 0.38)')
+    ink.fillStyle = wash
+    ink.fillRect(0, 0, 8, 256)
+  })
+}
+
+function floorShadeTexture(): THREE.CanvasTexture {
+  return painted(8, 256, (ink) => {
+    const shade = ink.createLinearGradient(0, 0, 0, 256)
+    shade.addColorStop(0, 'rgba(36, 10, 6, 0.42)')
+    shade.addColorStop(0.16 / FLOOR_HEIGHT, 'rgba(36, 10, 6, 0)')
+    shade.addColorStop(0.7 / FLOOR_HEIGHT, 'rgba(30, 8, 6, 0)')
+    shade.addColorStop(1, 'rgba(30, 8, 6, 0.3)')
+    ink.fillStyle = shade
+    ink.fillRect(0, 0, 8, 256)
+  })
+}
 
 /**
  * One wall, floor and its dressings that travel with the camera. Their textures scroll the other
- * way by the same amount, so the pattern looks fixed to the room while the meshes move.
+ * way, so the pattern looks fixed to the room while the meshes move.
  */
-export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
+export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolean): Backdrop {
   const wallTexture = assets.textures.wallpaper.clone()
   wallTexture.wrapS = THREE.RepeatWrapping
   wallTexture.wrapT = THREE.RepeatWrapping
@@ -57,12 +100,22 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
   curtainTexture.wrapS = THREE.RepeatWrapping
   curtainTexture.wrapT = THREE.ClampToEdgeWrapping
   curtainTexture.needsUpdate = true
-  const curtain = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ map: curtainTexture, transparent: true }),
-  )
-  curtain.position.z = CONFIG.curtain.z
+  const curtainGeometry = new THREE.PlaneGeometry(1, 1)
+  const curtainMaterial = new THREE.MeshBasicMaterial({ map: curtainTexture, transparent: true })
+  const curtain = new THREE.Mesh(curtainGeometry, curtainMaterial)
+  curtain.matrixAutoUpdate = false
   scene.add(curtain)
+
+  const shadowMaterial = new THREE.MeshBasicMaterial({
+    map: curtainTexture,
+    color: '#000000',
+    transparent: true,
+    opacity: CONFIG.curtain.shadow.opacity,
+    depthWrite: false,
+  })
+  const shadow = new THREE.Mesh(curtainGeometry, shadowMaterial)
+  shadow.matrixAutoUpdate = false
+  scene.add(shadow)
 
   const band = new THREE.Mesh(
     new THREE.PlaneGeometry(1, CURTAIN_BAND_HEIGHT),
@@ -71,19 +124,35 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
   band.position.z = CONFIG.curtain.z
   scene.add(band)
 
+  const wallShadeMap = wallShadeTexture()
+  const wallShade = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ map: wallShadeMap, transparent: true, depthWrite: false }),
+  )
+  wallShade.position.z = WALL_SHADE_Z
+  scene.add(wallShade)
+
+  const floorShadeMap = floorShadeTexture()
+  const floorShade = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ map: floorShadeMap, transparent: true, depthWrite: false }),
+  )
+  floorShade.position.z = FLOOR_SHADE_Z
+  scene.add(floorShade)
+
   const tiles: [THREE.Mesh, THREE.Texture, number][] = [
     [wall, wallTexture, wallTileWidth],
     [floor, floorTexture, FLOOR_HEIGHT * assets.aspect.floor],
     [baseboard, baseboardTexture, baseboardTileWidth],
-    [curtain, curtainTexture, 0],
   ]
+  const state = { top: 0, height: 0, tile: 0, originX: PATTERN_ORIGIN_X, lean: 0, z: CONFIG.curtain.z }
   let span = 0
   let curtainTop = Number.NaN
   let curtainHeight = 0
   let curtainTile = 0
 
   return {
-    update(cameraX, viewWidth, viewTop) {
+    update(cameraX, viewWidth, viewTop, now) {
       const width = Math.max(1, viewWidth) * SPAN_SCREENS
       const nextHeight = THREE.MathUtils.clamp(
         viewTop - CONFIG.curtain.clearY,
@@ -94,7 +163,7 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
         span = width
         for (const [mesh, texture, tile] of tiles) {
           mesh.scale.x = width
-          if (mesh !== curtain) texture.repeat.x = width / tile
+          texture.repeat.x = width / tile
         }
         if (curtainTile > 0) curtainTexture.repeat.x = width / curtainTile
         band.scale.x = width
@@ -103,18 +172,51 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
         curtainTop = viewTop
         curtainHeight = nextHeight
         curtainTile = curtainHeight * assets.aspect.curtain
-        curtain.scale.y = curtainHeight
-        curtain.position.y = viewTop - curtainHeight / 2
         curtainTexture.repeat.x = span / curtainTile
         band.position.y = viewTop + CURTAIN_BAND_HEIGHT / 2
       }
+
+      const t = still ? 0 : now / 1000
+      const lean = still ? 0 : nextHeight * (Math.sin(t * 0.7) * 0.012 + Math.sin(t * 1.7 + 1) * 0.005)
+      const originX = PATTERN_ORIGIN_X - cameraX * CONFIG.curtain.parallax
+      const baseY = viewTop - nextHeight / 2
+      curtain.matrix.set(
+        width, -lean, 0, cameraX + lean / 2,
+        0, nextHeight, 0, baseY,
+        0, 0, 1, CONFIG.curtain.z,
+        0, 0, 0, 1,
+      )
+      curtain.matrixWorldNeedsUpdate = true
+      const shadowY = baseY - CONFIG.curtain.shadow.drop * nextHeight
+      shadow.matrix.set(
+        width, -lean, 0, cameraX + lean / 2,
+        0, nextHeight, 0, shadowY,
+        0, 0, 1, CONFIG.curtain.z - 0.02,
+        0, 0, 0, 1,
+      )
+      shadow.matrixWorldNeedsUpdate = true
+
       const left = cameraX - span / 2
       for (const [mesh, texture, tile] of tiles) {
         mesh.position.x = cameraX
-        const tileWidth = mesh === curtain ? curtainTile : tile
-        texture.offset.x = ((left - PATTERN_ORIGIN_X) / tileWidth) % 1
+        texture.offset.x = ((left - PATTERN_ORIGIN_X) / tile) % 1
       }
+      curtainTexture.offset.x = ((left - originX) / curtainTile) % 1
       band.position.x = cameraX
+
+      wallShade.scale.set(Math.max(1, viewWidth), viewTop, 1)
+      wallShade.position.set(cameraX, viewTop / 2, WALL_SHADE_Z)
+      floorShade.scale.set(Math.max(1, viewWidth), FLOOR_HEIGHT, 1)
+      floorShade.position.set(cameraX, -FLOOR_HEIGHT / 2, FLOOR_SHADE_Z)
+
+      state.top = viewTop
+      state.height = nextHeight
+      state.tile = curtainTile
+      state.originX = originX
+      state.lean = lean
+    },
+    curtain() {
+      return state
     },
     dispose() {
       for (const [mesh, texture] of tiles) {
@@ -123,9 +225,23 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
         ;(mesh.material as THREE.Material).dispose()
         texture.dispose()
       }
+      scene.remove(curtain)
+      scene.remove(shadow)
+      curtainGeometry.dispose()
+      curtainMaterial.dispose()
+      shadowMaterial.dispose()
+      curtainTexture.dispose()
       scene.remove(band)
       band.geometry.dispose()
       ;(band.material as THREE.Material).dispose()
+      scene.remove(wallShade)
+      wallShade.geometry.dispose()
+      ;(wallShade.material as THREE.Material).dispose()
+      wallShadeMap.dispose()
+      scene.remove(floorShade)
+      floorShade.geometry.dispose()
+      ;(floorShade.material as THREE.Material).dispose()
+      floorShadeMap.dispose()
     },
   }
 }

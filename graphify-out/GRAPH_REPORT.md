@@ -1,22 +1,22 @@
 # Graph Report - tiny-museum  (2026-11-11)
 
 ## Corpus Check
-- 490 files · ~266,275 words
+- 495 files · ~271,860 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 78 file(s) not represented in the graph (top: .avif 39, .glb 30, .css 4)
 
 ## Summary
-- 4268 nodes · 11056 edges · 221 communities (194 shown, 27 thin omitted)
+- 4332 nodes · 11198 edges · 201 communities (175 shown, 26 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 200 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `06cdc454`
+- Built from commit: `4f44c309`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- gallery/page.tsx
+- gallery.ts
 - walk.ts
 - SketchGuess.tsx
 - rooms.ts
@@ -27,25 +27,25 @@
 - scene/assets.ts
 - SyncStore
 - machine.ts
-- PondRoom.tsx
+- PondPanels.tsx
 - Test Fakes and Helpers
 - scene.ts
 - cozy.ts
 - actions.ts
-- join-room.ts
-- createAtelierRoom
+- room-events.ts
+- useBackgroundMusic.ts
 - ref_node_assert
 - amplify/package.json
-- lib/assets.ts
+- app/page.tsx
 - prepare-models.mjs
 - Traversal
 - core/package.json
 - art-cache.ts
-- PersonalRoom.tsx
+- themes.ts
 - DecorController
-- Museum.tsx
+- react
 - ambience.ts
-- economy/pond.ts
+- core/src/index.ts
 - Web Package Dependencies
 - Gamifying Tiny Museum — genre direction & engagement research
 - atelier.ts
@@ -54,7 +54,7 @@
 - amplify/tsconfig.json
 - 5. Customization menu — what other people are doing
 - wallet.ts
-- rules.ts
+- BountyPanel.tsx
 - Web TSConfig
 - Root Package Manifest
 - bug-reports.ts
@@ -62,7 +62,7 @@
 - import-fishing-assets.mjs
 - Base TSConfig
 - Amplify Build Spec
-- useSound
+- CharacterKind
 - hitForVisitor
 - FakeServer
 - handlers.ts
@@ -70,7 +70,7 @@
 - Worker Package Manifest
 - Public Asset Manifest
 - wardrobe.ts
-- guestboard/route.ts
+- tab-turn.ts
 - compose-atelier.mjs
 - layout.ts
 - pond-format.ts
@@ -82,14 +82,14 @@
 - logic.ts
 - Handoff: move the Tiny Museum bunny from sprite frames to a rig
 - Sound Effect Assets
-- CharacterKind
+- createAtelierRoom
 - Custom HTTP Headers
 - Sharp Layer Package
-- isHallOwner
-- hall/room.ts
-- AssetImage
-- Conn
-- core/src/index.ts
+- bug-reports.ts
+- createHallRoom
+- GuestBoard.tsx
+- ReadScreen.tsx
+- import-landing-assets.mjs
 - Visits SQL Schema
 - Bunny Walk Sprites
 - Room Mockup Settings
@@ -101,7 +101,7 @@
 - Frame Window Asset
 - .webSocketMessage
 - presence/package.json
-- SoundProvider.tsx
+- outbox.test.ts
 - Asset pipeline: fast loading without losing sharpness
 - Guest Board SQL Schema
 - Landscape Frame Asset
@@ -116,9 +116,9 @@
 - createStage
 - FishingView.tsx
 - ticket.ts
-- createMinimap
-- currentMember
-- Clock
+- join-room.ts
+- dependencies
+- exports
 - graftCostume
 - FishingView.tsx
 - worker/tsconfig.json
@@ -134,102 +134,82 @@
 - audio/README.md
 - .claude/CLAUDE.md
 - The Costume Atelier
-- Medium
+- Confirmed issues
 - rig.ts
 - Curating the paintings (2026-11-07)
 - domain/guestboard.ts
 - presence/tsconfig.json
-- Low
+- run.ts
 - tsconfig.test.json
 - app/layout.tsx
 - messages.ts
 - lib/presence.ts
-- dependencies
-- exports
-- stage.ts
+- Item
+- PlacementLayer
+- RoomContents
 - three
 - epoch.ts
 - lib/presence.ts
 - sketchguess/lib/api.ts
 - visits.ts
-- personal/room.ts
+- placeLabel
 - The Moonlit Pond — design
 - Pond rework
 - env.ts
 - Orchestration contract — you plan, DSH workers execute
 - tables.ts
-- Personal room: stress-test issues
-- Local end-to-end stress test — 2026-11-06
+- confirm/page.tsx
+- createRoomPassage
 - pond-state.ts
-- Minimap
-- Storage
-- GameDesktop.tsx
-- transaction
-- next
+- perf.ts
+- Other visitors
+- FilesystemStorage
+- useVisitorName.ts
+- performance/page.tsx
 - Walkthrough.tsx
 - createPondRoom
 - createPlacementLayer
 - High
 - domain/sketch.ts
-- features/economy/index.ts
+- CoinToast.tsx
 - painting-open
-- boundedCameraX
+- share.ts
 - Multiplayer ("other visitors") — plan v2 (Cloudflare)
-- Context
-- member-route.ts
+- RemoteVisitors
+- HallAmbience
 - audience.ts
 - icon-basket
-- reveal.ts
-- next
-- config.ts
+- plan.ts
+- Sitting
+- Character
 - bunny-left
-- lib/slots/index.ts
+- AccountSheet
 - bunny-right
-- carry.test.ts
-- ticket/route.ts
+- createDecorController
+- HelmShare
 - icon-home
-- wallet/body.ts
-- atelier.ts
 - ticket
-- hit.ts
-- run.ts
-- tab-turn.ts
-- outbox.test.ts
-- Angler.tsx
+- HallForeground
+- createCharacter
 - media/storage.ts
 - Cafe
-- src/types.ts
 - themes.ts
 - useSoundEffects.ts
-- Confirmed issues
 - Monets Lily Pond: exploration, UX and multiplayer QA
 - createRemoteVisitors
 - RigPreview.tsx
-- hang-tag.ts
-- request
-- PerfMeter
-- currentArtist
+- pond-api.ts
+- rooms.ts
 - visits/page.tsx
-- icons.tsx
-- Lobby
-- confirm/page.tsx
-- AccountSheet
+- lobby.ts
 - BountyPanel.tsx
-- FilesystemStorage
 - CrowdPreview.tsx
-- formatInteger
-- Rig
+- remote-visitors.ts
 - shopkeeper.ts
 - VitalsReporter.tsx
 - 4. Transport: Cloudflare Durable Objects
-- vitals.ts
-- createStage
-- RoomSound
-- share.ts
-- db.ts
+- stage.ts
 - ArtCache
-- setCostumeVisibility
-- GuestBoard
 
 ## God Nodes (most connected - your core abstractions)
 1. `react` - 75 edges
@@ -237,48 +217,48 @@
 3. `query()` - 68 edges
 4. `hit()` - 55 edges
 5. `limited()` - 49 edges
-6. `next` - 44 edges
-7. `Traversal` - 44 edges
-8. `three` - 43 edges
+6. `three` - 45 edges
+7. `next` - 44 edges
+8. `Traversal` - 44 edges
 9. `SyncStore` - 41 edges
 10. `FishingView()` - 39 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Code` --references--> `followOutfit()`  [INFERRED]
   docs/costume-atelier.md → apps/web/src/features/hall/scene/wardrobe.ts
-- `5.1 Emotes (v1)` --references--> `ScreenChrome()`  [INFERRED]
-  docs/multiplayer-plan.md → apps/web/src/shared/components/ScreenChrome.tsx
 - `E2E-009 — Room mutations ignore stale account identity` --references--> `memberFromRequest()`  [INFERRED]
   docs/testing/local-e2e-stress-2026-11-06.md → apps/web/src/shared/lib/member-route.ts
 - `Fitting clothes to other characters` --references--> `graftCostume()`  [INFERRED]
   docs/costume-atelier.md → apps/web/tooling/graft-costume.mjs
+- `Where things stand` --references--> `sealEpoch()`  [INFERRED]
+  docs/curation-plan.md → packages/core/src/domain/epoch.ts
 - `19. Development-only: page payloads include the full room row` --references--> `getRoom()`  [INFERRED]
   docs/personal-room-issues.md → packages/core/src/domain/rooms.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (221 total, 27 thin omitted)
+## Communities (201 total, 26 thin omitted)
 
-### Community 0 - "gallery/page.tsx"
-Cohesion: 0.17
-Nodes (20): dynamic, GalleryPage(), dynamic, LocationsPage(), hangAction(), movePieceAction(), unhangAction(), FloorControls() (+12 more)
+### Community 0 - "gallery.ts"
+Cohesion: 0.27
+Nodes (12): hangAction(), movePieceAction(), unhangAction(), FloorControls(), move(), unhang(), formFor(), StorageControls() (+4 more)
 
 ### Community 1 - "walk.ts"
-Cohesion: 0.11
-Nodes (14): FloorPoint, WalkArea, water, FOREST_GATE, POND_LANDMARKS, DEPTH_SPAN, depthOf(), MAX_DEPTH (+6 more)
+Cohesion: 0.12
+Nodes (13): FloorPoint, WalkArea, water, POND_LANDMARKS, DEPTH_SPAN, depthOf(), MAX_DEPTH, PICTURE (+5 more)
 
 ### Community 2 - "SketchGuess.tsx"
-Cohesion: 0.11
-Nodes (30): bestKeyFor(), BURST, clueUrl(), openingPlan(), Phase, pickAtRandom(), prepareSketchGame(), readDifficulty() (+22 more)
+Cohesion: 0.12
+Nodes (27): bestKeyFor(), BURST, clueUrl(), openingPlan(), Phase, pickAtRandom(), prepareSketchGame(), readDifficulty() (+19 more)
 
 ### Community 3 - "rooms.ts"
-Cohesion: 0.06
-Nodes (57): AtelierPage(), dynamic, metadata, COLLECTIONS, publishLocationAction(), artist(), member(), piece() (+49 more)
+Cohesion: 0.16
+Nodes (28): publishLocationAction(), artist(), member(), piece(), randomId(), sealEpoch(), discardLocation(), hasUnpublished() (+20 more)
 
 ### Community 4 - "jobs.ts"
-Cohesion: 0.23
-Nodes (16): loop(), shutdown(), sleep(), sweepStale(), DrainResult, handler(), repairFrames(), repairUnframed() (+8 more)
+Cohesion: 0.15
+Nodes (20): loop(), shutdown(), sleep(), sweepStale(), DrainResult, handler(), repairFrames(), repairUnframed() (+12 more)
 
 ### Community 5 - "round.ts"
 Cohesion: 0.16
@@ -293,64 +273,64 @@ Cohesion: 0.05
 Nodes (41): artworks, audio, file, megabytes, seconds, sourceName, startedAt, bunny (+33 more)
 
 ### Community 8 - "scene/assets.ts"
-Cohesion: 0.09
-Nodes (40): AssetManifest, assetUrl(), bitmapTexture(), blankImage(), CAFE_CAT_FRAMES, CharacterSprites, CompressedLoader, elementTexture() (+32 more)
+Cohesion: 0.06
+Nodes (55): Loading(), DENSITY_MEDIA, HallPreload(), HallSkeleton(), AssetManifest, assetUrl(), bitmapTexture(), blankImage() (+47 more)
 
 ### Community 9 - "SyncStore"
 Cohesion: 0.16
-Nodes (6): encodeStored(), parseStored(), readStored(), writeStored(), SyncStore, upgrade()
+Nodes (8): encodeStored(), listKeys(), parseStored(), readStored(), removeStored(), writeStored(), SyncStore, upgrade()
 
 ### Community 10 - "machine.ts"
-Cohesion: 0.10
-Nodes (48): CAST_ERRORS, coarsePointer(), FishingView(), initialEasyReel(), isTyping(), LOST, Toast, vibrate() (+40 more)
+Cohesion: 0.12
+Nodes (35): CastMeter(), ReelMeter(), armCast(), BITE_WINDOW, biteGap(), CHARGE_PERIOD, chargePower(), createFishingState() (+27 more)
 
-### Community 11 - "PondRoom.tsx"
-Cohesion: 0.13
-Nodes (18): Loading(), metadata, PondPage(), POND_NAME, PondLoading(), BOARD_TABS, PondOverlayKind, PondPanels() (+10 more)
+### Community 11 - "PondPanels.tsx"
+Cohesion: 0.24
+Nodes (8): FishmongerPanel(), BOARD_TABS, PondOverlayKind, PondPanels(), signIn(), PondPanelsProps, SUBTITLES, TITLES
 
 ### Community 12 - "Test Fakes and Helpers"
-Cohesion: 0.11
-Nodes (27): deferredFetch(), deviceSlot, FakeEvents, FakeStorage, fixture, fixtureB, fixtureRegistry, fixtureRegistryBoth (+19 more)
+Cohesion: 0.10
+Nodes (29): STAMP_SVG, deferredFetch(), deviceSlot, FakeEvents, FakeStorage, fixture, fixtureB, fixtureRegistry (+21 more)
 
 ### Community 13 - "scene.ts"
-Cohesion: 0.05
-Nodes (27): MuseumProps, disposeDisplayTexture(), HELM_PEDESTAL_FILE, prefersAvif(), HiddenCoin, createNotes(), createPedestal(), Notes (+19 more)
+Cohesion: 0.04
+Nodes (37): MuseumProps, disposeDisplayTexture(), HELM_PEDESTAL_FILE, prefersAvif(), HiddenCoin, createNotes(), createPedestal(), Notes (+29 more)
 
 ### Community 14 - "cozy.ts"
 Cohesion: 0.16
-Nodes (21): ATELIER_PROPS, AtelierImage, canvasTexture(), CozyBackdrop, cozyPropImageUrl(), disposeCozyArt(), drawingOn(), FISH (+13 more)
+Nodes (20): ATELIER_PROPS, AtelierImage, canvasTexture(), CozyBackdrop, disposeCozyArt(), drawingOn(), FISH, fishTexture() (+12 more)
 
 ### Community 15 - "actions.ts"
-Cohesion: 0.09
-Nodes (51): AnalyticsPage(), dynamic, dynamic, StudioHome(), back(), createCodeAction(), deleteCodeAction(), deletePieceAction() (+43 more)
+Cohesion: 0.06
+Nodes (76): AnalyticsPage(), dynamic, BugReportsPage(), dateFormat, dynamic, summary(), dynamic, GalleryPage() (+68 more)
 
-### Community 16 - "join-room.ts"
-Cohesion: 0.17
-Nodes (28): ChatButton(), REFUSED, joinRoom(), Options, STANDING, emit(), getPeople(), isInRoom() (+20 more)
+### Community 16 - "room-events.ts"
+Cohesion: 0.24
+Nodes (17): ChatButton(), REFUSED, getPeople(), isInRoom(), isMuted(), muted, on(), onInRoomChange() (+9 more)
 
-### Community 17 - "createAtelierRoom"
-Cohesion: 0.33
-Nodes (18): aspectOf(), createAtelierRoom(), buildCollection(), form(), buildEntrance(), buildRoom(), picture(), place() (+10 more)
+### Community 17 - "useBackgroundMusic.ts"
+Cohesion: 0.15
+Nodes (14): saveIfHigher(), SoundProvider(), BackgroundMusic, clampVolume(), isDocumentHidden(), Options, useBackgroundMusic(), VISIBILITY_EVENTS (+6 more)
 
 ### Community 18 - "ref_node_assert"
 Cohesion: 0.12
-Nodes (30): defineSlot(), docBytes(), SLOTS, byAtThenKey(), encoded(), latest, mapOf(), maxNumber() (+22 more)
+Nodes (29): defineSlot(), docBytes(), SLOTS, byAtThenKey(), encoded(), latest, mapOf(), maxNumber() (+21 more)
 
 ### Community 19 - "amplify/package.json"
 Cohesion: 0.17
 Nodes (14): devDependencies, @aws-amplify/backend@^1.14.0, @aws-amplify/backend-cli@^1.6.0, aws-cdk-lib@^2.180.0, constructs@^10.3.0, name, private, scripts (+6 more)
 
-### Community 20 - "lib/assets.ts"
-Cohesion: 0.14
-Nodes (19): Loading(), DENSITY_MEDIA, HallPreload(), HallSkeleton(), loadPondArt(), loadTexture(), assetCssVariables(), assetEntry (+11 more)
+### Community 20 - "app/page.tsx"
+Cohesion: 0.19
+Nodes (12): dynamic, Hall(), MuseumPage(), [BRAND_OWNER, ...BRAND_REST], CurrentlyShowing(), Decor(), dynamic, LandingPage() (+4 more)
 
 ### Community 21 - "prepare-models.mjs"
 Cohesion: 0.15
 Nodes (18): paintedCostume(), atelier, bunny, floralOutfits(), goldOutfits(), HEADPIECES, image(), manifest (+10 more)
 
 ### Community 22 - "Traversal"
-Cohesion: 0.10
-Nodes (6): JumpPose, clamp(), fixture(), jump(), Traversal, Stress-test fixes (2026-11-06)
+Cohesion: 0.11
+Nodes (4): clamp(), fixture(), jump(), Traversal
 
 ### Community 23 - "core/package.json"
 Cohesion: 0.16
@@ -360,25 +340,21 @@ Nodes (13): devDependencies, @types/bcryptjs@^2.4.6, @types/pg@^8.11.10, main, n
 Cohesion: 0.21
 Nodes (9): ArtCacheOptions, createArtCache(), drop(), expireLater(), hold(), HeldArt, LoadResult, Slot (+1 more)
 
-### Community 25 - "PersonalRoom.tsx"
-Cohesion: 0.10
-Nodes (30): Carry, errorReason(), overDrawer(), PersonalRoom(), canPlaceNew(), carryEnd(), carryMove(), onCardKey() (+22 more)
+### Community 25 - "themes.ts"
+Cohesion: 0.15
+Nodes (13): GAMES, isRecord(), parsePlacements(), placementOf(), ownsAll, ownsNone, COZY_FLOOR_PROPS, COZY_TROPHIES (+5 more)
 
-### Community 26 - "DecorController"
+### Community 27 - "react"
 Cohesion: 0.06
-Nodes (4): DecorController, GhostOptions, PlacementLayer, Placement
-
-### Community 27 - "Museum.tsx"
-Cohesion: 0.08
-Nodes (36): Loading(), AtelierLoading(), CoinFound, ColorRecall, GameDesktop, GuestBoard, HallArranger, HelpGuide (+28 more)
+Nodes (47): config, SECURITY_HEADERS, Loading(), AtelierPage(), dynamic, metadata, Loading(), metadata (+39 more)
 
 ### Community 28 - "ambience.ts"
 Cohesion: 0.13
 Nodes (30): blade(), bloom(), BLOOMS, createPondAmbience(), update(), fishTexture(), frond(), FRONT_ROWS (+22 more)
 
-### Community 29 - "economy/pond.ts"
-Cohesion: 0.07
-Nodes (54): addBait(), castPond(), reelPond(), BOUNTY_POOL, BountyTemplate, inverseNormal(), isPondFish(), isPondTier() (+46 more)
+### Community 29 - "core/src/index.ts"
+Cohesion: 0.05
+Nodes (124): CatchExtra, COLUMNS, insertCatch(), member(), namedMember(), randomId(), StatePatch, addBait() (+116 more)
 
 ### Community 30 - "Web Package Dependencies"
 Cohesion: 0.07
@@ -389,16 +365,16 @@ Cohesion: 0.10
 Nodes (19): 0.1 The core experience, 0.2 Systems that make gamification cheap to build, 0.3 Constraints that shape any recommendation, 0. What the game is today (the deep dive), 1.1 The landscape (seven candidates, with verdicts), 1.2 Recommendation: a **cozy gallery life-sim** — "the gallery you live in", 1.3 The five design pillars the genre implies, 1. Genre direction (+11 more)
 
 ### Community 32 - "atelier.ts"
-Cohesion: 0.08
-Nodes (28): AtelierImage, BuiltRoom, Cardigan, CARDIGAN_NAMES, CHARACTER_NAMES, Control, refresh(), disposeAtelierArt() (+20 more)
+Cohesion: 0.05
+Nodes (46): AtelierArt, AtelierImage, BuiltRoom, Cardigan, CARDIGAN_NAMES, Control, refresh(), disposeAtelierArt() (+38 more)
 
 ### Community 33 - "slots/store.ts"
-Cohesion: 0.19
-Nodes (14): ANON_PREFIX, anonKey(), deviceKey(), isMemberSlotKey(), listKeys(), MEMBER_KEY, memberKey(), memberPrefix() (+6 more)
+Cohesion: 0.08
+Nodes (20): KeepOnOtherDevices(), Probe(), ANON_PREFIX, anonKey(), deviceKey(), isMemberSlotKey(), MEMBER_KEY, memberKey() (+12 more)
 
 ### Community 34 - "risk.ts"
-Cohesion: 0.15
-Nodes (27): Hud(), HudProps, HudWagerChip, WagerPicker(), chooseTier(), WagerPickerProps, chainChipLabel(), clampWagerStake() (+19 more)
+Cohesion: 0.12
+Nodes (32): Hud(), HudProps, HudWagerChip, WagerPicker(), chooseTier(), WagerPickerProps, CastOptions, PondStateView (+24 more)
 
 ### Community 35 - "amplify/tsconfig.json"
 Cohesion: 0.20
@@ -409,12 +385,12 @@ Cohesion: 0.12
 Nodes (16): 1. The target: what "Claude Opus 5.5" actually means, 2. Where your harness stands today (live config I read), 3. The honest gap model, 4. Quality levers, ranked by leverage, 5. Customization menu — what other people are doing, 6. Recommended starting kit for *your* profile, 7. What I can apply for you right now (needs your go-ahead), A. Prompt & persona (most common quality customizations) (+8 more)
 
 ### Community 37 - "wallet.ts"
-Cohesion: 0.07
-Nodes (46): grantPearls(), member(), now, piece(), randomId(), today, applyClaim(), baitCounts() (+38 more)
+Cohesion: 0.05
+Nodes (58): grantPearls(), member(), now, piece(), randomId(), today, applyClaim(), baitCounts() (+50 more)
 
-### Community 38 - "rules.ts"
-Cohesion: 0.20
-Nodes (14): EXCHANGE_DAILY_STAMPS, EXCHANGE_PEARLS_PER_STAMP, exchangeClaimKey(), GAME_DAILY_CAP, GameId, GAMES, includes(), isRecord() (+6 more)
+### Community 38 - "BountyPanel.tsx"
+Cohesion: 0.22
+Nodes (15): refreshWalletNow(), PondBounties, formatCountdown(), nextUtcMidnight(), utcDayLabel(), setPondState(), useCountdown(), useNow() (+7 more)
 
 ### Community 39 - "Web TSConfig"
 Cohesion: 0.10
@@ -425,16 +401,16 @@ Cohesion: 0.07
 Nodes (35): description, devDependencies, concurrently@^9.1.0, esbuild@^0.24.0, ktx2-encoder@^0.6.0, maxrects-packer@^2.7.3, playwright@^1.63.0, @types/node@^22.9.0 (+27 more)
 
 ### Community 41 - "bug-reports.ts"
-Cohesion: 0.11
-Nodes (28): BugReportHost(), BugReportSheet, BugReportSheet(), send(), Status, collectContext(), inAppBrowser(), onOpenBugReport() (+20 more)
+Cohesion: 0.20
+Nodes (15): BugReportHost(), BugReportSheet, BugReportSheet(), send(), Status, collectContext(), inAppBrowser(), onOpenBugReport() (+7 more)
 
 ### Community 42 - "PondTicker.tsx"
 Cohesion: 0.29
 Nodes (11): fetchPondFeed(), PondFeedItem, catchLabel(), formatSizeCm(), speciesFor(), speciesName(), speciesTier(), isGolden() (+3 more)
 
 ### Community 43 - "import-fishing-assets.mjs"
-Cohesion: 0.09
-Nodes (15): CANVAS, clear, FONT, FRAME, heights, layer(), layout, lossless (+7 more)
+Cohesion: 0.10
+Nodes (13): CANVAS, clear, FONT, FRAME, heights, layer(), layout, lossless (+5 more)
 
 ### Community 44 - "Base TSConfig"
 Cohesion: 0.11
@@ -444,25 +420,25 @@ Nodes (17): compilerOptions, allowImportingTsExtensions, esModuleInterop, forceC
 Cohesion: 0.12
 Nodes (16): applications, appRoot, backend, frontend, baseDirectory, files, phases, commands (+8 more)
 
-### Community 46 - "useSound"
-Cohesion: 0.32
-Nodes (7): ColorRecall(), ColorRecallProps, Phase, readBest(), ColorRound, showMs(), loadColorRecall()
+### Community 46 - "CharacterKind"
+Cohesion: 0.15
+Nodes (4): AtelierRoom, Display, CharacterKind, Options
 
 ### Community 47 - "hitForVisitor"
-Cohesion: 0.13
-Nodes (25): ALLOWED, POST(), POST(), GLOBAL, PER_IP, POST(), GLOBAL, PER_IP (+17 more)
+Cohesion: 0.11
+Nodes (28): POST(), ALLOWED, POST(), POST(), POST(), POST(), GET(), PER_VISITOR (+20 more)
 
 ### Community 48 - "FakeServer"
-Cohesion: 0.20
-Nodes (3): FakeServer, SlotState, SlotDef
+Cohesion: 0.14
+Nodes (5): FakeServer, SlotState, serverSnapshot(), serverSnapshots, SlotDef
 
 ### Community 49 - "handlers.ts"
-Cohesion: 0.14
-Nodes (26): confirmedFollowers(), GalleryRow, SketchPieceRow, DisplayPieceRow, handleDerivatives(), handleNotifyFollowers(), Job, newWorkNotice() (+18 more)
+Cohesion: 0.10
+Nodes (30): confirmedFollowers(), handleDerivatives(), handleNotifyFollowers(), handleRenderDisplay(), handleSealEpoch(), renderPieceFrame(), renderPieceSketch(), runJob() (+22 more)
 
 ### Community 50 - "Water.tsx"
-Cohesion: 0.08
-Nodes (37): AmbientShadow, box(), BUCKET, bunnyBox(), easeOut(), Glint, LEFT_STYLE, lineColour() (+29 more)
+Cohesion: 0.07
+Nodes (38): AmbientShadow, box(), BUCKET, bunnyBox(), easeOut(), Glint, LEFT_STYLE, lineColour() (+30 more)
 
 ### Community 51 - "Worker Package Manifest"
 Cohesion: 0.14
@@ -473,48 +449,48 @@ Cohesion: 0.12
 Nodes (15): artworks, bunny, size, floor, size, fonts, icon-no-photos, size (+7 more)
 
 ### Community 53 - "wardrobe.ts"
-Cohesion: 0.17
-Nodes (22): allowedCharacter(), OwnedSnapshot, owns(), walletReady(), Atelier(), leave(), loadedMember, loadingMember (+14 more)
+Cohesion: 0.07
+Nodes (44): Purse(), allowedCharacter(), OwnedSnapshot, owns(), walletReady(), stampLabel(), Atelier(), leave() (+36 more)
 
-### Community 54 - "guestboard/route.ts"
-Cohesion: 0.36
-Nodes (7): POST(), POST(), rateLimitedResponse(), rejectedResponse(), enforceLimits(), GuestNoteRateLimited, postGuestNote()
+### Community 54 - "tab-turn.ts"
+Cohesion: 0.16
+Nodes (5): createTabTurn(), TabTurn, tab(), TurnEnv, TurnMessage
 
 ### Community 55 - "compose-atelier.mjs"
 Cohesion: 0.14
 Nodes (9): body, dressLayer, dressWidth, floralWidth, MANNEQUIN_CANVAS, mask, root, sourceSize (+1 more)
 
 ### Community 56 - "layout.ts"
-Cohesion: 0.18
-Nodes (9): cafeAfterIndex(), computeLayout(), cutRooms(), HallLayout, HallRoomKind, HallRoomSpan, hasPedestal(), Span (+1 more)
+Cohesion: 0.17
+Nodes (10): cafeAfterIndex(), comingSoonWidth(), computeLayout(), cutRooms(), HallLayout, HallRoomKind, HallRoomSpan, hasPedestal() (+2 more)
 
 ### Community 57 - "pond-format.ts"
 Cohesion: 0.13
-Nodes (26): PondDex, EXCHANGE_DAILY_STAMPS, EXCHANGE_PEARLS_PER_STAMP, FISH_ART, fishArt(), formatPercent(), formatShortSizeCm(), ODDS_BAIT (+18 more)
+Nodes (25): PondDex, EXCHANGE_DAILY_STAMPS, EXCHANGE_PEARLS_PER_STAMP, FISH_ART, formatPercent(), formatShortSizeCm(), ODDS_BAIT, POND_BAIT (+17 more)
 
 ### Community 58 - "AccountSheet.tsx"
-Cohesion: 0.09
-Nodes (28): AccountHost(), AccountSheet, Mode, NAME_ERRORS, Pending, View, KeepOnOtherDevices(), onOpenAccount() (+20 more)
+Cohesion: 0.07
+Nodes (37): AccountHost(), AccountSheet, NAME_ERRORS, Pending, View, AccountMode, onOpenAccount(), openAccount() (+29 more)
 
 ### Community 59 - "economy/store.ts"
-Cohesion: 0.13
-Nodes (33): buy(), cappedTracked, emit(), emitEarned(), EMPTY_BAIT, EMPTY_TODAY, ensureStarted(), eventListeners (+25 more)
+Cohesion: 0.07
+Nodes (75): serverSnapshot, useEarnEvents(), useWallet(), CARRY_CAP, carryAdd(), CarryEntry, carryPrune(), carryRemove() (+67 more)
 
 ### Community 60 - "backend.ts"
 Cohesion: 0.15
 Nodes (12): amplifyDir, backend, everyMinutes, mediaBucket, missing, repoRoot, REQUIRED, setting() (+4 more)
 
 ### Community 61 - "room.ts"
-Cohesion: 0.13
-Nodes (29): admitted(), Attachment, farewell(), GHOST_MS, HELLO_TIMEOUT_MS, holdsOf(), MAX_WAITING_PER_IP, newAttachment() (+21 more)
+Cohesion: 0.14
+Nodes (28): admitted(), Attachment, farewell(), GHOST_MS, HELLO_TIMEOUT_MS, holdsOf(), MAX_WAITING_PER_IP, newAttachment() (+20 more)
 
 ### Community 62 - "minimap.ts"
-Cohesion: 0.12
-Nodes (23): ATELIER_DOOR, doorPoint(), FALLBACK_TINT, FloorSketch, ICONS, MAP_PLACES, MAP_SCALE, MapPlace (+15 more)
+Cohesion: 0.08
+Nodes (33): place(), ATELIER_DOOR, createMinimap(), draw(), drawRoom(), floors(), follow(), sketchOf() (+25 more)
 
 ### Community 63 - "logic.ts"
-Cohesion: 0.09
-Nodes (27): loadHallArranger(), DecorDrawer, DecorDrawerProps, SharingState, Tab, TABS, HallArranger(), HallArrangerProps (+19 more)
+Cohesion: 0.06
+Nodes (55): errorReason(), overDrawer(), PersonalRoom(), canPlaceNew(), carryEnd(), carryMove(), onCardKey(), onCardPointerDown() (+47 more)
 
 ### Community 64 - "Handoff: move the Tiny Museum bunny from sprite frames to a rig"
 Cohesion: 0.12
@@ -524,9 +500,9 @@ Nodes (15): BunnyArtist(), BunnyMood, Pencil(), POSES, 1. What is in this bundle
 Cohesion: 0.22
 Nodes (9): file, kilobytes, seconds, file, kilobytes, seconds, soundEffects, click (+1 more)
 
-### Community 66 - "CharacterKind"
-Cohesion: 0.09
-Nodes (8): AtelierActions, AtelierRoom, ClothingItem, Display, CollectionRoom, CharacterKind, Options, Wardrobe
+### Community 66 - "createAtelierRoom"
+Cohesion: 0.24
+Nodes (19): aspectOf(), AtelierActions, createAtelierRoom(), buildCollection(), form(), buildEntrance(), buildRoom(), picture() (+11 more)
 
 ### Community 67 - "Custom HTTP Headers"
 Cohesion: 0.25
@@ -536,25 +512,25 @@ Nodes (7): applications, appRoot, customHeaders, headers, pattern, key, value
 Cohesion: 0.33
 Nodes (6): dependencies, sharp@^0.33.5, description, sharp, name, private
 
-### Community 69 - "isHallOwner"
-Cohesion: 0.21
-Nodes (11): dynamic, HomePage(), dynamic, RoomPage(), StudioLayout(), COPY, HomeSignIn(), RoomNoticeProps (+3 more)
+### Community 69 - "bug-reports.ts"
+Cohesion: 0.22
+Nodes (12): BugReport, BugReportDto, BugReportRejected, BugRow, CONTEXT_KEYS, EVERYONE, normalizeBugPage(), parseBugReport() (+4 more)
 
-### Community 70 - "hall/room.ts"
-Cohesion: 0.06
-Nodes (43): earn(), getWalletSnapshot(), subscribeWallet(), AtelierArt, createBackdrop(), GALLERY_DOOR, loadGalleryDoor(), loadGalleryPillar() (+35 more)
+### Community 70 - "createHallRoom"
+Cohesion: 0.14
+Nodes (17): Backdrop, createBackdrop(), floorShadeTexture(), painted(), wallShadeTexture(), createHallRoom(), buildRoom(), cafeRoom() (+9 more)
 
-### Community 71 - "AssetImage"
-Cohesion: 0.10
-Nodes (32): BoardScreen(), BoardScreenProps, ComposeScreen(), ComposeScreenProps, blankDraft(), GuestBoard(), GuestBoardProps, View (+24 more)
+### Community 71 - "GuestBoard.tsx"
+Cohesion: 0.22
+Nodes (12): ComposeScreen(), ComposeScreenProps, blankDraft(), GuestBoard(), GuestBoardProps, View, fetchPage(), NoteDraft (+4 more)
 
-### Community 72 - "Conn"
-Cohesion: 0.31
-Nodes (4): connectWebSocket(), SocketHandlers, Conn, message()
+### Community 72 - "ReadScreen.tsx"
+Cohesion: 0.16
+Nodes (17): shape(), BoardScreen(), BoardScreenProps, PinnedNotes(), PinnedNotesProps, ReadScreen(), ReadScreenProps, StickyNote() (+9 more)
 
-### Community 73 - "core/src/index.ts"
-Cohesion: 0.11
-Nodes (36): PondBoardMe, PondBoardRow, PondFeedItem, Rep, BountyCatchRow, ONCE, PondBaitResult, PondBountiesView (+28 more)
+### Community 73 - "import-landing-assets.mjs"
+Cohesion: 0.13
+Nodes (9): socket(), CAT, drop, EXPECTED, manifest, manifestPath, masters, root (+1 more)
 
 ### Community 74 - "Visits SQL Schema"
 Cohesion: 0.47
@@ -573,12 +549,12 @@ Cohesion: 0.70
 Nodes (4): cacheable(), cacheFirst(), staleWhileRevalidate(), trim()
 
 ### Community 79 - "pond/art.ts"
-Cohesion: 0.18
-Nodes (16): ArtByRoom, blank(), colorAt(), disposePondArt(), EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, edgeTexture() (+8 more)
+Cohesion: 0.17
+Nodes (20): ArtByRoom, blank(), colorAt(), disposePondArt(), EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, edgeTexture() (+12 more)
 
 ### Community 80 - "createPresence"
-Cohesion: 0.15
-Nodes (16): createPresence(), drop(), heartbeat(), maybeSend(), onPageHide(), receive(), scheduleRetry(), send() (+8 more)
+Cohesion: 0.17
+Nodes (14): createPresence(), drop(), heartbeat(), maybeSend(), onPageHide(), receive(), scheduleRetry(), send() (+6 more)
 
 ### Community 81 - "members"
 Cohesion: 0.12
@@ -589,16 +565,16 @@ Cohesion: 0.50
 Nodes (4): frame, size, window, windowAspect
 
 ### Community 83 - ".webSocketMessage"
-Cohesion: 0.40
-Nodes (4): attachmentOf(), roomFull(), Room, sendTo()
+Cohesion: 0.44
+Nodes (3): attachmentOf(), Room, sendTo()
 
 ### Community 84 - "presence/package.json"
 Cohesion: 0.14
 Nodes (16): dependencies, @tiny/core@*, devDependencies, @cloudflare/workers-types@5.20261016.1, wrangler@4.151.1, @tiny/core, name, private (+8 more)
 
-### Community 85 - "SoundProvider.tsx"
-Cohesion: 0.16
-Nodes (13): SoundContext, SoundProvider(), EFFECTS, EffectSpec, FOOTSTEPS, SoundEffects, useSoundEffects(), gestured() (+5 more)
+### Community 85 - "outbox.test.ts"
+Cohesion: 0.29
+Nodes (10): OUTBOX_CAP, outboxAdd(), OutboxEntry, outboxFail(), outboxRemove(), RETRY_BASE_MS, RETRY_MAX_MS, retryDelay() (+2 more)
 
 ### Community 86 - "Asset pipeline: fast loading without losing sharpness"
 Cohesion: 0.22
@@ -617,48 +593,52 @@ Cohesion: 0.18
 Nodes (5): Nearby, NearbyReach, RoomSpan, reach, strip
 
 ### Community 93 - "json"
-Cohesion: 0.13
-Nodes (41): POST(), POST(), POST(), PER_MEMBER, PUT(), PER_MEMBER, POST(), catchIdOf() (+33 more)
+Cohesion: 0.06
+Nodes (87): POST(), PER_MEMBER, PUT(), POST(), GET(), GLOBAL, PER_IP, POST() (+79 more)
 
 ### Community 94 - "db-tests/pond.test.ts"
-Cohesion: 0.09
-Nodes (29): CatchExtra, COLUMNS, insertCatch(), member(), namedMember(), randomId(), StatePatch, compare() (+21 more)
+Cohesion: 0.13
+Nodes (21): BOARDS, GET(), oneOf(), PER_VISITOR, PERIODS, compare(), DexRow, displayName() (+13 more)
 
 ### Community 95 - "pond/room.ts"
-Cohesion: 0.10
-Nodes (25): FrameShape, depthAtLift(), FAR_LIFT, FAR_SCALE, liftAt(), pathHalfWidth(), pathX(), PondPath (+17 more)
+Cohesion: 0.11
+Nodes (24): depthAtLift(), FAR_LIFT, FAR_SCALE, liftAt(), pathHalfWidth(), pathX(), PondPath, scaleAt() (+16 more)
 
 ### Community 96 - "ticket/route.ts"
 Cohesion: 0.08
-Nodes (48): announceNameChange(), useVisitorName(), VisitorName, Code, How it plays, Other visitors, 3.2 Chosen names (members), Privacy (+40 more)
+Nodes (48): GET(), GET(), PER_IP, POST(), presenceUrl(), memberFromRequest(), Code, 3.1 Generated names (everyone has one) (+40 more)
 
 ### Community 104 - "createStage"
-Cohesion: 0.22
-Nodes (14): initialize(), aim(), drawFrame(), handleClick(), handlePointerDown(), handlePointerMove(), handlePointerUp(), prefetchNearDoors() (+6 more)
+Cohesion: 0.15
+Nodes (22): boundedCameraX(), createNearby(), createStage(), closeEntry(), enter(), initialize(), aim(), drawFrame() (+14 more)
 
 ### Community 105 - "FishingView.tsx"
-Cohesion: 0.11
-Nodes (17): CONFETTI_COLORS, ConfettiPiece, makeConfetti(), RevealCard(), RevealCardProps, TIER_MS, TIER_SFX, useCountUp() (+9 more)
+Cohesion: 0.12
+Nodes (16): CONFETTI_COLORS, ConfettiPiece, makeConfetti(), RevealCard(), RevealCardProps, TIER_MS, TIER_SFX, useCountUp() (+8 more)
 
 ### Community 106 - "ticket.ts"
-Cohesion: 0.14
-Nodes (18): fetch(), Env, parseRoom(), decoder, encoder, fromBase64Url(), HmacKey, isOwn() (+10 more)
+Cohesion: 0.23
+Nodes (12): decoder, encoder, fromBase64Url(), HmacKey, isOwn(), isTicket(), keyFor(), keys (+4 more)
 
-### Community 107 - "createMinimap"
-Cohesion: 0.36
-Nodes (9): place(), createMinimap(), draw(), drawRoom(), floors(), follow(), sketchOf(), panTo() (+1 more)
+### Community 107 - "join-room.ts"
+Cohesion: 0.29
+Nodes (12): joinRoom(), Options, STANDING, emit(), onNameChange(), onSayRequest(), openChat(), reportSay() (+4 more)
 
-### Community 108 - "currentMember"
-Cohesion: 0.16
-Nodes (18): GET(), GET(), PER_MEMBER, BOARDS, GET(), oneOf(), PER_VISITOR, PERIODS (+10 more)
+### Community 108 - "dependencies"
+Cohesion: 0.15
+Nodes (13): dependencies, @aws-sdk/client-s3@^3.1121.0, @aws-sdk/s3-request-presigner@^3.1121.0, bcryptjs@^2.4.3, obscenity@^0.4.6, sharp@^0.33.5, thumbhash@^0.1.1, sharp (+5 more)
+
+### Community 109 - "exports"
+Cohesion: 0.15
+Nodes (13): exports, ./brand, ./bugs, ./economy, ./guestboard, ./presence, ./presence/messages, ./presence/wire (+5 more)
 
 ### Community 110 - "graftCostume"
 Cohesion: 0.27
 Nodes (14): canvasFit(), compose(), graftCostume(), copyAccessor(), copyMaterial(), copyMesh(), copyTexture(), copyView() (+6 more)
 
 ### Community 111 - "FishingView.tsx"
-Cohesion: 0.17
-Nodes (22): PondGameProps, PondGame(), buyPondBait(), CastOptions, castPond(), chainPondBait(), errorOf(), fetchPondState() (+14 more)
+Cohesion: 0.13
+Nodes (31): BaitTray(), BaitTrayProps, CAST_ERRORS, coarsePointer(), FishingView(), initialEasyReel(), isTyping(), LOST (+23 more)
 
 ### Community 112 - "worker/tsconfig.json"
 Cohesion: 0.33
@@ -669,8 +649,8 @@ Cohesion: 0.33
 Nodes (5): compilerOptions, types, extends, include, ../../tsconfig.base.json
 
 ### Community 114 - "import-hall-assets.mjs"
-Cohesion: 0.08
-Nodes (17): socket(), BASEBOARD, CURTAIN, drop, EXPECTED, file(), manifest, manifestPath (+9 more)
+Cohesion: 0.10
+Nodes (16): BASEBOARD, CURTAIN, drop, EXPECTED, file(), manifest, manifestPath, masters (+8 more)
 
 ### Community 115 - "How to Design for Failures — ByteByteGo Newsletter"
 Cohesion: 0.40
@@ -685,16 +665,16 @@ Cohesion: 0.50
 Nodes (3): AWS prerequisites, Backend, Deploying by hand
 
 ### Community 118 - "protocol.ts"
-Cohesion: 0.31
-Nodes (13): isItem(), isName(), isPid(), isSeq(), MAX_INSTANCE, MAX_MESSAGE_BYTES, parseClientMessage(), parseLook() (+5 more)
+Cohesion: 0.18
+Nodes (19): fetch(), Env, isItem(), isName(), isPid(), isSeq(), MAX_HOLDS, MAX_MESSAGE_BYTES (+11 more)
 
 ### Community 119 - "Costume gallery doorway"
 Cohesion: 0.50
 Nodes (3): Costume gallery doorway, Curtain colour edit, Prompt
 
 ### Community 120 - "pond-api.ts"
-Cohesion: 0.17
-Nodes (19): fetchPondLeaderboard(), PondBoardId, PondBoardPeriod, PondBoardRow, PondBounty, PondBountyClaim, PondDexCell, PondExchangeResult (+11 more)
+Cohesion: 0.23
+Nodes (15): PondBoardId, PondBoardPeriod, PondBoardRow, PondLeaderboard, fishArt(), formatInteger(), formatOdds(), nextMondayUtc() (+7 more)
 
 ### Community 121 - "Fishing forest: painted asset pass"
 Cohesion: 0.10
@@ -704,81 +684,81 @@ Nodes (18): Assets, Bruce's collection refresh (2026-11-08), Fishing forest illu
 Cohesion: 0.13
 Nodes (14): Adding a character, Adding a costume, Art not supplied as files, Bruce's Chronicles, Checked against the mocks (2026-11-07), Code, Costume fit review, Fitting clothes to other characters (+6 more)
 
-### Community 125 - "Medium"
-Cohesion: 0.25
-Nodes (8): 10. Long names run off the name sign, 11. The rooms API skips the stale-tab member check, 12. The bunny is dragged along while you pan in Decorate, 6. Failed saves are nearly invisible, and nothing retries, 7. Two tabs editing the same room overwrite each other, 8. The drawer's card row can't be scrolled on touch screens, 9. Decorating can't be done with the keyboard, Medium
+### Community 125 - "Confirmed issues"
+Cohesion: 0.04
+Nodes (46): 10. Long names run off the name sign, 11. The rooms API skips the stale-tab member check, 12. The bunny is dragged along while you pan in Decorate, 13. Pages that redirect or don't exist answer 200, 14. Error codes reveal which room slugs exist, 15. The name sign slides under the top-right buttons in Decorate, 16. Level-up celebrations can be farmed, 17. No hint of where things are after panning away (+38 more)
 
 ### Community 126 - "rig.ts"
-Cohesion: 0.16
-Nodes (21): canvasToModel(), disposeRigLayer(), Frame, layerTemplates, loadRig(), dispose(), poseJump(), rotateInPlane() (+13 more)
+Cohesion: 0.13
+Nodes (24): Layer, setCostumeVisibility(), canvasToModel(), disposeRigLayer(), Frame, layerTemplates, loadRig(), dispose() (+16 more)
 
 ### Community 127 - "Curating the paintings (2026-11-07)"
-Cohesion: 0.14
-Nodes (13): 1. The registry and the table, 2. The studio's Location picker, 3. The rooms draw what is placed, 4. Credits, 5. Retiring self-serve artists, Building it, Curating the paintings (2026-11-07), Decided (+5 more)
+Cohesion: 0.13
+Nodes (14): 1. The registry and the table, 2. The studio's Location picker, 3. The rooms draw what is placed, 4. Credits, 5. Retiring self-serve artists, Building it, Curating the paintings (2026-11-07), Decided (+6 more)
 
 ### Community 128 - "domain/guestboard.ts"
 Cohesion: 0.15
-Nodes (16): GET(), decodeCursor(), encodeCursor(), GuestNoteInput, GuestNoteRejected, listGuestNotes(), PER_VISITOR, toDto() (+8 more)
+Nodes (17): GET(), messageLength(), StickyNoteProps, decodeCursor(), encodeCursor(), GuestNoteInput, GuestNoteRejected, listGuestNotes() (+9 more)
 
 ### Community 129 - "presence/tsconfig.json"
 Cohesion: 0.29
 Nodes (6): compilerOptions, types, exclude, extends, include, ../../tsconfig.base.json
 
-### Community 130 - "Low"
-Cohesion: 0.25
-Nodes (8): 13. Pages that redirect or don't exist answer 200, 14. Error codes reveal which room slugs exist, 15. The name sign slides under the top-right buttons in Decorate, 16. Level-up celebrations can be farmed, 17. No hint of where things are after panning away, 18. Too many items is only discovered by the server, 19. Development-only: page payloads include the full room row, Low
+### Community 130 - "run.ts"
+Cohesion: 0.17
+Nodes (9): admin, childEnv, client, database, fresh, migrations, target, pg@^8.13.1 (+1 more)
 
 ### Community 131 - "tsconfig.test.json"
 Cohesion: 0.33
 Nodes (5): compilerOptions, types, extends, include, ../../tsconfig.base.json
 
 ### Community 132 - "app/layout.tsx"
-Cohesion: 0.17
-Nodes (11): bethEllen, inspiratiq, metadata, notoSans, RootLayout(), sniglet, viewport, ServiceWorker() (+3 more)
+Cohesion: 0.16
+Nodes (12): bethEllen, inspiratiq, metadata, notoSans, RootLayout(), sniglet, viewport, ServiceWorker() (+4 more)
 
 ### Community 133 - "messages.ts"
 Cohesion: 0.31
 Nodes (7): checkMessage(), INVISIBLE, MESSAGE_MAX, MessageCheck, normalizeMessage(), hasProfanity(), matcher
 
 ### Community 134 - "lib/presence.ts"
+Cohesion: 0.08
+Nodes (21): PresencePreviewPage(), PresencePreview(), Entry, INTERPOLATION_DELAY_MS, PEER_TIMEOUT_MS, PeerTable, positionAt(), RemoteVisitor (+13 more)
+
+### Community 135 - "Item"
 Cohesion: 0.13
-Nodes (8): Entry, INTERPOLATION_DELAY_MS, PEER_TIMEOUT_MS, PeerTable, positionAt(), Sample, look, Peer
+Nodes (4): Room, Presence, Item, Refusal
 
-### Community 135 - "dependencies"
-Cohesion: 0.17
-Nodes (12): dependencies, @aws-sdk/client-s3@^3.1121.0, @aws-sdk/s3-request-presigner@^3.1121.0, bcryptjs@^2.4.3, obscenity@^0.4.6, sharp@^0.33.5, thumbhash@^0.1.1, sharp (+4 more)
+### Community 136 - "PlacementLayer"
+Cohesion: 0.13
+Nodes (5): Carry, PersonalRoomProps, DecorLive, PlacementLayer, Placement
 
-### Community 136 - "exports"
-Cohesion: 0.15
-Nodes (13): exports, ./brand, ./bugs, ./economy, ./guestboard, ./presence, ./presence/messages, ./presence/wire (+5 more)
-
-### Community 137 - "stage.ts"
-Cohesion: 0.04
-Nodes (39): coverFloorTransition(), CameraRig, Look, createPixelRatioGovernor(), PIXEL_RATIO_STEPS, createRoomPassage(), fixture(), Pose (+31 more)
+### Community 137 - "RoomContents"
+Cohesion: 0.08
+Nodes (17): Pose, RoomContents, prop(), Decisions (2026-11-05), Design for Phases 5–7 (2026-11-05), Follow-ups after Phases 4–7, Model (`apps/web/src/features/rooms/types.ts`), Personal room polish (2026-11-05) (+9 more)
 
 ### Community 138 - "three"
 Cohesion: 0.08
-Nodes (37): Assets, Scenery, CUTS, disposeBoards(), Mark, plane(), ROPE_CUTS, ropeSlices() (+29 more)
+Nodes (45): BULBS, createHallAmbience(), finish(), glowTexture(), mulberry(), painted(), vignetteTexture(), Assets (+37 more)
 
 ### Community 139 - "epoch.ts"
-Cohesion: 0.18
-Nodes (18): GET(), intParam(), GET(), sketchPool, unavailable(), Where things stand, currentEpoch(), ensureEpoch() (+10 more)
+Cohesion: 0.23
+Nodes (13): GET(), intParam(), GET(), sketchPool, unavailable(), EMPTY, firstSlice(), memo (+5 more)
 
 ### Community 140 - "lib/presence.ts"
-Cohesion: 0.08
-Nodes (19): PresencePreviewPage(), PresencePreview(), RemoteVisitor, Connect, fetchTicket, HEARTBEAT_MS, HIDDEN_LIMIT_MS, Presence (+11 more)
+Cohesion: 0.13
+Nodes (13): Connect, connectWebSocket(), HEARTBEAT_MS, HIDDEN_LIMIT_MS, SocketHandlers, Clock, Conn, flush() (+5 more)
 
 ### Community 141 - "sketchguess/lib/api.ts"
-Cohesion: 0.23
-Nodes (13): sameOriginUrl(), PreparedGame, decodeImage(), fetchBitmap(), fetchRound(), guarded(), LoadedRound, loadInk() (+5 more)
+Cohesion: 0.15
+Nodes (16): sameOriginUrl(), PreparedGame, decodeImage(), fetchBitmap(), fetchRound(), guarded(), InkMap, LoadedRound (+8 more)
 
 ### Community 142 - "visits.ts"
-Cohesion: 0.16
-Nodes (19): state(), flush(), visibleMs(), VisitState, count(), currentSalts(), DEVICES, loadSalts() (+11 more)
+Cohesion: 0.17
+Nodes (18): state(), flush(), visibleMs(), VisitState, count(), currentSalts(), DEVICES, loadSalts() (+10 more)
 
-### Community 143 - "personal/room.ts"
-Cohesion: 0.13
-Nodes (13): Placards, placeLabel(), toScreen(), writeStyle(), cozyLevel, cozyWorth(), createPersonalRoom(), showLevel() (+5 more)
+### Community 143 - "placeLabel"
+Cohesion: 0.07
+Nodes (13): LobbyMarks, CafeLink, ComingSoonNote, FunZoneSign, GiftShopSigns, GuestBoardNotes, LobbySigns, Placards (+5 more)
 
 ### Community 144 - "The Moonlit Pond — design"
 Cohesion: 0.09
@@ -797,40 +777,40 @@ Cohesion: 0.29
 Nodes (6): Briefing a worker, Budget hygiene, graphify, Orchestration contract — you plan, DSH workers execute, The worker, When not to delegate
 
 ### Community 148 - "tables.ts"
-Cohesion: 0.11
-Nodes (30): CatchWagerView, debugSpecies(), debugVariant(), GuestRoll, guestTreasure(), rollGuest(), BAIT_BY_ID, catchPearls() (+22 more)
+Cohesion: 0.10
+Nodes (37): FrameShape, PondCatch, CatchView, debugSpecies(), debugVariant(), GuestRoll, guestTreasure(), rollGuest() (+29 more)
 
-### Community 149 - "Personal room: stress-test issues"
-Cohesion: 0.29
-Nodes (5): Checked and fine, Not covered by this pass, Personal room: stress-test issues, Status (2026-11-06), Test data left in the local database
+### Community 149 - "confirm/page.tsx"
+Cohesion: 0.33
+Nodes (7): ConfirmFollow(), dynamic, dynamic, Unsubscribe(), FollowNotice(), confirmFollow(), unsubscribe()
 
-### Community 150 - "Local end-to-end stress test — 2026-11-06"
-Cohesion: 0.29
-Nodes (7): Environment and coverage, Follow-up coverage, Issue index, Local end-to-end stress test — 2026-11-06, Measured load, Passing checks and interpretation limits, Test data and cleanup
+### Community 150 - "createRoomPassage"
+Cohesion: 0.27
+Nodes (6): coverFloorTransition(), createPixelRatioGovernor(), PIXEL_RATIO_STEPS, createRoomPassage(), fixture(), Runtime
 
 ### Community 151 - "pond-state.ts"
-Cohesion: 0.19
-Nodes (16): PondStateView, PondTier, ensurePondStateStarted(), getPondStateSnapshot(), GUEST, listeners, LOADING, PondStateSnapshot (+8 more)
+Cohesion: 0.25
+Nodes (14): PondStateView, PondTier, ensurePondStateStarted(), getPondStateSnapshot(), GUEST, listeners, LOADING, PondStateSnapshot (+6 more)
 
-### Community 153 - "Storage"
-Cohesion: 0.09
-Nodes (8): renderPieceFrame(), renderPieceSketch(), S3Storage, S3StorageOptions, pieceFrameKey(), pieceSketchKey(), Storage, @aws-sdk/client-s3
+### Community 152 - "perf.ts"
+Cohesion: 0.22
+Nodes (4): createPerfMeter(), isEnabled(), PerfMeter, PerfSnapshot
 
-### Community 154 - "GameDesktop.tsx"
-Cohesion: 0.33
-Nodes (7): loadGameDesktop(), GameDesktop(), GameDesktopProps, MinigameFrame(), Minigame, MinigameId, MINIGAMES
+### Community 153 - "Other visitors"
+Cohesion: 0.29
+Nodes (6): How it plays, Other visitors, Privacy, Running it in production, Running it locally, Staying consistent
 
-### Community 155 - "transaction"
-Cohesion: 0.15
-Nodes (24): hangPiece(), movePiece(), unhangPiece(), baitOf(), bountyCatches(), bountyViews(), buyPondBait(), chainPondBait() (+16 more)
+### Community 155 - "useVisitorName.ts"
+Cohesion: 0.29
+Nodes (5): announceNameChange(), NameError, useVisitorName(), VisitorName, NameCheck
 
-### Community 156 - "next"
-Cohesion: 0.10
-Nodes (26): config, SECURITY_HEADERS, BugReportsPage(), dateFormat, dynamic, summary(), dateFormat, dynamic (+18 more)
+### Community 156 - "performance/page.tsx"
+Cohesion: 0.16
+Nodes (15): dynamic, format(), grade(), METRICS, PAGES, PerformancePage(), RANGES, DEVICES (+7 more)
 
 ### Community 157 - "Walkthrough.tsx"
-Cohesion: 0.16
-Nodes (18): MoreArrow(), NavArrow(), Props, SLIDE, Walkthrough(), XIcon(), decodedFrames, frameFor() (+10 more)
+Cohesion: 0.15
+Nodes (19): BACKDROP_STYLE, MoreArrow(), NavArrow(), Props, SLIDE, Walkthrough(), XIcon(), decodedFrames (+11 more)
 
 ### Community 158 - "createPondRoom"
 Cohesion: 0.32
@@ -841,164 +821,108 @@ Cohesion: 0.18
 Nodes (8): aspectOf(), createPlacementLayer(), drawOutline(), dropHelper(), sizeOf(), PlacementTheme, Phase 5: themes, zones and arrangements, ThemeSpec
 
 ### Community 160 - "High"
-Cohesion: 0.33
-Nodes (6): 1. Items placed against a zone edge fail to save, and the whole draft reverts, 2. One owned item can be placed many times, 3. Any save rejection throws away all unsaved work, 4. Changes made just before leaving are lost, 5. Fish trophies can be claimed without playing, High
+Cohesion: 0.24
+Nodes (8): 1. Items placed against a zone edge fail to save, and the whole draft reverts, 2. One owned item can be placed many times, 3. Any save rejection throws away all unsaved work, 4. Changes made just before leaving are lost, 5. Fish trophies can be claimed without playing, High, PlacementOwnership, validatePlacements()
 
 ### Community 161 - "domain/sketch.ts"
-Cohesion: 0.13
-Nodes (17): planSketchRound(), SKETCH_CHOICES, SketchCandidate, SketchRoundPlan, pool, renderSketch(), SKETCH_COLOR_WIDTH, SKETCH_DETAIL_WIDTH (+9 more)
+Cohesion: 0.08
+Nodes (34): listPieces(), pieceImageUrl(), PieceRow, toPieceDto(), EpochRow, GalleryRow, planSketchRound(), SKETCH_CHOICES (+26 more)
 
-### Community 162 - "features/economy/index.ts"
-Cohesion: 0.17
-Nodes (17): serverSnapshot, useEarnEvents(), buildClaim(), BuiltClaim, EarnDetail, EarnSource, GameSource, newRunId() (+9 more)
+### Community 162 - "CoinToast.tsx"
+Cohesion: 0.18
+Nodes (9): MuseumLayout(), CoinToast(), Toast, Stamp(), WalletProvider(), STAMP_ASPECT, STAMP_URL, EconomyEvent (+1 more)
 
 ### Community 163 - "painting-open"
 Cohesion: 0.50
 Nodes (4): file, kilobytes, seconds, painting-open
 
-### Community 165 - "Multiplayer ("other visitors") — plan v2 (Cloudflare)"
-Cohesion: 0.15
-Nodes (12): 0. Summary, 10. Decisions, 1. Product contract changes (approved 2026-10-31), 2. What already exists that this builds on, 3.1 Generated names (everyone has one), 3. Names, 5.1 Emotes (v1), 5. Protocol (`packages/core/src/presence/protocol.ts`) (+4 more)
+### Community 164 - "share.ts"
+Cohesion: 0.33
+Nodes (5): ShareOutcome, shareResult(), ShareSummary, shareText(), base
 
-### Community 167 - "member-route.ts"
-Cohesion: 0.24
-Nodes (12): roomEditor, PER_EDITOR, PUT(), versionOf(), PER_EDITOR, POST(), PER_MEMBER, POST() (+4 more)
+### Community 165 - "Multiplayer ("other visitors") — plan v2 (Cloudflare)"
+Cohesion: 0.17
+Nodes (11): ScreenChrome(), 0. Summary, 10. Decisions, 1. Product contract changes (approved 2026-10-31), 2. What already exists that this builds on, 5.1 Emotes (v1), 5. Protocol (`packages/core/src/presence/protocol.ts`), 8.1 Expected cost (+3 more)
 
 ### Community 168 - "audience.ts"
 Cohesion: 0.11
-Nodes (21): ArtistPage(), dynamic, generateMetadata(), GET(), GET(), FollowForm(), BRAND, getArtistPage() (+13 more)
+Nodes (20): ArtistPage(), dynamic, generateMetadata(), GET(), GET(), FollowForm(), getArtistPage(), AnalyticsSummary (+12 more)
 
 ### Community 169 - "icon-basket"
 Cohesion: 0.67
 Nodes (3): icon-basket, file, vector
 
-### Community 170 - "reveal.ts"
-Cohesion: 0.17
-Nodes (9): PlaceInfo, InkMap, planGame(), ROUND_SPREAD, createReveal(), compose(), PENCIL, SketchReveal (+1 more)
+### Community 170 - "plan.ts"
+Cohesion: 0.31
+Nodes (6): PlaceInfo, planGame(), ROUND_SPREAD, createReveal(), compose(), shuffle()
 
-### Community 171 - "next"
-Cohesion: 0.24
-Nodes (11): dynamic, Hall(), MuseumPage(), CurrentlyShowing(), dynamic, GUIDELINES, LandingPage(), EMPTY (+3 more)
+### Community 172 - "Character"
+Cohesion: 0.08
+Nodes (6): Carried, Character, Helm, Matcha, hop(), 2. How the game draws the bunny today (read from the repo, not run)
 
-### Community 172 - "config.ts"
-Cohesion: 0.05
-Nodes (30): Backdrop, Attachment, Carried, CarriedState, createCarried(), Character, Perch, Pose (+22 more)
+### Community 174 - "AccountSheet"
+Cohesion: 0.29
+Nodes (9): AccountSheet(), continueAnyway(), doSignOut(), runDelete(), runName(), submit(), submitDelete(), submitName() (+1 more)
 
-### Community 174 - "lib/slots/index.ts"
-Cohesion: 0.09
-Nodes (11): Probe(), StoredSlot, defaultEnv(), defaultStore(), EventTargetLike, MemberInfo, SlotHandle, useMember (+3 more)
+### Community 176 - "createDecorController"
+Cohesion: 0.67
+Nodes (4): createDecorController(), canvasRect(), targetRise(), toScreen()
 
-### Community 176 - "carry.test.ts"
-Cohesion: 0.22
-Nodes (13): CARRY_CAP, carryAdd(), CarryEntry, carryPrune(), carryRemove(), chunk(), ClaimRequest, tzOffsetNow() (+5 more)
-
-### Community 177 - "ticket/route.ts"
-Cohesion: 0.21
-Nodes (12): GET(), PER_MEMBER, PUT(), GET(), PER_IP, POST(), presenceUrl(), memberFromRequest() (+4 more)
-
-### Community 179 - "wallet/body.ts"
-Cohesion: 0.23
-Nodes (12): PER_MEMBER, POST(), baitIdOf(), integerOffset(), isRecord(), itemIdOf(), MAX_CLAIM_BATCH, ParsedWalletClaim (+4 more)
-
-### Community 180 - "atelier.ts"
-Cohesion: 0.15
-Nodes (15): MuseumLayout(), CoinToast(), Toast, Purse(), Stamp(), WalletProvider(), useWallet(), STAMP_SVG (+7 more)
-
-### Community 182 - "hit.ts"
-Cohesion: 0.17
-Nodes (12): CoinWall, createHiddenCoin(), Spot, AlphaMap, alphaMapFor(), alphaMaps, buildAlphaMap(), isPaintedAt() (+4 more)
-
-### Community 183 - "run.ts"
-Cohesion: 0.17
-Nodes (9): admin, childEnv, client, database, fresh, migrations, target, pg@^8.13.1 (+1 more)
-
-### Community 184 - "tab-turn.ts"
-Cohesion: 0.16
-Nodes (5): createTabTurn(), TabTurn, tab(), TurnEnv, TurnMessage
-
-### Community 185 - "outbox.test.ts"
-Cohesion: 0.27
-Nodes (12): OUTBOX_CAP, outboxAdd(), outboxDue(), OutboxEntry, outboxFail(), outboxRemove(), RETRY_BASE_MS, RETRY_MAX_MS (+4 more)
-
-### Community 186 - "Angler.tsx"
-Cohesion: 0.19
-Nodes (12): createCharacter(), contextLost(), loadKind(), loseRig(), setFrame(), createRigState(), RigAttachmentPose, FITS (+4 more)
+### Community 186 - "createCharacter"
+Cohesion: 0.38
+Nodes (6): createCharacter(), contextLost(), loadKind(), loseRig(), setFrame(), Angler()
 
 ### Community 187 - "media/storage.ts"
-Cohesion: 0.16
-Nodes (20): CONTENT_TYPES, GET(), PUT(), deletePiece(), GalleryPiece, ACCEPTED, createAssetFromUpload(), MAX_UPLOAD_BYTES (+12 more)
-
-### Community 189 - "src/types.ts"
-Cohesion: 0.23
-Nodes (11): listPieces(), pieceImageUrl(), PieceRow, toPieceDto(), pickDerivative(), ArtistPageDto, ArtistStatus, AssetStatus (+3 more)
+Cohesion: 0.09
+Nodes (24): CONTENT_TYPES, GET(), PUT(), getHallSlice(), SliceRow, deletePiece(), GalleryPiece, MAX_STANDS (+16 more)
 
 ### Community 190 - "themes.ts"
-Cohesion: 0.15
-Nodes (9): ownsAll, ownsNone, COZY_FLOOR_PROPS, COZY_TROPHIES, COZY_WALL_PROPS, PlacementKind, PropSpec, THEMES (+1 more)
+Cohesion: 0.22
+Nodes (9): COLLECTIONS, ATELIER_SPOTS, FRAME_ASPECT, LOCATIONS, LocationSpec, spotPlacementId(), SpotSpec, ownsAll (+1 more)
 
 ### Community 191 - "useSoundEffects.ts"
-Cohesion: 0.17
-Nodes (18): BackgroundMusic, clampVolume(), isDocumentHidden(), Options, useBackgroundMusic(), VISIBILITY_EVENTS, AudioContextCtor, decodeClip() (+10 more)
-
-### Community 192 - "Confirmed issues"
-Cohesion: 0.11
-Nodes (18): Confirmed issues, E2E-002 — Valid edge placement rejected through floating-point precision, E2E-003 — One owned prop can be placed multiple times, E2E-004 — Reload before autosave silently loses the latest placement, E2E-005 — Failed save and failed Done have no visible mobile explanation, E2E-006 — Restoring connectivity does not retry a failed draft save, E2E-007 — Keyboard activation cannot place drawer items, E2E-008 — Creating an account from My Room leaves the signed-in user on the sign-in prompt (+10 more)
+Cohesion: 0.18
+Nodes (17): EFFECTS, EffectSpec, FOOTSTEPS, SoundEffects, useSoundEffects(), gestured(), OPTIONS, applyMix() (+9 more)
 
 ### Community 193 - "Monets Lily Pond: exploration, UX and multiplayer QA"
 Cohesion: 0.29
 Nodes (6): Browser and interaction coverage, Changes made from the walkthrough, Monets Lily Pond: exploration, UX and multiplayer QA, Multiplayer and load, Practical limits, Regression checks and cleanup
 
 ### Community 194 - "createRemoteVisitors"
-Cohesion: 0.21
-Nodes (10): createRenderer(), createRigLayer(), createRemoteVisitors(), ensureLayer(), load(), placeOwn(), show(), showProp() (+2 more)
+Cohesion: 0.25
+Nodes (8): createRenderer(), createRigLayer(), createRemoteVisitors(), ensureLayer(), load(), show(), showProp(), sprite()
 
 ### Community 195 - "RigPreview.tsx"
-Cohesion: 0.30
-Nodes (9): RigPreviewPage(), NEXT, PROPS, RigPreview(), draw(), approach(), GROUNDED, rigFacing() (+1 more)
+Cohesion: 0.22
+Nodes (14): RigPreviewPage(), NEXT, PROPS, RigPreview(), draw(), Perch, Pose, approach() (+6 more)
 
-### Community 196 - "hang-tag.ts"
-Cohesion: 0.17
-Nodes (6): CARD, createHangTag(), HangTag, HangTagStyle, HOLE, KNOT
+### Community 197 - "pond-api.ts"
+Cohesion: 0.26
+Nodes (18): buyPondBait(), claimPondBounty(), errorOf(), exchangePondPearls(), fetchPondBounties(), fetchPondDex(), fetchPondLeaderboard(), fetchPondState() (+10 more)
 
-### Community 197 - "request"
-Cohesion: 0.38
-Nodes (12): buyPondBait(), claimPondBounty(), errorOf(), exchangePondPearls(), fetchPondBounties(), fetchPondDex(), fetchPondState(), isRecord() (+4 more)
-
-### Community 199 - "currentArtist"
-Cohesion: 0.25
-Nodes (8): GET(), PaintingRow, POST(), UPLOADS_PER_ARTIST, POST(), UPLOADS_PER_ARTIST, currentArtist(), isHttpUrl()
+### Community 199 - "rooms.ts"
+Cohesion: 0.09
+Nodes (34): GET(), PaintingRow, GET(), POST(), UPLOADS_PER_ARTIST, POST(), UPLOADS_PER_ARTIST, dynamic (+26 more)
 
 ### Community 200 - "visits/page.tsx"
 Cohesion: 0.25
 Nodes (10): amount(), duration(), dynamic, LANDMARKS, PAGES, RANGES, share(), VisitsPage() (+2 more)
 
-### Community 201 - "icons.tsx"
-Cohesion: 0.24
-Nodes (9): BaitTray(), BaitTrayProps, GuestRollOptions, BAIT, BaitId, GLYPHS, PearlIcon(), POND_CRIMSON (+1 more)
-
-### Community 203 - "confirm/page.tsx"
-Cohesion: 0.33
-Nodes (7): ConfirmFollow(), dynamic, dynamic, Unsubscribe(), FollowNotice(), confirmFollow(), unsubscribe()
-
-### Community 204 - "AccountSheet"
-Cohesion: 0.29
-Nodes (9): AccountSheet(), continueAnyway(), doSignOut(), runDelete(), runName(), submit(), submitDelete(), submitName() (+1 more)
+### Community 202 - "lobby.ts"
+Cohesion: 0.08
+Nodes (25): CoinWall, createHiddenCoin(), Spot, AlphaMap, alphaMapFor(), alphaMaps, buildAlphaMap(), isPaintedAt() (+17 more)
 
 ### Community 205 - "BountyPanel.tsx"
-Cohesion: 0.36
-Nodes (8): PondBounties, formatCountdown(), nextUtcMidnight(), utcDayLabel(), useCountdown(), useNow(), BountyPanel(), dayLabel()
+Cohesion: 0.31
+Nodes (6): GLYPHS, PearlIcon(), POND_CRIMSON, PondIconName, PondHud(), PondHudProps
 
 ### Community 207 - "CrowdPreview.tsx"
 Cohesion: 0.33
 Nodes (7): CrowdPreviewPage(), CrowdPreview(), draw(), KINDS, Stats, Window, clearRigLayer()
 
-### Community 208 - "formatInteger"
-Cohesion: 0.50
-Nodes (9): refreshWalletNow(), formatInteger(), setPondState(), claim(), BaitShop(), buy(), Exchange(), exchange() (+1 more)
-
-### Community 209 - "Rig"
-Cohesion: 0.25
-Nodes (3): RigState, Rig, Shown
+### Community 209 - "remote-visitors.ts"
+Cohesion: 0.11
+Nodes (11): Attachment, RigState, Rig, RigAttachment, placeOwn(), FLAT, insideScreen(), MAX_SHOWN (+3 more)
 
 ### Community 210 - "shopkeeper.ts"
 Cohesion: 0.25
@@ -1012,49 +936,29 @@ Nodes (7): firstPainting(), flush(), Metric, queue, REPORTED, FIRST_PAINTING_MAR
 Cohesion: 0.25
 Nodes (8): 4. Transport: Cloudflare Durable Objects, Decision (2026-10-31), Deploying, Identity cannot be forged, Local development and tests, Rooms and capacity, Shape of `apps/presence` (about 200 lines), main()
 
-### Community 213 - "vitals.ts"
-Cohesion: 0.36
-Nodes (6): DEVICES, METRICS, normalizePage(), parseVitalsReport(), RATINGS, VitalRow
-
-### Community 214 - "createStage"
-Cohesion: 0.52
-Nodes (7): createNearby(), createStage(), closeEntry(), enter(), isCurrent(), isQuiet(), open()
-
-### Community 215 - "RoomSound"
-Cohesion: 0.33
-Nodes (4): StageOptions, RoomSound, SoundState, EffectName
-
-### Community 216 - "share.ts"
-Cohesion: 0.33
-Nodes (5): ShareOutcome, shareResult(), ShareSummary, shareText(), base
-
-### Community 217 - "db.ts"
-Cohesion: 0.43
-Nodes (4): getPool(), poolConfig(), sslFor(), RDS_CA_BUNDLE
-
-### Community 219 - "setCostumeVisibility"
-Cohesion: 0.50
-Nodes (3): Layer, setCostumeVisibility(), setCostume()
+### Community 215 - "stage.ts"
+Cohesion: 0.05
+Nodes (33): CharacterSprites, CameraRig, ROOM_ART, RoomArt, EXITS, isDoor(), linkedDoor(), LINKS (+25 more)
 
 ## Knowledge Gaps
 - **5 isolated node(s):** `../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1349 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **27 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1376 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `AccountSheet.tsx` to `gallery/page.tsx`, `SketchGuess.tsx`, `app/layout.tsx`, `machine.ts`, `PondRoom.tsx`, `lib/presence.ts`, `Test Fakes and Helpers`, `actions.ts`, `join-room.ts`, `pond-state.ts`, `PersonalRoom.tsx`, `Museum.tsx`, `Walkthrough.tsx`, `Web Package Dependencies`, `features/economy/index.ts`, `risk.ts`, `audience.ts`, `bug-reports.ts`, `PondTicker.tsx`, `next`, `useSound`, `lib/slots/index.ts`, `Water.tsx`, `atelier.ts`, `pond-format.ts`, `Angler.tsx`, `logic.ts`, `useSoundEffects.ts`, `RigPreview.tsx`, `isHallOwner`, `AssetImage`, `icons.tsx`, `BountyPanel.tsx`, `CrowdPreview.tsx`, `VitalsReporter.tsx`, `SoundProvider.tsx`, `ticket/route.ts`, `FishingView.tsx`, `pond-api.ts`?**
-  _High betweenness centrality (0.078) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `gallery.ts`, `SketchGuess.tsx`, `app/layout.tsx`, `lib/presence.ts`, `PondPanels.tsx`, `Test Fakes and Helpers`, `actions.ts`, `room-events.ts`, `useBackgroundMusic.ts`, `app/page.tsx`, `pond-state.ts`, `useVisitorName.ts`, `Walkthrough.tsx`, `Web Package Dependencies`, `slots/store.ts`, `CoinToast.tsx`, `risk.ts`, `BountyPanel.tsx`, `audience.ts`, `bug-reports.ts`, `PondTicker.tsx`, `FakeServer`, `Water.tsx`, `wardrobe.ts`, `pond-format.ts`, `AccountSheet.tsx`, `economy/store.ts`, `logic.ts`, `useSoundEffects.ts`, `RigPreview.tsx`, `GuestBoard.tsx`, `ReadScreen.tsx`, `BountyPanel.tsx`, `CrowdPreview.tsx`, `VitalsReporter.tsx`, `stage.ts`, `FishingView.tsx`, `FishingView.tsx`, `pond-api.ts`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
 - **What connects `../tsconfig.base.json`, `../../tsconfig.base.json`, `../../tsconfig.base.json` to the rest of the system?**
   _5 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `walk.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.11494252873563218 - nodes in this community are weakly interconnected._
-- **Why does `three` connect `three` to `atelier.ts`, `hang-tag.ts`, `hall/room.ts`, `scene/assets.ts`, `stage.ts`, `config.ts`, `scene.ts`, `cozy.ts`, `pond/art.ts`, `join-room.ts`, `prepare-models.mjs`, `hit.ts`, `rig.ts`, `ambience.ts`, `Web Package Dependencies`, `pond/room.ts`?**
-  _High betweenness centrality (0.044) - this node is a cross-community bridge._
+  _Cohesion score 0.1206896551724138 - nodes in this community are weakly interconnected._
+- **Why does `three` connect `three` to `atelier.ts`, `RigPreview.tsx`, `createHallRoom`, `scene/assets.ts`, `lobby.ts`, `join-room.ts`, `scene.ts`, `cozy.ts`, `pond/art.ts`, `remote-visitors.ts`, `prepare-models.mjs`, `createRoomPassage`, `stage.ts`, `perf.ts`, `rig.ts`, `ambience.ts`, `Web Package Dependencies`, `pond/room.ts`?**
+  _High betweenness centrality (0.045) - this node is a cross-community bridge._
 - **Should `SketchGuess.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.11428571428571428 - nodes in this community are weakly interconnected._
-- **Why does `pg` connect `run.ts` to `core/src/index.ts`, `db.ts`, `wallet.ts`, `core/package.json`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Should `rooms.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06453028972783142 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.12043010752688173 - nodes in this community are weakly interconnected._
+- **Why does `query()` connect `actions.ts` to `domain/guestboard.ts`, `rooms.ts`, `jobs.ts`, `epoch.ts`, `visits.ts`, `confirm/page.tsx`, `performance/page.tsx`, `core/src/index.ts`, `domain/sketch.ts`, `wallet.ts`, `audience.ts`, `hitForVisitor`, `handlers.ts`, `media/storage.ts`, `bug-reports.ts`, `rooms.ts`, `visits/page.tsx`, `json`, `db-tests/pond.test.ts`, `ticket/route.ts`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Should `jobs.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.14814814814814814 - nodes in this community are weakly interconnected._

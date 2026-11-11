@@ -39,7 +39,15 @@ export default function ScreenChrome() {
 
   return (
     <>
-      {leaving ? <div className="screen-leaving" aria-hidden="true" /> : null}
+      {leaving && pathname === '/museum' ? (
+        // Leaving the hall, its stage curtain closes; the next room's loading curtain then opens.
+        <div className="screen-leaving is-curtain" aria-hidden="true">
+          <div className="hall-skeleton-drape is-left" />
+          <div className="hall-skeleton-drape is-right" />
+        </div>
+      ) : leaving ? (
+        <div className="screen-leaving" aria-hidden="true" />
+      ) : null}
       <div className={onDark ? 'screen-chrome screen-chrome--on-dark' : 'screen-chrome'}>
         {showHome ? (
           <button

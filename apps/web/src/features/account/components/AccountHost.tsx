@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { onOpenAccount } from '@/features/account/lib/account'
+import { onOpenAccount, type AccountMode } from '@/features/account/lib/account'
 
 const AccountSheet = dynamic(() => import('@/features/account/components/AccountSheet'), { ssr: false })
 
 export default function AccountHost() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [mode, setMode] = useState<AccountMode | null>(null)
 
-  useEffect(() => onOpenAccount(() => setIsOpen(true)), [])
+  useEffect(() => onOpenAccount(setMode), [])
 
-  return isOpen ? <AccountSheet onClose={() => setIsOpen(false)} /> : null
+  return mode ? <AccountSheet initialMode={mode} onClose={() => setMode(null)} /> : null
 }

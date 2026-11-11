@@ -1,53 +1,72 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { BRAND } from '@tiny/core'
+import manifest from '@/generated/asset-manifest.json'
 import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import { firstSlice } from '@/features/hall/lib/slice'
 import AssetImage from '@/shared/components/AssetImage'
+import LandingAccount from '@/features/landing/LandingAccount'
+import { builtUrl } from '@/shared/lib/assets'
 
 export const dynamic = 'force-dynamic'
 
-const GUIDELINES = [
-  'Silence is not required — share your favourite pieces with your friends.',
-  'There are no closing hours. Stay as long as you want.',
-  'Touching the art, or zooming in to an unreasonable degree, is strictly encouraged.',
-]
+const [BRAND_OWNER, ...BRAND_REST] = BRAND.split(' ')
+
+function Decor({ name, className }: { name: keyof typeof manifest.atelier; className: string }) {
+  const { src, width, height } = manifest.atelier[name]
+  return <img className={className} src={builtUrl(src)} width={width} height={height} alt="" />
+}
 
 export default function LandingPage() {
   return (
     <main className="landing">
       <MediaPreconnect />
+
+      <div className="landing-scene" aria-hidden="true">
+        <div className="landing-wall" />
+        <div className="landing-floor" />
+        <div className="landing-valance" />
+
+        <Decor name="portraitWink" className="landing-portrait is-wink" />
+        <Decor name="portraitJiji" className="landing-portrait is-jiji" />
+        <div className="landing-portrait is-bunny">
+          <Decor name="portraitBunny" className="landing-portrait-frame" />
+          <Decor name="ribbon" className="landing-portrait-bow" />
+        </div>
+        <div className="landing-portrait is-bruce">
+          <Decor name="portraitBruce" className="landing-portrait-frame" />
+          <Decor name="ribbonBlue" className="landing-portrait-bow" />
+        </div>
+
+        <Decor name="cabinet" className="landing-cabinet" />
+        <Decor name="jewelryBox" className="landing-jewelry" />
+        <Decor name="perfume" className="landing-perfume" />
+        <AssetImage name="landing/cat" className="landing-cat" />
+
+        <Decor name="column" className="landing-column" />
+        <AssetImage name="landing/book" className="landing-book" />
+      </div>
+
       <div className="landing-body">
         <div className="welcome-plaque">
           <span className="welcome-kicker">Welcome to</span>
-          <h1 className="script welcome-title">{BRAND}</h1>
+          <h1 className="script welcome-title">
+            {BRAND_OWNER}
+            <br />
+            {BRAND_REST.join(' ')}
+          </h1>
         </div>
 
-        <section className="guidelines" aria-labelledby="guidelines-heading">
-          <h2 id="guidelines-heading">Visitor&apos;s guidelines:</h2>
-          <ol>
-            {GUIDELINES.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ol>
-          <p className="open-line">The gallery floor is officially open. Enjoy!</p>
-        </section>
+        <p className="landing-tagline">
+          The guards went home....
+          <wbr />
+          The paintings woke up.
+        </p>
 
-      </div>
-
-      <div className="landing-floor">
-        <Link className="button" href="/museum" data-track="start_visit">
+        <Link className="landing-button is-start" href="/museum" data-track="start_visit">
           Start visit
         </Link>
-      </div>
-
-      <AssetImage name="pedestal" className="landing-column" aria-hidden="true" />
-
-      <div className="landing-visitor">
-        <AssetImage name="bunny-right" className="visitor-bunny" aria-hidden="true" />
-        <Link className="visitor-ticket" href="/museum" data-track="start_visit" aria-label="Start visit">
-          <AssetImage name="ticket" aria-hidden="true" />
-        </Link>
+        <LandingAccount />
       </div>
 
       <Suspense fallback={null}>

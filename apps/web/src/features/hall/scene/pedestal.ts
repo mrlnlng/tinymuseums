@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { HELM_PEDESTAL_FILE, type Assets } from './assets'
 import { CONFIG } from './config'
+import { groundShadow } from './shadow'
 
 export type PedestalVoice = 'harp' | 'owl'
 
@@ -43,6 +44,11 @@ export function createPedestal(
   const group = new THREE.Group()
   group.position.set(x, CONFIG.pedestal.centerY, CONFIG.pedestal.z)
   group.add(sprite)
+
+  const shadow = groundShadow(width * 0.85, 0, 0)
+  shadow.position.y = Math.min(-0.02, CONFIG.pedestal.centerY - height / 2 + 0.03) - CONFIG.pedestal.centerY
+  shadow.position.z = -0.36 - CONFIG.pedestal.z
+  group.add(shadow)
 
   const voice = VOICES[chosen.file] ?? null
 
@@ -88,6 +94,8 @@ export function createPedestal(
     },
 
     dispose() {
+      group.remove(shadow)
+      shadow.geometry.dispose()
       geometry.dispose()
       material.dispose()
       notes?.dispose()

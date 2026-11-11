@@ -9,7 +9,8 @@ import { pickPainted } from './hit'
 import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
-import { createSpotlight, disposeSpotlights } from './spotlight'
+import { createPaintingLight, disposeSpotlights, type PaintingLight } from './spotlight'
+import { disposeGroundShadows, groundShadow } from './shadow'
 
 interface SlotRuntime {
   index: number
@@ -45,7 +46,7 @@ export interface MountedDisplay {
   display: HallPieceDto
   group: THREE.Group
   mesh: THREE.Mesh
-  spotlight: THREE.Mesh
+  light: PaintingLight
   centerX: number
   width: number
   height: number
@@ -185,6 +186,11 @@ export class HallScene {
 
     this.updateFades(now)
     this.updatePedestals(dt, near)
+    const t = now / 1000
+    for (const mount of this.mountedList) {
+      const level = Math.abs(cameraX - mount.centerX) < mount.width / 2 + CONFIG.spotlight.nearMargin ? 1 : 0
+      mount.light.update(dt, level, t)
+    }
     this.coin.update(dt)
   }
 
@@ -265,8 +271,8 @@ export class HallScene {
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
-    const spotlight = createSpotlight(width, bottom, height)
-    group.add(spotlight)
+    const light = createPaintingLight(width, bottom, height)
+    group.add(light.group)
 
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
     const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
@@ -281,9 +287,11 @@ export class HallScene {
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
 
-    for (const slice of ropeSlices(this.assets.textures.rope, this.assets.aspect.rope, width, 'ownedByDisplay')) {
-      group.add(slice)
-    }
+    const ropes = ropeSlices(this.assets.textures.rope, this.assets.aspect.rope, width, 'ownedByDisplay')
+    for (const slice of ropes) group.add(slice)
+    const postShadowY = Math.min(-0.02, CONFIG.rope.centerY - CONFIG.rope.height / 2 + 0.03)
+    if (ropes[0]) group.add(groundShadow(0.34, ropes[0].position.x, postShadowY))
+    if (ropes.length > 1) group.add(groundShadow(0.34, ropes[ropes.length - 1].position.x, postShadowY))
 
     this.coin.attach({
       index: slot.index,
@@ -301,7 +309,7 @@ export class HallScene {
       display: piece,
       group,
       mesh,
-      spotlight,
+      light,
       centerX,
       width,
       height,
@@ -342,11 +350,12 @@ export class HallScene {
 
     this.scene.remove(mount.group)
     this.coin.detach(index)
+    mount.group.remove(mount.light.group)
+    mount.light.dispose()
     mount.group.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
-      // Every beam shares one material and texture, so only its geometry belongs to the display.
-      if (obj === mount.spotlight) return
+      if (obj.userData.sharedGroundShadow) return
       const material = obj.material as THREE.MeshBasicMaterial
       if (material.map?.userData.ownedByDisplay) material.map.dispose()
       material.dispose()
@@ -469,5 +478,6 @@ export class HallScene {
     for (const index of [...this.mounted.keys()]) this.unmount(index)
     for (const index of [...this.pedestals.keys()]) this.removePedestal(index)
     disposeSpotlights()
+    disposeGroundShadows()
   }
 }

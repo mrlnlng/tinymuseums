@@ -5,10 +5,12 @@ import { outfit } from '@tiny/core/slots'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
 import { loadScenery, type Scenery } from '@/features/hall/scene/assets'
+import { createHallAmbience } from '@/features/hall/scene/ambience'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
 import { CONFIG, centerYFor } from '@/features/hall/scene/config'
+import { createHallForeground } from '@/features/hall/scene/foreground'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
@@ -103,7 +105,10 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       let disposed = false
       let presence: Room | null = null
 
-      const backdrop = createBackdrop(scene, assets)
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const backdrop = createBackdrop(scene, assets, reducedMotion)
+      const ambience = createHallAmbience(scene, backdrop, reducedMotion)
+      const foreground = createHallForeground(characterHost, reducedMotion)
       const hall = new HallScene(scene, assets)
       hall.ingestSlice(options.initialSlice)
       hall.onTextureReady = (texture) => renderer.initTexture(texture)
@@ -467,6 +472,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
 
       let restX: number | null = null
       let hasMoved = false
+      let wasAirborne = false
 
       const openingStart = performance.now()
       let fontsReady = false
@@ -546,11 +552,15 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           helm?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
           matcha?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
 
-          backdrop.update(
-            traversal.cameraX,
-            ctx.rig.viewWidth,
-            centerYFor(ctx.rig.frustumHeight) + ctx.rig.frustumHeight / 2,
-          )
+          const viewTop = centerYFor(ctx.rig.frustumHeight) + ctx.rig.frustumHeight / 2
+          backdrop.update(traversal.cameraX, ctx.rig.viewWidth, viewTop, frame.now)
+          const airborne = traversal.isAirborne
+          if (wasAirborne && !airborne) {
+            ambience.puff(traversal.x, CONFIG.character.centerY - CONFIG.character.height / 2 + 0.06)
+          }
+          wasAirborne = airborne
+          ambience.update(frame.now, frame.dt, frame.camera, viewTop)
+          foreground.update(frame.now, traversal.cameraX, ctx.rig.viewWidth)
           hall.update(frame.now, frame.dt, traversal.cameraX, near)
           if (!ctx.isQuiet()) hall.releaseCoin()
           placards.sync(hall.getMounted(), frame.camera, frame.viewport)
@@ -571,6 +581,8 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           follower.dispose()
           placards.clear()
           hall.dispose()
+          ambience.dispose()
+          foreground.dispose()
           backdrop.dispose()
           helm?.dispose()
           matcha?.dispose()

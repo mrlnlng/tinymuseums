@@ -34,6 +34,8 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `pond/sparkles.png`, `pond/splash.png`, `pond/lily.png` | `Untitled_Artwork-130.png`, `-131.png`, `-132.png`, alpha bounds trimmed; native transparency preserved |
 | `pond/fish-star-snapper.png` … `pond/fish-blobfish.png` | `fish_caught/Untitled_Artwork-125.png` … `-128.png`, trimmed, max 600px long side, quantised |
 | `pond/layout.json` | source canvas dimensions, normalized overlay boxes, traced water and walking shoreline for the new garden |
+| `landing/book.png` | `2026-11-10/book.png`, trimmed |
+| `landing/cat.png` | cut out of `2026-11-10/home_mock.png` (no separate cat layer was delivered); reimport with `node apps/web/tooling/import-landing-assets.mjs /home/shan/Downloads/mocks/2026-11-10` |
 
 ## Monets Lily Pond (2026-11-08)
 

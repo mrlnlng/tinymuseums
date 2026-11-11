@@ -537,12 +537,12 @@
       }
     },
     "pond/forest-door": {
-      "w": 780,
-      "h": 1160,
+      "w": 1169,
+      "h": 1740,
       "x2": {
-        "w": 780,
-        "h": 1160,
-        "src": "pond-forest-door@2x.4078b51817.webp"
+        "w": 1169,
+        "h": 1740,
+        "src": "pond-forest-door@2x.404d21d202.webp"
       }
     },
     "pond/forest-noticeboard-signed": {
@@ -564,12 +564,12 @@
       }
     },
     "pond/forest-journal-signed": {
-      "w": 1380,
-      "h": 770,
+      "w": 2070,
+      "h": 1155,
       "x2": {
-        "w": 1380,
-        "h": 770,
-        "src": "pond-forest-journal-signed@2x.4dc354053c.webp"
+        "w": 2070,
+        "h": 1155,
+        "src": "pond-forest-journal-signed@2x.1cb6b79328.webp"
       }
     },
     "pond/shopkeeper-apron": {
@@ -796,12 +796,12 @@
       }
     },
     "pond/forest-door-sign": {
-      "w": 339,
-      "h": 251,
+      "w": 508,
+      "h": 376,
       "x2": {
-        "w": 339,
-        "h": 251,
-        "src": "pond-forest-door-sign@2x.35fa8c96ea.webp"
+        "w": 508,
+        "h": 376,
+        "src": "pond-forest-door-sign@2x.0af2e84fca.webp"
       }
     }
   },

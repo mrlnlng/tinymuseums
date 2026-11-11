@@ -31,12 +31,16 @@ function mulberry(seed: number): () => number {
   }
 }
 
-function painted(width: number, height: number, draw: (ink: Ink) => void): THREE.CanvasTexture {
+/** Drawn at several times its nominal size, so it stays sharp on dense phone screens. */
+function painted(width: number, height: number, draw: (ink: Ink) => void, density = 3): THREE.CanvasTexture {
   const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  canvas.width = width * density
+  canvas.height = height * density
   const ink = canvas.getContext('2d')
-  if (ink) draw(ink)
+  if (ink) {
+    ink.scale(density, density)
+    draw(ink)
+  }
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.minFilter = THREE.LinearMipmapLinearFilter
@@ -153,7 +157,7 @@ function glowTexture(): THREE.CanvasTexture {
     glow.addColorStop(1, 'rgba(255, 255, 255, 0)')
     ink.fillStyle = glow
     ink.fillRect(0, 0, 64, 64)
-  })
+  }, 1)
 }
 
 function shadowTexture(): THREE.CanvasTexture {
@@ -166,7 +170,7 @@ function shadowTexture(): THREE.CanvasTexture {
     shade.addColorStop(1, 'rgba(30, 62, 24, 0)')
     ink.fillStyle = shade
     ink.fillRect(-64, -64, 128, 128)
-  })
+  }, 1)
 }
 
 function rayTexture(): THREE.CanvasTexture {
@@ -184,7 +188,7 @@ function rayTexture(): THREE.CanvasTexture {
     across.addColorStop(1, 'rgba(0, 0, 0, 0)')
     ink.fillStyle = across
     ink.fillRect(0, 0, 128, 512)
-  })
+  }, 1)
 }
 
 function vignetteTexture(): THREE.CanvasTexture {
@@ -200,14 +204,13 @@ function vignetteTexture(): THREE.CanvasTexture {
     sun.addColorStop(1, 'rgba(255, 244, 190, 0)')
     ink.fillStyle = sun
     ink.fillRect(0, 0, 256, 256)
-  })
+  }, 1)
 }
 
-/** Out-of-focus leaves close to the viewer: broad, dark and soft. */
+/** Leaves close to the viewer: broad and dark. */
 function frontTexture(seed: number): THREE.CanvasTexture {
   const random = mulberry(seed)
   return painted(256, 128, (ink) => {
-    ink.filter = 'blur(2.5px)'
     for (let i = 0; i < 16; i++) {
       const offset = (random() - 0.5) * 200
       const tall = (50 + random() * 66) * (1 - Math.abs(offset) / 240)

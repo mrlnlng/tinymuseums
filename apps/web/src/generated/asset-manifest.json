@@ -564,12 +564,12 @@
       }
     },
     "pond/forest-journal-signed": {
-      "w": 1536,
-      "h": 1024,
+      "w": 1380,
+      "h": 770,
       "x2": {
-        "w": 1536,
-        "h": 1024,
-        "src": "pond-forest-journal-signed@2x.e1dd5456ad.webp"
+        "w": 1380,
+        "h": 770,
+        "src": "pond-forest-journal-signed@2x.4dc354053c.webp"
       }
     },
     "pond/shopkeeper-apron": {

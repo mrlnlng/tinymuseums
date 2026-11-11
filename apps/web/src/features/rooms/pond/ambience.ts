@@ -628,6 +628,16 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
     return { mesh, x: 0, y: 0, land: 0, phase: random() * 6, wait: random() * 6, size: 0.06 + random() * 0.04, drift: 0 }
   })
 
+  // The journal's lantern burns with a small unsteady flame.
+  const journal = POND_LANDMARKS.find((landmark) => landmark.kind === 'fishdex')!
+  const journalWidth = journal.width * scaleAt(journal.depth)
+  const lanternX = journal.x + (1128 / 1380 - 0.5) * journalWidth
+  const lanternY = groundY + liftAt(journal.depth) + (1 - 195 / 770) * (journalWidth / journal.aspect)
+  const lantern = sprite(glow, { additive: true, colour: '#ffc45e', opacity: 0.5 })
+  lantern.position.set(lanternX, lanternY, -0.19)
+  const flame = sprite(glow, { additive: true, colour: '#fff2b0', opacity: 0.7 })
+  flame.position.set(lanternX, lanternY, -0.189)
+
   // Butterflies wander between the flowers.
   const wing = keep(wingTexture())
   const flutter = [
@@ -788,6 +798,11 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
       twinkle.mesh.material.opacity = still ? 1 : 0.4 + 0.6 * pulse
     }
     doorGlow.material.opacity = 0.16 + 0.1 * Math.sin(t * 0.8)
+    const flicker = still ? 0.6 : 0.55 + 0.25 * Math.sin(t * 7.3) * Math.sin(t * 3.1 + 1) + 0.2 * Math.sin(t * 1.3)
+    lantern.scale.setScalar(journalWidth * (0.3 + 0.08 * flicker))
+    lantern.material.opacity = 0.3 + 0.3 * flicker
+    flame.scale.set(journalWidth * 0.07, journalWidth * (0.09 + 0.03 * flicker), 1)
+    flame.material.opacity = 0.45 + 0.4 * flicker
     for (const mote of gateMotes) {
       mote.t = (mote.t + mote.speed * step) % 1
       const at = gateAt(mote.px + Math.sin(clock * 0.9 + mote.phase) * 26, 1300 - mote.t * 760)

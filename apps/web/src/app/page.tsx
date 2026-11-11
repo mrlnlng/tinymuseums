@@ -26,6 +26,14 @@ export default function LandingPage() {
       <div className="landing-scene" aria-hidden="true">
         <div className="landing-wall" />
 
+        {/* The phone layout's stage: side drapes and a chandelier in place of the string lights. */}
+        <div className="landing-stage">
+          <Decor name="curtainSwag" className="landing-swag" />
+          <Decor name="curtainDrape" className="landing-drape is-left" />
+          <Decor name="curtainDrape" className="landing-drape is-right" />
+          <AssetImage name="landing/chandelier" className="landing-chandelier" />
+        </div>
+
         <div className="landing-portrait is-wink" data-poke>
           <Decor name="portraitWink" className="landing-portrait-frame" />
         </div>
@@ -55,6 +63,9 @@ export default function LandingPage() {
         </div>
         <div className="landing-prop is-cat">
           <AssetImage name="landing/cat" className="landing-cat" />
+        </div>
+        <div className="landing-walker">
+          <AssetImage name="landing/cat-walk" className="landing-walker-cat" />
         </div>
       </div>
 

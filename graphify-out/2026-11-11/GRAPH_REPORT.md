@@ -1,7 +1,7 @@
 # Graph Report - tiny-museum  (2026-11-11)
 
 ## Corpus Check
-- 495 files · ~272,102 words
+- 495 files · ~272,099 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 82 file(s) not represented in the graph (top: .avif 39, .glb 34, .css 4)
 

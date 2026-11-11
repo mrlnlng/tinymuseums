@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { runLandingCat } from './cat'
 
 const POKEABLE = '[data-poke], .landing-cat, .landing-perfume, .landing-jewelry, .landing-book'
 
@@ -140,6 +141,7 @@ export default function LandingFx() {
     observer.observe(root)
     resize()
     root.addEventListener('click', onClick)
+    const stopCat = still ? null : runLandingCat(root)
     if (!still) {
       root.addEventListener('pointermove', onPointerMove)
       document.addEventListener('visibilitychange', onVisibility)
@@ -149,6 +151,7 @@ export default function LandingFx() {
     return () => {
       cancelAnimationFrame(frameId)
       observer.disconnect()
+      stopCat?.()
       root.removeEventListener('click', onClick)
       root.removeEventListener('pointermove', onPointerMove)
       document.removeEventListener('visibilitychange', onVisibility)

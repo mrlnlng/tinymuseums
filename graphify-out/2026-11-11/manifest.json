@@ -267,9 +267,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/page.tsx": {
-    "mtime": 1794429159.8257477,
-    "seen": 1794429411.0050163,
-    "ast_hash": "bd1c448157ad1e90b308094281f3cb21",
+    "mtime": 1794431065.660977,
+    "seen": 1794431188.5648236,
+    "ast_hash": "9bdc64a6ebbeebb26f2fb28165a71a41",
     "semantic_hash": ""
   },
   "apps/web/src/app/q/[token]/route.ts": {
@@ -5541,9 +5541,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/landing/LandingFx.tsx": {
-    "mtime": 1794429159.8161197,
-    "seen": 1794429411.0051162,
-    "ast_hash": "649224ff40a57e1211cfe531dd4fe97a",
+    "mtime": 1794431093.7082727,
+    "seen": 1794431188.564918,
+    "ast_hash": "7d99df989b04ff9b11bf353018bd4ac5",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

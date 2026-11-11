@@ -877,6 +877,24 @@
         "h": 405,
         "src": "landing-cat@2x.4163b0a300.webp"
       }
+    },
+    "landing/chandelier": {
+      "w": 837,
+      "h": 668,
+      "x2": {
+        "w": 837,
+        "h": 668,
+        "src": "landing-chandelier@2x.8a5e37532e.webp"
+      }
+    },
+    "landing/cat-walk": {
+      "w": 640,
+      "h": 718,
+      "x2": {
+        "w": 640,
+        "h": 718,
+        "src": "landing-cat-walk@2x.2291f3f009.webp"
+      }
     }
   },
   "atlases": {

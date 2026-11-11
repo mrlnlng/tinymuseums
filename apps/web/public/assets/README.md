@@ -36,6 +36,7 @@ cp apps/web/public/assets/frame.png apps/web/public/assets/manifest.json package
 | `pond/layout.json` | source canvas dimensions, normalized overlay boxes, traced water and walking shoreline for the new garden |
 | `landing/book.png` | `2026-11-10/book.png`, trimmed |
 | `landing/cat.png` | cut out of `2026-11-10/home_mock.png` (no separate cat layer was delivered); reimport with `node apps/web/tooling/import-landing-assets.mjs /home/shan/Downloads/mocks/2026-11-10` |
+| `landing/chandelier.png`, `landing/cat-walk.png` | cut from frames of `2026-11-11/Tiny Museum Screens(2).MOV`, the phone home mock (no layers were delivered), at twice the video's size; the importer above rebuilds their shipped copies |
 
 ## Monets Lily Pond (2026-11-08)
 

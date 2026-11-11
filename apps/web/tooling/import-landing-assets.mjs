@@ -160,4 +160,15 @@ for (const [name, image] of Object.entries(masters)) {
   manifest.images[`landing/${name}`] = entry
   console.log(`landing/${name}: ${entry.w}×${entry.h}`)
 }
+
+/**
+ * Art that exists only inside the phone mock video (2026-11-11): the crystal chandelier and the
+ * whole cat. They were cut from its frames by hand into the landing folder, at twice the video's
+ * size; this only rebuilds their shipped copies. Replace the PNGs if the layers are ever delivered.
+ */
+for (const name of ['chandelier', 'cat-walk']) {
+  const entry = await buildImage(`landing/${name}`, resolve(target, `${name}.png`))
+  manifest.images[`landing/${name}`] = entry
+  console.log(`landing/${name}: ${entry.w}×${entry.h}`)
+}
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n')

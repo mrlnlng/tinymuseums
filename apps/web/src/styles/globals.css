@@ -1585,102 +1585,162 @@ code.token {
   }
 }
 
-/* A tall screen stacks the same scene: 100 units wide and at least 200 tall. */
+/* Only the phone layout has a stage and a cat that walks; see the container rules below. */
+.landing-stage,
+.landing-walker { display: none; }
+
+/*
+ * A tall screen follows the phone mock: 100 units wide and at least 178 tall. Everything hung from
+ * the ceiling keeps the mock's distances from the top, the floor pieces keep theirs from the bottom,
+ * and a taller phone's spare height (--slack) opens up between the two.
+ */
 @container (max-aspect-ratio: 1 / 1) {
   .landing-scene,
   .landing-body {
-    --u: min(1cqw, 0.5cqh);
+    --u: min(1cqw, 0.5618cqh);
+    --slack: max(0px, 100cqh - var(--u) * 178);
+    --lift: calc(var(--slack) * 0.4);
   }
 
-  .landing-wall { background-size: calc(var(--u) * 110) auto; }
+  .landing-wall { background: #430a21; }
+  .landing-valance,
+  .landing-portrait.is-wink,
+  .landing-prop.is-cat { display: none; }
 
-  .landing-valance {
-    top: calc(var(--u) * -2.5);
-    height: calc(var(--u) * 25);
-    background-position: center top;
+  .landing-stage {
+    --d: 0.5;
+    display: block;
+    position: absolute;
+    inset: 0;
+    translate:
+      calc(var(--px, 0) * var(--d) * var(--u))
+      calc(var(--py, 0) * var(--d) * var(--u) * 0.6);
   }
 
-  .landing-floor { --floor-h: 13; }
-  .landing-floor::before { height: calc(var(--u) * 2.9); }
+  /* The atelier's drapes, turned from its orange red to the mock's crimson. */
+  .landing-swag,
+  .landing-drape { filter: hue-rotate(-32deg) saturate(1.05) brightness(0.96); }
 
-  .landing-portrait { top: calc(var(--u) * var(--y)); }
-  .landing-portrait.is-wink { --x: -44; --y: 131; --w: 22; }
-  .landing-portrait.is-jiji { --x: -19; --y: 127; --w: 16; }
-  .landing-portrait.is-bunny { --x: 5.5; --y: 128; --w: 15.5; }
-  .landing-portrait.is-bruce { --x: 27; --y: 133; --w: 15.5; }
+  .landing-swag {
+    left: calc(50% - var(--u) * 36);
+    top: calc(var(--u) * -3);
+    width: calc(var(--u) * 72);
+    filter: hue-rotate(-32deg) saturate(1.05) brightness(0.68);
+  }
 
+  .landing-scene .landing-drape {
+    top: calc(var(--u) * -1);
+    width: auto;
+    height: calc(var(--u) * 113 + var(--lift));
+  }
+
+  .landing-drape.is-left { left: calc(var(--u) * -3); }
+  .landing-drape.is-right { right: calc(var(--u) * -3); scale: -1 1; }
+
+  .landing-chandelier {
+    left: calc(51.4% - var(--u) * 29);
+    top: 0;
+    width: calc(var(--u) * 58);
+  }
+
+  .landing-floor { --floor-h: 17.6; }
+  .landing-floor::before { height: calc(var(--u) * 2.2); }
+
+  .landing-portrait { top: calc(var(--u) * var(--y) + var(--lift)); }
+  .landing-portrait.is-jiji { --x: -39.6; --y: 97.6; --w: 15.5; }
+  .landing-portrait.is-bunny { --x: 26.1; --y: 90.3; --w: 15.8; }
+  .landing-portrait.is-bruce { --x: -4.9; --y: 129; --w: 12.5; top: calc(var(--u) * var(--y) + var(--slack) * 0.6); }
 
   .landing-cabinet {
-    left: calc(var(--u) * 7.04);
-    bottom: calc(var(--u) * 2.3);
-    width: calc(var(--u) * 60);
+    left: calc(var(--u) * -17.5);
+    bottom: calc(var(--u) * 12.1);
+    width: calc(var(--u) * 51.2);
   }
 
   .landing-jewelry {
-    left: calc(var(--u) * 17.75);
-    bottom: calc(var(--u) * 36.5);
-    width: calc(var(--u) * 16.7);
+    left: calc(var(--u) * -9.4);
+    bottom: calc(var(--u) * 47.5);
+    width: calc(var(--u) * 16.6);
   }
 
   .landing-perfume {
-    left: calc(var(--u) * 35.7);
-    bottom: calc(var(--u) * 36.45);
-    width: calc(var(--u) * 15.03);
-  }
-
-  .landing-cat {
-    bottom: calc(var(--u) * 4);
-    width: calc(var(--u) * 23.9);
+    left: calc(var(--u) * 11.1);
+    bottom: calc(var(--u) * 46.4);
+    width: calc(var(--u) * 15);
   }
 
   .landing-column {
     left: auto;
-    right: calc(var(--u) * 5.2);
-    bottom: calc(var(--u) * 9.6);
-    width: calc(var(--u) * 22.8);
+    right: calc(var(--u) * 2.8);
+    bottom: calc(var(--u) * 14.2);
+    width: calc(var(--u) * 27);
   }
 
   .landing-book {
     left: auto;
-    right: calc(var(--u) * 5.2);
-    bottom: calc(var(--u) * 34.3);
-    width: calc(var(--u) * 23.5);
+    right: calc(var(--u) * 2.8);
+    bottom: calc(var(--u) * 48.2);
+    width: calc(var(--u) * 27.8);
   }
+
+  /*
+   * The cat waits at the left edge, walks off to the right, then peeks back in now and then;
+   * LandingFx moves it. It hangs a little below the screen so its waddle never shows the cut edge.
+   */
+  .landing-walker {
+    display: block;
+    position: absolute;
+    left: calc(var(--u) * -12.8);
+    bottom: calc(var(--u) * -2.5);
+    width: calc(var(--u) * 44.4);
+    aspect-ratio: 640 / 718;
+    will-change: transform;
+  }
+
+  .landing-walker.is-away { visibility: hidden; }
+  .landing-walker.is-peeking { left: 0; top: 0; bottom: auto; }
+
+  .landing-scene .landing-walker-cat {
+    position: static;
+    width: 100%;
+    transform-origin: 50% 100%;
+  }
+
+  .landing-walker.is-walking .landing-walker-cat { animation: landing-waddle 0.3s ease-in-out infinite alternate; }
 
   .landing-body {
     left: 50%;
-    top: calc(var(--u) * 27);
+    top: calc(var(--u) * 49.3 + var(--lift));
   }
 
-  .welcome-plaque { width: calc(var(--u) * 66); gap: calc(var(--u) * 1.3); }
-  .welcome-kicker { font-size: calc(var(--u) * 5.7); }
-  .welcome-title { font-size: calc(var(--u) * 5.45); }
+  .welcome-plaque { width: calc(var(--u) * 62); gap: calc(var(--u) * 1.2); }
+  .welcome-kicker { font-size: calc(var(--u) * 5.35); }
+  .welcome-title { font-size: calc(var(--u) * 5.1); }
 
   .landing-tagline {
-    max-width: calc(var(--u) * 84);
-    margin-top: calc(var(--u) * 3);
-    font-size: calc(var(--u) * 4.1);
-    white-space: normal;
+    margin-top: calc(var(--u) * 1.7);
+    font-size: calc(var(--u) * 2.95);
   }
-
-  .landing-tagline-a,
-  .landing-tagline-b { display: block; }
-  .landing-tagline wbr { display: none; }
 
   .landing-button {
-    width: calc(var(--u) * 58);
-    height: calc(var(--u) * 13.6);
-    margin-top: calc(var(--u) * 4);
-    border-width: calc(var(--u) * 1.2);
-    font-size: calc(var(--u) * 4.9);
+    width: calc(var(--u) * 40.5);
+    height: calc(var(--u) * 11.5);
+    margin-top: calc(var(--u) * 5.9);
+    border-width: calc(var(--u) * 1.05);
+    font-size: calc(var(--u) * 3.8);
   }
 
-  .landing-button.is-create { margin-top: calc(var(--u) * 3); }
+  .landing-button.is-create { margin-top: calc(var(--u) * 2.8); }
 
   .landing-login {
-    margin-top: calc(var(--u) * 2.6);
-    font-size: calc(var(--u) * 4.1);
+    margin-top: calc(var(--u) * 3.3);
+    font-size: calc(var(--u) * 3.3);
   }
+}
+
+@keyframes landing-waddle {
+  from { transform: rotate(-2.2deg); }
+  to { transform: translateY(-1.2%) rotate(2.2deg); }
 }
 
 /* Covers the page the moment a top-corner button is pressed: it answers the tap and swallows repeats. */

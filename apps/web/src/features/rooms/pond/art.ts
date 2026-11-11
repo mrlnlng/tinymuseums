@@ -13,6 +13,8 @@ export interface PondArt {
   lily: THREE.Texture
   sparkles: THREE.Texture
   landmarks: Record<string, THREE.Texture>
+  /** The gate's sign, kept apart from the gate so it can swing on its chains. */
+  gateSign: THREE.Texture
   /** The woodland past the painting: original foliage and grass reused at full resolution. */
   edges: { left: THREE.Texture; right: THREE.Texture }
   /** Colours sampled from the scene, for the fill above and below the painting. */
@@ -29,7 +31,7 @@ export const EDGE_BAND = 0.19
 export const EDGE_BANDS = 5
 export const EDGE_OVERLAP = 0.85
 
-function loadTexture(name: 'pond/scene' | 'pond/scene-left' | 'pond/bridge' | 'pond/stone-path' | 'pond/lily' | 'pond/sparkles', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
+function loadTexture(name: 'pond/forest-door-sign' | 'pond/scene' | 'pond/scene-left' | 'pond/bridge' | 'pond/stone-path' | 'pond/lily' | 'pond/sparkles', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
   return new THREE.TextureLoader()
     .loadAsync(assetUrl(name, { density: 3 }))
     .then((texture) => {
@@ -276,6 +278,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     loadTexture('pond/scene-left', renderer),
     loadTexture('pond/bridge', renderer),
     loadTexture('pond/stone-path', renderer),
+    loadTexture('pond/forest-door-sign', renderer),
     ...POND_LANDMARKS.map(async (landmark) => {
       const texture = await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image))
       texture.colorSpace = THREE.SRGBColorSpace
@@ -290,7 +293,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     throw failed.reason
   }
   const textures = results.map((result) => (result as PromiseFulfilledResult<THREE.Texture>).value)
-  const [scene, lily, sparkles, left, bridge, path] = textures
+  const [scene, lily, sparkles, left, bridge, path, gateSign] = textures
   const grass = colorAt(scene, 0.995, FALLBACK_GRASS)
   return {
     scene,
@@ -299,7 +302,8 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     path: pathTexture(path),
     lily,
     sparkles,
-    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 6]])),
+    gateSign,
+    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 7]])),
     edges: { left: edgeTexture(scene, 'left', grass, left), right: edgeTexture(scene, 'right', grass) },
     sky: colorAt(scene, 0.005, FALLBACK_SKY),
     grass,
@@ -314,6 +318,7 @@ export function disposePondArt(art: PondArt): void {
   art.path.dispose()
   art.lily.dispose()
   art.sparkles.dispose()
+  art.gateSign.dispose()
   art.edges.left.dispose()
   art.edges.right.dispose()
   for (const texture of Object.values(art.landmarks)) texture.dispose()

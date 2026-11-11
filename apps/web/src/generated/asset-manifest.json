@@ -537,12 +537,12 @@
       }
     },
     "pond/forest-door": {
-      "w": 810,
-      "h": 1100,
+      "w": 780,
+      "h": 1160,
       "x2": {
-        "w": 810,
-        "h": 1100,
-        "src": "pond-forest-door@2x.7f156efd4c.webp"
+        "w": 780,
+        "h": 1160,
+        "src": "pond-forest-door@2x.4078b51817.webp"
       }
     },
     "pond/forest-noticeboard-signed": {
@@ -793,6 +793,15 @@
         "w": 2381,
         "h": 1691,
         "src": "pond-stone-path@3x.bc88e1f6fe.webp"
+      }
+    },
+    "pond/forest-door-sign": {
+      "w": 339,
+      "h": 251,
+      "x2": {
+        "w": 339,
+        "h": 251,
+        "src": "pond-forest-door-sign@2x.35fa8c96ea.webp"
       }
     }
   },

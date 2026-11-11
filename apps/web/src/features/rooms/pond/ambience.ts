@@ -254,6 +254,19 @@ function wingTexture(): THREE.CanvasTexture {
   })
 }
 
+function starTexture(): THREE.CanvasTexture {
+  return painted(64, 64, (ink) => {
+    ink.fillStyle = '#fff3d2'
+    ink.beginPath()
+    ink.moveTo(32, 2)
+    ink.quadraticCurveTo(38, 26, 62, 32)
+    ink.quadraticCurveTo(38, 38, 32, 62)
+    ink.quadraticCurveTo(26, 38, 2, 32)
+    ink.quadraticCurveTo(26, 26, 32, 2)
+    ink.fill()
+  })
+}
+
 function ringTexture(): THREE.CanvasTexture {
   return painted(128, 128, (ink) => {
     ink.strokeStyle = 'rgba(255, 255, 255, 0.95)'
@@ -572,6 +585,49 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
     return { petal, start }
   })
 
+  // The gate back to the museum: stars that twinkle in its doorway and a sign that swings on its chains.
+  const gate = POND_LANDMARKS.find((landmark) => landmark.kind === 'exit')!
+  const gateHeight = gate.width / gate.aspect
+  const GATE = { w: 920, h: 1369 }
+  const gateAt = (px: number, py: number) => ({
+    x: gate.x + (px / GATE.w - 0.5) * gate.width,
+    y: groundY + (1 - py / GATE.h) * gateHeight,
+  })
+  const gatePx = gate.width / GATE.w
+  const doorGlow = sprite(glow, { additive: true, colour: '#8d86ff', opacity: 0.2 })
+  const glowAt = gateAt(460, 1010)
+  doorGlow.position.set(glowAt.x, glowAt.y, -0.195)
+  doorGlow.scale.set(470 * gatePx, 900 * gatePx, 1)
+  const starMap = keep(starTexture())
+  const gateStars = [
+    [326, 668, 26], [582, 808, 34], [352, 1018, 22], [562, 1098, 16], [482, 598, 14], [300, 880, 12], [600, 610, 10],
+    [532, 648, 5], [310, 858, 5], [442, 918, 4], [612, 968, 5], [392, 1168, 4], [520, 1230, 5], [330, 1250, 4],
+  ].map(([px, py, radius], index) => {
+    const mesh = radius > 8 ? sprite(starMap) : sprite(glow, { colour: '#fff3d2' })
+    const at = gateAt(px, py)
+    mesh.position.set(at.x, at.y, -0.19)
+    return { mesh, size: radius * (radius > 8 ? 2 : 3.2) * gatePx, phase: index * 2.4, speed: 0.9 + (index % 4) * 0.35 }
+  })
+  const gateMotes = Array.from({ length: still ? 0 : 7 }, () => {
+    const mesh = sprite(glow, { additive: true, colour: '#cfc8ff', opacity: 0 })
+    mesh.position.z = -0.188
+    return { mesh, px: 250 + random() * 420, t: random(), speed: 0.05 + random() * 0.06, phase: random() * 6, size: (16 + random() * 16) * gatePx }
+  })
+  const signSwing = new THREE.Group()
+  const signPivot = gateAt(460, 222)
+  signSwing.position.set(signPivot.x, signPivot.y, -0.185)
+  const signMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(400 * gatePx, 296 * gatePx).translate(0, -148 * gatePx, 0),
+    new THREE.MeshBasicMaterial({ map: art.gateSign, transparent: true, depthWrite: false }),
+  )
+  signSwing.add(signMesh)
+  group.add(signSwing)
+  const gatePetals = Array.from({ length: still ? 0 : 6 }, () => {
+    const mesh = sprite(petalMap, { colour: petalTints[Math.floor(random() * petalTints.length)], opacity: 0 })
+    mesh.position.z = -0.15
+    return { mesh, x: 0, y: 0, land: 0, phase: random() * 6, wait: random() * 6, size: 0.06 + random() * 0.04, drift: 0 }
+  })
+
   // Butterflies wander between the flowers.
   const wing = keep(wingTexture())
   const flutter = [
@@ -722,6 +778,46 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
       }
       petal.mesh.position.x = petal.x
       petal.mesh.position.y = petal.y
+    }
+
+    for (const twinkle of gateStars) {
+      const pulse = Math.sin(t * twinkle.speed + twinkle.phase) * 0.5 + 0.5
+      const size = twinkle.size * (0.62 + 0.5 * pulse)
+      twinkle.mesh.scale.set(size, size, 1)
+      twinkle.mesh.rotation.z = Math.sin(t * 0.4 + twinkle.phase) * 0.25
+      twinkle.mesh.material.opacity = still ? 1 : 0.4 + 0.6 * pulse
+    }
+    doorGlow.material.opacity = 0.16 + 0.1 * Math.sin(t * 0.8)
+    for (const mote of gateMotes) {
+      mote.t = (mote.t + mote.speed * step) % 1
+      const at = gateAt(mote.px + Math.sin(clock * 0.9 + mote.phase) * 26, 1300 - mote.t * 760)
+      mote.mesh.position.x = at.x
+      mote.mesh.position.y = at.y
+      mote.mesh.scale.set(mote.size, mote.size, 1)
+      mote.mesh.material.opacity = 0.75 * Math.sin(mote.t * Math.PI)
+    }
+    signSwing.rotation.z = Math.sin(t * 1.25) * 0.045 + Math.sin(t * 0.47 + 1) * 0.02
+    for (const petal of gatePetals) {
+      if (petal.wait > 0) {
+        petal.wait -= step
+        petal.mesh.material.opacity = 0
+        if (petal.wait <= 0) {
+          const from = gateAt(60 + random() * 800, 120 + random() * 380)
+          petal.x = from.x
+          petal.y = from.y
+          petal.land = groundY - 0.15 + random() * 0.3
+          petal.drift = (random() - 0.3) * 0.3
+        }
+        continue
+      }
+      petal.y -= 0.34 * step
+      petal.x += (petal.drift + Math.sin(clock * 1.5 + petal.phase) * 0.28) * step
+      petal.mesh.position.x = petal.x
+      petal.mesh.position.y = petal.y
+      petal.mesh.rotation.z = Math.sin(clock * 1.8 + petal.phase) * 0.9
+      petal.mesh.scale.set(petal.size * Math.cos(clock * 2.4 + petal.phase), petal.size, 1)
+      petal.mesh.material.opacity = Math.min(0.95, (petal.y - petal.land) * 3)
+      if (petal.y <= petal.land) petal.wait = 1 + random() * 5
     }
 
     const viewWidth = camera.right - camera.left

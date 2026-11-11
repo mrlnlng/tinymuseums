@@ -32,7 +32,7 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
     depth: 0,
     width: 1.95,
     baseY: 0,
-    aspect: 1076 / 1461,
+    aspect: 920 / 1369,
     title: 'Back to the museum',
     description: 'The forest gate',
     image: 'pond/forest-door',

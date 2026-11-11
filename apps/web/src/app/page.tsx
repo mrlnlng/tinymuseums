@@ -6,6 +6,7 @@ import MediaPreconnect from '@/shared/components/MediaPreconnect'
 import { firstSlice } from '@/features/hall/lib/slice'
 import AssetImage from '@/shared/components/AssetImage'
 import LandingAccount from '@/features/landing/LandingAccount'
+import LandingFx from '@/features/landing/LandingFx'
 import { builtUrl } from '@/shared/lib/assets'
 
 export const dynamic = 'force-dynamic'
@@ -24,31 +25,47 @@ export default function LandingPage() {
 
       <div className="landing-scene" aria-hidden="true">
         <div className="landing-wall" />
-        <div className="landing-floor" />
-        <div className="landing-valance" />
+        <div className="landing-spot" />
+        <div className="landing-beam is-left" />
+        <div className="landing-beam is-right" />
 
-        <Decor name="portraitWink" className="landing-portrait is-wink" />
-        <Decor name="portraitJiji" className="landing-portrait is-jiji" />
-        <div className="landing-portrait is-bunny">
+        <div className="landing-portrait is-wink" data-poke>
+          <Decor name="portraitWink" className="landing-portrait-frame" />
+        </div>
+        <div className="landing-portrait is-jiji" data-poke>
+          <Decor name="portraitJiji" className="landing-portrait-frame" />
+        </div>
+        <div className="landing-portrait is-bunny" data-poke>
           <Decor name="portraitBunny" className="landing-portrait-frame" />
           <Decor name="ribbon" className="landing-portrait-bow" />
         </div>
-        <div className="landing-portrait is-bruce">
+        <div className="landing-portrait is-bruce" data-poke>
           <Decor name="portraitBruce" className="landing-portrait-frame" />
           <Decor name="ribbonBlue" className="landing-portrait-bow" />
         </div>
 
-        <Decor name="cabinet" className="landing-cabinet" />
-        <Decor name="jewelryBox" className="landing-jewelry" />
-        <Decor name="perfume" className="landing-perfume" />
-        <AssetImage name="landing/cat" className="landing-cat" />
+        <div className="landing-floor" />
+        <div className="landing-valance" />
 
-        <Decor name="column" className="landing-column" />
-        <AssetImage name="landing/book" className="landing-book" />
+        <div className="landing-prop is-cabinet">
+          <Decor name="cabinet" className="landing-cabinet" />
+          <Decor name="jewelryBox" className="landing-jewelry" />
+          <Decor name="perfume" className="landing-perfume" />
+        </div>
+        <div className="landing-prop is-lectern">
+          <Decor name="column" className="landing-column" />
+          <AssetImage name="landing/book" className="landing-book" />
+        </div>
+        <div className="landing-prop is-cat">
+          <AssetImage name="landing/cat" className="landing-cat" />
+        </div>
       </div>
+
+      <LandingFx />
 
       <div className="landing-body">
         <div className="welcome-plaque">
+          <span className="welcome-sheen" aria-hidden="true" />
           <span className="welcome-kicker">Welcome to</span>
           <h1 className="script welcome-title">
             {BRAND_OWNER}
@@ -58,9 +75,9 @@ export default function LandingPage() {
         </div>
 
         <p className="landing-tagline">
-          The guards went home....
+          <span className="landing-tagline-a">The guards went home....</span>
           <wbr />
-          The paintings woke up.
+          <span className="landing-tagline-b">The paintings woke up.</span>
         </p>
 
         <Link className="landing-button is-start" href="/museum" data-track="start_visit">

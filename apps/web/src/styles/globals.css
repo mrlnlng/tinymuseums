@@ -1195,14 +1195,21 @@ code.token {
 /*
  * The landing is laid out on the mock's canvas: 100 units wide, and at least 56.25 tall. Wall pieces
  * hang from the middle of the screen and floor pieces stand on its bottom edge, so a taller window
- * only adds wall between them.
+ * only adds wall between them. Each layer carries a depth (--d); LandingFx moves the camera (--px,
+ * --py) and the layers slide against each other by that depth.
  */
+@property --iris {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 150%;
+}
+
 .landing {
   position: absolute;
   inset: 0;
   overflow: hidden;
   container-type: size;
-  background: var(--hall-wall);
+  background: #4d0c22;
 }
 
 .landing-scene,
@@ -1214,6 +1221,8 @@ code.token {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  transform-origin: 50% 46%;
+  transition: scale 0.9s cubic-bezier(0.5, 0, 0.2, 1), filter 0.9s ease-in;
 }
 
 .landing-scene img {
@@ -1221,26 +1230,111 @@ code.token {
   display: block;
   height: auto;
   max-width: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.landing-wall,
+.landing-spot,
+.landing-portrait,
+.landing-floor,
+.landing-valance,
+.landing-prop,
+.landing-body {
+  translate:
+    calc(var(--px, 0) * var(--d, 0) * var(--u))
+    calc(var(--py, 0) * var(--d, 0) * var(--u) * 0.6);
 }
 
 .landing-wall {
+  --d: -0.7;
   position: absolute;
-  inset: 0;
+  inset: calc(var(--u) * -2);
   background: var(--asset-hall-wallpaper) repeat center top / calc(var(--u) * 50) auto;
 }
 
-.landing-valance {
+/* The room after hours: dark at the edges, one warm pool of light where the plaque hangs. */
+.landing-spot {
+  --d: -0.7;
+  --spot-x: calc(50% - var(--u) * 1.75);
+  --spot-y: calc(50% - var(--u) * 7);
   position: absolute;
-  inset: calc(var(--u) * -1.3) 0 auto;
+  inset: calc(var(--u) * -2);
+  background:
+    radial-gradient(ellipse calc(var(--u) * 30) calc(var(--u) * 21) at var(--spot-x) var(--spot-y), rgba(255, 196, 140, 0.34), rgba(255, 170, 130, 0.1) 55%, transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 62) calc(var(--u) * 40) at var(--spot-x) var(--spot-y), transparent 30%, rgba(38, 2, 18, 0.62) 100%);
+}
+
+.landing-beam {
+  --beam-w: 20;
+  --beam-h: 46;
+  --beam-tilt: 26deg;
+  --beam-reach: 20;
+  position: absolute;
+  top: calc(var(--u) * -3);
+  left: calc(50% - var(--u) * 1.75 - var(--u) * var(--beam-w) / 2 + var(--u) * var(--beam-reach) * var(--side));
+  width: calc(var(--u) * var(--beam-w));
+  height: calc(var(--u) * var(--beam-h));
+  filter: blur(calc(var(--u) * 1.3));
+  mix-blend-mode: screen;
+  transform-origin: 50% 0;
+  rotate: calc(var(--beam-tilt) * var(--side));
+  animation: landing-beam 9s ease-in-out infinite alternate;
+}
+
+/* The cone is cut on a child so the blur above softens its edges instead of being clipped by them. */
+.landing-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255, 232, 186, 0.42), rgba(255, 214, 160, 0.14) 55%, transparent 90%);
+  clip-path: polygon(47% 0, 53% 0, 92% 100%, 8% 100%);
+}
+
+.landing-beam.is-left { --side: -1; }
+.landing-beam.is-right { --side: 1; animation-delay: -4.5s; animation-duration: 11s; }
+
+@keyframes landing-beam {
+  from { rotate: calc((var(--beam-tilt) - 3deg) * var(--side)); opacity: 0.75; }
+  to { rotate: calc((var(--beam-tilt) + 3deg) * var(--side)); opacity: 1; }
+}
+
+.landing-valance {
+  --d: 1.4;
+  position: absolute;
+  inset: calc(var(--u) * -1.3) calc(var(--u) * -3) auto;
   height: calc(var(--u) * 12.69);
-  background: var(--asset-hall-curtain) repeat-x calc(var(--u) * -0.62) top / auto 100%;
+  background: var(--asset-hall-curtain) repeat-x calc(50% - var(--u) * 0.62) top / auto 100%;
+  filter: drop-shadow(0 calc(var(--u) * 0.9) calc(var(--u) * 1.1) rgba(30, 0, 12, 0.55));
+  animation: landing-valance-in 1s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.1s backwards;
+}
+
+/* A blurred copy of the string lights, laid back over them, is their bloom. */
+.landing-valance::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(calc(var(--u) * 0.6)) brightness(0.95) contrast(3.2);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  animation: landing-bloom 3.4s ease-in-out infinite alternate;
+}
+
+@keyframes landing-valance-in { from { transform: translateY(-105%); } }
+@keyframes landing-bloom {
+  0% { opacity: 0.55; }
+  45% { opacity: 0.95; }
+  60% { opacity: 0.7; }
+  100% { opacity: 1; }
 }
 
 .landing-floor {
+  --d: 1;
   position: absolute;
-  inset: auto 0 0;
-  height: calc(var(--u) * 6.03);
-  background: var(--floor) var(--asset-floor) repeat-x center top / auto 100%;
+  inset: auto calc(var(--u) * -4) calc(var(--u) * -3);
+  height: calc(var(--u) * (var(--floor-h, 6.03) + 3));
+  background: var(--floor) var(--asset-floor) repeat-x center top / auto calc(var(--u) * var(--floor-h, 6.03));
 }
 
 .landing-floor::before {
@@ -1251,17 +1345,62 @@ code.token {
   background: var(--asset-hall-baseboard) repeat-x center / auto 100%;
 }
 
+.landing-floor::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--u) * -1.34) 0 0;
+  background:
+    radial-gradient(ellipse calc(var(--u) * 34) 130% at 50% 0, rgba(255, 206, 150, 0.26), transparent 100%),
+    linear-gradient(to right, rgba(30, 2, 14, 0.55), transparent 30%, transparent 70%, rgba(30, 2, 14, 0.55));
+}
+
 .landing-portrait {
+  --d: -0.7;
   position: absolute;
   left: calc(50% + var(--u) * var(--x));
   top: calc(50% + var(--u) * var(--y));
   width: calc(var(--u) * var(--w));
+  isolation: isolate;
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: 50% 0;
+  filter: drop-shadow(0 calc(var(--u) * 0.5) calc(var(--u) * 0.5) rgba(30, 0, 12, 0.5));
+  animation:
+    landing-portrait-in 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) calc(1.9s + var(--i) * 0.14s) backwards,
+    landing-sway calc(4.6s + var(--i) * 0.7s) ease-in-out calc(var(--i) * -1.3s) infinite alternate;
 }
 
-.landing-portrait.is-wink { --x: -38.71; --y: -8.84; --w: 9.07; }
-.landing-portrait.is-jiji { --x: -25.97; --y: -11.37; --w: 6.89; }
-.landing-portrait.is-bunny { --x: 16.5; --y: -11.01; --w: 6.44; }
-.landing-portrait.is-bruce { --x: 27.06; --y: -7.1; --w: 6.67; --bow: 50%; }
+/* Each picture has its own little lamp. */
+.landing-portrait::before {
+  content: "";
+  position: absolute;
+  inset: -55% -60% -40%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(255, 208, 150, 0.4), rgba(255, 190, 140, 0.12) 55%, transparent);
+  animation: landing-lamp 5s ease-in-out calc(var(--i) * -1.1s) infinite alternate;
+}
+
+.landing-portrait.is-wink { --x: -38.71; --y: -8.84; --w: 9.07; --i: 0; }
+.landing-portrait.is-jiji { --x: -25.97; --y: -11.37; --w: 6.89; --i: 1; }
+.landing-portrait.is-bunny { --x: 16.5; --y: -11.01; --w: 6.44; --i: 2; }
+.landing-portrait.is-bruce { --x: 27.06; --y: -7.1; --w: 6.67; --bow: 50%; --i: 3; }
+
+.landing-portrait.is-poked {
+  animation:
+    landing-poke 0.7s cubic-bezier(0.3, 1.4, 0.5, 1),
+    landing-sway calc(4.6s + var(--i) * 0.7s) ease-in-out calc(var(--i) * -1.3s) infinite alternate;
+}
+
+@keyframes landing-portrait-in { from { transform: scale(0.2) rotate(-14deg); opacity: 0; } }
+@keyframes landing-sway { from { rotate: -1.6deg; } to { rotate: 1.6deg; } }
+@keyframes landing-lamp { from { opacity: 0.7; } to { opacity: 1; } }
+@keyframes landing-poke {
+  0% { transform: none; }
+  18% { transform: scale(1.22, 0.84) rotate(9deg); }
+  42% { transform: scale(0.92, 1.12) rotate(-7deg); }
+  66% { transform: scale(1.05, 0.97) rotate(3deg); }
+  100% { transform: none; }
+}
 
 .landing-scene .landing-portrait-frame {
   position: static;
@@ -1272,7 +1411,37 @@ code.token {
   position: static;
   width: var(--bow, 58%);
   margin: 2% auto 0;
+  transform-origin: 50% 0;
+  animation: landing-sway 2.8s ease-in-out infinite alternate-reverse;
 }
+
+.landing-prop {
+  --d: 1;
+  position: absolute;
+  inset: 0;
+}
+
+.landing-prop.is-cat {
+  --d: 1.7;
+  /* The cat is cut off at the screen's edge, so it only ever slides further out of frame. */
+  translate: min(0px, calc(var(--px, 0) * var(--d) * var(--u))) calc(var(--py, 0) * var(--d) * var(--u) * 0.6);
+}
+
+/* Contact shadows keep the furniture standing on the floor rather than pasted over it. */
+.landing-prop::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--u) * var(--sx));
+  bottom: calc(var(--u) * var(--sy));
+  width: calc(var(--u) * var(--sw));
+  height: calc(var(--u) * var(--sh));
+  background: radial-gradient(closest-side, rgba(28, 2, 12, 0.62), rgba(28, 2, 12, 0.3) 60%, transparent);
+}
+
+.landing-prop.is-cabinet { --sx: 1.6; --sy: -0.6; --sw: 33; --sh: 3.6; }
+.landing-prop.is-lectern { --sx: 0; --sy: 3.5; --sw: 14; --sh: 2.6; }
+.landing-prop.is-lectern::before { left: calc(50% + var(--u) * 11.2); }
+.landing-prop.is-cat { --sx: -2; --sy: 0.7; --sw: 15; --sh: 2.8; }
 
 .landing-cabinet {
   left: calc(var(--u) * 3.45);
@@ -1296,6 +1465,8 @@ code.token {
   left: 0;
   bottom: calc(var(--u) * 1.96);
   width: calc(var(--u) * 11.7);
+  transform-origin: 30% 100%;
+  animation: landing-breathe 3.8s ease-in-out infinite alternate;
 }
 
 .landing-column {
@@ -1310,20 +1481,109 @@ code.token {
   width: calc(var(--u) * 11.5);
 }
 
-.landing-body {
+.landing-cat,
+.landing-jewelry,
+.landing-perfume,
+.landing-book {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.landing-jewelry,
+.landing-perfume,
+.landing-book { transform-origin: 50% 100%; }
+
+.landing-jewelry.is-poked,
+.landing-perfume.is-poked,
+.landing-book.is-poked { animation: landing-wobble 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); }
+
+.landing-cat.is-poked { animation: landing-hop 0.75s cubic-bezier(0.3, 1.2, 0.5, 1); }
+
+@keyframes landing-breathe {
+  from { transform: scale(1, 1) rotate(-0.4deg); }
+  to { transform: scale(1.006, 1.022) rotate(0.5deg); }
+}
+
+@keyframes landing-wobble {
+  20% { transform: scale(1.14, 0.86) rotate(-6deg); }
+  45% { transform: scale(0.94, 1.1) rotate(5deg); }
+  70% { transform: scale(1.03, 0.98) rotate(-2deg); }
+}
+
+@keyframes landing-hop {
+  15% { transform: scale(1.08, 0.88); }
+  45% { transform: translateY(-9%) scale(0.96, 1.06) rotate(3deg); }
+  75% { transform: scale(1.05, 0.94); }
+}
+
+.landing-fx,
+.landing-vignette,
+.landing-iris {
   position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.landing-fx {
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.landing-vignette {
+  z-index: 3;
+  background: radial-gradient(ellipse 78% 74% at 50% 46%, transparent 58%, rgba(22, 0, 10, 0.5) 100%);
+}
+
+/* The lights come on: the whole room starts dark and flickers up like old bulbs warming. */
+.landing-vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #17030c;
+  opacity: 0;
+  animation: landing-lights-up 1.5s linear 0.05s backwards;
+}
+
+@keyframes landing-lights-up {
+  0% { opacity: 1; }
+  16% { opacity: 0.94; }
+  20% { opacity: 0.5; }
+  25% { opacity: 0.86; }
+  38% { opacity: 0.3; }
+  44% { opacity: 0.56; }
+  100% { opacity: 0; }
+}
+
+.landing-iris {
+  z-index: 4;
+  background: radial-gradient(circle at var(--leave-x, 50%) var(--leave-y, 50%), transparent var(--iris), #17030c calc(var(--iris) + 6%));
+  opacity: 0;
+  transition: --iris 0.75s cubic-bezier(0.6, 0, 0.3, 1), opacity 0.75s ease-in;
+}
+
+.landing.is-leaving .landing-iris { --iris: 0%; opacity: 1; pointer-events: auto; cursor: progress; }
+.landing.is-leaving .landing-scene { scale: 1.14; filter: blur(2px); }
+.landing.is-leaving .landing-body { scale: 1.06; opacity: 0; }
+
+.landing-body {
+  --d: 0.35;
+  position: absolute;
+  z-index: 2;
   left: calc(50% - var(--u) * 1.75);
-  top: calc(50% - var(--u) * 16.42);
+  top: calc(50% - var(--u) * 17.4);
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   width: max-content;
   max-width: 100%;
+  transition: scale 0.6s ease-in, opacity 0.45s ease-in;
 }
 
 .welcome-plaque {
-  width: calc(var(--u) * 24.95);
+  position: relative;
+  width: calc(var(--u) * 26.4);
   aspect-ratio: 987 / 487;
   display: flex;
   flex-direction: column;
@@ -1333,11 +1593,52 @@ code.token {
   padding: 0 4% 2% 0;
   background: var(--asset-plaque) no-repeat center / 100% 100%;
   text-align: center;
+  filter:
+    drop-shadow(0 calc(var(--u) * 0.9) calc(var(--u) * 1) rgba(30, 0, 12, 0.55))
+    drop-shadow(0 0 calc(var(--u) * 2.4) rgba(255, 200, 150, 0.22));
+  transform-origin: 50% -40%;
+  animation:
+    landing-plaque-in 1.1s cubic-bezier(0.25, 1, 0.35, 1) 0.5s backwards,
+    landing-plaque-sway 6.5s ease-in-out infinite alternate;
+}
+
+@keyframes landing-plaque-in {
+  0% { transform: translateY(-190%) rotate(-7deg); }
+  52% { transform: translateY(4%) rotate(3.2deg); }
+  74% { transform: translateY(-1.5%) rotate(-1.6deg); }
+  100% { transform: none; }
+}
+
+@keyframes landing-plaque-sway { from { rotate: -0.7deg; } to { rotate: 0.7deg; } }
+
+/* A gleam crossing the plaque, clipped to the plaque's own painted outline. */
+.welcome-sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-mask: var(--asset-plaque) no-repeat center / 100% 100%;
+  mask: var(--asset-plaque) no-repeat center / 100% 100%;
+  pointer-events: none;
+}
+
+.welcome-sheen::before {
+  content: "";
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 34%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75) 45%, rgba(255, 244, 214, 0.35) 60%, transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: landing-sheen 6s ease-in-out 2.2s infinite;
+}
+
+@keyframes landing-sheen {
+  0% { transform: translateX(-160%) skewX(-18deg); }
+  22%, 100% { transform: translateX(420%) skewX(-18deg); }
 }
 
 .welcome-kicker {
   font-family: var(--font-button);
-  font-size: calc(var(--u) * 2.2);
+  font-size: calc(var(--u) * 2.3);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.05em;
@@ -1349,35 +1650,66 @@ code.token {
 .welcome-title {
   margin: 0;
   font-family: var(--font-title);
-  font-size: calc(var(--u) * 2.08);
+  font-size: calc(var(--u) * 2.2);
   line-height: 1.32;
   -webkit-text-stroke: 0.02em currentColor;
 }
 
 .landing-tagline {
-  margin: calc(var(--u) * 0.96) 0 0;
+  margin: calc(var(--u) * 1.1) 0 0;
   font-family: var(--font-body);
-  font-size: calc(var(--u) * 1.5);
+  font-size: calc(var(--u) * 1.55);
   font-weight: 400;
   line-height: 1.26;
-  color: #ffd3d3;
+  letter-spacing: 0.02em;
+  color: #ffd9d0;
   text-align: center;
   white-space: nowrap;
+  text-shadow: 0 calc(var(--u) * 0.12) calc(var(--u) * 0.5) rgba(30, 0, 12, 0.7);
 }
 
+.landing-tagline-a,
+.landing-tagline-b { display: inline-block; }
+
+.landing-tagline-a { animation: landing-rise 0.7s ease-out 1.25s backwards; }
+
+.landing-tagline-b {
+  color: #fff0c4;
+  text-shadow:
+    0 calc(var(--u) * 0.12) calc(var(--u) * 0.5) rgba(30, 0, 12, 0.7),
+    0 0 calc(var(--u) * 1.1) rgba(255, 200, 120, 0.55);
+  animation: landing-wake 1.1s ease-out 1.95s backwards;
+}
+
+@keyframes landing-rise { from { transform: translateY(60%); opacity: 0; } }
+@keyframes landing-wake {
+  0% { transform: scale(0.9); opacity: 0; filter: brightness(2.2) blur(2px); }
+  45% { transform: scale(1.06); opacity: 1; filter: brightness(1.7); }
+  100% { transform: none; filter: none; }
+}
+
+/* A candy button with a real edge: a lit top, a gloss, and a ledge it sinks onto when pressed. */
 .landing-button {
+  --ledge: calc(var(--u) * var(--bh) * 0.13);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  width: calc(var(--u) * 16.24);
-  height: calc(var(--u) * 4.64);
-  margin-top: calc(var(--u) * 1.6);
+  width: calc(var(--u) * var(--bw));
+  height: calc(var(--u) * var(--bh));
+  margin-top: calc(var(--u) * 1.7);
   padding: 0;
-  border: calc(var(--u) * 0.41) solid var(--edge);
+  border: calc(var(--u) * var(--bh) * 0.075) solid var(--edge);
   border-radius: 999px;
-  background: var(--fill);
+  background: linear-gradient(to bottom, var(--lit) 0%, var(--fill) 52%, var(--low) 100%);
+  box-shadow:
+    0 var(--ledge) 0 var(--deep),
+    0 calc(var(--ledge) * 2.2) calc(var(--ledge) * 2.4) rgba(26, 0, 10, 0.5),
+    inset 0 calc(var(--ledge) * -0.5) calc(var(--ledge) * 0.8) rgba(120, 30, 60, 0.18);
   font-family: var(--font-button);
-  font-size: calc(var(--u) * 1.53);
+  font-size: calc(var(--u) * var(--bf));
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.06em;
@@ -1386,18 +1718,105 @@ code.token {
   white-space: nowrap;
   color: var(--hall-wall);
   -webkit-text-stroke: 0.03em currentColor;
+  text-shadow: 0 0.06em 0 rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  transition: transform 0.12s ease-out, filter 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.14s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.14s ease-out, filter 0.14s ease-out;
+  animation: landing-pop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) var(--pop-at, 1.5s) backwards;
 }
 
-.landing-button.is-start { --fill: #ffc4ed; --edge: #e67899; }
-.landing-button.is-create { --fill: #fae3c0; --edge: #ebb375; margin-top: calc(var(--u) * 1.13); }
+.landing-button::before {
+  content: "";
+  position: absolute;
+  inset: 7% 3.5% 50%;
+  z-index: -1;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.08));
+}
 
-.landing-button:hover { filter: brightness(1.04); transform: translateY(-1px); }
-.landing-button:active { transform: translateY(1px); }
+.landing-button.is-start {
+  --bw: 18.6;
+  --bh: 5.3;
+  --bf: 1.78;
+  --lit: #ffe3f7;
+  --fill: #ffbfea;
+  --low: #ff9ed6;
+  --edge: #e8648f;
+  --deep: #a92f5c;
+  --pop-at: 1.45s;
+  animation:
+    landing-pop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) var(--pop-at) backwards,
+    landing-halo 2.2s ease-in-out 2s infinite alternate;
+}
+
+.landing-button.is-start::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  width: 28%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.85) 50%, transparent);
+  transform: translateX(-140%) skewX(-20deg);
+  animation: landing-shine 3.6s ease-in-out 2.6s infinite;
+}
+
+.landing-button.is-create {
+  --bw: 15.2;
+  --bh: 4.1;
+  --bf: 1.36;
+  --lit: #fff3dc;
+  --fill: #fae0b8;
+  --low: #f3cb93;
+  --edge: #e3a35f;
+  --deep: #a5642c;
+  --pop-at: 1.6s;
+  margin-top: calc(var(--u) * 1.75);
+}
+
+.landing-button:hover {
+  filter: brightness(1.06) saturate(1.08);
+  transform: translateY(calc(var(--ledge) * -0.35)) scale(1.045);
+}
+
+.landing-button:active {
+  transform: translateY(calc(var(--ledge) * 0.8)) scale(0.985);
+  box-shadow:
+    0 calc(var(--ledge) * 0.2) 0 var(--deep),
+    0 calc(var(--ledge) * 0.5) calc(var(--ledge) * 0.8) rgba(26, 0, 10, 0.5),
+    inset 0 calc(var(--ledge) * 0.5) calc(var(--ledge) * 0.8) rgba(120, 30, 60, 0.25);
+  transition-duration: 0.05s;
+  animation: none;
+}
+
+@keyframes landing-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { opacity: 1; }
+}
+
+@keyframes landing-halo {
+  from {
+    box-shadow:
+      0 var(--ledge) 0 var(--deep),
+      0 calc(var(--ledge) * 2.2) calc(var(--ledge) * 2.4) rgba(26, 0, 10, 0.5),
+      inset 0 calc(var(--ledge) * -0.5) calc(var(--ledge) * 0.8) rgba(120, 30, 60, 0.18),
+      0 0 calc(var(--ledge) * 2) calc(var(--ledge) * 0.2) rgba(255, 160, 215, 0.3);
+  }
+  to {
+    box-shadow:
+      0 var(--ledge) 0 var(--deep),
+      0 calc(var(--ledge) * 2.2) calc(var(--ledge) * 2.4) rgba(26, 0, 10, 0.5),
+      inset 0 calc(var(--ledge) * -0.5) calc(var(--ledge) * 0.8) rgba(120, 30, 60, 0.18),
+      0 0 calc(var(--ledge) * 5.5) calc(var(--ledge) * 1.3) rgba(255, 150, 215, 0.6);
+  }
+}
+
+@keyframes landing-shine {
+  0% { transform: translateX(-140%) skewX(-20deg); }
+  30%, 100% { transform: translateX(520%) skewX(-20deg); }
+}
 
 .landing-login {
-  margin-top: calc(var(--u) * 0.85);
+  margin-top: calc(var(--u) * 1.5);
   padding: 0;
   border: 0;
   background: none;
@@ -1406,20 +1825,29 @@ code.token {
   line-height: 1.3;
   color: #ffecc6;
   text-decoration: underline;
-  text-underline-offset: 0.16em;
+  text-decoration-color: rgba(255, 236, 198, 0.5);
+  text-underline-offset: 0.2em;
+  text-shadow: 0 calc(var(--u) * 0.1) calc(var(--u) * 0.4) rgba(30, 0, 12, 0.7);
   cursor: pointer;
+  transition: color 0.15s, text-decoration-color 0.15s;
+  animation: landing-rise 0.6s ease-out 1.8s backwards;
 }
 
-.landing-login:hover { color: #fff; }
+.landing-login:hover { color: #fff; text-decoration-color: currentColor; }
 
 .landing-button:focus-visible,
 .landing-login:focus-visible {
   outline: 3px solid #ffecc6;
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-button { transition: none; }
+  .landing *,
+  .landing *::before,
+  .landing *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* A tall screen stacks the same scene: 100 units wide and at least 200 tall. */
@@ -1431,20 +1859,43 @@ code.token {
 
   .landing-wall { background-size: calc(var(--u) * 110) auto; }
 
+  .landing-spot {
+    --spot-x: 50%;
+    --spot-y: calc(var(--u) * 62);
+    background:
+      radial-gradient(ellipse calc(var(--u) * 62) calc(var(--u) * 52) at var(--spot-x) var(--spot-y), rgba(255, 196, 140, 0.32), rgba(255, 170, 130, 0.1) 55%, transparent 100%),
+      radial-gradient(ellipse calc(var(--u) * 110) calc(var(--u) * 130) at var(--spot-x) calc(var(--u) * 90), transparent 34%, rgba(38, 2, 18, 0.6) 100%);
+  }
+
+  .landing-beam {
+    --beam-w: 44;
+    --beam-h: 92;
+    --beam-tilt: 15deg;
+    --beam-reach: 24;
+    left: calc(50% - var(--u) * var(--beam-w) / 2 + var(--u) * var(--beam-reach) * var(--side));
+    top: calc(var(--u) * -6);
+  }
+
   .landing-valance {
     top: calc(var(--u) * -2.5);
     height: calc(var(--u) * 25);
     background-position: center top;
   }
 
-  .landing-floor { height: calc(var(--u) * 13); }
+  .landing-floor { --floor-h: 13; }
   .landing-floor::before { height: calc(var(--u) * 2.9); }
+  .landing-floor::after { top: calc(var(--u) * -2.9); }
 
   .landing-portrait { top: calc(var(--u) * var(--y)); }
-  .landing-portrait.is-wink { --x: -44; --y: 122; --w: 22; }
-  .landing-portrait.is-jiji { --x: -19; --y: 118; --w: 16; }
-  .landing-portrait.is-bunny { --x: 5.5; --y: 119; --w: 15.5; }
-  .landing-portrait.is-bruce { --x: 27; --y: 124; --w: 15.5; }
+  .landing-portrait.is-wink { --x: -44; --y: 131; --w: 22; }
+  .landing-portrait.is-jiji { --x: -19; --y: 127; --w: 16; }
+  .landing-portrait.is-bunny { --x: 5.5; --y: 128; --w: 15.5; }
+  .landing-portrait.is-bruce { --x: 27; --y: 133; --w: 15.5; }
+
+  .landing-prop.is-cabinet { --sx: 3.5; --sy: -1.2; --sw: 67; --sh: 7.2; }
+  .landing-prop.is-lectern { --sw: 28; --sh: 5.2; --sy: 7.2; }
+  .landing-prop.is-lectern::before { left: auto; right: calc(var(--u) * 2.6); }
+  .landing-prop.is-cat { --sx: -4; --sy: 1.6; --sw: 30; --sh: 5.6; }
 
   .landing-cabinet {
     left: calc(var(--u) * 7.04);
@@ -1488,30 +1939,27 @@ code.token {
     top: calc(var(--u) * 27);
   }
 
-  .welcome-plaque { width: calc(var(--u) * 62); gap: calc(var(--u) * 1.3); }
-  .welcome-kicker { font-size: calc(var(--u) * 5.4); }
-  .welcome-title { font-size: calc(var(--u) * 5.1); }
+  .welcome-plaque { width: calc(var(--u) * 66); gap: calc(var(--u) * 1.3); }
+  .welcome-kicker { font-size: calc(var(--u) * 5.7); }
+  .welcome-title { font-size: calc(var(--u) * 5.45); }
 
   .landing-tagline {
     max-width: calc(var(--u) * 84);
     margin-top: calc(var(--u) * 3);
     font-size: calc(var(--u) * 4.1);
     white-space: normal;
-    text-wrap: balance;
   }
 
-  .landing-button {
-    width: calc(var(--u) * 58);
-    height: calc(var(--u) * 13.6);
-    margin-top: calc(var(--u) * 4);
-    border-width: calc(var(--u) * 1.2);
-    font-size: calc(var(--u) * 4.9);
-  }
+  .landing-tagline-a,
+  .landing-tagline-b { display: block; }
+  .landing-tagline wbr { display: none; }
 
-  .landing-button.is-create { margin-top: calc(var(--u) * 3); }
+  .landing-button { margin-top: calc(var(--u) * 4.4); }
+  .landing-button.is-start { --bw: 64; --bh: 15.6; --bf: 5.5; }
+  .landing-button.is-create { --bw: 54; --bh: 12.4; --bf: 4.4; margin-top: calc(var(--u) * 4.6); }
 
   .landing-login {
-    margin-top: calc(var(--u) * 2.6);
+    margin-top: calc(var(--u) * 3.6);
     font-size: calc(var(--u) * 4.1);
   }
 }

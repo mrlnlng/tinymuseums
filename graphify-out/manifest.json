@@ -267,9 +267,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/page.tsx": {
-    "mtime": 1794386529.7275813,
-    "seen": 1794386635.152728,
-    "ast_hash": "486a98b01751b662a8dd93103772b2a7",
+    "mtime": 1794423033.8375823,
+    "seen": 1794423406.1221006,
+    "ast_hash": "48a8b89feb80da70e64fe517e79bc043",
     "semantic_hash": ""
   },
   "apps/web/src/app/q/[token]/route.ts": {
@@ -5511,9 +5511,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/landing/LandingAccount.tsx": {
-    "mtime": 1794386317.9544542,
-    "seen": 1794386635.152817,
-    "ast_hash": "f3c9155b3d24162a2c25018ea5befcbf",
+    "mtime": 1794422520.8532388,
+    "seen": 1794423406.12221,
+    "ast_hash": "ddb1c3a5e0468969adc0c727ea3e655a",
     "semantic_hash": ""
   },
   "apps/web/tooling/import-landing-assets.mjs": {
@@ -5544,6 +5544,12 @@
     "mtime": 1794386172.5483649,
     "seen": 1794386635.1532867,
     "ast_hash": "97deac263b591d500addfea8c43621a7",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/landing/LandingFx.tsx": {
+    "mtime": 1794423328.5342448,
+    "seen": 1794423406.1222112,
+    "ast_hash": "3f718c8bb7937f6faa5e49fb77f69297",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

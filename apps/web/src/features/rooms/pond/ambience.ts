@@ -207,17 +207,101 @@ function vignetteTexture(): THREE.CanvasTexture {
   }, 1)
 }
 
-/** Leaves close to the viewer: broad and dark. */
-function frontTexture(seed: number): THREE.CanvasTexture {
-  const random = mulberry(seed)
-  return painted(256, 128, (ink) => {
-    for (let i = 0; i < 16; i++) {
-      const offset = (random() - 0.5) * 200
-      const tall = (50 + random() * 66) * (1 - Math.abs(offset) / 240)
-      blade(ink, 128 + offset, 132, tall, offset / 150 + (random() - 0.5) * 0.9, 20 + random() * 18, ['#2f6a25', '#3a782a', '#46852e'][Math.floor(random() * 3)])
-    }
-  })
+/** A slender blade with a slight wave in it, cut flat like the painting's own. */
+function frond(ink: Ink, x: number, base: number, height: number, lean: number, width: number, curl: number): void {
+  const tipX = x + lean * height * 0.5
+  const wave = curl * height * 0.1
+  ink.beginPath()
+  ink.moveTo(x - width / 2, base)
+  ink.bezierCurveTo(
+    x - width * 0.6 + wave, base - height * 0.35,
+    x - width * 0.3 + lean * height * 0.25 - wave, base - height * 0.72,
+    tipX, base - height,
+  )
+  ink.bezierCurveTo(
+    x + width * 0.25 + lean * height * 0.25 - wave, base - height * 0.68,
+    x + width * 0.6 + wave, base - height * 0.32,
+    x + width / 2, base,
+  )
+  ink.closePath()
+  ink.fill()
 }
+
+/** A leaf of shade or light lying within the grass, pointed at both ends. */
+function sliver(ink: Ink, x: number, y: number, length: number, lean: number, width: number): void {
+  const topX = x + lean * length * 0.5
+  ink.beginPath()
+  ink.moveTo(x, y)
+  ink.quadraticCurveTo(x - width + lean * length * 0.2, y - length * 0.45, topX, y - length)
+  ink.quadraticCurveTo(x + width + lean * length * 0.3, y - length * 0.55, x, y)
+  ink.fill()
+}
+
+const FRONT_WIDTH = 512
+const FRONT_HEIGHT = 176
+
+interface FrontTone {
+  /** The body of the grass, one flat step darker than the lawn behind it. */
+  body: string
+  shade: string
+  light: string
+  blades: number
+  /** How tall the blades stand, as a share of the strip. */
+  reach: number
+}
+
+/**
+ * Grass close to the viewer, painted the way the artist painted the lawn's own near edge:
+ * one flat tone of slender, wavy blades standing in clumps, a step darker than the grass
+ * behind, with a few leaves of shade and light lying in it. The strips overlap end to end.
+ */
+function frontTexture(seed: number, tone: FrontTone): THREE.CanvasTexture {
+  const random = mulberry(seed)
+  const phases = [random() * 6.3, random() * 6.3, random() * 6.3]
+  // Clumps rise and fall along the strip, and it sinks at both ends to tuck under its neighbours.
+  const swell = (x: number) => {
+    const clumps = 0.66 + 0.18 * Math.sin(x / 38 + phases[0]) + 0.1 * Math.sin(x / 17 + phases[1]) + 0.06 * Math.sin(x / 7 + phases[2])
+    const end = Math.min(1, Math.min(x, FRONT_WIDTH - x) / 44)
+    return clumps * (0.45 + 0.55 * end)
+  }
+  return painted(FRONT_WIDTH, FRONT_HEIGHT, (ink) => {
+    const full = FRONT_HEIGHT * tone.reach
+    ink.fillStyle = tone.body
+    ink.fillRect(0, FRONT_HEIGHT - full * 0.12, FRONT_WIDTH, full * 0.12)
+    const stems: { x: number; tall: number; lean: number }[] = []
+    const stand = (count: number, share: number) => {
+      for (let i = 0; i < count; i++) {
+        const x = 12 + ((i + random()) / count) * (FRONT_WIDTH - 24)
+        const tall = Math.min(0.98, swell(x) * (0.62 + random() * 0.4)) * full * share
+        const inward = (FRONT_WIDTH / 2 - x) / FRONT_WIDTH
+        const lean = (random() - 0.5) * 0.55 + inward * 0.2
+        stems.push({ x, tall, lean })
+        frond(ink, x, FRONT_HEIGHT + 2, tall, lean, 9 + random() * 6 + tall * 0.09, (random() - 0.5) * 1.8)
+      }
+    }
+    // Tall blades part at their tips; shorter ones close the clump beneath them.
+    stand(tone.blades, 1)
+    stand(Math.round(tone.blades * 1.4), 0.5)
+    // Shade gathers low in the clumps; a little light catches higher up.
+    ink.fillStyle = tone.shade
+    for (const stem of stems) {
+      if (random() > 0.34) continue
+      const length = stem.tall * (0.3 + random() * 0.25)
+      sliver(ink, stem.x + (random() - 0.5) * 8, FRONT_HEIGHT - stem.tall * (0.08 + random() * 0.3), length, stem.lean + (random() - 0.5) * 0.2, 2.6 + random() * 3)
+    }
+    ink.fillStyle = tone.light
+    for (const stem of stems) {
+      if (random() > 0.1) continue
+      const length = stem.tall * (0.2 + random() * 0.2)
+      sliver(ink, stem.x + (random() - 0.5) * 4, FRONT_HEIGHT - stem.tall * (0.4 + random() * 0.25), length, stem.lean, 1.8 + random() * 1.8)
+    }
+  }, 2)
+}
+
+const FRONT_ROWS: { tone: FrontTone; width: number; height: number; slide: number; sink: number }[] = [
+  { tone: { body: '#66912f', shade: '#5a852d', light: '#79a435', blades: 26, reach: 1 }, width: 3.5, height: 1.12, slide: -0.2, sink: 0.12 },
+  { tone: { body: '#567e2b', shade: '#4b7228', light: '#6b9631', blades: 21, reach: 0.92 }, width: 3.1, height: 0.8, slide: -0.38, sink: 0.09 },
+]
 
 function petalTexture(): THREE.CanvasTexture {
   return painted(48, 48, (ink) => {
@@ -680,15 +764,26 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
   // The edges of the view fall into shade, and near leaves slide past faster than the garden behind them.
   const vignette = sprite(keep(vignetteTexture()))
   vignette.position.z = -0.13
-  const frontMaps = [0, 1, 2].map((index) => keep(frontTexture(91 + index * 29)))
-  const fronts: { mesh: THREE.Mesh; x: number; phase: number }[] = []
-  for (let x = ground.minX - 4; x < ground.maxX + 6; x += 1.5 + random() * 1.9) {
-    const mesh = sprite(frontMaps[Math.floor(random() * 3)], { rooted: true })
-    const width = (1.5 + random() * 1.1) * (random() < 0.5 ? -1 : 1)
-    mesh.scale.set(width, Math.abs(width) * (0.4 + random() * 0.16), 1)
-    mesh.position.z = -0.125
-    fronts.push({ mesh, x, phase: random() * Math.PI * 2 })
-  }
+  // Two rows of it: the nearer one darker, lower, and quicker to slide by.
+  const fronts: { mesh: THREE.Mesh; x: number; phase: number; width: number; height: number; slide: number; sink: number }[] = []
+  FRONT_ROWS.forEach((row, rowIndex) => {
+    const maps = [0, 1, 2].map((index) => keep(frontTexture(91 + rowIndex * 53 + index * 29, row.tone)))
+    let turn = Math.floor(random() * 3)
+    for (let x = ground.minX - 6; x < ground.maxX + 8; x += row.width * 0.74) {
+      const mesh = sprite(maps[turn++ % 3], { rooted: true })
+      mesh.matrixAutoUpdate = false
+      mesh.position.z = -0.126 + rowIndex * 0.002
+      fronts.push({
+        mesh,
+        x,
+        phase: x * 0.9 + rowIndex * 2.1,
+        width: row.width * (random() < 0.5 ? -1 : 1),
+        height: row.height * (0.92 + random() * 0.16),
+        slide: row.slide,
+        sink: row.sink,
+      })
+    }
+  })
 
   let clock = 0
 
@@ -845,9 +940,15 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
     vignette.position.y = camera.position.y + (camera.top + camera.bottom) / 2
     vignette.scale.set(viewWidth * 1.04, viewHeight * 1.04, 1)
     for (const front of fronts) {
-      front.mesh.position.x = front.x + (camera.position.x - front.x) * -0.35
-      front.mesh.position.y = floor - 0.12
-      front.mesh.rotation.z = Math.sin(t * 0.8 + front.phase) * 0.02
+      // The roots stay put while the tips lean with the breeze.
+      const lean = (Math.sin(t * 0.8 + front.phase) * 0.035 + Math.sin(t * 1.9 + front.phase * 1.7) * 0.012) * front.height
+      front.mesh.matrix.set(
+        front.width, lean, 0, front.x + (camera.position.x - front.x) * front.slide,
+        0, front.height, 0, floor - front.sink,
+        0, 0, 1, front.mesh.position.z,
+        0, 0, 0, 1,
+      )
+      front.mesh.matrixWorldNeedsUpdate = true
     }
 
     for (const fly of flutter) {

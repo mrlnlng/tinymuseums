@@ -2,8 +2,8 @@
  * The pond's ground recedes from the bank (depth 0) to the treeline (depth 1). Depth is distance
  * over the ground, so a steady walk slows on screen as it nears the trees, as it would in a picture.
  */
-export const FAR_LIFT = 1.75
-export const FAR_SCALE = 0.6
+export const FAR_LIFT = 1.45
+export const FAR_SCALE = 0.72
 const K = 1 / FAR_SCALE - 1
 
 export function scaleAt(d: number): number {

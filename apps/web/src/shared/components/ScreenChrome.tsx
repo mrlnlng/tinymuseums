@@ -34,8 +34,8 @@ export default function ScreenChrome() {
   const showHome = pathname !== '/'
   const showMyRoom = pathname === '/museum'
   const showChat = pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier'
-  // The atelier's walls are dark maroon, where the pink buttons would disappear.
-  const onDark = pathname === '/museum/atelier'
+  // The hall's and the atelier's walls are dark maroon, where the pink buttons would disappear.
+  const onDark = pathname === '/museum' || pathname === '/museum/atelier'
 
   return (
     <>

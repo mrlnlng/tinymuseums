@@ -1900,6 +1900,8 @@
 /* The visitor's own rig at the water's edge. */
 .pond-angler { position: absolute; z-index: 5; display: block; pointer-events: none; }
 .pond-angler > canvas { display: block; width: 100%; height: 100%; }
+/* The paw, drawn again over the rod it holds. */
+.pond-angler-paw { position: absolute; z-index: 7; display: block; pointer-events: none; }
 
 /* Where a tap sends the visitor: a soft ring pressed into the grass, fading as they set off. */
 .pond-step-mark {
@@ -2048,7 +2050,7 @@
 /* The painted layers and props all share the painting's own pixel scale. */
 .pond-scene-left { inset: 0 auto 0 auto; }
 .pond-bridge { position: absolute; z-index: 1; display: block; pointer-events: none; user-select: none; }
-.pond-rod-art { position: absolute; z-index: 4; display: block; height: auto; pointer-events: none; user-select: none; will-change: transform; }
+.pond-rod-art { position: absolute; z-index: 6; display: block; height: auto; pointer-events: none; user-select: none; will-change: transform; }
 .pond-line { stroke: rgb(244 250 248 / 92%); stroke-width: 1.8px; }
 .pond-sign { position: absolute; z-index: 1; display: block; height: auto; pointer-events: none; user-select: none; transform-origin: 50% 0; animation: pond-sign-sway 7s ease-in-out infinite; }
 @keyframes pond-sign-sway { 0%, 100% { transform: rotate(-0.7deg); } 50% { transform: rotate(0.7deg); } }

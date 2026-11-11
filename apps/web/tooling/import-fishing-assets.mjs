@@ -135,10 +135,13 @@ await save('bait-shop', sharp(stall).extract(stallBox))
 
 const fish = await sharp(prop('pond_fish')).resize({ width: 190 }).png().toBuffer()
 await save('notice-sign', sharp(await doubled(prop('pond_rules_sign'))).composite([
-  await lettering('POND NOTICES', 96, { left: 190, y: 300 }),
+  await lettering('POND RULES', 96, { left: 190, y: 300 }),
   { input: fish, left: 860, top: 205 },
-  await lettering('1. TODAY&apos;S BOUNTIES', 62, { left: 190, y: 480 }),
-  await lettering('2. POND RECORDS', 62, { left: 190, y: 590 }),
+  await lettering('1. CAST IN THE GOLD ZONE', 54, { left: 190, y: 452 }),
+  await lettering('2. WAIT FOR A BITE', 54, { left: 190, y: 544 }),
+  await lettering('3. HOOK IT QUICK', 54, { left: 190, y: 636 }),
+  await lettering('4. REEL IT IN, REST IF IT PULLS', 54, { left: 190, y: 728 }),
+  await lettering('BOUNTIES AND RECORDS INSIDE', 54, { left: 190, y: 820 }),
 ]))
 
 const bloom = await sharp(layer(139)).extract(await opaqueBox(layer(139))).resize({ width: 420 }).png().toBuffer()

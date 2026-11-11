@@ -717,12 +717,12 @@
       "x2": {
         "w": 869,
         "h": 844,
-        "src": "pond-notice-sign@2x.e0e64a25c9.webp"
+        "src": "pond-notice-sign@2x.bd0873ba26.webp"
       },
       "x3": {
         "w": 1304,
         "h": 1266,
-        "src": "pond-notice-sign@3x.5c306836cd.webp"
+        "src": "pond-notice-sign@3x.8b71df903f.webp"
       }
     },
     "pond/pond-sign": {
@@ -802,6 +802,62 @@
         "w": 508,
         "h": 376,
         "src": "pond-forest-door-sign@2x.0af2e84fca.webp"
+      }
+    },
+    "hall/wallpaper": {
+      "w": 750,
+      "h": 378,
+      "x2": {
+        "w": 500,
+        "h": 252,
+        "src": "hall-wallpaper@2x.baeed3829c.webp"
+      },
+      "x3": {
+        "w": 750,
+        "h": 378,
+        "src": "hall-wallpaper@3x.fbea6f1dbf.webp"
+      }
+    },
+    "hall/baseboard": {
+      "w": 987,
+      "h": 35,
+      "x2": {
+        "w": 987,
+        "h": 35,
+        "src": "hall-baseboard@2x.c4982d98c6.webp"
+      },
+      "x3": {
+        "w": 987,
+        "h": 35,
+        "src": "hall-baseboard@3x.c4982d98c6.webp"
+      }
+    },
+    "hall/curtain": {
+      "w": 1903,
+      "h": 238,
+      "x2": {
+        "w": 1903,
+        "h": 238,
+        "src": "hall-curtain@2x.6611dc78d9.webp"
+      },
+      "x3": {
+        "w": 1903,
+        "h": 238,
+        "src": "hall-curtain@3x.6611dc78d9.webp"
+      }
+    },
+    "hall/christmas-tree": {
+      "w": 416,
+      "h": 577,
+      "x2": {
+        "w": 416,
+        "h": 577,
+        "src": "hall-christmas-tree@2x.f19bbb6d7e.webp"
+      },
+      "x3": {
+        "w": 416,
+        "h": 577,
+        "src": "hall-christmas-tree@3x.f19bbb6d7e.webp"
       }
     }
   },

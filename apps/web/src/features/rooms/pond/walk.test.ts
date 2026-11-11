@@ -39,7 +39,7 @@ test('walks round the near shore to cross the pond', () => {
   }
   assert.ok(!walker.walking)
   assert.ok(Math.abs(walker.x - 10) < 1e-6 && Math.abs(walker.depth - 0.6) < 1e-6)
-  assert.ok(shallowest < 0.1)
+  assert.ok(shallowest < 0.2)
 })
 
 test('keys steer into the picture and stop at the treeline', () => {

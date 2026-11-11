@@ -41,12 +41,19 @@ export function currentLook(): Look {
   return { kind: look.kind, costume: fitted(look.costume), bow: fitted(look.bow) }
 }
 
+/** How much of the figure around the paw is drawn again over the rod, as a share of its height. */
+const PAW_REACH = 0.055
+
 /**
  * The visitor at the water's edge, drawn with their own rig so a cat or an otter fishes as itself.
  * `box` is the standing figure's box as fractions of the world; the paw is reported in world fractions.
+ * `swing` turns the rod arm, in degrees back from rest, so the arm casts with the rod it holds.
  */
-export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boolean; onPaw(paw: { x: number; y: number } | null | undefined): void }) {
+export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduced: boolean; swing: number; onPaw(paw: { x: number; y: number } | null | undefined): void }) {
   const hostRef = useRef<HTMLDivElement>(null)
+  const pawRef = useRef<HTMLCanvasElement>(null)
+  const swingRef = useRef(swing)
+  swingRef.current = swing
   const [frame, setFrame] = useState<Box | null>(null)
   const [failed, setFailed] = useState(false)
   const onPawRef = useRef(onPaw)
@@ -71,6 +78,8 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
     let raf = 0
     let timer = 0
     const motion = createRigState('right')
+    const bend = { armFront: swingRef.current }
+    motion.bend = bend
     const pose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
 
     void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then(async (loaded) => {
@@ -85,6 +94,8 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
       rig = loaded
       let last = performance.now()
       let reported = 0
+      let reportedX = 0
+      let reportedY = 0
       let lastFrame = ''
       const draw = (now: number) => {
         if (!rig || disposed) return
@@ -107,11 +118,34 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
         const w = world.getBoundingClientRect()
         const placed = w.width > 0 && w.height > 0 && Math.abs(c.height - frame.height * w.height) < 1 && Math.abs(c.width - frame.width * w.width) < 1
         if (px > 0 && placed) {
+          bend.armFront = reducedRef.current ? swingRef.current : bend.armFront + (swingRef.current - bend.armFront) * (1 - Math.exp(-dt * 24))
           rig.render(motion, reducedRef.current ? 0 : dt, px, window.devicePixelRatio)
-          // The paw breathes a little; report it now and then, not every frame.
-          if (now - reported > 250 && rig.projectAttachment(GRIP[look.kind], pose)) {
-            reported = now
-            onPawRef.current({ x: (c.left + pose.x - w.left) / w.width, y: (c.top + pose.y - w.top) / w.height })
+          if (rig.projectAttachment(GRIP[look.kind], pose)) {
+            // The paw closes over the handle: the figure around it is drawn again, above the rod.
+            const over = pawRef.current
+            const ink = over?.getContext('2d')
+            if (over && ink) {
+              if (over.width !== canvas.width || over.height !== canvas.height) {
+                over.width = canvas.width
+                over.height = canvas.height
+              }
+              const density = canvas.width / Math.max(1, c.width)
+              ink.clearRect(0, 0, over.width, over.height)
+              ink.save()
+              ink.beginPath()
+              ink.arc(pose.x * density, pose.y * density, PAW_REACH * c.height * density, 0, Math.PI * 2)
+              ink.clip()
+              ink.drawImage(canvas, 0, 0)
+              ink.restore()
+            }
+            // The paw breathes a little; report it when it has moved, or now and then.
+            const moved = Math.hypot(pose.x - reportedX, pose.y - reportedY) > 0.25
+            if (moved || now - reported > 250) {
+              reported = now
+              reportedX = pose.x
+              reportedY = pose.y
+              onPawRef.current({ x: (c.left + pose.x - w.left) / w.width, y: (c.top + pose.y - w.top) / w.height })
+            }
           }
         }
         if (!reducedRef.current || !placed) raf = requestAnimationFrame(draw)
@@ -146,6 +180,19 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
           height: `${frame.height * 100}%`,
         } : { visibility: 'hidden', inset: 0 }}
       />
+      {frame ? (
+        <canvas
+          ref={pawRef}
+          className="pond-angler-paw"
+          aria-hidden="true"
+          style={{
+            left: `${frame.left * 100}%`,
+            top: `${frame.top * 100}%`,
+            width: `${frame.width * 100}%`,
+            height: `${frame.height * 100}%`,
+          }}
+        />
+      ) : null}
       {failed ? (
         <div
           className="pond-bunny"

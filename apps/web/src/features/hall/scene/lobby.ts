@@ -45,7 +45,7 @@ function svgTexture(svg: string): THREE.Texture {
 }
 
 export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
-  const { door, sign, post, booth, cat, catFrameMs } = CONFIG.lobby
+  const { door, sign, post, booth, cat, tree, catFrameMs } = CONFIG.lobby
   const group = new THREE.Group()
 
   const doorMesh = plane(
@@ -57,6 +57,17 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
     door.z,
   )
   group.add(doorMesh)
+
+  group.add(
+    plane(
+      tree.height * assets.aspect.christmasTree,
+      tree.height,
+      assets.textures.christmasTree,
+      tree.x,
+      tree.centerY,
+      tree.z,
+    ),
+  )
 
   group.add(
     stretchedBoard(

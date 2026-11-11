@@ -95,3 +95,20 @@ replaces the generated fisherman/basket in the scene, and
 `pond/forest-noticeboard-wood.webp` supplies the board's wooden header. Source
 PNGs and the exact built-in image_gen prompts are recorded in the
 [art direction notes](../../../../docs/pond-asset-art-direction.md#5-current-revision-original-otter-bait-stall-and-quiet-exploration).
+
+## Main hall v2 (2026-11-10)
+
+Source files are in `/home/shan/Downloads/mocks/2026-11-10/main_hall_v2/main_hall_v2`.
+
+| Runtime master in `hall/` | Source | Crop (left, top, width, height) |
+| --- | --- | --- |
+| `wallpaper.png` | `wallpaper.png` | 0, 0, 1093, 551; flattened onto `#741633` |
+| `baseboard.png` | `baseboard.png` | 19, 0, 987, 35 |
+| `curtain.png` | `purple_curtains.png` | 0, 8, 1903, 238, then transparent edge columns trimmed |
+| `christmas-tree.png` | `christmas_tree.png` | Full canvas, 416×577, unchanged |
+
+Reimport this drop and rebuild its content-hashed WebPs from the repo root:
+
+```bash
+node apps/web/tooling/import-hall-assets.mjs /home/shan/Downloads/mocks/2026-11-10/main_hall_v2/main_hall_v2
+```

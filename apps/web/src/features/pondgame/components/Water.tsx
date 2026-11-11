@@ -58,9 +58,13 @@ function pawPoint(pose: Pose): Point {
 
 const easeOut = (t: number) => 1 - (1 - t) ** 3
 
+const REST_LEAN = 28
+/** How much of the rod's swing comes from the arm; the wrist does the rest. */
+const ARM_SHARE = 0.55
+
 /** How far the rod leans back from its resting angle, in degrees, for the moment in the cast. */
 function rodAngle(phase: FishingPhase, power: number, flight: number, tension: number): number {
-  const rest = 28
+  const rest = REST_LEAN
   if (phase === 'charging') return rest + 30 * power
   if (phase === 'flying') return rest + 30 * power * (1 - flight) ** 2 - 12 * Math.sin(Math.PI * flight)
   if (phase === 'reeling') return rest - 7 * tension
@@ -87,30 +91,30 @@ const LEFT_STYLE: CSSProperties = {
 
 /** Where the catch bucket stands on the bank: its foot, and its height, as fractions of the world. */
 const BUCKET: Record<'wide' | 'narrow', { x: number; bottom: number; height: number }> = {
-  wide: { x: 0.855, bottom: 0.875, height: 0.11 },
-  narrow: { x: 0.345, bottom: 0.955, height: 0.085 },
+  wide: { x: 0.9, bottom: 0.865, height: 0.2 },
+  narrow: { x: 0.345, bottom: 0.985, height: 0.115 },
 }
 const BUCKET_ASPECT = 777 / 774
 
 const SIGN_ASPECT = 1366 / 1156
 const SCORE_ASPECT = 922 / 1070
-/** The pond's name hangs over the bridge, and the day's tally is staked beside it. */
-const SIGN_WIDTH = 0.17
+/** The pond's name hangs low over the bridge, just covering its middle post, and the day's tally is staked beside it. */
+const SIGN_WIDTH = 0.25
 const SIGN_STYLE: CSSProperties = {
   left: `${(layout.bridge.x + layout.bridge.w / 2 - SIGN_WIDTH / 2) * 100}%`,
-  bottom: `${(1 - layout.bridge.y + 0.012) * 100}%`,
+  bottom: `${(1 - layout.bridge.y - 0.01) * 100}%`,
   width: `${SIGN_WIDTH * 100}%`,
   aspectRatio: SIGN_ASPECT,
 }
 const SCORE_STYLE: CSSProperties = {
   left: `${(layout.bridge.x + layout.bridge.w + 0.004) * 100}%`,
   bottom: `${(1 - layout.bridge.y - layout.bridge.h - 0.012) * 100}%`,
-  width: '8.6%',
+  width: '14%',
   aspectRatio: SCORE_ASPECT,
 }
 /** A phone sees only the left of the painting, so both signs move in beside the angler. */
-const SIGN_STYLE_NARROW: CSSProperties = { ...SIGN_STYLE, left: '22.5%' }
-const SCORE_STYLE_NARROW: CSSProperties = { ...SCORE_STYLE, left: '23%', bottom: '54.5%' }
+const SIGN_STYLE_NARROW: CSSProperties = { ...SIGN_STYLE, left: '13.5%', width: '20%' }
+const SCORE_STYLE_NARROW: CSSProperties = { ...SCORE_STYLE, left: '34.5%', bottom: '54.5%', width: '12%' }
 
 interface Splash {
   id: number
@@ -496,7 +500,7 @@ export default function Water({
         </svg>
       ) : null}
 
-      <Angler box={bunny} reduced={reduced} onPaw={setRigPaw} />
+      <Angler box={bunny} reduced={reduced} swing={(lean - REST_LEAN) * ARM_SHARE} onPaw={setRigPaw} />
 
       {showBobber ? (
         <>

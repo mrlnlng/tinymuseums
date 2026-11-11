@@ -9,6 +9,7 @@ import { pickPainted } from './hit'
 import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
+import { createSpotlight, disposeSpotlights } from './spotlight'
 
 interface SlotRuntime {
   index: number
@@ -44,6 +45,7 @@ export interface MountedDisplay {
   display: HallPieceDto
   group: THREE.Group
   mesh: THREE.Mesh
+  spotlight: THREE.Mesh
   centerX: number
   width: number
   height: number
@@ -263,6 +265,9 @@ export class HallScene {
     mesh.userData.slotIndex = slot.index
     group.add(mesh)
 
+    const spotlight = createSpotlight(width, bottom, height)
+    group.add(spotlight)
+
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
     const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
     const plaque = new THREE.Mesh(
@@ -296,6 +301,7 @@ export class HallScene {
       display: piece,
       group,
       mesh,
+      spotlight,
       centerX,
       width,
       height,
@@ -339,6 +345,8 @@ export class HallScene {
     mount.group.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return
       obj.geometry.dispose()
+      // Every beam shares one material and texture, so only its geometry belongs to the display.
+      if (obj === mount.spotlight) return
       const material = obj.material as THREE.MeshBasicMaterial
       if (material.map?.userData.ownedByDisplay) material.map.dispose()
       material.dispose()
@@ -460,5 +468,6 @@ export class HallScene {
   dispose(): void {
     for (const index of [...this.mounted.keys()]) this.unmount(index)
     for (const index of [...this.pedestals.keys()]) this.removePedestal(index)
+    disposeSpotlights()
   }
 }

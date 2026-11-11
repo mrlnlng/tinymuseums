@@ -1,5 +1,8 @@
 :root {
   --wall: #fff1d2;
+  /* The main hall's burgundy wallpaper, and the cream lettering that reads on it. */
+  --hall-wall: #741633;
+  --hall-ink: #fdebc8;
   --wall-deep: #fbebc0;
   --floor: #8b5641;
   --ink: #6d402e;
@@ -574,7 +577,8 @@ code.token {
   font-family: var(--font-title);
   text-align: center;
   line-height: 1.15;
-  color: var(--script);
+  color: var(--hall-ink);
+  text-shadow: 0 1px 2px rgba(48, 6, 20, 0.55);
   will-change: transform, opacity;
   pointer-events: none;
   text-wrap: balance;
@@ -1988,11 +1992,11 @@ form > .account-switch {
   inset: 0;
   display: grid;
   place-items: center;
-  background: var(--wall);
+  background: var(--hall-wall);
 }
 
 .hall-skeleton-note {
-  color: var(--script);
+  color: var(--hall-ink);
   font-size: 20px;
   opacity: 0;
   animation: skeleton-wait 2.4s ease-in-out 0.45s infinite;
@@ -2527,6 +2531,17 @@ form > .account-switch {
     width: max(100%, calc(75dvh * var(--pond-aspect, 1.480475)));
   }
 
+}
+
+/* With room to spare, the painting sits low so the pond is near the viewer; short screens keep it clear of the tray. */
+@media (min-aspect-ratio: 1 / 1) and (min-height: 600px) {
+  .pond-fishing .pond-world { bottom: clamp(48px, 7vh, 90px); }
+}
+/* A short landscape screen crops the top of the painting, so its signs stay small enough to clear the buttons. */
+@media (min-aspect-ratio: 1 / 1) and (max-height: 599.98px) {
+  .pond-fishing .pond-sign { bottom: 68.8% !important; left: 44.4% !important; width: 17% !important; }
+  .pond-fishing .pond-score { width: 8.6% !important; }
+  .pond-fishing .pond-bucket { scale: 0.7; }
 }
 
 /* Grass continues below the painting on screens taller than its crop. */

@@ -531,10 +531,10 @@
     "semantic_hash": "84e4c28df85b6c37000a8a6416f310cf"
   },
   "apps/web/src/features/hall/scene/assets.ts": {
-    "mtime": 1793345730.8605843,
-    "seen": 1793430503.3323262,
-    "ast_hash": "5ccc8b6a7efe27fee78dd747c610039e",
-    "semantic_hash": "5ccc8b6a7efe27fee78dd747c610039e"
+    "mtime": 1794382425.0779018,
+    "seen": 1794383074.9809608,
+    "ast_hash": "f4c085e8e0421da26e929d7a192c1541",
+    "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/atelier.ts": {
     "mtime": 1794080114.3943326,
@@ -543,9 +543,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/backdrop.ts": {
-    "mtime": 1794024981.6637602,
-    "seen": 1794025613.1503866,
-    "ast_hash": "e2a3392fb3429edc7d244256f85a56ca",
+    "mtime": 1794382504.4006221,
+    "seen": 1794383074.980966,
+    "ast_hash": "ed32f46579d7566c51a4a44a50e02957",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/board.ts": {
@@ -591,9 +591,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1794199447.2827172,
-    "seen": 1794199837.8378603,
-    "ast_hash": "bc0b2fb0651b8743f733edd85acbf768",
+    "mtime": 1794382916.8555036,
+    "seen": 1794383074.980973,
+    "ast_hash": "e3285a7805fb215412509505d82eca96",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -651,9 +651,9 @@
     "semantic_hash": "a8fec7284a4b6956913915c7dc68fc2f"
   },
   "apps/web/src/features/hall/scene/lobby.ts": {
-    "mtime": 1794022805.4654658,
-    "seen": 1794022993.2267363,
-    "ast_hash": "2e3028ab6ac24379ad502ad1b0e877ad",
+    "mtime": 1794382685.5518405,
+    "seen": 1794383074.9809835,
+    "ast_hash": "4e6e71d4fa6b8b807ce8ce0fe025674b",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/matcha.ts": {
@@ -711,9 +711,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/scene.ts": {
-    "mtime": 1794025240.98411,
-    "seen": 1794025613.1504107,
-    "ast_hash": "f604a3853ae60571f59b91c564cd4802",
+    "mtime": 1794382754.231819,
+    "seen": 1794383074.980997,
+    "ast_hash": "3d4cff537edd24167a6d39aab943724b",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/sitting.ts": {
@@ -873,9 +873,9 @@
     "semantic_hash": "796873e0bfdac77202e9e5f54c3f82f8"
   },
   "apps/web/src/generated/asset-manifest.json": {
-    "mtime": 1794363703.7422464,
-    "seen": 1794363995.5655582,
-    "ast_hash": "e18081ededa438838d32b33f1a20b579",
+    "mtime": 1794382415.9830754,
+    "seen": 1794383074.9810994,
+    "ast_hash": "81241e6aa7c1b17887cd9386e1e5ad77",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AssetImage.tsx": {
@@ -897,9 +897,9 @@
     "semantic_hash": "f1eae512cc73927ef3c62aed081d8acc"
   },
   "apps/web/src/shared/components/ScreenChrome.tsx": {
-    "mtime": 1793985256.2965004,
-    "seen": 1793985513.4184744,
-    "ast_hash": "3834c14008d89997a827101e72bab626",
+    "mtime": 1794382641.2076905,
+    "seen": 1794383074.981102,
+    "ast_hash": "ee29141523d3505727934dc0cfc6d7ee",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/ServiceWorker.tsx": {
@@ -1653,9 +1653,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/README.md": {
-    "mtime": 1794200833.5219045,
-    "seen": 1794201256.721871,
-    "ast_hash": "239886d844d2621568c9e4cbefd1a84b",
+    "mtime": 1794382445.0099115,
+    "seen": 1794383074.9812267,
+    "ast_hash": "cc515a86a12f52c99285ea705dd4ebf6",
     "semantic_hash": ""
   },
   "apps/web/public/audio/README.md": {
@@ -2301,230 +2301,230 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-left.74b05b492d.webp": {
-    "mtime": 1794111419.2919009,
-    "seen": 1794113051.1862502,
+    "mtime": 1794371077.146088,
+    "seen": 1794379436.7225046,
     "ast_hash": "1e4e5664de4a20db19e30ffc8b2cf9e3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-right.77b79c158c.webp": {
-    "mtime": 1794111421.2949607,
-    "seen": 1794113051.1862519,
+    "mtime": 1794371079.0821397,
+    "seen": 1794379436.7225065,
     "ast_hash": "32191a1ec3c6e7b0b298ca4e731a02f3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-sit-helm.5a3728b148.webp": {
-    "mtime": 1794111422.670002,
-    "seen": 1794113051.1862526,
+    "mtime": 1794371080.444176,
+    "seen": 1794379436.7225072,
     "ast_hash": "3d3b1b20e4cdf6ff8ab12e3b62392ad7",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-sit.c050e5d416.webp": {
-    "mtime": 1794111421.8909788,
-    "seen": 1794113051.1862533,
+    "mtime": 1794371079.6781554,
+    "seen": 1794379436.7225082,
     "ast_hash": "a7d7934a23d3a505988e118acdfef3e8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-left-1.b382829d45.webp": {
-    "mtime": 1794111424.1720471,
-    "seen": 1794113051.1862538,
+    "mtime": 1794371081.939216,
+    "seen": 1794379436.7225091,
     "ast_hash": "40899af6549d6d178350ee311ffab994",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-left-2.ad0a735a6c.webp": {
-    "mtime": 1794111425.6610918,
-    "seen": 1794113051.1862545,
+    "mtime": 1794371083.4652565,
+    "seen": 1794379436.72251,
     "ast_hash": "83e198e72491e8b0e52727332621cfe2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-left-3.ad97423d6e.webp": {
-    "mtime": 1794111427.7551544,
-    "seen": 1794113051.1862555,
+    "mtime": 1794371085.6633153,
+    "seen": 1794379436.722511,
     "ast_hash": "4db9cc067680104ceae8e84c733622d6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-left-4.7e27fc1f83.webp": {
-    "mtime": 1794111429.4752061,
-    "seen": 1794113051.1862562,
+    "mtime": 1794371087.4343624,
+    "seen": 1794379436.7225118,
     "ast_hash": "927501e7387f21ac22d565419060080b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-left-5.a5718b4392.webp": {
-    "mtime": 1794111431.207258,
-    "seen": 1794113051.1862566,
+    "mtime": 1794371089.1784089,
+    "seen": 1794379436.722513,
     "ast_hash": "8fa315546d8bbbf933e5550a846f4260",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-right-1.872a2ef634.webp": {
-    "mtime": 1794111432.94631,
-    "seen": 1794113051.1862574,
+    "mtime": 1794371090.8744543,
+    "seen": 1794379436.7225137,
     "ast_hash": "66931209aab4f70f1c50fc20c8a158cf",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-right-2.b625475b47.webp": {
-    "mtime": 1794111434.450355,
-    "seen": 1794113051.186258,
+    "mtime": 1794371092.3024924,
+    "seen": 1794379436.7225146,
     "ast_hash": "ea71d7bbb87808efe5d0f355b01deaf9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-right-3.4de9281186.webp": {
-    "mtime": 1794111436.6024196,
-    "seen": 1794113051.186259,
+    "mtime": 1794371094.4355493,
+    "seen": 1794379436.7225153,
     "ast_hash": "5fb48c75b39118b284d3ff84097e7d8d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-right-4.a4924af499.webp": {
-    "mtime": 1794111438.7414837,
-    "seen": 1794113051.1862595,
+    "mtime": 1794371096.4816039,
+    "seen": 1794379436.7225165,
     "ast_hash": "1694cf668162d99bee2a0f1431e37f1d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-walk-right-5.a5ad7ab8bd.webp": {
-    "mtime": 1794111440.8975484,
-    "seen": 1794113051.1862602,
+    "mtime": 1794371098.551659,
+    "seen": 1794379436.7225173,
     "ast_hash": "6824da560bd3e885686af74f94400ee8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny.77b79c158c.webp": {
-    "mtime": 1794111417.293841,
-    "seen": 1794113051.1862607,
+    "mtime": 1794371075.1800356,
+    "seen": 1794379436.722518,
     "ast_hash": "32191a1ec3c6e7b0b298ca4e731a02f3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/coin-large@2x.b0b3f2f54e.webp": {
-    "mtime": 1794111443.2416186,
-    "seen": 1794113051.1862614,
+    "mtime": 1794371100.8327198,
+    "seen": 1794379436.7225187,
     "ast_hash": "d7e30be02ef05db86ecc6a99587f428d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/coin-large@3x.eda01f21e5.webp": {
-    "mtime": 1794111443.2896202,
-    "seen": 1794113051.1862624,
+    "mtime": 1794371100.8817213,
+    "seen": 1794379436.7225199,
     "ast_hash": "9e7f2c8906baea15d21cf86a750fa474",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/floor.1309ce327f.webp": {
-    "mtime": 1794111447.6277502,
-    "seen": 1794113051.186263,
+    "mtime": 1794371105.291839,
+    "seen": 1794379436.7225206,
     "ast_hash": "578e4f4899873c04489954d9f6adb6c5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/frame-landscape@2x.d8bfec309b.webp": {
-    "mtime": 1794111455.6349902,
-    "seen": 1794113051.1862636,
+    "mtime": 1794371113.1760492,
+    "seen": 1794379436.7225213,
     "ast_hash": "57350c0a906a89350949983f7fe98f23",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/frame-landscape@3x.5e2983b62f.webp": {
-    "mtime": 1794111456.1560056,
-    "seen": 1794113051.1862643,
+    "mtime": 1794371113.7230637,
+    "seen": 1794379436.722522,
     "ast_hash": "b15e6a93eaf6576653e0c857c06fb8b7",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/frame@2x.614c7157bc.webp": {
-    "mtime": 1794111450.2348282,
-    "seen": 1794113051.1862648,
+    "mtime": 1794371107.8589072,
+    "seen": 1794379436.722523,
     "ast_hash": "be7b200824266f9ba15b55c1384ee9d0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/frame@3x.e82db0a9a6.webp": {
-    "mtime": 1794111452.6028993,
-    "seen": 1794113051.1862657,
+    "mtime": 1794371110.1799693,
+    "seen": 1794379436.722524,
     "ast_hash": "3b3e133f50aef3c7359bf346ebdc3de0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/guestboard-arrow-left.853303a223.webp": {
-    "mtime": 1794111456.2270079,
-    "seen": 1794113051.1862664,
+    "mtime": 1794371113.7900655,
+    "seen": 1794379436.7225246,
     "ast_hash": "e3e9369e0184806633dfc904a7d2d3ff",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/guestboard-board.64165da934.webp": {
-    "mtime": 1794111459.8081152,
-    "seen": 1794113051.186267,
+    "mtime": 1794371117.6601686,
+    "seen": 1794379436.7225254,
     "ast_hash": "8132f0c48e9d0e9f8899be7c0cd327f6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/helm@2x.1d4ae2557e.webp": {
-    "mtime": 1794111460.4501345,
-    "seen": 1794113051.1862676,
+    "mtime": 1794371118.3191864,
+    "seen": 1794379436.7225263,
     "ast_hash": "b5c255a9a9f47d1202c2b4cd68bd15a4",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/helm@3x.9cb91642cc.webp": {
-    "mtime": 1794111460.8471463,
-    "seen": 1794113051.186268,
+    "mtime": 1794371118.6871963,
+    "seen": 1794379436.7225275,
     "ast_hash": "47bbcf853d5b05b207ca5cde4a06d27b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/help-center.803163d58e.webp": {
-    "mtime": 1794111465.240278,
-    "seen": 1794113051.186269,
+    "mtime": 1794371122.9843109,
+    "seen": 1794379436.7225282,
     "ast_hash": "ccec417dade7a62731af946f4feab820",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/icon-basket.1de59ff210.svg": {
-    "mtime": 1794111465.2412782,
-    "seen": 1794113051.1862695,
+    "mtime": 1794371122.9853108,
+    "seen": 1794379436.722529,
     "ast_hash": "b523667ff8e405bc047e53ad6c3089bd",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/icon-home.d3c75c298c.webp": {
-    "mtime": 1794111465.4992857,
-    "seen": 1794113051.1862702,
+    "mtime": 1794371123.253318,
+    "seen": 1794379436.72253,
     "ast_hash": "90901d81a3972fa7172f458f72164d69",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/icon-no-photos.d77f55038f.webp": {
-    "mtime": 1794111465.8642967,
-    "seen": 1794113051.186271,
+    "mtime": 1794371123.6173277,
+    "seen": 1794379436.7225306,
     "ast_hash": "bc9d59a42ed676d06ceed695a681c87b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/matcha@2x.b5edf7c96f.webp": {
-    "mtime": 1794111466.2153072,
-    "seen": 1794113051.1862717,
+    "mtime": 1794371123.960337,
+    "seen": 1794379436.7225313,
     "ast_hash": "57ae2468fd2a1581c16c5ca0434c6ee5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/matcha@3x.8cd31a0c3e.webp": {
-    "mtime": 1794111466.5233164,
-    "seen": 1794113051.1862726,
+    "mtime": 1794371124.2523446,
+    "seen": 1794379436.7225323,
     "ast_hash": "7b549a44051d6e85e7c4dcd70eeb189a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/music-notes.5e2aa0b2a7.svg": {
-    "mtime": 1794111466.5243165,
-    "seen": 1794113051.186273,
+    "mtime": 1794371124.2533445,
+    "seen": 1794379436.7225332,
     "ast_hash": "970f39bb6d4f1f9ab4a1d3e7bc4b902a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pedestal-5-large.6a8cf670ad.webp": {
-    "mtime": 1794111468.944389,
-    "seen": 1794113051.1862738,
+    "mtime": 1794371126.6474085,
+    "seen": 1794379436.722534,
     "ast_hash": "4639067c87b30f7ab3491f1ded733669",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pedestal@2x.b9c2f001b1.webp": {
-    "mtime": 1794111467.8173552,
-    "seen": 1794113051.1862745,
+    "mtime": 1794371125.5363789,
+    "seen": 1794379436.7225347,
     "ast_hash": "33d9454117e092019f8c14d9837fa439",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pedestal@3x.b548bf36f1.webp": {
-    "mtime": 1794111467.6783512,
-    "seen": 1794113051.186275,
+    "mtime": 1794371125.391375,
+    "seen": 1794379436.7225354,
     "ast_hash": "f3d849b053189bf840da57524e1e9f43",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/plaque@2x.495da8a967.webp": {
-    "mtime": 1794111469.9204183,
-    "seen": 1794113051.186276,
+    "mtime": 1794371127.640435,
+    "seen": 1794379436.722536,
     "ast_hash": "cd4a7c913b32e58210dd04a84560cbdc",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/plaque@3x.240be6f6aa.webp": {
-    "mtime": 1794111470.5874383,
-    "seen": 1794113051.1862764,
+    "mtime": 1794371128.2164505,
+    "seen": 1794379436.722537,
     "ast_hash": "16a1d6c5184a8c315c545b0e607ac8d2",
     "semantic_hash": ""
   },
@@ -3177,9 +3177,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/hall/room.ts": {
-    "mtime": 1794198918.4076686,
-    "seen": 1794199197.1147945,
-    "ast_hash": "59e28a51beea8c52bdc8eb94ef956853",
+    "mtime": 1794382440.2655814,
+    "seen": 1794383074.9810617,
+    "ast_hash": "b977a56e48c23ca4c6a5f324039aeab8",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/MuseumStage.tsx": {
@@ -3711,668 +3711,668 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-blobfish@2x.34610f97fe.webp": {
-    "mtime": 1794111472.209487,
-    "seen": 1794113051.1862772,
+    "mtime": 1794371138.0797136,
+    "seen": 1794379436.7225435,
     "ast_hash": "a90146dfb468353fe1c5308ca550e5c0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-blobfish@3x.1dc8c2cc52.webp": {
-    "mtime": 1794111471.343461,
-    "seen": 1794113051.1862776,
+    "mtime": 1794371137.2476914,
+    "seen": 1794379436.7225444,
     "ast_hash": "c8d59580afa421fc1de2a129c4d8edfb",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-crab@2x.a25c94291e.webp": {
-    "mtime": 1794111474.8875673,
-    "seen": 1794113051.1862783,
+    "mtime": 1794371140.755785,
+    "seen": 1794379436.7225451,
     "ast_hash": "4948f99dd7f74b74c5cc86f60b3902c3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-crab@3x.0cbec9a5d9.webp": {
-    "mtime": 1794111474.2015467,
-    "seen": 1794113051.1862788,
+    "mtime": 1794371140.013765,
+    "seen": 1794379436.7225459,
     "ast_hash": "fdf149b3f28a80fcfa19ddecf6bff9e8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-puffer@2x.7b4b89aae0.webp": {
-    "mtime": 1794111476.012601,
-    "seen": 1794113051.1862798,
+    "mtime": 1794371141.8728147,
+    "seen": 1794379436.7225473,
     "ast_hash": "abdaa4c3f3af6cbbc08b9be01d048c46",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-puffer@3x.5c648af4da.webp": {
-    "mtime": 1794111475.7015915,
-    "seen": 1794113051.1862805,
+    "mtime": 1794371141.5248053,
+    "seen": 1794379436.722548,
     "ast_hash": "35e9cd54c3562545181e40365a11a0e5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-star-snapper@2x.90ed8edd9c.webp": {
-    "mtime": 1794111477.0136309,
-    "seen": 1794113051.1862812,
+    "mtime": 1794371142.898842,
+    "seen": 1794379436.722549,
     "ast_hash": "1b0abadfd57103e77ad2eb3ac8cc85c9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-star-snapper@3x.95596a6e07.webp": {
-    "mtime": 1794111477.8956573,
-    "seen": 1794113051.186282,
+    "mtime": 1794371143.8118663,
+    "seen": 1794379436.7225497,
     "ast_hash": "b60d6fd125fddf07f547798a7a916f69",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-blue-cap-trimmed.6bddc1b919.webp": {
-    "mtime": 1794198588.8436823,
-    "seen": 1794198676.1000483,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224205,
     "ast_hash": "1a5db0c90e2665968ac0b0b2fd39fa5d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bow.295095db35.webp": {
-    "mtime": 1794111595.387179,
-    "seen": 1794113051.1861866,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224212,
     "ast_hash": "f734885d588731326c132de01b158dee",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bow.f75f4b433f.webp": {
-    "mtime": 1794198593.9238207,
-    "seen": 1794198676.100051,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224224,
     "ast_hash": "52158b968cacefd2632d9833857cd5d4",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-broom.0f7c76b942.webp": {
-    "mtime": 1794198589.7127059,
-    "seen": 1794198676.1000528,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224233,
     "ast_hash": "42b0bd9c938ca85da177906a430eb484",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-frame-blue.a2a4d13c8b.webp": {
-    "mtime": 1794198323.023434,
-    "seen": 1794198394.5783813,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224243,
     "ast_hash": "0ecb393842adf6db4ecda13af0ba2ff8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-frame-cream.1d503a308d.webp": {
-    "mtime": 1794198323.4454455,
-    "seen": 1794198394.5783827,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224262,
     "ast_hash": "6fb34d6267622dd039403c6b7942178b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-painting-garden.5e8fa2982d.webp": {
-    "mtime": 1794111595.388179,
-    "seen": 1794113051.1861906,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.722428,
     "ast_hash": "f7ee5e2b51e330f2d1f2f7d52083035f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-painting-pond.1dfb129cc4.webp": {
-    "mtime": 1794111595.388179,
-    "seen": 1794113051.1861913,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224307,
     "ast_hash": "0b27d0ec9b44dc9f957c560f4ee7efd3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-tag.9cacff52b9.webp": {
-    "mtime": 1794111595.388179,
-    "seen": 1794113051.1861923,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224317,
     "ast_hash": "af4d951c207e69de2e5705edef10e6f3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-cabinet.a51f2e745d.webp": {
-    "mtime": 1794198562.5629656,
-    "seen": 1794198676.100069,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224336,
     "ast_hash": "2fe6de5cb8b715c8deaeef73769ba087",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-carpet.e55a3ec620.webp": {
-    "mtime": 1794198560.6539135,
-    "seen": 1794198676.1000705,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224345,
     "ast_hash": "d52244b03e93287097c20e1162327d2e",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-cat-standing.ffabd19e7e.webp": {
-    "mtime": 1794111595.388179,
-    "seen": 1794113051.1861947,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224352,
     "ast_hash": "a360fcf7bfb8a706d45f33cbbbadc540",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-column.d0e2882614.webp": {
-    "mtime": 1794198592.9527943,
-    "seen": 1794198676.1000736,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224364,
     "ast_hash": "44df07875d24e270a9dcde95b446451c",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-costume-kiki.aaae2c62ab.webp": {
-    "mtime": 1794111595.388179,
-    "seen": 1794113051.1861963,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224371,
     "ast_hash": "662bb86e834adb0091ab8a97053ab739",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-curtain-drape.30dc2c96bd.webp": {
-    "mtime": 1794198562.286958,
-    "seen": 1794198676.1000764,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224376,
     "ast_hash": "640a7f55638ea68823165bf777410ec5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-curtain-swag.cf15e01072.webp": {
-    "mtime": 1794198561.665941,
-    "seen": 1794198676.1000779,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224386,
     "ast_hash": "2d8832f9a7327f5b002491638c6ea4a3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-curtains.3f1e25b386.webp": {
-    "mtime": 1794198561.1889281,
-    "seen": 1794198676.1000793,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224395,
     "ast_hash": "3ff8f2a1405ebcfe0fc4cc2872b6830a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-daisy-clip-trimmed.4a0287f360.webp": {
-    "mtime": 1794198589.3566961,
-    "seen": 1794198676.1000807,
+    "mtime": 1794371362.035688,
+    "seen": 1794379436.7224405,
     "ast_hash": "c9856e0587cbd95d86174a402e1b7254",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-fish-bag.60946cdde6.webp": {
-    "mtime": 1794198603.4620807,
-    "seen": 1794198676.100082,
+    "mtime": 1794371362.035688,
+    "seen": 1794379436.7224412,
     "ast_hash": "b89e4fc93ddf7ace33ed32bc80c2b249",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-fish-wall.c2e846c47b.webp": {
-    "mtime": 1794198602.8790648,
-    "seen": 1794198676.100083,
+    "mtime": 1794371362.035688,
+    "seen": 1794379436.7224422,
     "ast_hash": "b68d98c805d1cc4233bfd413862f692e",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-flower-bush.0ec05515e3.webp": {
-    "mtime": 1794198603.9200933,
-    "seen": 1794198676.1000845,
+    "mtime": 1794371362.035688,
+    "seen": 1794379436.722443,
     "ast_hash": "176a2d31eafcd9e93001708345a450a2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-flower-crown-trimmed.d028b32b7e.webp": {
-    "mtime": 1794198582.8825197,
-    "seen": 1794198676.100086,
+    "mtime": 1794371362.035688,
+    "seen": 1794379436.722444,
     "ast_hash": "bf3a1ba0e781401ba5805c8fce48cfa6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-gallery-door-red.33233d9f3d.webp": {
-    "mtime": 1794198605.334132,
-    "seen": 1794198676.100088,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.722445,
     "ast_hash": "be166aba9c4769759e501287533f1087",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-hibiscus-blue-trimmed.c62832749f.webp": {
-    "mtime": 1794198587.66965,
-    "seen": 1794198676.100089,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224457,
     "ast_hash": "829e6715104e57f5186aebf6f31245da",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-hibiscus-pink-trimmed.e88bada13c.webp": {
-    "mtime": 1794198588.147663,
-    "seen": 1794198676.1000903,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.722447,
     "ast_hash": "a143f7a3ff680face9bfc63d7a956e58",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-hibiscus-yellow-trimmed.9d59c802c5.webp": {
-    "mtime": 1794198587.9286573,
-    "seen": 1794198676.100092,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224476,
     "ast_hash": "b44ab3eb2e57f1e6ac62c9645775275f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-jewelry-box.a83281b0db.webp": {
-    "mtime": 1794111595.389179,
-    "seen": 1794113051.1862054,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224483,
     "ast_hash": "cfcbab16a4c65bd72db438a7a3a8513c",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-jewelry-box.fa6f961a95.webp": {
-    "mtime": 1794198563.8390005,
-    "seen": 1794198676.1000948,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224493,
     "ast_hash": "8e3f07bbe68bdec6eab51679bbd5a66a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-bare.1e5581e10e.webp": {
-    "mtime": 1794198567.8621101,
-    "seen": 1794198676.100096,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224503,
     "ast_hash": "44d08d473f6e9621f981d5fde8fc7547",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-bare.d623f7011f.webp": {
-    "mtime": 1794111595.389179,
-    "seen": 1794113051.1862078,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224512,
     "ast_hash": "ffd39073f137bd00e0f495a89e00630a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-blue-floral.032f93a8df.webp": {
-    "mtime": 1794111595.390179,
-    "seen": 1794113051.1862085,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224522,
     "ast_hash": "3d2a18bc6aeda677f33963711f85f1ec",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-blue-floral.79263c83fd.webp": {
-    "mtime": 1794198579.5054276,
-    "seen": 1794198676.1001003,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224529,
     "ast_hash": "8ea09710dbf4d2148444b6e2354125d7",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-bow.e205ce5931.webp": {
-    "mtime": 1794111595.390179,
-    "seen": 1794113051.1862097,
+    "mtime": 1794371362.0366879,
+    "seen": 1794379436.7224538,
     "ast_hash": "e7ef09f9ca3063c4c39bfc09a86a79b1",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-cardigan-butter-yellow.8ca2627cc8.webp": {
-    "mtime": 1794198575.2913127,
-    "seen": 1794198676.1001031,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224548,
     "ast_hash": "3ee03031bb930719dbfde0edf501f379",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-cardigan-forest-green.4111dcff30.webp": {
-    "mtime": 1794198571.8262181,
-    "seen": 1794198676.100105,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224557,
     "ast_hash": "97cc43ab6d4970ff18a49f7ea93ef397",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-cardigan-navy-blue.b4a82d8ff4.webp": {
-    "mtime": 1794198573.544265,
-    "seen": 1794198676.1001062,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224567,
     "ast_hash": "5e794c3b9272cfc4ca919293e6855c4e",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-cardigan-red.f5db8cfbf8.webp": {
-    "mtime": 1794198570.1211717,
-    "seen": 1794198676.1001074,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224576,
     "ast_hash": "e6750f874f26e45a8ce9ea2f58591d6e",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-dress.02d3bdf640.webp": {
-    "mtime": 1794111595.390179,
-    "seen": 1794113051.186213,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224584,
     "ast_hash": "ef9d04e0434d9e28e4fe6b1a8db5d5c5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-dress.46629fab8f.webp": {
-    "mtime": 1794198568.4281256,
-    "seen": 1794198676.1001103,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.722459,
     "ast_hash": "b1f0b782f0cd98472db65023bdf98b95",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-dress.b19faf725f.webp": {
-    "mtime": 1794111595.390179,
-    "seen": 1794113051.1862144,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224603,
     "ast_hash": "b9e4b00c18c7941216f98455e1392dc4",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-floral-bare.0600212ad3.webp": {
-    "mtime": 1794111595.391179,
-    "seen": 1794113051.1862152,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224612,
     "ast_hash": "7cbed4efa6e082e333d689ba5424f145",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-floral-bare.5e78970bb0.webp": {
-    "mtime": 1794198577.3113678,
-    "seen": 1794198676.1001146,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.722462,
     "ast_hash": "b949694111ad2dd8550b00ba397c78ff",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-floral-cardigan.4cf0c1549a.webp": {
-    "mtime": 1794198581.7744894,
-    "seen": 1794198676.100116,
+    "mtime": 1794371362.037688,
+    "seen": 1794379436.7224627,
     "ast_hash": "eca0364dbc9e63138c0ca72fd25ece46",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-floral-cardigan.7e1f5cf783.webp": {
-    "mtime": 1794111595.391179,
-    "seen": 1794113051.1862175,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224638,
     "ast_hash": "f07711964a5f349087fc5189d60bdb23",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-gold-cape.16f0386fd2.webp": {
-    "mtime": 1794111595.391179,
-    "seen": 1794113051.1862183,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224646,
     "ast_hash": "6f2f0eb885b6432ffe400d64af3b0a8d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-gold-cape.673b6d0ff3.webp": {
-    "mtime": 1794198587.4226434,
-    "seen": 1794198676.10012,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224653,
     "ast_hash": "415a063e8b54b89b3ee49be99384e009",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-gold-sequin.2c95c9d6f9.webp": {
-    "mtime": 1794111595.391179,
-    "seen": 1794113051.1862197,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.722466,
     "ast_hash": "3a66b3a5127fd7d0e69100cef8e32f0f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-gold-sequin.aecbc66ebd.webp": {
-    "mtime": 1794198585.1005802,
-    "seen": 1794198676.100123,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224672,
     "ast_hash": "aadcc593a77ff3442c59958690f846c3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-kiki.e29c76f342.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.1862214,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.722468,
     "ast_hash": "775f55bb131d2938da65abe69b8d0021",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mannequin-tutu.bfe1d272a8.webp": {
-    "mtime": 1794198597.156909,
-    "seen": 1794198676.100126,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224689,
     "ast_hash": "9e6039762f5e80bd040f2482ef8636cf",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-mirror.b2b6c729e8.webp": {
-    "mtime": 1794198595.0138505,
-    "seen": 1794198676.1001272,
+    "mtime": 1794371362.038688,
+    "seen": 1794379436.7224698,
     "ast_hash": "f996b465a41aeaec6bdc5b57b898f1de",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-painting.896f38be08.webp": {
-    "mtime": 1794198594.5108366,
-    "seen": 1794198676.1001284,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224708,
     "ast_hash": "62920c77bb0b8f9a0d2ea1a4c2e7b8f8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-perfume.54dcb972ef.webp": {
-    "mtime": 1794198564.8580282,
-    "seen": 1794198676.1001296,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224717,
     "ast_hash": "86e249e5e8444dc69a9bd63de1eec6b6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-perfume.b705309c95.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.186225,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224724,
     "ast_hash": "dd0fd0f95fc1ba5cb7ad6aba31481abb",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-pillow-blue.d1665d39a7.webp": {
-    "mtime": 1794198593.2678027,
-    "seen": 1794198676.1001325,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224731,
     "ast_hash": "45b6730cd0af79e69aef8ffec2b0b6e1",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-pillow-red.2fc52e5c64.webp": {
-    "mtime": 1794198593.5938118,
-    "seen": 1794198676.100134,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224743,
     "ast_hash": "c28d6732b49421bb63b5c8efa69157c4",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-placeholder-painting.0adb3e13a1.webp": {
-    "mtime": 1794198599.3989701,
-    "seen": 1794198676.1001348,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224753,
     "ast_hash": "4ef8fc851cd13dc2e4459247488b049f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-platform-blue.f282cd7bcc.webp": {
-    "mtime": 1794198603.9540942,
-    "seen": 1794198676.100136,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722476,
     "ast_hash": "7fa61b04fdec8949ff6745ba93c404b9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-platform.c2505f7d9c.webp": {
-    "mtime": 1794198589.8137085,
-    "seen": 1794198676.1001372,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224767,
     "ast_hash": "bd047cbe690202e7218e9e0811aa0f3a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-portrait-bruce.a537591905.webp": {
-    "mtime": 1794198601.5450284,
-    "seen": 1794198676.1001384,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224777,
     "ast_hash": "02c920e37250b7e93d10b97c0b7de2ae",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-portrait-bunny.d398084a2e.webp": {
-    "mtime": 1794198565.2620392,
-    "seen": 1794198676.1001396,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224784,
     "ast_hash": "014f5246647a1b4ac6420c537099d6f9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-portrait-jiji.be8e44dc87.webp": {
-    "mtime": 1794198565.805054,
-    "seen": 1794198676.100141,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224793,
     "ast_hash": "3970073ff8d3073f8c5e05ccbadc505d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-portrait-otter.7788f2aff1.webp": {
-    "mtime": 1794198567.2650938,
-    "seen": 1794198676.1001422,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.72248,
     "ast_hash": "a09bd14d6184896ea67d2fb73c15a452",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-portrait-wink.a866216bf6.webp": {
-    "mtime": 1794198565.0800343,
-    "seen": 1794198676.1001437,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722481,
     "ast_hash": "6d6c63cca53b7e4bacdc32aabb5bf4fb",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-railing.a64dc36f7d.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.1862326,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722482,
     "ast_hash": "464d1d10ce93ec614ed8a4dc56e7c3c8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-ribbon-blue.66a016446c.webp": {
-    "mtime": 1794198601.5810294,
-    "seen": 1794198676.1001463,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722483,
     "ast_hash": "8b02d8eb7a3937ddfefd572f40162ffb",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-ribbon.75b71bdd77.webp": {
-    "mtime": 1794198567.2950945,
-    "seen": 1794198676.1001477,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224836,
     "ast_hash": "372956acfa970848df7f37da025c9d93",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-ribbon.e3991eb0fd.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.1862345,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224848,
     "ast_hash": "38a99fd6db66cc8952f781fcab3cf946",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-shelf.e0f45775d4.webp": {
-    "mtime": 1794198562.5529654,
-    "seen": 1794198676.10015,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224855,
     "ast_hash": "ba98c92b953eca3f361079f403ac8171",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-spotlight.66ee716e6d.webp": {
-    "mtime": 1794198592.9277935,
-    "seen": 1794198676.1001515,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722486,
     "ast_hash": "53bae701b1c8eb78cccbca6e213911ac",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-staircase.dc1f0a7f2d.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.1862364,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722487,
     "ast_hash": "cbcc36cef700839bc01db093c22d2265",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-tag-blank.5615441ce4.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.186237,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.722489,
     "ast_hash": "bffd787674405ac56bbbc48cf9bbe0b0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-wallpaper.3421bf606d.webp": {
-    "mtime": 1794198560.5009093,
-    "seen": 1794198676.100157,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224898,
     "ast_hash": "4b7d8acd9fc45bde8dbdf88cbd0bdfa9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-wallpaper.6eab15a1ae.webp": {
-    "mtime": 1794111595.392179,
-    "seen": 1794113051.1862388,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224905,
     "ast_hash": "e982d917ee9a1aba6f94469c96cb6dab",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-avif-q62@2x.a9cd393b17.webp": {
-    "mtime": 1794111518.787883,
-    "seen": 1794113051.1862392,
+    "mtime": 1794371273.3003206,
+    "seen": 1794379436.7224917,
     "ast_hash": "7e1d83fb2abdac9704967d85898ab002",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-avif-q62@3x.4713d396c4.webp": {
-    "mtime": 1794111524.5720563,
-    "seen": 1794113051.18624,
+    "mtime": 1794371279.0144732,
+    "seen": 1794379436.7224925,
     "ast_hash": "e2c629989ac6a13e490573b5836d664b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-avif-q70@2x.74c8c1e5f9.webp": {
-    "mtime": 1794111521.6829698,
-    "seen": 1794113051.1862407,
+    "mtime": 1794371276.1743975,
+    "seen": 1794379436.7224934,
     "ast_hash": "154340fe0a8c49db087db7c5fb11d7b5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-avif-q70@3x.5e98714cd1.webp": {
-    "mtime": 1794111526.4431124,
-    "seen": 1794113051.1862416,
+    "mtime": 1794371280.809521,
+    "seen": 1794379436.7224944,
     "ast_hash": "1bab6c7056b31f45941de6adaefd59a9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-webp-lossless@2x.f5552dc4fb.webp": {
-    "mtime": 1794111526.9381273,
-    "seen": 1794113051.186242,
+    "mtime": 1794371281.3795362,
+    "seen": 1794379436.7224956,
     "ast_hash": "1a9ecd1a132d627f2aa13c32b08429e3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-webp-lossless@3x.2e8059ea7f.webp": {
-    "mtime": 1794111533.062311,
-    "seen": 1794113051.186243,
+    "mtime": 1794371287.4926994,
+    "seen": 1794379436.7224963,
     "ast_hash": "94cfd8749298ebae0f00f399544bfd0c",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-webp-near@2x.65e8cbb27d.webp": {
-    "mtime": 1794111531.9192767,
-    "seen": 1794113051.1862438,
+    "mtime": 1794371286.507673,
+    "seen": 1794379436.722497,
     "ast_hash": "73519487aa7cd7bb2d6073bcdfe42ccf",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-entrance-webp-near@3x.65e8cbb27d.webp": {
-    "mtime": 1794111537.9814582,
-    "seen": 1794113051.1862447,
+    "mtime": 1794371292.3748295,
+    "seen": 1794379436.7224977,
     "ast_hash": "73519487aa7cd7bb2d6073bcdfe42ccf",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-masks.6842b2eb42.png": {
-    "mtime": 1794111595.2481747,
-    "seen": 1794113051.1862452,
+    "mtime": 1794371349.219346,
+    "seen": 1794379436.722499,
     "ast_hash": "9be32a22065e72458149c42e4244d1cf",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-avif-q62@2x.6d95eabd18.webp": {
-    "mtime": 1794111576.7486203,
-    "seen": 1794113051.186246,
+    "mtime": 1794371331.0198605,
+    "seen": 1794379436.7224998,
     "ast_hash": "845d49775daeb33ecd0ebfbb6f5a6a33",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-avif-q62@3x.95c9f29b70.webp": {
-    "mtime": 1794111583.340818,
-    "seen": 1794113051.1862466,
+    "mtime": 1794371337.3980305,
+    "seen": 1794379436.7225006,
     "ast_hash": "cff22cb4a7fe21822936d149efc2f856",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-webp-lossless@2x.df612078dd.webp": {
-    "mtime": 1794111579.3576984,
-    "seen": 1794113051.186247,
+    "mtime": 1794371333.659931,
+    "seen": 1794379436.7225013,
     "ast_hash": "6a52d1378de734aa577bf9a027995bf6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-webp-lossless@3x.df612078dd.webp": {
-    "mtime": 1794111585.9188952,
-    "seen": 1794113051.1862478,
+    "mtime": 1794371339.9780993,
+    "seen": 1794379436.7225022,
     "ast_hash": "6a52d1378de734aa577bf9a027995bf6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-webp-near@2x.ca01c2a277.webp": {
-    "mtime": 1794111588.4859722,
-    "seen": 1794113051.186249,
+    "mtime": 1794371342.7611737,
+    "seen": 1794379436.7225032,
     "ast_hash": "f6bc81252b01bac12e59d41fa33aea3b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atlas-scenery-webp-near@3x.ca01c2a277.webp": {
-    "mtime": 1794111594.8421626,
-    "seen": 1794113051.1862497,
+    "mtime": 1794371348.814335,
+    "seen": 1794379436.722504,
     "ast_hash": "f6bc81252b01bac12e59d41fa33aea3b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/bunny-rig-bow.021c8341a1.png": {
-    "mtime": 1794198560.3929064,
-    "seen": 1794198676.1001823,
+    "mtime": 1794371349.221346,
+    "seen": 1794379436.7225058,
     "ast_hash": "00dc93fb395858be559be7eac543f846",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/rope@2x.abce3087f0.webp": {
-    "mtime": 1794111487.5829477,
-    "seen": 1794113051.186287,
+    "mtime": 1794371241.819481,
+    "seen": 1794379436.7225962,
     "ast_hash": "6a656fe378c1f33dbb2019e6e9c9ba32",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/rope@3x.07dfce2512.webp": {
-    "mtime": 1794111488.2109666,
-    "seen": 1794113051.1862879,
+    "mtime": 1794371242.4774985,
+    "seen": 1794379436.7225971,
     "ast_hash": "7db13200df175c7c38de81037e98153d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-bunny@2x.ad77dbe1a8.webp": {
-    "mtime": 1794111488.6649802,
-    "seen": 1794113051.1862886,
+    "mtime": 1794371242.9325106,
+    "seen": 1794379436.7225978,
     "ast_hash": "4c3370c3c881bed8e28eb82584dcdcd2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-bunny@3x.5b1d9a1e1c.webp": {
-    "mtime": 1794111488.9009871,
-    "seen": 1794113051.1862893,
+    "mtime": 1794371243.1485164,
+    "seen": 1794379436.722599,
     "ast_hash": "204a03b12619279f11f63d416c5b1f00",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-computer@2x.b760e3693c.webp": {
-    "mtime": 1794111490.760043,
-    "seen": 1794113051.1862903,
+    "mtime": 1794371245.0535672,
+    "seen": 1794379436.7225997,
     "ast_hash": "d2bfd96b2b9d72fdabe7832008b9b490",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-computer@3x.cf6d84ada6.webp": {
-    "mtime": 1794111490.3770316,
-    "seen": 1794113051.186291,
+    "mtime": 1794371244.6565566,
+    "seen": 1794379436.7226005,
     "ast_hash": "9ce6630456d6fbd2d69091cb66de789d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-dice@2x.d9e0e9288d.webp": {
-    "mtime": 1794111490.9760494,
-    "seen": 1794113051.1862917,
+    "mtime": 1794371245.2605727,
+    "seen": 1794379436.7226012,
     "ast_hash": "b2ddb98e347b653b23ede4bb74a8b21f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sketchguess-dice@3x.50b04dd23d.webp": {
-    "mtime": 1794111491.1200538,
-    "seen": 1794113051.1862924,
+    "mtime": 1794371245.4095767,
+    "seen": 1794379436.7226021,
     "ast_hash": "9e41f320faa8d432ad17e95dc83cda43",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sticky@2x.8cbe4f819a.webp": {
-    "mtime": 1794111492.0090804,
-    "seen": 1794113051.186293,
+    "mtime": 1794371246.2906,
+    "seen": 1794379436.722603,
     "ast_hash": "a5ed7f1837e705099ad6948036b514dc",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/sticky@3x.ca17c08f85.webp": {
-    "mtime": 1794111492.928108,
-    "seen": 1794113051.1862938,
+    "mtime": 1794371247.2296252,
+    "seen": 1794379436.7226038,
     "ast_hash": "7a2ab8da62c81dba9be32ae524b90e9a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/ticket@2x.14ccd99c41.webp": {
-    "mtime": 1794111493.8441353,
-    "seen": 1794113051.1862946,
+    "mtime": 1794371248.1696503,
+    "seen": 1794379436.7226048,
     "ast_hash": "f451a398c2baaf78455d0fb5a4c818e7",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/ticket@3x.1c7db485ea.webp": {
-    "mtime": 1794111493.8131344,
-    "seen": 1794113051.186295,
+    "mtime": 1794371248.0956483,
+    "seen": 1794379436.7226055,
     "ast_hash": "638d036b8b089859bd48fd3fcb5b2837",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/wallpaper.18f31684c5.webp": {
-    "mtime": 1794111493.8511355,
-    "seen": 1794113051.186296,
+    "mtime": 1794371248.1766505,
+    "seen": 1794379436.7226064,
     "ast_hash": "a78549ec17d692834255bc79546f207c",
     "semantic_hash": ""
   },
@@ -4443,9 +4443,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
-    "mtime": 1794370085.9560976,
-    "seen": 1794370437.6814423,
-    "ast_hash": "990241150ce3b348b4268d5a99cf9a6f",
+    "mtime": 1794371570.4772952,
+    "seen": 1794379436.7220502,
+    "ast_hash": "e1d3683714037e21c63985957d1c01d9",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/room.ts": {
@@ -4587,9 +4587,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Water.tsx": {
-    "mtime": 1794364667.2610686,
-    "seen": 1794364999.5362983,
-    "ast_hash": "4050b534285eaba91bd6e3a52e4fd9a8",
+    "mtime": 1794381044.9052463,
+    "seen": 1794383074.9810152,
+    "ast_hash": "7bc979264ba9b86f31f986e3ca3bbed6",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondHud.tsx": {
@@ -4683,45 +4683,45 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@2x.4f03027752.webp": {
-    "mtime": 1794111478.6346796,
-    "seen": 1794113051.1862826,
+    "mtime": 1794371362.1116898,
+    "seen": 1794379436.722561,
     "ast_hash": "ce5e3f68dd2a22470d49f6d2867a1814",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@3x.7c5d4876f6.webp": {
-    "mtime": 1794111479.2276974,
-    "seen": 1794113051.1862836,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225647,
     "ast_hash": "c38b89a33a83de1f317ef63fcc6e043b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@2x.56b923a4e0.webp": {
-    "mtime": 1794111483.0478117,
-    "seen": 1794113051.186284,
+    "mtime": 1794371362.11469,
+    "seen": 1794379436.722577,
     "ast_hash": "93342a50e7e2c4d544e8b42566d89fba",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@3x.384057cc3e.webp": {
-    "mtime": 1794111486.3489108,
-    "seen": 1794113051.1862848,
+    "mtime": 1794371362.11569,
+    "seen": 1794379436.7225778,
     "ast_hash": "3df8b44ae7745dd751037466555e1af8",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@2x.7ccddb4da5.webp": {
-    "mtime": 1794111486.7109215,
-    "seen": 1794113051.1862853,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225895,
     "ast_hash": "78c27708e4fc64c752a7d837b3b21bd6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@3x.91cb09be07.webp": {
-    "mtime": 1794111486.5729175,
-    "seen": 1794113051.186286,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.722592,
     "ast_hash": "db2d568730878f82a89a0f01dd45e939",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/landmarks.ts": {
-    "mtime": 1794363738.935745,
-    "seen": 1794363995.5655336,
-    "ast_hash": "c27525dc352d773eb0dee648bb431ee6",
+    "mtime": 1794379269.2485213,
+    "seen": 1794379436.7220542,
+    "ast_hash": "1b06c94c64f47cc5f848ceb963a0c520",
     "semantic_hash": ""
   },
   "docs/pond-asset-art-direction.md": {
@@ -4731,9 +4731,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/forest-door.png": {
-    "mtime": 1794117110.341662,
-    "seen": 1794119048.4767163,
-    "ast_hash": "a01d6f70c30daebb38f1a5327f31f92c",
+    "mtime": 1794373233.0889583,
+    "seen": 1794379436.7223852,
+    "ast_hash": "3bc4307d36bf798168edb0f9d6d30d28",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/forest-door.webp": {
@@ -4833,9 +4833,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/forest-journal-signed.png": {
-    "mtime": 1794122270.2343922,
-    "seen": 1794123341.7365854,
-    "ast_hash": "f415deff068295d8fa76f60205888788",
+    "mtime": 1794373233.0911105,
+    "seen": 1794379436.7223895,
+    "ast_hash": "48ae7ed2477b855afc1deec2e3987b06",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/forest-journal-signed.webp": {
@@ -4893,9 +4893,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Angler.tsx": {
-    "mtime": 1794363826.9108074,
-    "seen": 1794363995.565468,
-    "ast_hash": "278f12798c74d4c2e0ab80058f8a4805",
+    "mtime": 1794381783.8326602,
+    "seen": 1794383074.981008,
+    "ast_hash": "599ccf02a0e58db86c99e4add5ef502c",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/depth.test.ts": {
@@ -4905,15 +4905,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/depth.ts": {
-    "mtime": 1794171536.4620554,
-    "seen": 1794198394.577863,
-    "ast_hash": "c4a3313dd85f523904016da6144fba39",
+    "mtime": 1794378899.558553,
+    "seen": 1794379436.722053,
+    "ast_hash": "8ea7c8ee7710723f7d3a8454cf752b21",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/walk.test.ts": {
-    "mtime": 1794200628.2813067,
-    "seen": 1794201256.7217252,
-    "ast_hash": "b3a7a18af6e1b73ebb5120079c43070e",
+    "mtime": 1794379269.2485979,
+    "seen": 1794379436.7220576,
+    "ast_hash": "92b925f1a24e4368bef3201fc43cca44",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/walk.ts": {
@@ -4923,56 +4923,44 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-tag.a5f20f46ef.webp": {
-    "mtime": 1794198598.2549388,
-    "seen": 1794198676.1000679,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224329,
     "ast_hash": "68c0449982caf96f3ab210e5f23f18a3",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-tag-blank.4e717ac2c9.webp": {
-    "mtime": 1794198599.3729694,
-    "seen": 1794198676.1001542,
+    "mtime": 1794371362.0396879,
+    "seen": 1794379436.7224882,
     "ast_hash": "1c8612b4443cabe34586244a2f5f9b37",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-forest-bait-shop-signed@2x.9f257158ce.webp": {
-    "mtime": 1794176910.066713,
-    "seen": 1794198394.5785606,
+    "mtime": 1794371362.10969,
+    "seen": 1794379436.7225559,
     "ast_hash": "f3f9652aaf254c2d60165c1474909720",
     "semantic_hash": ""
   },
-  "apps/web/public/immutable/pond-forest-door@2x.7f156efd4c.webp": {
-    "mtime": 1794176910.044717,
-    "seen": 1794198394.5785618,
-    "ast_hash": "c6a43a99df3ee39b2bf381cdb6790e97",
-    "semantic_hash": ""
-  },
-  "apps/web/public/immutable/pond-forest-journal-signed@2x.e1dd5456ad.webp": {
-    "mtime": 1794176910.0672724,
-    "seen": 1794198394.5785627,
-    "ast_hash": "c9c464babde7121fd6156dc729754b4d",
-    "semantic_hash": ""
-  },
   "apps/web/public/immutable/pond-forest-noticeboard-signed@2x.ad3fbefcb2.webp": {
-    "mtime": 1794176910.0662482,
-    "seen": 1794198394.5785642,
+    "mtime": 1794371362.1116898,
+    "seen": 1794379436.7225597,
     "ast_hash": "1e49f517f526506aee44abb422102bd2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-shopkeeper-apron@2x.b8078dd6cc.webp": {
-    "mtime": 1794176910.0675864,
-    "seen": 1794198394.578571,
+    "mtime": 1794371362.11769,
+    "seen": 1794379436.7225826,
     "ast_hash": "58bc3dd0224f8d7d08a00538cab763d1",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-shopkeeper-hat@2x.ef968f77d5.webp": {
-    "mtime": 1794176910.0677779,
-    "seen": 1794198394.5785723,
+    "mtime": 1794371362.11769,
+    "seen": 1794379436.7225833,
     "ast_hash": "251a9885039e935cc39415f917e123c2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-shopkeeper-rod@2x.c94d2f0036.webp": {
-    "mtime": 1794176910.0687463,
-    "seen": 1794198394.5785732,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225842,
     "ast_hash": "a9cc26c2af52713fa65f2a1472279190",
     "semantic_hash": ""
   },
@@ -4983,26 +4971,26 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-frame-blue.bc5e3050fa.webp": {
-    "mtime": 1794198600.5060003,
-    "seen": 1794198676.1000557,
+    "mtime": 1794371362.0336878,
+    "seen": 1794379436.7224255,
     "ast_hash": "52e579f7c796cc9c9f582ccfb68c888f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-frame-cream.427000544a.webp": {
-    "mtime": 1794198601.2810214,
-    "seen": 1794198676.1000588,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.7224271,
     "ast_hash": "c2cb2d6c741e5337cc5abaa2508a34d6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-painting-garden.92e39d218c.webp": {
-    "mtime": 1794198601.3620236,
-    "seen": 1794198676.1000617,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.722429,
     "ast_hash": "f04a7740a4842374201f45a4b4a2a89b",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/atelier-bruce-painting-pond.1b20e649c4.webp": {
-    "mtime": 1794198601.3940244,
-    "seen": 1794198676.1000633,
+    "mtime": 1794371362.0346878,
+    "seen": 1794379436.72243,
     "ast_hash": "b64a9e11d5c9041c2ab67f6689d53312",
     "semantic_hash": ""
   },
@@ -5037,9 +5025,9 @@
     "semantic_hash": ""
   },
   "apps/web/tooling/import-fishing-assets.mjs": {
-    "mtime": 1794363693.595051,
-    "seen": 1794363995.5655878,
-    "ast_hash": "dbbb9b741d8414b0ea2eaf48416a4e2f",
+    "mtime": 1794381448.5381105,
+    "seen": 1794383074.9811296,
+    "ast_hash": "8be78fce4e595e226e6a110d8559450a",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/sparkles.png": {
@@ -5049,50 +5037,50 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@2x.de79eb2357.webp": {
-    "mtime": 1794200758.9108696,
-    "seen": 1794201256.7221315,
+    "mtime": 1794371362.1116898,
+    "seen": 1794379436.7225628,
     "ast_hash": "93946c7cd0dcbc9fc0221ba15a571c88",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@3x.560da4b882.webp": {
-    "mtime": 1794200758.8748686,
-    "seen": 1794201256.722132,
+    "mtime": 1794371362.1116898,
+    "seen": 1794379436.7225637,
     "ast_hash": "bcb7e5b1b8ee5a1128ebd865bd545a71",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@2x.35a36e38ff.webp": {
-    "mtime": 1794200756.687809,
-    "seen": 1794201256.7221334,
+    "mtime": 1794371362.11469,
+    "seen": 1794379436.7225761,
     "ast_hash": "40d2c4fd7d56df5c23cb83690deec1b1",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@3x.80494669eb.webp": {
-    "mtime": 1794200758.7588656,
-    "seen": 1794201256.7221355,
+    "mtime": 1794371362.11669,
+    "seen": 1794379436.722579,
     "ast_hash": "ad49d3d3bc9f6146cdb038bd08985722",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-sparkles@2x.c7ff9dd8d1.webp": {
-    "mtime": 1794200758.7948666,
-    "seen": 1794201256.7221384,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225866,
     "ast_hash": "f47d9e353133cf1e39aa23d4cd5c4246",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-sparkles@3x.1733b617e3.webp": {
-    "mtime": 1794200758.7938664,
-    "seen": 1794201256.7221391,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225873,
     "ast_hash": "3fae0b75e5efcdd0ff6ef361f58d46a2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@2x.e0e93002cb.webp": {
-    "mtime": 1794200758.9438705,
-    "seen": 1794201256.7221403,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.72259,
     "ast_hash": "a41b691c91987147cb3e310d2c04334e",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@3x.cb6106d607.webp": {
-    "mtime": 1794200758.92387,
-    "seen": 1794201256.722142,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225928,
     "ast_hash": "46e936366ffcd0c11dba49bee9e8d304",
     "semantic_hash": ""
   },
@@ -5145,9 +5133,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/notice-sign.png": {
-    "mtime": 1794363696.1432054,
-    "seen": 1794363995.5658274,
-    "ast_hash": "9508354c742ae1fa2527b1da085036cc",
+    "mtime": 1794381447.8641162,
+    "seen": 1794383074.9813771,
+    "ast_hash": "bbdacad1f82394c4b7fd5e26f42b3cb8",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/pond-sign.png": {
@@ -5187,213 +5175,321 @@
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bait-shop@2x.05fcfede48.webp": {
-    "mtime": 1794363700.2911549,
-    "seen": 1794363995.565949,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225378,
     "ast_hash": "1fc9fd31cb86288999fd0f09dafcf655",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bait-shop@3x.9395ba63b0.webp": {
-    "mtime": 1794363700.8071685,
-    "seen": 1794363995.5659494,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225387,
     "ast_hash": "39eca08b8a95ad3a3904b364ca7d70ac",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bridge@2x.95727ae230.webp": {
-    "mtime": 1794363698.7711143,
-    "seen": 1794363995.5659502,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225394,
     "ast_hash": "925ee11346b4b68fb26a121728296867",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bridge@3x.05a9a56b05.webp": {
-    "mtime": 1794363698.907118,
-    "seen": 1794363995.5659506,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225406,
     "ast_hash": "bf55dcefb361b8f1f62558b2819f6d12",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bucket@2x.216dc28b6a.webp": {
-    "mtime": 1794363699.5691357,
-    "seen": 1794363995.5659513,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225416,
     "ast_hash": "52704fa5fd533899e9330fab90e44598",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-bucket@3x.c5befa956a.webp": {
-    "mtime": 1794363699.6791384,
-    "seen": 1794363995.565952,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225425,
     "ast_hash": "8bca28f2a62c08e0032f070d4326600c",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fishing-hat@2x.256c479384.webp": {
-    "mtime": 1794363702.6892183,
-    "seen": 1794363995.565959,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225506,
     "ast_hash": "ebc77837fbdd1d31a5a2b517a515e4b5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fishing-hat@3x.08e442f976.webp": {
-    "mtime": 1794363702.5452147,
-    "seen": 1794363995.5659595,
+    "mtime": 1794371362.1086898,
+    "seen": 1794379436.7225513,
     "ast_hash": "f1f08ec1cdfdcf4524972ae6c8e4a1e9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-float-hook@2x.8bd1fbd58c.webp": {
-    "mtime": 1794363699.427132,
-    "seen": 1794363995.56596,
+    "mtime": 1794371362.10969,
+    "seen": 1794379436.722552,
     "ast_hash": "4761f230794405b033120e52c9d4b0fe",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-float-hook@3x.96eb5a1cbb.webp": {
-    "mtime": 1794363699.4121315,
-    "seen": 1794363995.5659604,
+    "mtime": 1794371362.10969,
+    "seen": 1794379436.7225528,
     "ast_hash": "a3e2ee03f89dde40f1f0cfd58e611e26",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-float@2x.bb7db01f85.webp": {
-    "mtime": 1794363699.3781304,
-    "seen": 1794363995.565961,
+    "mtime": 1794371362.10969,
+    "seen": 1794379436.722554,
     "ast_hash": "e0676231d22d9b9d2c8da60389fda4c5",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-float@3x.e5bf57c495.webp": {
-    "mtime": 1794363699.3671303,
-    "seen": 1794363995.5659614,
+    "mtime": 1794371362.10969,
+    "seen": 1794379436.722555,
     "ast_hash": "5289d4a8371de464bd3d967556caae51",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@2x.924efbb706.webp": {
-    "mtime": 1794363699.0971231,
-    "seen": 1794363995.5659664,
+    "mtime": 1794371362.1116898,
+    "seen": 1794379436.7225618,
     "ast_hash": "eab53893083125b7ca7492b77839fcee",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@3x.863d4faebc.webp": {
-    "mtime": 1794363699.0641222,
-    "seen": 1794363995.5659697,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225657,
     "ast_hash": "e4515b053ac2b20018e98311c484f8e9",
     "semantic_hash": ""
   },
-  "apps/web/public/immutable/pond-notice-sign@2x.e0e64a25c9.webp": {
-    "mtime": 1794363701.1061764,
-    "seen": 1794363995.5659704,
-    "ast_hash": "c4c0ca6c14075a5db7396ea46fc2f3fc",
-    "semantic_hash": ""
-  },
-  "apps/web/public/immutable/pond-notice-sign@3x.5c306836cd.webp": {
-    "mtime": 1794363701.4911866,
-    "seen": 1794363995.565971,
-    "ast_hash": "b0d03fa859e8ab074477a3ce2fedf32a",
-    "semantic_hash": ""
-  },
   "apps/web/public/immutable/pond-pond-sign@2x.f7c611e304.webp": {
-    "mtime": 1794363701.848196,
-    "seen": 1794363995.5659714,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225683,
     "ast_hash": "bf992ffaa751a813947995c9d19f896f",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-pond-sign@3x.22b970dd7f.webp": {
-    "mtime": 1794363702.2552068,
-    "seen": 1794363995.5659723,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225688,
     "ast_hash": "3cc7a89c27ad77c13474d617e790d4dc",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-rod-upright@2x.da6c91ac7e.webp": {
-    "mtime": 1794363702.8332222,
-    "seen": 1794363995.5659728,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225697,
     "ast_hash": "671979663c409ad246e1b70e278ba706",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-rod-upright@3x.0552a2b5e7.webp": {
-    "mtime": 1794363702.8952239,
-    "seen": 1794363995.5659733,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225704,
     "ast_hash": "a582f577b5881ae82af787dd8bf9e724",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-rod@2x.bec1a82cbe.webp": {
-    "mtime": 1794363699.35713,
-    "seen": 1794363995.5659738,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225716,
     "ast_hash": "31d2a0531476c959daf9ce2ccee2b0ba",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-rod@3x.b886f90f1b.webp": {
-    "mtime": 1794363699.1391242,
-    "seen": 1794363995.5659745,
+    "mtime": 1794371362.11269,
+    "seen": 1794379436.7225723,
     "ast_hash": "fe0a43e2840e19f617577b6cb04ef656",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene-left@2x.5af353b81e.webp": {
-    "mtime": 1794363698.3101022,
-    "seen": 1794363995.565975,
+    "mtime": 1794371362.11369,
+    "seen": 1794379436.7225733,
     "ast_hash": "ad4611fad63f4f8286f7a0f4bd1910f2",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene-left@3x.6fc5e6c88c.webp": {
-    "mtime": 1794363698.60211,
-    "seen": 1794363995.5659757,
+    "mtime": 1794371362.11369,
+    "seen": 1794379436.722574,
     "ast_hash": "229314ff52cfc21284619a9b6f789d6c",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@2x.34f89fae1d.webp": {
-    "mtime": 1794363697.4250789,
-    "seen": 1794363995.5659761,
+    "mtime": 1794371362.11369,
+    "seen": 1794379436.7225752,
     "ast_hash": "e451e1ebe3ff763d187937796eed28d6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-scene@3x.c56b95f73e.webp": {
-    "mtime": 1794363697.9340923,
-    "seen": 1794363995.5659802,
+    "mtime": 1794371362.11669,
+    "seen": 1794379436.7225797,
     "ast_hash": "4e71d4a84f52146fe5cfbbd3405b4e28",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-score-sign@2x.3bd146d52b.webp": {
-    "mtime": 1794363702.4032109,
-    "seen": 1794363995.565981,
+    "mtime": 1794371362.11769,
+    "seen": 1794379436.7225807,
     "ast_hash": "87ca8f21ae18ccc07caef72b4c2d3af9",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-score-sign@3x.c93ecd5eb4.webp": {
-    "mtime": 1794363702.524214,
-    "seen": 1794363995.5659814,
+    "mtime": 1794371362.11769,
+    "seen": 1794379436.7225814,
     "ast_hash": "cdf78749652da514cc44d8d03836c465",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-sparkles@2x.4c10647874.webp": {
-    "mtime": 1794363698.949119,
-    "seen": 1794363995.5659842,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225854,
     "ast_hash": "b7986c9311719d8274f1f90464f42264",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-sparkles@3x.cd1164e7da.webp": {
-    "mtime": 1794363698.941119,
-    "seen": 1794363995.565988,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225883,
     "ast_hash": "e9dcad4ea9390d01c790a00c40998c19",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@2x.f20b6bc492.webp": {
-    "mtime": 1794363698.98012,
-    "seen": 1794363995.5659916,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.722591,
     "ast_hash": "64f764b8e195fd47249043b46238373a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-splash@3x.e18997f786.webp": {
-    "mtime": 1794363698.9621196,
-    "seen": 1794363995.565995,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225938,
     "ast_hash": "9ccf2bfb6da639f7da8797a3d12c37e0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-stone-path@2x.6957717ca9.webp": {
-    "mtime": 1794363703.7412462,
-    "seen": 1794363995.565996,
+    "mtime": 1794371362.11869,
+    "seen": 1794379436.7225945,
     "ast_hash": "953658707bce09e6593d02d954d0e0cc",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-stone-path@3x.bc88e1f6fe.webp": {
-    "mtime": 1794363703.13123,
-    "seen": 1794363995.565997,
+    "mtime": 1794371362.1196902,
+    "seen": 1794379436.7225952,
     "ast_hash": "4d124f5da3c56ca01f21d14ab6e5ac18",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/ambience.ts": {
-    "mtime": 1794370270.0064874,
-    "seen": 1794370437.6814408,
-    "ast_hash": "dd07529163dc6d7c89f3978481f27987",
+    "mtime": 1794380116.8783417,
+    "seen": 1794380211.7394886,
+    "ast_hash": "e8eb489bce0a2b418caad9f2cd3309b4",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/forest-door-sign.png": {
+    "mtime": 1794373233.0901916,
+    "seen": 1794379436.7223842,
+    "ast_hash": "f82923d10430610cbed8e05e029142b5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-forest-door-sign@2x.0af2e84fca.webp": {
+    "mtime": 1794373236.5010028,
+    "seen": 1794379436.7225566,
+    "ast_hash": "3f0baf4122ba8b094a0dab632b5eca76",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-forest-door@2x.404d21d202.webp": {
+    "mtime": 1794373236.0169897,
+    "seen": 1794379436.7225578,
+    "ast_hash": "88fb460efb9d1b471488fbfd19065fde",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-forest-journal-signed@2x.1cb6b79328.webp": {
+    "mtime": 1794373239.775091,
+    "seen": 1794379436.7225587,
+    "ast_hash": "21a5627d3b2613391b6d82bf202ebefc",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/hall/scene/spotlight.ts": {
+    "mtime": 1794382692.891052,
+    "seen": 1794383074.9809997,
+    "ast_hash": "3eaf3841d9f75a6f2c622ced25c33c4b",
+    "semantic_hash": ""
+  },
+  "apps/web/tooling/import-hall-assets.mjs": {
+    "mtime": 1794382411.981305,
+    "seen": 1794383074.9811306,
+    "ast_hash": "b12f3c36dbad7b6cf1e751f0e8c8cae0",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/hall/baseboard.png": {
+    "mtime": 1794382413.853014,
+    "seen": 1794383074.9813304,
+    "ast_hash": "9d8e18b33791ff798f3e3989fc853fb5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/hall/christmas-tree.png": {
+    "mtime": 1794382413.9015942,
+    "seen": 1794383074.9813313,
+    "ast_hash": "16362ea52c0caf7d24b03ecf87a94381",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/hall/curtain.png": {
+    "mtime": 1794382413.9000154,
+    "seen": 1794383074.981332,
+    "ast_hash": "758a740a5dc7744d72f9e25d1a37c559",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/hall/wallpaper.png": {
+    "mtime": 1794382413.8490138,
+    "seen": 1794383074.9813328,
+    "ast_hash": "3e37ea0e813a13c4e25cd94d22f20654",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-baseboard@2x.c4982d98c6.webp": {
+    "mtime": 1794382414.0410194,
+    "seen": 1794383074.9814892,
+    "ast_hash": "f1224356fd62d7ac6adb1681054d7c1d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-baseboard@3x.c4982d98c6.webp": {
+    "mtime": 1794382414.0400193,
+    "seen": 1794383074.98149,
+    "ast_hash": "f1224356fd62d7ac6adb1681054d7c1d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-christmas-tree@2x.f19bbb6d7e.webp": {
+    "mtime": 1794382415.9470742,
+    "seen": 1794383074.9814904,
+    "ast_hash": "d72e8f0de39e506340f7e5be6ae53b32",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-christmas-tree@3x.f19bbb6d7e.webp": {
+    "mtime": 1794382415.9820752,
+    "seen": 1794383074.981491,
+    "ast_hash": "d72e8f0de39e506340f7e5be6ae53b32",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-curtain@2x.6611dc78d9.webp": {
+    "mtime": 1794382415.204053,
+    "seen": 1794383074.9814918,
+    "ast_hash": "cfc2b7da0072fbb2105e289428fafae0",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-curtain@3x.6611dc78d9.webp": {
+    "mtime": 1794382415.210053,
+    "seen": 1794383074.9814923,
+    "ast_hash": "cfc2b7da0072fbb2105e289428fafae0",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-wallpaper@2x.baeed3829c.webp": {
+    "mtime": 1794382413.9420164,
+    "seen": 1794383074.981493,
+    "ast_hash": "25ebcfc7c61b0cdfd4928d5023ae2a0a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-wallpaper@3x.fbea6f1dbf.webp": {
+    "mtime": 1794382413.962017,
+    "seen": 1794383074.9814935,
+    "ast_hash": "c5d42a75257f002a47831be8e5707812",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-notice-sign@2x.bd0873ba26.webp": {
+    "mtime": 1794381448.1931458,
+    "seen": 1794383074.981532,
+    "ast_hash": "2398d623fedaf4f41bf8e5d3278ef365",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-notice-sign@3x.8b71df903f.webp": {
+    "mtime": 1794381448.526155,
+    "seen": 1794383074.9815328,
+    "ast_hash": "5217557b266005df18608c5af134c6f9",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

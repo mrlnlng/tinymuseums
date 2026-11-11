@@ -8,6 +8,12 @@ export const CONFIG = {
   },
 
   wallpaper: { stripePairWidth: 0.62 },
+  wall: { tileWidth: 1.8, color: '#741633' },
+  baseboard: { height: 0.17, z: -0.45 },
+  // The valance hangs from the top of the view; on short views it shrinks so it stays above clearY.
+  curtain: { height: 1.25, minHeight: 0.85, clearY: 4.1, z: -0.3, bandColor: '#622331' },
+  // A soft beam from above the view down onto each painting; drawn behind the frame, over the valance.
+  spotlight: { topY: 6.2, topWidth: 0.55, spread: 1.15, reach: 0.55, opacity: 0.34, z: -0.2 },
 
   displayBottomY: 0.608,
   displayTitleGap: 0.07,
@@ -62,14 +68,15 @@ export const CONFIG = {
   },
 
   lobby: {
-    length: 4.75,
+    length: 6.75,
     minX: -3.6,
     startX: 0,
     introWalk: 1.9,
     door: { x: -0.09, centerY: 1.165, height: 2.81, z: 0.2 },
     sign: { x: 0.165, centerY: 3.007, width: 1.977, height: 0.427, z: 0.2 },
-    post: { x: 4.1, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
-    booth: { x: 2.39, centerY: 1.56, height: 3.467, z: 0.4 },
+    post: { x: 6.1, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
+    booth: { x: 4.39, centerY: 1.56, height: 3.467, z: 0.4 },
+    tree: { x: 2.02, centerY: 1.2, height: 2.7, z: 0.3 },
     cat: { dx: 0, centerY: 1.165, height: 1.27, z: 0.35 },
     catFrameMs: 130,
   },

@@ -4,11 +4,11 @@ import type { Item } from '@tiny/core/presence/wire'
 import { outfit } from '@tiny/core/slots'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
-import { loadScenery, manifest, type Scenery } from '@/features/hall/scene/assets'
+import { loadScenery, type Scenery } from '@/features/hall/scene/assets'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
 import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
-import { CONFIG } from '@/features/hall/scene/config'
+import { CONFIG, centerYFor } from '@/features/hall/scene/config'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
@@ -85,7 +85,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
   return {
     id: 'hall',
     gatesItself: true,
-    clearColor: manifest.room.wallColor,
+    clearColor: CONFIG.wall.color,
     doors: {
       atelier: { x: GALLERY_DOOR.lobbyX, clearX: GALLERY_DOOR.lobbyX + GALLERY_DOOR.clear, label: 'To the fashion area' },
     },
@@ -546,7 +546,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           helm?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
           matcha?.update(frame.dt, ctx.character, frame.camera, frame.viewport)
 
-          backdrop.update(traversal.cameraX, ctx.rig.viewWidth)
+          backdrop.update(
+            traversal.cameraX,
+            ctx.rig.viewWidth,
+            centerYFor(ctx.rig.frustumHeight) + ctx.rig.frustumHeight / 2,
+          )
           hall.update(frame.now, frame.dt, traversal.cameraX, near)
           if (!ctx.isQuiet()) hall.releaseCoin()
           placards.sync(hall.getMounted(), frame.camera, frame.viewport)

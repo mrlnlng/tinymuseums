@@ -186,10 +186,9 @@ export class HallScene {
 
     this.updateFades(now)
     this.updatePedestals(dt, near)
-    const t = now / 1000
     for (const mount of this.mountedList) {
       const level = Math.abs(cameraX - mount.centerX) < mount.width / 2 + CONFIG.spotlight.nearMargin ? 1 : 0
-      mount.light.update(dt, level, t)
+      mount.light.update(dt, level)
     }
     this.coin.update(dt)
   }

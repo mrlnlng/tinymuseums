@@ -83,7 +83,7 @@ function vignetteTexture(): THREE.CanvasTexture {
         let alpha = 0
         if (edge > 0.6) {
           const t = (edge - 0.6) / 0.4
-          alpha = 0.36 * t * t * (3 - 2 * t)
+          alpha = 0.2 * t * t * (3 - 2 * t)
         }
         const at = (y * 256 + x) * 4
         image.data[at] = 22
@@ -94,7 +94,7 @@ function vignetteTexture(): THREE.CanvasTexture {
     }
     ink.putImageData(image, 0, 0)
     const bloom = ink.createRadialGradient(128, 0, 0, 128, 0, 150)
-    bloom.addColorStop(0, 'rgba(255, 214, 160, 0.10)')
+    bloom.addColorStop(0, 'rgba(255, 214, 160, 0.06)')
     bloom.addColorStop(1, 'rgba(255, 214, 160, 0)')
     ink.fillStyle = bloom
     ink.fillRect(0, 0, 256, 256)
@@ -135,7 +135,6 @@ export function createHallAmbience(scene: THREE.Scene, backdrop: Backdrop, still
 
   const haloColor = new THREE.Color(settings.bulbs.halo.color)
   const poolColor = new THREE.Color(settings.bulbs.pool.color)
-  const streakColor = new THREE.Color(settings.bulbs.streak.color)
   const dustColor = new THREE.Color(settings.dust.color)
   const dummy = new THREE.Object3D()
   const tint = new THREE.Color()
@@ -218,7 +217,7 @@ export function createHallAmbience(scene: THREE.Scene, backdrop: Backdrop, still
         for (let tile = first; tile <= last; tile++) {
           for (let bulb = 0; bulb < BULBS.length; bulb++) {
             const [u, v] = BULBS[bulb]
-            const x = curtain.originX + (tile + u) * curtain.tile + curtain.lean * v
+            const x = curtain.originX + (tile + u) * curtain.tile
             if (x < left - margin || x > right + margin) continue
             const y = curtain.top - v * curtain.height
             if (y < bottom - poolDiameter / 2 || y > top + haloDiameter / 2) continue
@@ -226,19 +225,10 @@ export function createHallAmbience(scene: THREE.Scene, backdrop: Backdrop, still
             const speed = settings.bulbs.twinkle.minSpeed
               + hashed(tile, bulb, 1) * (settings.bulbs.twinkle.maxSpeed - settings.bulbs.twinkle.minSpeed)
             const phase = hashed(tile, bulb, 2) * TAU
-            const pulse = still ? 1 : 0.78 + 0.16 * Math.sin(t * speed + phase) + 0.06 * Math.sin(t * 6.1 * speed + phase * 3)
+            const pulse = still ? 1 : 0.9 + 0.1 * Math.sin(t * speed + phase)
 
             place(x, y, settings.bulbs.halo.z, haloDiameter, haloDiameter, haloColor, settings.bulbs.halo.base * pulse)
             place(x, y, settings.bulbs.pool.z, poolDiameter, poolDiameter, poolColor, settings.bulbs.pool.base * pulse)
-            place(
-              x,
-              settings.bulbs.streak.y,
-              settings.bulbs.streak.z,
-              settings.bulbs.streak.width,
-              settings.bulbs.streak.height,
-              streakColor,
-              settings.bulbs.streak.base * pulse,
-            )
           }
         }
       }

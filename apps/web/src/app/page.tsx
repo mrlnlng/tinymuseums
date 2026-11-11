@@ -25,9 +25,6 @@ export default function LandingPage() {
 
       <div className="landing-scene" aria-hidden="true">
         <div className="landing-wall" />
-        <div className="landing-spot" />
-        <div className="landing-beam is-left" />
-        <div className="landing-beam is-right" />
 
         <div className="landing-portrait is-wink" data-poke>
           <Decor name="portraitWink" className="landing-portrait-frame" />
@@ -65,7 +62,6 @@ export default function LandingPage() {
 
       <div className="landing-body">
         <div className="welcome-plaque">
-          <span className="welcome-sheen" aria-hidden="true" />
           <span className="welcome-kicker">Welcome to</span>
           <h1 className="script welcome-title">
             {BRAND_OWNER}

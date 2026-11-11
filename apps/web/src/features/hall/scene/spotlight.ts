@@ -5,32 +5,14 @@ const BEAM_SIZE = 256
 /** The width the beam texture's top edge was drawn for; every beam reuses that shape. */
 const NOMINAL_WIDTH = 2.6
 const WARM_WHITE = [255, 244, 214] as const
-const GLINT_COUNT = 3
-const GLINT_SECONDS = 0.85
-const TAU = Math.PI * 2
 
 let beamMap: THREE.CanvasTexture | null = null
 let glowMap: THREE.CanvasTexture | null = null
-let starMap: THREE.CanvasTexture | null = null
-let starMaterial: THREE.MeshBasicMaterial | null = null
-let starGeometry: THREE.PlaneGeometry | null = null
-let stillMode: boolean | null = null
-let seed = 20261111
 
 export interface PaintingLight {
   group: THREE.Group
-  update(dt: number, level: number, t: number): void
+  update(dt: number, level: number): void
   dispose(): void
-}
-
-function mulberry(seedValue: number): () => number {
-  let state = seedValue
-  return () => {
-    state = (state + 0x6d2b79f5) | 0
-    let t = Math.imul(state ^ (state >>> 15), 1 | state)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 function painted(width: number, height: number, draw: (ink: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
@@ -94,42 +76,7 @@ function getGlowMap(): THREE.CanvasTexture {
   return glowMap
 }
 
-function getStarMap(): THREE.CanvasTexture {
-  starMap ??= painted(64, 64, (ink) => {
-    ink.fillStyle = '#fff4d6'
-    ink.beginPath()
-    ink.moveTo(32, 2)
-    ink.quadraticCurveTo(38, 26, 62, 32)
-    ink.quadraticCurveTo(38, 38, 32, 62)
-    ink.quadraticCurveTo(26, 38, 2, 32)
-    ink.quadraticCurveTo(26, 26, 32, 2)
-    ink.fill()
-  })
-  return starMap
-}
-
-function getGlintAssets(): { geometry: THREE.PlaneGeometry; material: THREE.MeshBasicMaterial } {
-  starGeometry ??= new THREE.PlaneGeometry(1, 1)
-  starMaterial ??= new THREE.MeshBasicMaterial({
-    map: getStarMap(),
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
-  return { geometry: starGeometry, material: starMaterial }
-}
-
-/** Read once per visit to the hall, so every rig agrees with the rest of the room. */
-function reducedMotion(): boolean {
-  if (stillMode === null) {
-    stillMode = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  }
-  return stillMode
-}
-
 export function createPaintingLight(width: number, bottom: number, height: number): PaintingLight {
-  const random = mulberry(seed++)
-  const still = reducedMotion()
   const group = new THREE.Group()
 
   const top = CONFIG.spotlight.topY
@@ -169,66 +116,16 @@ export function createPaintingLight(width: number, bottom: number, height: numbe
   pool.position.set(0, -0.5, -0.38)
   group.add(pool)
 
-  const glintAssets = getGlintAssets()
-  const glints = Array.from({ length: GLINT_COUNT }, () => {
-    const mesh = new THREE.Mesh(glintAssets.geometry, glintAssets.material)
-    mesh.scale.setScalar(0)
-    group.add(mesh)
-    return {
-      mesh,
-      wait: 0.7 + random() * 1.9,
-      age: GLINT_SECONDS,
-      size: 0.1 + random() * 0.08,
-      turn: random() * TAU,
-    }
-  })
-
-  function startGlint(glint: (typeof glints)[number]): void {
-    const side = Math.floor(random() * 4)
-    const along = random() * 2 - 1
-    const edge = 0.86 + random() * 0.12
-    const halfWidth = (width / 2) * edge
-    const halfHeight = (height / 2) * edge
-    const x = side < 2 ? (side === 0 ? halfWidth : -halfWidth) : along * halfWidth
-    const y = side < 2 ? along * halfHeight : (side === 2 ? halfHeight : -halfHeight)
-    glint.mesh.position.set(x, bottom + height / 2 + y, 0.02)
-    glint.mesh.rotation.z = glint.turn
-    glint.mesh.scale.setScalar(0)
-    glint.size = 0.1 + random() * 0.08
-    glint.age = 0
-    glint.wait = 0.7 + random() * 1.9
-  }
-
   let current = 0
-  const breathePhase = random() * TAU
 
   return {
     group,
 
-    update(dt, level, t) {
-      current += (level - current) * (1 - Math.exp(-dt / 0.1))
-      const breathe = still ? 1 : 1 + 0.04 * Math.sin(t * 0.55 + breathePhase)
-      beamMaterial.opacity = CONFIG.spotlight.opacity * (0.55 + 0.45 * current) * breathe
-      haloMaterial.opacity = CONFIG.spotlight.halo * (0.4 + 0.6 * current)
-      poolMaterial.opacity = CONFIG.spotlight.pool * (0.35 + 0.65 * current)
-
-      const show = !still && current > 0.5
-      for (const glint of glints) {
-        if (!show) {
-          glint.mesh.scale.setScalar(0)
-          continue
-        }
-        if (glint.age < GLINT_SECONDS) {
-          glint.age += dt
-          const progress = Math.min(1, glint.age / GLINT_SECONDS)
-          const scale = glint.size * Math.sin(Math.PI * progress)
-          glint.mesh.scale.setScalar(scale)
-          glint.mesh.rotation.z = glint.turn + (progress - 0.5) * 0.5
-          continue
-        }
-        glint.wait -= dt
-        if (glint.wait <= 0) startGlint(glint)
-      }
+    update(dt, level) {
+      current += (level - current) * (1 - Math.exp(-dt / 0.6))
+      beamMaterial.opacity = CONFIG.spotlight.opacity * (0.8 + 0.2 * current)
+      haloMaterial.opacity = CONFIG.spotlight.halo * (0.6 + 0.4 * current)
+      poolMaterial.opacity = CONFIG.spotlight.pool * (0.6 + 0.4 * current)
     },
 
     dispose() {
@@ -246,13 +143,6 @@ export function createPaintingLight(width: number, bottom: number, height: numbe
 export function disposeSpotlights(): void {
   beamMap?.dispose()
   glowMap?.dispose()
-  starMap?.dispose()
-  starMaterial?.dispose()
-  starGeometry?.dispose()
   beamMap = null
   glowMap = null
-  starMap = null
-  starMaterial = null
-  starGeometry = null
-  stillMode = null
 }

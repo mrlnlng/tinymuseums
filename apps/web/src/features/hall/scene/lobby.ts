@@ -22,11 +22,6 @@ const POST_BOX = { width: 240, height: 233 }
 const POST_PANEL = { x: 120, y: 88, width: 190 }
 
 const TREE_TOPPER = [0.502, 0.066] as const
-const TREE_ORNAMENTS: readonly [number, number][] = [
-  [0.495, 0.286], [0.657, 0.373], [0.338, 0.416],
-  [0.49, 0.537], [0.744, 0.555], [0.23, 0.607],
-  [0.109, 0.667], [0.205, 0.754], [0.778, 0.702],
-]
 
 const POST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="233" viewBox="0 0 240 233">
   <g fill="#c06a12" stroke="#5d3218" stroke-width="6" stroke-linejoin="round">
@@ -77,33 +72,19 @@ function treeGlowTexture(): THREE.CanvasTexture {
   })
 }
 
-function treeStarTexture(): THREE.CanvasTexture {
-  return sparklePainted(64, 64, (ink) => {
-    ink.fillStyle = '#fff4d6'
-    ink.beginPath()
-    ink.moveTo(32, 2)
-    ink.quadraticCurveTo(38, 26, 62, 32)
-    ink.quadraticCurveTo(38, 38, 32, 62)
-    ink.quadraticCurveTo(26, 38, 2, 32)
-    ink.quadraticCurveTo(26, 26, 32, 2)
-    ink.fill()
-  })
-}
-
 interface TreeSparkles {
   group: THREE.Group
   update(t: number, still: boolean): void
   dispose(): void
 }
 
-/** The tree's topper and ornaments, drawn just above its painted plane. */
+/** The tree's soft topper glow, drawn just above its painted plane. */
 function createTreeSparkles(width: number, height: number, x: number, y: number, z: number): TreeSparkles {
   const settings = CONFIG.lobby.treeLights
   const group = new THREE.Group()
   group.position.set(x, y, z + 0.01)
 
   const glowMap = treeGlowTexture()
-  const starMap = treeStarTexture()
   const geometry = new THREE.PlaneGeometry(1, 1)
   const glowMaterial = new THREE.MeshBasicMaterial({
     map: glowMap,
@@ -112,20 +93,7 @@ function createTreeSparkles(width: number, height: number, x: number, y: number,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   })
-  const starMaterial = new THREE.MeshBasicMaterial({
-    map: starMap,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
-  const glintMaterial = new THREE.MeshBasicMaterial({
-    map: starMap,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
   glowMaterial.opacity = settings.topperMinOpacity
-  starMaterial.opacity = 0.5
 
   const at = (u: number, v: number): [number, number] => [(u - 0.5) * width, (0.5 - v) * height]
   const topper = at(TREE_TOPPER[0], TREE_TOPPER[1])
@@ -134,55 +102,24 @@ function createTreeSparkles(width: number, height: number, x: number, y: number,
   glow.scale.setScalar(settings.topperGlow)
   group.add(glow)
 
-  const flare = new THREE.Mesh(geometry, starMaterial)
-  flare.position.set(topper[0], topper[1], 0.001)
-  flare.scale.setScalar(settings.topperStar)
-  group.add(flare)
-
-  const glints = TREE_ORNAMENTS.map(([u, v]) => {
-    const point = at(u, v)
-    const mesh = new THREE.Mesh(geometry, glintMaterial)
-    mesh.position.set(point[0], point[1], 0.002)
-    mesh.scale.setScalar(0)
-    group.add(mesh)
-    return mesh
-  })
-
   return {
     group,
 
     update(t, still) {
       if (still) {
         glowMaterial.opacity = (settings.topperMinOpacity + settings.topperMaxOpacity) / 2
-        starMaterial.opacity = 0.65
-        flare.rotation.z = 0
-        for (const glint of glints) glint.scale.setScalar(0)
         return
       }
 
       glowMaterial.opacity = settings.topperMinOpacity
-        + (settings.topperMaxOpacity - settings.topperMinOpacity) * (0.5 + 0.5 * Math.sin(t * 0.55))
-      starMaterial.opacity = 0.5 + 0.25 * Math.sin(t * 0.8 + 1.7)
-      flare.rotation.z = t * 0.32
-
-      const { waveSeconds, pauseSeconds, flashSeconds, size } = settings.ornament
-      const cycle = t % (waveSeconds + pauseSeconds)
-      const step = waveSeconds / glints.length
-      for (let i = 0; i < glints.length; i++) {
-        const progress = (cycle - i * step) / flashSeconds
-        const visible = cycle >= i * step && progress < 1
-        glints[i].scale.setScalar(visible ? size * Math.sin(Math.PI * progress) : 0)
-      }
+        + (settings.topperMaxOpacity - settings.topperMinOpacity) * (0.5 + 0.5 * Math.sin(t * 0.35))
     },
 
     dispose() {
       group.removeFromParent()
       geometry.dispose()
       glowMaterial.dispose()
-      starMaterial.dispose()
-      glintMaterial.dispose()
       glowMap.dispose()
-      starMap.dispose()
     },
   }
 }

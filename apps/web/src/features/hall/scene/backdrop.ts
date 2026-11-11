@@ -4,9 +4,9 @@ import { CONFIG } from './config'
 
 export interface Backdrop {
   /** Keeps the wall, floor and dressings under the camera, however long the room is. */
-  update(cameraX: number, viewWidth: number, viewTop: number, now: number): void
+  update(cameraX: number, viewWidth: number, viewTop: number): void
   /** The valance's current placement, so the string lights can sit on its painted bulbs. */
-  curtain(): { top: number; height: number; tile: number; originX: number; lean: number; z: number }
+  curtain(): { top: number; height: number; tile: number; originX: number; z: number }
   dispose(): void
 }
 
@@ -38,10 +38,10 @@ function painted(width: number, height: number, draw: (ink: CanvasRenderingConte
 function wallShadeTexture(): THREE.CanvasTexture {
   return painted(8, 256, (ink) => {
     const wash = ink.createLinearGradient(0, 0, 0, 256)
-    wash.addColorStop(0, 'rgba(255, 196, 128, 0.13)')
+    wash.addColorStop(0, 'rgba(255, 196, 128, 0.08)')
     wash.addColorStop(0.5, 'rgba(255, 196, 128, 0)')
     wash.addColorStop(0.72, 'rgba(38, 4, 16, 0)')
-    wash.addColorStop(1, 'rgba(38, 4, 16, 0.38)')
+    wash.addColorStop(1, 'rgba(38, 4, 16, 0.2)')
     ink.fillStyle = wash
     ink.fillRect(0, 0, 8, 256)
   })
@@ -50,10 +50,10 @@ function wallShadeTexture(): THREE.CanvasTexture {
 function floorShadeTexture(): THREE.CanvasTexture {
   return painted(8, 256, (ink) => {
     const shade = ink.createLinearGradient(0, 0, 0, 256)
-    shade.addColorStop(0, 'rgba(36, 10, 6, 0.42)')
+    shade.addColorStop(0, 'rgba(36, 10, 6, 0.28)')
     shade.addColorStop(0.16 / FLOOR_HEIGHT, 'rgba(36, 10, 6, 0)')
     shade.addColorStop(0.7 / FLOOR_HEIGHT, 'rgba(30, 8, 6, 0)')
-    shade.addColorStop(1, 'rgba(30, 8, 6, 0.3)')
+    shade.addColorStop(1, 'rgba(30, 8, 6, 0.16)')
     ink.fillStyle = shade
     ink.fillRect(0, 0, 8, 256)
   })
@@ -63,7 +63,7 @@ function floorShadeTexture(): THREE.CanvasTexture {
  * One wall, floor and its dressings that travel with the camera. Their textures scroll the other
  * way, so the pattern looks fixed to the room while the meshes move.
  */
-export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolean): Backdrop {
+export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
   const wallTexture = assets.textures.wallpaper.clone()
   wallTexture.wrapS = THREE.RepeatWrapping
   wallTexture.wrapT = THREE.RepeatWrapping
@@ -145,14 +145,14 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolea
     [floor, floorTexture, FLOOR_HEIGHT * assets.aspect.floor],
     [baseboard, baseboardTexture, baseboardTileWidth],
   ]
-  const state = { top: 0, height: 0, tile: 0, originX: PATTERN_ORIGIN_X, lean: 0, z: CONFIG.curtain.z }
+  const state = { top: 0, height: 0, tile: 0, originX: PATTERN_ORIGIN_X, z: CONFIG.curtain.z }
   let span = 0
   let curtainTop = Number.NaN
   let curtainHeight = 0
   let curtainTile = 0
 
   return {
-    update(cameraX, viewWidth, viewTop, now) {
+    update(cameraX, viewWidth, viewTop) {
       const width = Math.max(1, viewWidth) * SPAN_SCREENS
       const nextHeight = THREE.MathUtils.clamp(
         viewTop - CONFIG.curtain.clearY,
@@ -176,12 +176,10 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolea
         band.position.y = viewTop + CURTAIN_BAND_HEIGHT / 2
       }
 
-      const t = still ? 0 : now / 1000
-      const lean = still ? 0 : nextHeight * (Math.sin(t * 0.7) * 0.012 + Math.sin(t * 1.7 + 1) * 0.005)
       const originX = PATTERN_ORIGIN_X - cameraX * CONFIG.curtain.parallax
       const baseY = viewTop - nextHeight / 2
       curtain.matrix.set(
-        width, -lean, 0, cameraX + lean / 2,
+        width, 0, 0, cameraX,
         0, nextHeight, 0, baseY,
         0, 0, 1, CONFIG.curtain.z,
         0, 0, 0, 1,
@@ -189,7 +187,7 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolea
       curtain.matrixWorldNeedsUpdate = true
       const shadowY = baseY - CONFIG.curtain.shadow.drop * nextHeight
       shadow.matrix.set(
-        width, -lean, 0, cameraX + lean / 2,
+        width, 0, 0, cameraX,
         0, nextHeight, 0, shadowY,
         0, 0, 1, CONFIG.curtain.z - 0.02,
         0, 0, 0, 1,
@@ -213,7 +211,6 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets, still: boolea
       state.height = nextHeight
       state.tile = curtainTile
       state.originX = originX
-      state.lean = lean
     },
     curtain() {
       return state

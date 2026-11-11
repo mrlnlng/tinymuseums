@@ -1649,37 +1649,38 @@ code.token {
   .landing-portrait { top: calc(var(--u) * var(--y) + var(--lift)); }
   .landing-portrait.is-jiji { --x: -39.6; --y: 97.6; --w: 15.5; }
   .landing-portrait.is-bunny { --x: 26.1; --y: 90.3; --w: 15.8; }
-  .landing-portrait.is-bruce { --x: -4.9; --y: 129; --w: 12.5; top: calc(var(--u) * var(--y) + var(--slack) * 0.6); }
+  .landing-portrait.is-bruce { --x: -5.6; --y: 128.5; --w: 13.8; top: calc(var(--u) * var(--y) + var(--slack) * 0.6); }
 
+  /* Sizes allow for the transparent margins in the cabinet, jewellery box and perfume art. */
   .landing-cabinet {
-    left: calc(var(--u) * -17.5);
-    bottom: calc(var(--u) * 12.1);
-    width: calc(var(--u) * 51.2);
+    left: calc(var(--u) * -35.5);
+    bottom: calc(var(--u) * 5.9);
+    width: calc(var(--u) * 70.3);
   }
 
   .landing-jewelry {
-    left: calc(var(--u) * -9.4);
-    bottom: calc(var(--u) * 47.5);
-    width: calc(var(--u) * 16.6);
+    left: calc(var(--u) * -10.3);
+    bottom: calc(var(--u) * 47);
+    width: calc(var(--u) * 17.8);
   }
 
   .landing-perfume {
-    left: calc(var(--u) * 11.1);
-    bottom: calc(var(--u) * 46.4);
-    width: calc(var(--u) * 15);
+    left: calc(var(--u) * 9.9);
+    bottom: calc(var(--u) * 45.6);
+    width: calc(var(--u) * 17.9);
   }
 
   .landing-column {
     left: auto;
-    right: calc(var(--u) * 2.8);
+    right: calc(var(--u) * 1.8);
     bottom: calc(var(--u) * 14.2);
-    width: calc(var(--u) * 27);
+    width: calc(var(--u) * 29.1);
   }
 
   .landing-book {
     left: auto;
     right: calc(var(--u) * 2.8);
-    bottom: calc(var(--u) * 48.2);
+    bottom: calc(var(--u) * 46);
     width: calc(var(--u) * 27.8);
   }
 

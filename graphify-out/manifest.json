@@ -543,9 +543,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/backdrop.ts": {
-    "mtime": 1794429176.913538,
-    "seen": 1794429411.005082,
-    "ast_hash": "6f8057d7c87e45cdc4da96e8f42b19dc",
+    "mtime": 1794435227.68531,
+    "seen": 1794435356.583882,
+    "ast_hash": "8b00bfeb86416c9c603402546872f1b5",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/board.ts": {
@@ -591,9 +591,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1794429165.354444,
-    "seen": 1794429411.0050886,
-    "ast_hash": "efc2888b229a826daf380d3efb0176b0",
+    "mtime": 1794435227.684025,
+    "seen": 1794435356.5838897,
+    "ast_hash": "8de646a6881864bd4e2b71fc0571c906",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -5493,15 +5493,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/ambience.ts": {
-    "mtime": 1794429170.099252,
-    "seen": 1794429411.0050766,
-    "ast_hash": "26bf8ff26e99e4bac3353807c550b755",
+    "mtime": 1794435227.6862206,
+    "seen": 1794435356.583876,
+    "ast_hash": "7eb446adf09e4af8417899174a21f45d",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/shadow.ts": {
-    "mtime": 1794384397.5971963,
-    "seen": 1794385477.4163344,
-    "ast_hash": "478a23251b1dd535d6a75029ea462a30",
+    "mtime": 1794435227.6829338,
+    "seen": 1794435356.5839136,
+    "ast_hash": "0d99222b8d5141f50424f45986c3de3c",
     "semantic_hash": ""
   },
   "apps/web/src/features/landing/LandingAccount.tsx": {

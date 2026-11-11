@@ -12,8 +12,8 @@ function shadowTexture(): THREE.CanvasTexture {
     ink.translate(64, 32)
     ink.scale(1, 0.5)
     const shade = ink.createRadialGradient(0, 0, 0, 0, 0, 64)
-    shade.addColorStop(0, 'rgba(34, 9, 6, 0.55)')
-    shade.addColorStop(0.55, 'rgba(34, 9, 6, 0.25)')
+    shade.addColorStop(0, 'rgba(34, 9, 6, 0.18)')
+    shade.addColorStop(0.55, 'rgba(34, 9, 6, 0.08)')
     shade.addColorStop(1, 'rgba(34, 9, 6, 0)')
     ink.fillStyle = shade
     ink.fillRect(-64, -64, 128, 128)

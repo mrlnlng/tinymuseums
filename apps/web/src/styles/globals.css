@@ -477,7 +477,7 @@ code.token {
   position: absolute;
   inset: 0;
   opacity: var(--strength, 1);
-  background: radial-gradient(closest-side, rgb(60 30 20 / 0.45), rgb(60 30 20 / 0.28) 60%, rgb(60 30 20 / 0));
+  background: radial-gradient(closest-side, rgb(60 30 20 / 0.26), rgb(60 30 20 / 0.14) 60%, rgb(60 30 20 / 0));
 }
 .swipe-hint {
   position: absolute;
@@ -977,7 +977,7 @@ code.token {
   width: 100%;
   height: clamp(60px, 13cqh, 118px);
   background: var(--wt-valance) center top / auto 100% repeat-x;
-  filter: drop-shadow(0 6px 10px rgb(36 4 16 / 0.5));
+  filter: drop-shadow(0 6px 10px rgb(36 4 16 / 0.22));
   transform-origin: top center;
 }
 
@@ -2550,7 +2550,7 @@ form > .account-switch {
   background-repeat: repeat-x;
   background-position: center top;
   background-size: auto 100%;
-  filter: drop-shadow(0 6px 10px rgb(36 4 16 / 0.5));
+  filter: drop-shadow(0 6px 10px rgb(36 4 16 / 0.22));
   opacity: clamp(0, calc((1 - var(--curtain-open, 0)) * 3), 1);
   pointer-events: none;
 }

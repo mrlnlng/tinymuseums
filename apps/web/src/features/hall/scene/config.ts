@@ -11,7 +11,7 @@ export const CONFIG = {
   wall: { tileWidth: 1.8, color: '#741633' },
   baseboard: { height: 0.17, z: -0.45 },
   // The valance hangs from the top of the view; on short views it shrinks so it stays above clearY.
-  curtain: { height: 1.25, minHeight: 0.85, clearY: 4.1, z: -0.3, bandColor: '#622331', parallax: 0.08, shadow: { opacity: 0.3, drop: 0.07 } },
+  curtain: { height: 1.25, minHeight: 0.85, clearY: 4.1, z: -0.3, bandColor: '#622331', parallax: 0.08, shadow: { opacity: 0.1, drop: 0.07 } },
   // A soft beam from above the view down onto each painting; drawn behind the frame, over the valance.
   spotlight: { topY: 6.2, topWidth: 0.55, spread: 1.15, reach: 0.55, opacity: 0.34, z: -0.2, halo: 0.11, pool: 0.08, nearMargin: 1.3 },
 

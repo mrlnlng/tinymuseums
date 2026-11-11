@@ -83,7 +83,7 @@ function vignetteTexture(): THREE.CanvasTexture {
         let alpha = 0
         if (edge > 0.6) {
           const t = (edge - 0.6) / 0.4
-          alpha = 0.2 * t * t * (3 - 2 * t)
+          alpha = 0.08 * t * t * (3 - 2 * t)
         }
         const at = (y * 256 + x) * 4
         image.data[at] = 22

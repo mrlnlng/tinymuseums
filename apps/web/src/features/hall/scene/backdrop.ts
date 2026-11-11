@@ -41,7 +41,7 @@ function wallShadeTexture(): THREE.CanvasTexture {
     wash.addColorStop(0, 'rgba(255, 196, 128, 0.08)')
     wash.addColorStop(0.5, 'rgba(255, 196, 128, 0)')
     wash.addColorStop(0.72, 'rgba(38, 4, 16, 0)')
-    wash.addColorStop(1, 'rgba(38, 4, 16, 0.2)')
+    wash.addColorStop(1, 'rgba(38, 4, 16, 0.06)')
     ink.fillStyle = wash
     ink.fillRect(0, 0, 8, 256)
   })
@@ -50,10 +50,10 @@ function wallShadeTexture(): THREE.CanvasTexture {
 function floorShadeTexture(): THREE.CanvasTexture {
   return painted(8, 256, (ink) => {
     const shade = ink.createLinearGradient(0, 0, 0, 256)
-    shade.addColorStop(0, 'rgba(36, 10, 6, 0.28)')
+    shade.addColorStop(0, 'rgba(36, 10, 6, 0.1)')
     shade.addColorStop(0.16 / FLOOR_HEIGHT, 'rgba(36, 10, 6, 0)')
     shade.addColorStop(0.7 / FLOOR_HEIGHT, 'rgba(30, 8, 6, 0)')
-    shade.addColorStop(1, 'rgba(30, 8, 6, 0.16)')
+    shade.addColorStop(1, 'rgba(30, 8, 6, 0.06)')
     ink.fillStyle = shade
     ink.fillRect(0, 0, 8, 256)
   })

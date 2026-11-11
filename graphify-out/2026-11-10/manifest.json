@@ -873,9 +873,9 @@
     "semantic_hash": "796873e0bfdac77202e9e5f54c3f82f8"
   },
   "apps/web/src/generated/asset-manifest.json": {
-    "mtime": 1794200758.9438705,
-    "seen": 1794201256.7217467,
-    "ast_hash": "029376bc1b5f996763bc91364aedd6d4",
+    "mtime": 1794363703.7422464,
+    "seen": 1794363995.5655582,
+    "ast_hash": "e18081ededa438838d32b33f1a20b579",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AssetImage.tsx": {
@@ -3651,9 +3651,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/layout.json": {
-    "mtime": 1794200755.223541,
-    "seen": 1794201256.7215035,
-    "ast_hash": "41eaa2801cad8eb59e255f5e990eeed3",
+    "mtime": 1794363696.8419285,
+    "seen": 1794363995.5653088,
+    "ast_hash": "4146bdaa94c5f92d7c6d1e8405a7298f",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/wallet/bait/route.ts": {
@@ -3693,21 +3693,21 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/lily.png": {
-    "mtime": 1794200755.2229252,
-    "seen": 1794201256.7220092,
+    "mtime": 1794363695.5720296,
+    "seen": 1794363995.565827,
     "ast_hash": "d2cc5b56e9b03a27d9487658f2be5c00",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/scene.png": {
-    "mtime": 1794200754.930761,
-    "seen": 1794201256.72201,
-    "ast_hash": "64b5a4efa45060a5a51dc5f0d639fa6a",
+    "mtime": 1794363694.528743,
+    "seen": 1794363995.5658307,
+    "ast_hash": "cc13ce10ccab1d59ea571fde627d8c58",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/splash.png": {
-    "mtime": 1794200755.1297665,
-    "seen": 1794201256.7220159,
-    "ast_hash": "836c2d1a1f9c37741557b403f9a9aac0",
+    "mtime": 1794363695.440026,
+    "seen": 1794363995.5658376,
+    "ast_hash": "a64ae93a4add64fc11e114036ba8bec6",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-fish-blobfish@2x.34610f97fe.webp": {
@@ -4443,15 +4443,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
-    "mtime": 1794200788.6834247,
-    "seen": 1794201256.7217183,
-    "ast_hash": "60268afed0493f336049795d838e7105",
+    "mtime": 1794363738.936093,
+    "seen": 1794363995.5655298,
+    "ast_hash": "f555404561d5763be46512846cd3712e",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/room.ts": {
-    "mtime": 1794203162.633526,
-    "seen": 1794203892.1616414,
-    "ast_hash": "9df5fd175224c021925c06c0094e56ee",
+    "mtime": 1794363750.1054091,
+    "seen": 1794363995.5655344,
+    "ast_hash": "6346ca24ad19e27cd880cb4c57a26430",
     "semantic_hash": ""
   },
   "packages/core/db-tests/pond.test.ts": {
@@ -4563,9 +4563,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/FishingView.tsx": {
-    "mtime": 1794360842.456665,
-    "seen": 1794360916.4080946,
-    "ast_hash": "5e23e5ffdc422d9252ea11816ee74331",
+    "mtime": 1794364555.414588,
+    "seen": 1794364999.5362918,
+    "ast_hash": "e6165d30c8d40fa028d2c88220777559",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Hud.tsx": {
@@ -4575,21 +4575,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/ReelMeter.tsx": {
-    "mtime": 1794360697.0522435,
-    "seen": 1794360916.408098,
-    "ast_hash": "4d5664cd186e7ec3914b396fb93d5f3f",
+    "mtime": 1794364678.6901572,
+    "seen": 1794364999.5362952,
+    "ast_hash": "a28a5d707e869bcb2719f03db6375e94",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/RevealCard.tsx": {
-    "mtime": 1794202120.3890128,
-    "seen": 1794203892.161582,
-    "ast_hash": "512902f1170eb974cfa396d73717e73a",
+    "mtime": 1794364667.2612379,
+    "seen": 1794364999.5362961,
+    "ast_hash": "c8ab9ea7b46bdde6797d71751a663f44",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Water.tsx": {
-    "mtime": 1794360697.0520918,
-    "seen": 1794360916.408101,
-    "ast_hash": "207468203504f79addaa043d5774e8fe",
+    "mtime": 1794364667.2610686,
+    "seen": 1794364999.5362983,
+    "ast_hash": "4050b534285eaba91bd6e3a52e4fd9a8",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondHud.tsx": {
@@ -4719,9 +4719,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/landmarks.ts": {
-    "mtime": 1794176925.4349804,
-    "seen": 1794198394.5778644,
-    "ast_hash": "e55472458e2e18ea6efff8561ea30ff6",
+    "mtime": 1794363738.935745,
+    "seen": 1794363995.5655336,
+    "ast_hash": "c27525dc352d773eb0dee648bb431ee6",
     "semantic_hash": ""
   },
   "docs/pond-asset-art-direction.md": {
@@ -4779,9 +4779,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/shopkeeper.ts": {
-    "mtime": 1794176925.4352274,
-    "seen": 1794198394.577869,
-    "ast_hash": "c622929e058f38c36121865693f8852d",
+    "mtime": 1794363738.9358568,
+    "seen": 1794363995.5655355,
+    "ast_hash": "c4bc550029d14fc75840f8c613ec290f",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/fishing-apron.png": {
@@ -4893,9 +4893,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Angler.tsx": {
-    "mtime": 1794203292.028064,
-    "seen": 1794203892.1615767,
-    "ast_hash": "c5510e69b0036f77a7b58c3e29057c67",
+    "mtime": 1794363826.9108074,
+    "seen": 1794363995.565468,
+    "ast_hash": "278f12798c74d4c2e0ab80058f8a4805",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/depth.test.ts": {
@@ -4908,12 +4908,6 @@
     "mtime": 1794171536.4620554,
     "seen": 1794198394.577863,
     "ast_hash": "c4a3313dd85f523904016da6144fba39",
-    "semantic_hash": ""
-  },
-  "apps/web/src/features/rooms/pond/paths.ts": {
-    "mtime": 1794168887.1054053,
-    "seen": 1794169204.0355952,
-    "ast_hash": "9fdd176bf61e29d52da1aca9b028d3a3",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/walk.test.ts": {
@@ -5043,15 +5037,15 @@
     "semantic_hash": ""
   },
   "apps/web/tooling/import-fishing-assets.mjs": {
-    "mtime": 1794200754.8697593,
-    "seen": 1794201256.7217758,
-    "ast_hash": "dbd4438e1a53c4c67ad907c7f7c58891",
+    "mtime": 1794363693.595051,
+    "seen": 1794363995.5655878,
+    "ast_hash": "dbbb9b741d8414b0ea2eaf48416a4e2f",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/sparkles.png": {
-    "mtime": 1794200755.0392234,
-    "seen": 1794201256.722015,
-    "ast_hash": "2cd64b671dd97a02cd8051fdb1987bc3",
+    "mtime": 1794363695.3200228,
+    "seen": 1794363995.565837,
+    "ast_hash": "2a30de14b68ae8c91311bf5446fa5ae4",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-lily@2x.de79eb2357.webp": {
@@ -5112,6 +5106,288 @@
     "mtime": 1794203914.5830433,
     "seen": 1794360916.408338,
     "ast_hash": "39500c894ba38bf85a87bffff5cf8725",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/bait-shop.png": {
+    "mtime": 1794363696.0378747,
+    "seen": 1794363995.565802,
+    "ast_hash": "a0bec142ee34ea3954848958e2ac9e26",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/bridge.png": {
+    "mtime": 1794363695.180803,
+    "seen": 1794363995.565803,
+    "ast_hash": "6ae463c38871191a60ffe6272ef0cefa",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/bucket.png": {
+    "mtime": 1794363695.7412465,
+    "seen": 1794363995.5658035,
+    "ast_hash": "9979144a1c34ee36bcccfa6e9ea35a23",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/fishing-hat.png": {
+    "mtime": 1794363696.5452213,
+    "seen": 1794363995.56581,
+    "ast_hash": "29ec8a3249e98ae499c76f22de0fe4ab",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/float-hook.png": {
+    "mtime": 1794363695.6511853,
+    "seen": 1794363995.5658104,
+    "ast_hash": "288410ec5529f96094a2d1af139ec9d8",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/float.png": {
+    "mtime": 1794363695.6430316,
+    "seen": 1794363995.5658112,
+    "ast_hash": "f6ff510287ea5e0d07058932426fef1d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/notice-sign.png": {
+    "mtime": 1794363696.1432054,
+    "seen": 1794363995.5658274,
+    "ast_hash": "9508354c742ae1fa2527b1da085036cc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/pond-sign.png": {
+    "mtime": 1794363696.3830512,
+    "seen": 1794363995.565828,
+    "ast_hash": "6db80e26b4053ca4e187cd654c32a32d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/rod-upright.png": {
+    "mtime": 1794363696.6737587,
+    "seen": 1794363995.5658286,
+    "ast_hash": "6349ef58f76c8ac5673db5e5f6bd1b12",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/rod.png": {
+    "mtime": 1794363695.6399088,
+    "seen": 1794363995.565829,
+    "ast_hash": "e6e9554b295ae0383cf832928064be83",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/scene-left.png": {
+    "mtime": 1794363694.8563738,
+    "seen": 1794363995.5658295,
+    "ast_hash": "45d7c92a3b02560c82ac545dc3dba873",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/score-sign.png": {
+    "mtime": 1794363696.4501119,
+    "seen": 1794363995.5658312,
+    "ast_hash": "718cba27a289e45b3f756159dfffc18b",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/stone-path.png": {
+    "mtime": 1794363696.8414235,
+    "seen": 1794363995.565838,
+    "ast_hash": "d2bd9817d85c43de924ddb76fe055ab5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bait-shop@2x.05fcfede48.webp": {
+    "mtime": 1794363700.2911549,
+    "seen": 1794363995.565949,
+    "ast_hash": "1fc9fd31cb86288999fd0f09dafcf655",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bait-shop@3x.9395ba63b0.webp": {
+    "mtime": 1794363700.8071685,
+    "seen": 1794363995.5659494,
+    "ast_hash": "39eca08b8a95ad3a3904b364ca7d70ac",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bridge@2x.95727ae230.webp": {
+    "mtime": 1794363698.7711143,
+    "seen": 1794363995.5659502,
+    "ast_hash": "925ee11346b4b68fb26a121728296867",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bridge@3x.05a9a56b05.webp": {
+    "mtime": 1794363698.907118,
+    "seen": 1794363995.5659506,
+    "ast_hash": "bf55dcefb361b8f1f62558b2819f6d12",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bucket@2x.216dc28b6a.webp": {
+    "mtime": 1794363699.5691357,
+    "seen": 1794363995.5659513,
+    "ast_hash": "52704fa5fd533899e9330fab90e44598",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-bucket@3x.c5befa956a.webp": {
+    "mtime": 1794363699.6791384,
+    "seen": 1794363995.565952,
+    "ast_hash": "8bca28f2a62c08e0032f070d4326600c",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-fishing-hat@2x.256c479384.webp": {
+    "mtime": 1794363702.6892183,
+    "seen": 1794363995.565959,
+    "ast_hash": "ebc77837fbdd1d31a5a2b517a515e4b5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-fishing-hat@3x.08e442f976.webp": {
+    "mtime": 1794363702.5452147,
+    "seen": 1794363995.5659595,
+    "ast_hash": "f1f08ec1cdfdcf4524972ae6c8e4a1e9",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-float-hook@2x.8bd1fbd58c.webp": {
+    "mtime": 1794363699.427132,
+    "seen": 1794363995.56596,
+    "ast_hash": "4761f230794405b033120e52c9d4b0fe",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-float-hook@3x.96eb5a1cbb.webp": {
+    "mtime": 1794363699.4121315,
+    "seen": 1794363995.5659604,
+    "ast_hash": "a3e2ee03f89dde40f1f0cfd58e611e26",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-float@2x.bb7db01f85.webp": {
+    "mtime": 1794363699.3781304,
+    "seen": 1794363995.565961,
+    "ast_hash": "e0676231d22d9b9d2c8da60389fda4c5",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-float@3x.e5bf57c495.webp": {
+    "mtime": 1794363699.3671303,
+    "seen": 1794363995.5659614,
+    "ast_hash": "5289d4a8371de464bd3d967556caae51",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-lily@2x.924efbb706.webp": {
+    "mtime": 1794363699.0971231,
+    "seen": 1794363995.5659664,
+    "ast_hash": "eab53893083125b7ca7492b77839fcee",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-lily@3x.863d4faebc.webp": {
+    "mtime": 1794363699.0641222,
+    "seen": 1794363995.5659697,
+    "ast_hash": "e4515b053ac2b20018e98311c484f8e9",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-notice-sign@2x.e0e64a25c9.webp": {
+    "mtime": 1794363701.1061764,
+    "seen": 1794363995.5659704,
+    "ast_hash": "c4c0ca6c14075a5db7396ea46fc2f3fc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-notice-sign@3x.5c306836cd.webp": {
+    "mtime": 1794363701.4911866,
+    "seen": 1794363995.565971,
+    "ast_hash": "b0d03fa859e8ab074477a3ce2fedf32a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-pond-sign@2x.f7c611e304.webp": {
+    "mtime": 1794363701.848196,
+    "seen": 1794363995.5659714,
+    "ast_hash": "bf992ffaa751a813947995c9d19f896f",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-pond-sign@3x.22b970dd7f.webp": {
+    "mtime": 1794363702.2552068,
+    "seen": 1794363995.5659723,
+    "ast_hash": "3cc7a89c27ad77c13474d617e790d4dc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-rod-upright@2x.da6c91ac7e.webp": {
+    "mtime": 1794363702.8332222,
+    "seen": 1794363995.5659728,
+    "ast_hash": "671979663c409ad246e1b70e278ba706",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-rod-upright@3x.0552a2b5e7.webp": {
+    "mtime": 1794363702.8952239,
+    "seen": 1794363995.5659733,
+    "ast_hash": "a582f577b5881ae82af787dd8bf9e724",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-rod@2x.bec1a82cbe.webp": {
+    "mtime": 1794363699.35713,
+    "seen": 1794363995.5659738,
+    "ast_hash": "31d2a0531476c959daf9ce2ccee2b0ba",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-rod@3x.b886f90f1b.webp": {
+    "mtime": 1794363699.1391242,
+    "seen": 1794363995.5659745,
+    "ast_hash": "fe0a43e2840e19f617577b6cb04ef656",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-scene-left@2x.5af353b81e.webp": {
+    "mtime": 1794363698.3101022,
+    "seen": 1794363995.565975,
+    "ast_hash": "ad4611fad63f4f8286f7a0f4bd1910f2",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-scene-left@3x.6fc5e6c88c.webp": {
+    "mtime": 1794363698.60211,
+    "seen": 1794363995.5659757,
+    "ast_hash": "229314ff52cfc21284619a9b6f789d6c",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-scene@2x.34f89fae1d.webp": {
+    "mtime": 1794363697.4250789,
+    "seen": 1794363995.5659761,
+    "ast_hash": "e451e1ebe3ff763d187937796eed28d6",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-scene@3x.c56b95f73e.webp": {
+    "mtime": 1794363697.9340923,
+    "seen": 1794363995.5659802,
+    "ast_hash": "4e71d4a84f52146fe5cfbbd3405b4e28",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-score-sign@2x.3bd146d52b.webp": {
+    "mtime": 1794363702.4032109,
+    "seen": 1794363995.565981,
+    "ast_hash": "87ca8f21ae18ccc07caef72b4c2d3af9",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-score-sign@3x.c93ecd5eb4.webp": {
+    "mtime": 1794363702.524214,
+    "seen": 1794363995.5659814,
+    "ast_hash": "cdf78749652da514cc44d8d03836c465",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-sparkles@2x.4c10647874.webp": {
+    "mtime": 1794363698.949119,
+    "seen": 1794363995.5659842,
+    "ast_hash": "b7986c9311719d8274f1f90464f42264",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-sparkles@3x.cd1164e7da.webp": {
+    "mtime": 1794363698.941119,
+    "seen": 1794363995.565988,
+    "ast_hash": "e9dcad4ea9390d01c790a00c40998c19",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-splash@2x.f20b6bc492.webp": {
+    "mtime": 1794363698.98012,
+    "seen": 1794363995.5659916,
+    "ast_hash": "64f764b8e195fd47249043b46238373a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-splash@3x.e18997f786.webp": {
+    "mtime": 1794363698.9621196,
+    "seen": 1794363995.565995,
+    "ast_hash": "9ccf2bfb6da639f7da8797a3d12c37e0",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-stone-path@2x.6957717ca9.webp": {
+    "mtime": 1794363703.7412462,
+    "seen": 1794363995.565996,
+    "ast_hash": "953658707bce09e6593d02d954d0e0cc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-stone-path@3x.bc88e1f6fe.webp": {
+    "mtime": 1794363703.13123,
+    "seen": 1794363995.565997,
+    "ast_hash": "4d124f5da3c56ca01f21d14ab6e5ac18",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

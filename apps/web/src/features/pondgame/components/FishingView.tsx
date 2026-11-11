@@ -848,15 +848,11 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       if (mustBuy) return `Out of ${selected.name.toLowerCase()} — tap it to buy ${selected.pack} for ${selected.cost} pearls`
       return touch ? 'Tap anywhere to cast' : 'Hold the button, then let go in the gold zone'
     }
-    if (phase === 'charging') return tapCast ? 'Tap again in the gold zone for a Perfect cast' : 'Let go in the gold zone for a Perfect cast'
+    if (phase === 'charging') return 'A Perfect cast hooks bigger fish'
     if (phase === 'flying') return 'Here it goes…'
     if (phase === 'waiting') return state.nibbleActive ? 'Just a nibble — wait for it…' : 'Watch the bobber…'
     if (phase === 'bite') return touch ? 'It’s biting — tap anywhere!' : 'It’s biting — tap now!'
-    if (phase === 'reeling') {
-      if (state.reel?.runActive) return 'It’s running — let go!'
-      if ((state.reel?.tension ?? 0) >= DANGER_TENSION) return 'Easy, the line’s tight…'
-      return touch ? 'Hold anywhere to reel, lift to ease off' : 'Hold to reel it in'
-    }
+    if (phase === 'reeling') return touch ? 'Hold anywhere to reel · lift when it runs' : 'Hold to reel · let go when it runs'
     if (phase === 'landing') return 'Almost in…'
     if (phase === 'reveal') return 'Tap to keep your catch'
     return 'Cast again when you’re ready'
@@ -926,7 +922,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           onCancel={closePicker}
         />
         {showReel ? <ReelMeter reel={state.reel!} easy={easyReel} /> : null}
-        {touch && phase === 'charging' ? <CastMeter power={state.power} /> : null}
+        {phase === 'charging' ? <CastMeter power={state.power} touch={touch} /> : null}
         <BaitTray
           counts={pondState?.bait ?? {}}
           selected={selectedBait}
@@ -972,17 +968,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
               }}
               onContextMenu={(event) => event.preventDefault()}
             >
-              {phase === 'charging' && !touch ? (
-                <span className="pond-action-meter" aria-hidden="true">
-                  <span
-                    className="pond-action-sweet"
-                    style={{ left: `${SWEET_LOW * 100}%`, width: `${(SWEET_HIGH - SWEET_LOW) * 100}%` }}
-                  />
-                  <span className="pond-action-fill" style={{ width: `${state.power * 100}%` }} />
-                  <span className="pond-action-tick" style={{ left: `${state.power * 100}%` }} />
-                </span>
-              ) : null}
-              <PondIcon name="rod" size={24} disc={false} />
+              <PondIcon name="rod" size={30} disc={false} />
               <span className="pond-action-text">
                 <span className="pond-action-label">{action.label}</span>
                 <span className="pond-action-sub">{action.sub}</span>

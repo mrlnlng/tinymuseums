@@ -12,6 +12,7 @@ import { FOREST_GATE, POND_LANDMARKS, type PondLandmark } from './landmarks'
 import { FAR_LIFT, depthAtLift, liftAt, pathX, scaleAt } from './depth'
 import { MAX_DEPTH, Walker, depthOf, pondFloor, toFloor } from './walk'
 import { createShopkeeper } from './shopkeeper'
+import { createPondAmbience } from './ambience'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
 
@@ -276,7 +277,7 @@ export function createPondRoom({
         y: IMAGE_CENTER_Y,
         z: -0.55,
       })
-      add({
+      const lily = add({
         width: layout.lily.w * SCENE_WIDTH,
         height: layout.lily.h * SCENE_HEIGHT,
         material: new THREE.MeshBasicMaterial({ map: art.lily, transparent: true, depthWrite: false }),
@@ -324,6 +325,10 @@ export function createPondRoom({
         landmarkMaterials.set(landmark.kind, material)
         add({ width, height, material, x: landmark.x, y: bottom + height / 2, z: -0.2 })
       }
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const ambience = createPondAmbience(group, art, {
+        sceneWidth: SCENE_WIDTH, sceneHeight: SCENE_HEIGHT, groundY: GROUND_Y, minX: MIN_X, maxX: MAX_X, yAt,
+      }, lily, reducedMotion)
       ctx.scene.add(group)
 
       const follower = followOutfit(
@@ -339,7 +344,6 @@ export function createPondRoom({
       let glow = 0
       const white = new THREE.Color('#ffffff')
       const lamplight = new THREE.Color('#ffe2b0')
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
       const landmarks = POND_LANDMARKS.map((landmark) => {
         const button = document.createElement('button')
@@ -685,6 +689,7 @@ export function createPondRoom({
         },
 
         update(frame) {
+          ambience.update(frame.now, frame.dt, frame.camera)
           if (activeSpot !== null && !spotFree(activeSpot)) {
             releaseSpot()
             callbacks.onSpotLost?.()
@@ -778,6 +783,7 @@ export function createPondRoom({
           window.removeEventListener('blur', letGo)
           mark.remove()
           for (const texture of pathTextures) texture.dispose()
+          ambience.dispose()
           if (control.release === releaseSpot) control.release = () => {}
           if (control.setBountyReady === setBountyReady) control.setBountyReady = () => {}
           if (activeSpot !== null) presence?.want(itemFor(activeSpot), false)

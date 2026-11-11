@@ -248,6 +248,7 @@ export default function RevealCard({
         {caught.tier === 'legendary' ? <span className="pond-reveal-stamp">LEGENDARY</span> : null}
 
         <div className="pond-reveal-fishwrap">
+        <span className={`pond-reveal-rays is-${caught.tier}`} aria-hidden="true" />
         {caught.variant !== 'normal' ? <span className={`pond-reveal-aura is-${caught.variant}`} aria-hidden="true" /> : null}
         <div className={`pond-reveal-fish is-${caught.variant}`} style={maskStyle}>
           <img src={art} alt="" draggable={false} />

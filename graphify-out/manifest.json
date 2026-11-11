@@ -4443,15 +4443,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
-    "mtime": 1794363738.936093,
-    "seen": 1794363995.5655298,
-    "ast_hash": "f555404561d5763be46512846cd3712e",
+    "mtime": 1794370085.9560976,
+    "seen": 1794370437.6814423,
+    "ast_hash": "990241150ce3b348b4268d5a99cf9a6f",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/room.ts": {
-    "mtime": 1794363750.1054091,
-    "seen": 1794363995.5655344,
-    "ast_hash": "6346ca24ad19e27cd880cb4c57a26430",
+    "mtime": 1794370309.1896157,
+    "seen": 1794370437.6814482,
+    "ast_hash": "6f04a93bd3e227a7ba03876bae477e17",
     "semantic_hash": ""
   },
   "packages/core/db-tests/pond.test.ts": {
@@ -4563,9 +4563,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/FishingView.tsx": {
-    "mtime": 1794362636.8187673,
-    "seen": 1794363995.5654702,
-    "ast_hash": "c085a9006bbe7610ac671d7c8639a485",
+    "mtime": 1794364555.414588,
+    "seen": 1794364999.5362918,
+    "ast_hash": "e6165d30c8d40fa028d2c88220777559",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Hud.tsx": {
@@ -4575,21 +4575,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/ReelMeter.tsx": {
-    "mtime": 1794361405.0708141,
-    "seen": 1794363995.5654728,
-    "ast_hash": "e26f123735c546b54a9cf3b10b90f6fc",
+    "mtime": 1794364678.6901572,
+    "seen": 1794364999.5362952,
+    "ast_hash": "a28a5d707e869bcb2719f03db6375e94",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/RevealCard.tsx": {
-    "mtime": 1794202120.3890128,
-    "seen": 1794203892.161582,
-    "ast_hash": "512902f1170eb974cfa396d73717e73a",
+    "mtime": 1794364667.2612379,
+    "seen": 1794364999.5362961,
+    "ast_hash": "c8ab9ea7b46bdde6797d71751a663f44",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Water.tsx": {
-    "mtime": 1794363904.5798848,
-    "seen": 1794363995.5654752,
-    "ast_hash": "42b50725489658e62cfa217df2877226",
+    "mtime": 1794364667.2610686,
+    "seen": 1794364999.5362983,
+    "ast_hash": "4050b534285eaba91bd6e3a52e4fd9a8",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondHud.tsx": {
@@ -5388,6 +5388,12 @@
     "mtime": 1794363703.13123,
     "seen": 1794363995.565997,
     "ast_hash": "4d124f5da3c56ca01f21d14ab6e5ac18",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/pond/ambience.ts": {
+    "mtime": 1794370270.0064874,
+    "seen": 1794370437.6814408,
+    "ast_hash": "dd07529163dc6d7c89f3978481f27987",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

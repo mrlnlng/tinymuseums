@@ -146,6 +146,56 @@ function makeAmbient(narrow: boolean): AmbientShadow[] {
   }))
 }
 
+interface Glint {
+  id: number
+  x: number
+  y: number
+  width: number
+  duration: number
+  delay: number
+}
+
+function makeGlints(narrow: boolean): Glint[] {
+  return Array.from({ length: narrow ? 5 : 8 }, (_, id) => ({
+    id,
+    x: narrow ? 0.24 + Math.random() * 0.26 : 0.3 + Math.random() * 0.44,
+    y: 0.735 + Math.random() * 0.12,
+    width: 0.022 + Math.random() * 0.03,
+    duration: 3.6 + Math.random() * 3.4,
+    delay: -Math.random() * 7,
+  }))
+}
+
+interface Petal {
+  id: number
+  x: number
+  y: number
+  size: number
+  duration: number
+  delay: number
+  sway: number
+}
+
+/** Blossom from the trees on the left, let go a petal at a time. */
+function makePetals(): Petal[] {
+  return Array.from({ length: 9 }, (_, id) => ({
+    id,
+    x: 0.02 + Math.random() * 0.4,
+    y: 0.04 + Math.random() * 0.24,
+    size: 0.006 + Math.random() * 0.005,
+    duration: 9 + Math.random() * 8,
+    delay: -Math.random() * 17,
+    sway: 0.04 + Math.random() * 0.07,
+  }))
+}
+
+/** The line warms from white to red as it nears breaking. */
+function lineColour(tension: number): string {
+  const t = Math.max(0, Math.min(1, (tension - 0.45) / 0.45))
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * t)
+  return `rgb(${mix(244, 255)} ${mix(250, 92)} ${mix(248, 70)})`
+}
+
 const SHADOW_CLASS: Record<ShadowSize, string> = {
   tiny: 'is-tiny',
   small: 'is-small',
@@ -195,6 +245,12 @@ export default function Water({
   useEffect(() => {
     setAmbient(makeAmbient(narrow))
   }, [narrow])
+
+  const [glints, setGlints] = useState(() => makeGlints(narrow))
+  useEffect(() => {
+    setGlints(makeGlints(narrow))
+  }, [narrow])
+  const [petals] = useState(makePetals)
 
   const [approach, setApproach] = useState<FishPoint | null>(null)
   useEffect(() => {
@@ -272,6 +328,7 @@ export default function Water({
     let kind: Splash['kind'] | null = null
     if (phase === 'waiting' && before.phase === 'flying') kind = 'land'
     else if (phase === 'bite' && before.phase !== 'bite') kind = 'bite'
+    else if (phase === 'landing' && before.phase === 'reeling') kind = 'bite'
     else if (nibbleActive && !before.nibbleActive) kind = 'nibble'
     if (!kind) return
     const id = ++splashId.current
@@ -304,6 +361,19 @@ export default function Water({
       <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: 3 })} alt="" style={box(layout.sparkles)} draggable={false} />
 
       <div className="pond-water" style={{ clipPath: WATER_CLIP }}>
+        {glints.map((glint) => (
+          <span
+            key={`glint-${glint.id}`}
+            className="pond-glint"
+            style={{
+              left: `${glint.x * 100}%`,
+              top: `${glint.y * 100}%`,
+              width: `${glint.width * 100}%`,
+              animationDuration: `${glint.duration}s`,
+              animationDelay: `${glint.delay}s`,
+            }}
+          />
+        ))}
         {ambient.map((entry) => (
           <span
             key={entry.id}
@@ -323,7 +393,7 @@ export default function Water({
         ))}
         {armed && shadow && approach ? (
           <span
-            className={`pond-shadow is-target ${SHADOW_CLASS[shadow]}`}
+            className={`pond-shadow is-target ${SHADOW_CLASS[shadow]}${phase === 'reeling' ? (reel?.runActive ? ' is-running' : ' is-hooked') : ''}`}
             style={{ left: `${approach.x * 100}%`, top: `${approach.y * 100}%` }}
           />
         ) : null}
@@ -343,6 +413,26 @@ export default function Water({
       </div>
 
       <img className="pond-lily" src={assetUrl('pond/lily', { density: 3 })} alt="" style={box(layout.lily)} draggable={false} />
+
+      {phase === 'bite' ? <span className="pond-focus" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100}%` }} /> : null}
+
+      {phase === 'waiting' && !nibbleActive ? (
+        <span className="pond-ripples" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100}%` }}>
+          <i />
+          <i />
+        </span>
+      ) : null}
+
+      {phase === 'reeling' ? (
+        <span
+          className={reel?.runActive ? 'pond-churn is-run' : 'pond-churn'}
+          style={{ left: `${bobber.x * 100}%`, top: `${rest.y * 100}%`, '--pull': Math.max(0.25, tension).toFixed(2) } as CSSProperties}
+        >
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : null}
 
       {splashes.map((splash) => {
         const scale = SPLASH_SCALE[splash.kind]
@@ -396,7 +486,13 @@ export default function Water({
       <img className="pond-rod-art" src={assetUrl('pond/rod', { density: 3 })} alt="" style={rodStyle} draggable={false} />
       {showBobber ? (
         <svg className="pond-rod" viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
-          <path className={reel?.runActive ? 'pond-line is-shaking' : 'pond-line'} d={linePath} fill="none" vectorEffect="non-scaling-stroke" />
+          <path
+            className={reel?.runActive ? 'pond-line is-shaking' : 'pond-line'}
+            d={linePath}
+            fill="none"
+            vectorEffect="non-scaling-stroke"
+            style={phase === 'reeling' ? { stroke: lineColour(tension), strokeWidth: `${(1.8 + tension * 1.4).toFixed(2)}px` } : undefined}
+          />
         </svg>
       ) : null}
 
@@ -419,12 +515,31 @@ export default function Water({
             />
           ) : null}
           {phase === 'bite' ? (
-            <span className="pond-bang" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100 - 11}%` }}>
-              !
+            <span className="pond-bang" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100 - 9}%` }}>
+              <b>!</b>
             </span>
           ) : null}
         </>
       ) : null}
+
+      {reduced
+        ? null
+        : petals.map((petal) => (
+            <span
+              key={`petal-${petal.id}`}
+              className="pond-petal"
+              style={
+                {
+                  left: `${petal.x * 100}%`,
+                  top: `${petal.y * 100}%`,
+                  width: `${petal.size * 100}%`,
+                  '--sway': `${petal.sway * 60}vw`,
+                  animationDuration: `${petal.duration}s`,
+                  animationDelay: `${petal.delay}s`,
+                } as CSSProperties
+              }
+            />
+          ))}
 
       {pop ? (
         <span key={pop.id} className="pond-pop" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100 - 7}%` }}>

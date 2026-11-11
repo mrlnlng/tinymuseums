@@ -2072,3 +2072,297 @@
 @media (max-height: 500px) {
   .pond-fishing.is-touch .pond-action { min-height: 50px; }
 }
+
+/* ---------- Fishing: a pond that moves ---------- */
+.pond-glint {
+  position: absolute;
+  aspect-ratio: 9 / 1;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 90%);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: pond-glint 5s ease-in-out infinite;
+}
+@keyframes pond-glint {
+  0%, 100% { opacity: 0; transform: translate(-85%, -50%) scaleX(0.35); }
+  50% { opacity: 0.8; transform: translate(-50%, -50%) scaleX(1); }
+  99% { transform: translate(-15%, -50%) scaleX(0.35); }
+}
+
+/* Fish under the surface read as fish: a soft blue silhouette that swims. */
+.pond-shadow { aspect-ratio: 30 / 18; border-radius: 0; background: none; filter: none; }
+.pond-shadow::after { display: none; }
+.pond-shadow::before,
+.pond-shadow.is-huge::before {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: rgb(18 78 118 / 40%);
+  filter: blur(2.2px);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M29 9c-3.4-5-8.2-7.5-13-7.5S8.6 4 6.8 6.8L1 2.5v13l5.8-4.3c1.8 2.8 4.4 5.3 9.2 5.3s9.6-2.5 13-7.5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M29 9c-3.4-5-8.2-7.5-13-7.5S8.6 4 6.8 6.8L1 2.5v13l5.8-4.3c1.8 2.8 4.4 5.3 9.2 5.3s9.6-2.5 13-7.5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  transform: none;
+  transform-origin: 72% 50%;
+  animation: pond-fish-swim 0.9s ease-in-out infinite alternate;
+  content: '';
+}
+.pond-shadow.is-target::before { background: rgb(12 54 92 / 56%); }
+.pond-shadow.is-hooked::before { animation-duration: 0.28s; }
+.pond-shadow.is-running::before { animation: pond-fish-thrash 0.13s linear infinite alternate; }
+@keyframes pond-fish-swim {
+  from { transform: skewY(-5deg); }
+  to { transform: skewY(5deg) scaleX(0.96); }
+}
+@keyframes pond-fish-thrash {
+  from { transform: rotate(-14deg) skewY(-8deg); }
+  to { transform: rotate(14deg) skewY(8deg); }
+}
+
+.pond-fishing .pond-bobber { width: clamp(18px, 1.9%, 32px); }
+
+/* The float sends out slow rings while it waits, and foam while a fish pulls. */
+.pond-ripples,
+.pond-churn {
+  position: absolute;
+  z-index: 6;
+  width: clamp(36px, 4.4%, 74px);
+  aspect-ratio: 2.6 / 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.pond-ripples i,
+.pond-churn i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgb(240 252 250 / 80%);
+  border-radius: 50%;
+  opacity: 0;
+  animation: pond-ripple-out 2.8s ease-out infinite;
+}
+.pond-ripples i + i { animation-delay: 1.4s; }
+.pond-churn { scale: calc(0.6 + var(--pull, 0.4) * 0.9); }
+.pond-churn i { border-width: 2.5px; border-color: #fff; animation-duration: 0.75s; }
+.pond-churn i:nth-child(2) { animation-delay: 0.25s; }
+.pond-churn i:nth-child(3) { animation-delay: 0.5s; }
+.pond-churn.is-run i { animation-duration: 0.36s; border-width: 3.5px; }
+@keyframes pond-ripple-out {
+  0% { opacity: 0; transform: scale(0.2); }
+  18% { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* A bite pulls the eye to the float: the garden dims round it and a badge stays up until the hook. */
+.pond-focus {
+  position: absolute;
+  z-index: 6;
+  width: 320%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 0 5.5%, rgb(10 36 30 / 16%) 14%, rgb(10 36 30 / 30%) 50%);
+  transform: translate(-50%, -50%);
+  animation: pond-focus-in 0.16s ease-out both;
+  pointer-events: none;
+}
+@keyframes pond-focus-in { from { opacity: 0; } to { opacity: 1; } }
+.pond-fishing .pond-bang,
+.pond-fishing.is-touch .pond-bang {
+  display: grid;
+  place-items: center;
+  width: clamp(46px, 4.4%, 66px);
+  aspect-ratio: 1;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: #ffd84d;
+  box-shadow: 0 4px 0 rgb(43 26 15 / 30%), 0 0 0 7px rgb(255 216 77 / 34%);
+  color: #b3261e;
+  font: 400 clamp(30px, 3.2vw, 44px) / 1 var(--font-button);
+  text-shadow: none;
+  animation: pond-bang-in 0.26s cubic-bezier(0.2, 1.7, 0.35, 1) both, pond-bang-wobble 0.24s 0.26s ease-in-out infinite alternate;
+}
+.pond-bang b { font-weight: 400; }
+@keyframes pond-bang-in {
+  from { opacity: 0; transform: translate(-50%, -20%) scale(0.3); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes pond-bang-wobble {
+  from { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
+  to { transform: translate(-50%, -56%) rotate(7deg) scale(1.08); }
+}
+
+/* Blossom drifts down from the trees. */
+.pond-petal {
+  position: absolute;
+  z-index: 6;
+  aspect-ratio: 1.5 / 1;
+  border-radius: 80% 20% 80% 20%;
+  background: #ffc9de;
+  box-shadow: inset -1px -1px 0 rgb(236 120 168 / 55%);
+  opacity: 0;
+  animation: pond-petal-fall 12s linear infinite;
+  pointer-events: none;
+}
+@keyframes pond-petal-fall {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0); }
+  8% { opacity: 0.95; }
+  50% { transform: translate(var(--sway, 4vw), 22vh) rotate(170deg); }
+  82% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(var(--sway, 4vw) * 0.3), 46vh) rotate(350deg); }
+}
+
+/* ---------- Fishing: gauges ---------- */
+.pond-fishing .pond-bottom { width: min(580px, calc(100% - 24px)); }
+.pond-fishing .pond-reel-meter { width: min(100%, 470px); padding: 9px 14px 11px; border-radius: 18px; }
+.pond-fishing .pond-reel-head { margin-bottom: 7px; font-size: 14.5px; }
+.pond-reel-track {
+  height: 26px;
+  background:
+    linear-gradient(90deg, #fffdf6 0 85%, transparent 85%),
+    repeating-linear-gradient(135deg, #ee8377 0 6px, #f7aca3 6px 12px);
+  box-shadow: inset 0 3px 0 rgb(43 26 15 / 8%);
+}
+.pond-reel-safe { background: linear-gradient(#b9e082, #8dc452); box-shadow: inset 0 3px 0 rgb(255 255 255 / 40%); }
+.pond-reel-marker {
+  top: 50%;
+  bottom: auto;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgb(43 26 15 / 22%);
+}
+.pond-reel-meter.is-danger .pond-reel-marker,
+.pond-reel-meter.is-run .pond-reel-marker { background: #ff8f80; }
+.pond-reel-meter.is-cast .pond-reel-gold { background: repeating-linear-gradient(135deg, #ffd666 0 6px, #f5c344 6px 12px); }
+.pond-cast-fill { position: absolute; top: 0; bottom: 0; left: 0; background: linear-gradient(90deg, #ffe3ea, #f79ab3); }
+.pond-reel-meter.is-cast .pond-reel-count { color: var(--ink-soft); }
+
+/* How much line is in: the fish rides the bar towards the bucket. */
+.pond-reel-haul { position: relative; height: 20px; margin: 9px 30px 0 6px; }
+.pond-reel-haul .pond-reel-progress { position: absolute; top: 7px; right: 0; left: 0; height: 6px; margin: 0; }
+.pond-reel-fish {
+  position: absolute;
+  top: 1px;
+  width: 28px;
+  height: 18px;
+  margin-left: -22px;
+  overflow: visible;
+  fill: #5fb4ea;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  transform-origin: 70% 50%;
+  animation: pond-fish-swim 0.3s ease-in-out infinite alternate;
+}
+.pond-reel-fish circle { fill: var(--ink); stroke: none; }
+.pond-reel-goal {
+  position: absolute;
+  top: -1px;
+  right: -28px;
+  width: 22px;
+  height: 20px;
+  overflow: visible;
+  fill: #dfeaf2;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* The one button: a little sheen, and it breathes while it waits for a cast. */
+.pond-fishing .pond-action-label { font-size: 22px; }
+.pond-action::before {
+  position: absolute;
+  inset: 0 0 52%;
+  background: linear-gradient(rgb(255 255 255 / 17%), transparent);
+  content: '';
+  pointer-events: none;
+}
+.pond-fishing.is-idle .pond-action { animation: pond-action-breathe 1.5s ease-in-out infinite alternate; }
+@keyframes pond-action-breathe {
+  from { box-shadow: inset 0 -5px 0 var(--pond-crimson-dark), 0 3px 0 rgb(43 26 15 / 22%), 0 0 0 0 rgb(194 34 82 / 0%); }
+  to { box-shadow: inset 0 -5px 0 var(--pond-crimson-dark), 0 3px 0 rgb(43 26 15 / 22%), 0 0 0 7px rgb(194 34 82 / 20%); }
+}
+
+/* ---------- Fishing: the catch card ---------- */
+.pond-reveal-card { width: min(100%, 404px); padding: 14px 18px 20px; }
+.pond-reveal-card-top { align-items: center; font-size: 11.5px; }
+.pond-reveal-tier { padding: 4px 11px; }
+.pond-reveal-fishwrap { z-index: 0; margin-top: 6px; }
+.pond-reveal-fish { width: min(84%, 290px); margin: 12px auto 6px; animation: pond-fish-float 2.6s ease-in-out 0.5s infinite alternate; }
+@keyframes pond-fish-float {
+  from { transform: translateY(2px) rotate(-1.5deg); }
+  to { transform: translateY(-4px) rotate(1.5deg); }
+}
+.pond-reveal-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: min(104%, 350px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--ray, rgb(244 205 120 / 38%)) 0deg 10deg, transparent 10deg 20deg);
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 18%, transparent 96%);
+  mask-image: radial-gradient(circle closest-side, #000 18%, transparent 96%);
+  translate: -50% -50%;
+  animation: pond-rays-spin 36s linear infinite, pond-rays-in 0.5s ease-out both;
+  pointer-events: none;
+}
+.pond-reveal-rays.is-uncommon { --ray: rgb(128 214 128 / 42%); }
+.pond-reveal-rays.is-rare { --ray: rgb(110 180 255 / 48%); }
+.pond-reveal-rays.is-legendary { --ray: rgb(255 200 60 / 62%); }
+@keyframes pond-rays-spin { to { rotate: 360deg; } }
+@keyframes pond-rays-in { from { opacity: 0; scale: 0.5; } to { opacity: 1; scale: 1; } }
+.pond-reveal-title,
+.pond-reveal-size,
+.pond-reveal-badges,
+.pond-reveal-pearls,
+.pond-reveal-breakdown,
+.pond-reveal-extra,
+.pond-reveal-room,
+.pond-reveal-guest,
+.pond-reveal-actions { position: relative; z-index: 1; }
+.pond-reveal-title h2 { font-size: clamp(27px, 7.5vw, 34px); }
+.pond-reveal-size { font-size: 15px; }
+.pond-reveal-badges { gap: 6px; margin-top: 8px; }
+.pond-badge { padding: 4px 10px; font-size: 11.5px; }
+.pond-badge.is-new { animation: pond-chip-bump 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.35s both; }
+.pond-reveal-pearls { margin-top: 12px; padding: 8px 18px 8px 12px; border: 2px solid #ead7ae; background: #fbf1d8; font-size: 16px; }
+.pond-reveal-pearls strong { font-size: 28px; }
+.pond-reveal-extra { margin-top: 8px; font-size: 13px; }
+.pond-reveal-breakdown { margin-top: 6px; font-size: 12px; }
+.pond-reveal-guest { margin: 8px 0 0; color: var(--ink-soft); font: 12px/1.35 var(--font-body); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-glint, .pond-shadow::before, .pond-ripples i, .pond-churn i, .pond-petal, .pond-reveal-rays, .pond-reveal-fish, .pond-reel-fish, .pond-fishing.is-idle .pond-action { animation: none; }
+  .pond-glint { opacity: 0.5; }
+  .pond-ripples i, .pond-churn i { opacity: 0.6; }
+  .pond-fishing .pond-bang { animation: none; }
+}
+.pond-fishing.is-still .pond-glint,
+.pond-fishing.is-still .pond-shadow::before,
+.pond-fishing.is-still .pond-ripples i,
+.pond-fishing.is-still .pond-churn i,
+.pond-fishing.is-still .pond-reel-fish,
+.pond-fishing.is-still.is-idle .pond-action,
+.pond-fishing.is-still .pond-bang,
+.pond-reveal.is-still .pond-reveal-rays,
+.pond-reveal.is-still .pond-reveal-fish { animation: none; }
+.pond-fishing.is-still .pond-glint { opacity: 0.5; }
+.pond-fishing.is-still .pond-ripples i, .pond-fishing.is-still .pond-churn i { opacity: 0.6; }
+
+/* On a phone the gauge carries the instruction, so the bar steps aside and the bank stays in view. */
+.pond-fishing.is-touch.is-reeling .pond-panel-bar,
+.pond-fishing.is-touch.is-landing .pond-panel-bar,
+.pond-fishing.is-touch.is-charging .pond-panel-bar { display: none; }
+.pond-fishing.is-touch.is-reeling .pond-panel-body,
+.pond-fishing.is-touch.is-landing .pond-panel-body,
+.pond-fishing.is-touch.is-charging .pond-panel-body { border-top: 2.5px solid var(--pond-wood-dark); border-radius: 16px; }
+.pond-fishing.is-touch .pond-reel-meter { padding: 8px 12px 9px; }
+.pond-fishing.is-touch .pond-reel-track { height: 26px; }
+.pond-reveal-title h2 { line-height: 1.3; }
+.pond-reveal-title + .pond-reveal-size { margin-top: 9px; }

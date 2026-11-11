@@ -6,6 +6,10 @@ import layout from '../../../../public/assets/pond/layout.json'
 /** The daytime garden, its aligned overlays, and crisp woodland extensions. */
 export interface PondArt {
   scene: THREE.Texture
+  /** The painted garden that continues the scene to its left. */
+  left: THREE.Texture
+  bridge: THREE.Texture
+  path: THREE.Texture
   lily: THREE.Texture
   sparkles: THREE.Texture
   landmarks: Record<string, THREE.Texture>
@@ -25,7 +29,7 @@ export const EDGE_BAND = 0.19
 export const EDGE_BANDS = 5
 export const EDGE_OVERLAP = 0.85
 
-function loadTexture(name: 'pond/scene' | 'pond/lily' | 'pond/sparkles', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
+function loadTexture(name: 'pond/scene' | 'pond/scene-left' | 'pond/bridge' | 'pond/stone-path' | 'pond/lily' | 'pond/sparkles', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
   return new THREE.TextureLoader()
     .loadAsync(assetUrl(name, { density: 3 }))
     .then((texture) => {
@@ -74,8 +78,9 @@ function colorAt(texture: THREE.Texture, v: number, fallback: string): string {
  * the forest gets the same varied, crisp plants as the clearing. The source assets
  * are only sampled, never edited. The inner overlap meets the original pixels.
  */
-function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: string): THREE.Texture {
+function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: string, neighbour: THREE.Texture = texture): THREE.Texture {
   const image = imageOf(texture)
+  const beside = imageOf(neighbour)
   const { width, height } = image ? sizeOf(image) : layout.scene
   const forestPx = Math.round(width * EDGE_BAND * EDGE_BANDS)
   const overlapPx = Math.round(width * EDGE_BAND * EDGE_OVERLAP)
@@ -114,9 +119,11 @@ function edgeTexture(texture: THREE.Texture, side: 'left' | 'right', fallback: s
     join.width = overlapPx
     join.height = height
     const seam = join.getContext('2d')
-    if (seam) {
-      const srcX = side === 'left' ? 0 : width - overlapPx
-      seam.drawImage(image, srcX, 0, overlapPx, height, 0, 0, overlapPx, height)
+    if (seam && beside) {
+      const besideSize = sizeOf(beside)
+      const srcWidth = overlapPx * (besideSize.height / height)
+      const srcX = side === 'left' ? 0 : besideSize.width - srcWidth
+      seam.drawImage(beside, srcX, 0, srcWidth, besideSize.height, 0, 0, overlapPx, height)
       seam.globalCompositeOperation = 'destination-in'
       const blend = seam.createLinearGradient(0, 0, overlapPx, 0)
       blend.addColorStop(0, side === 'left' ? 'transparent' : '#000')
@@ -150,6 +157,9 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     loadTexture('pond/scene', renderer),
     loadTexture('pond/lily', renderer),
     loadTexture('pond/sparkles', renderer),
+    loadTexture('pond/scene-left', renderer),
+    loadTexture('pond/bridge', renderer),
+    loadTexture('pond/stone-path', renderer),
     ...POND_LANDMARKS.map(async (landmark) => {
       const texture = await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image))
       texture.colorSpace = THREE.SRGBColorSpace
@@ -164,14 +174,17 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     throw failed.reason
   }
   const textures = results.map((result) => (result as PromiseFulfilledResult<THREE.Texture>).value)
-  const [scene, lily, sparkles] = textures
+  const [scene, lily, sparkles, left, bridge, path] = textures
   const grass = colorAt(scene, 0.995, FALLBACK_GRASS)
   return {
     scene,
+    left,
+    bridge,
+    path,
     lily,
     sparkles,
-    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 3]])),
-    edges: { left: edgeTexture(scene, 'left', grass), right: edgeTexture(scene, 'right', grass) },
+    landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 6]])),
+    edges: { left: edgeTexture(scene, 'left', grass, left), right: edgeTexture(scene, 'right', grass) },
     sky: colorAt(scene, 0.005, FALLBACK_SKY),
     grass,
   }
@@ -180,6 +193,9 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
 /** The art cache owns the textures; the room only borrows them. */
 export function disposePondArt(art: PondArt): void {
   art.scene.dispose()
+  art.left.dispose()
+  art.bridge.dispose()
+  art.path.dispose()
   art.lily.dispose()
   art.sparkles.dispose()
   art.edges.left.dispose()

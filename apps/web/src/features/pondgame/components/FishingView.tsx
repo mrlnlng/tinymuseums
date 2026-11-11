@@ -142,6 +142,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [streakLost, setStreakLost] = useState(false)
   const [tapCast, setTapCast] = useState(false)
   const [pop, setPop] = useState<{ id: number; text: string } | null>(null)
+  const [catches, setCatches] = useState(0)
 
   const stateRef = useRef(state)
   const narrowRef = useRef(false)
@@ -743,6 +744,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
 
   const dismissReveal = useCallback(() => {
     setReveal(null)
+    setCatches((count) => count + 1)
     resetToIdle()
     bumpStreakChip()
   }, [bumpStreakChip, resetToIdle])
@@ -894,6 +896,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
         reduced={reduced}
         narrow={narrow}
         pop={pop}
+        catches={catches}
       />
 
       <Hud

@@ -18,6 +18,15 @@ const GRIP: Record<CharacterKind, RigAttachment> = {
   bruce: { bone: 'arm_R', x: 1386, y: 1490, width: 1, rotation: 0 },
 }
 
+/** The fishing hat on each rig's head in its rest pose, in the same layer canvas. */
+const HAT: Record<CharacterKind, { x: number; y: number; width: number }> = {
+  bunny: { x: 218, y: 250, width: 1133 },
+  cat: { x: 218, y: 250, width: 1133 },
+  otter: { x: 218, y: 250, width: 1133 },
+  bruce: { x: 218, y: 250, width: 1133 },
+}
+const HAT_ASPECT = 1063 / 697
+
 export interface Box {
   left: number
   top: number
@@ -64,9 +73,15 @@ export default function Angler({ box, reduced, onPaw }: { box: Box; reduced: boo
     const motion = createRigState('right')
     const pose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
 
-    void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then((loaded) => {
+    void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then(async (loaded) => {
       if (disposed) { loaded.dispose(); return }
       loaded.setCostume(look.costume, look.bow)
+      // A costume keeps its own headwear; everyone else borrows the pond's hat.
+      if (!look.costume) {
+        const hat = HAT[look.kind]
+        await loaded.wear([{ bone: 'head', image: assetUrl('pond/fishing-hat', { density: 3 }), ...hat, height: hat.width / HAT_ASPECT, drawOrder: 12 }])
+        if (disposed) { loaded.dispose(); return }
+      }
       rig = loaded
       let last = performance.now()
       let reported = 0

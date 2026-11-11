@@ -2697,19 +2697,16 @@ form > .account-switch {
   position: absolute;
   z-index: 7;
   display: block;
-  width: clamp(10px, 1.05%, 17px);
-  aspect-ratio: 1;
-  border: 1.5px solid #3f2a22;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 34% 26%, rgb(255 255 255 / 90%) 0 14%, transparent 22%),
-    linear-gradient(to bottom, #e0443a 0 50%, #fff8ec 50% 100%);
-  box-shadow: 0 2px 0 rgb(20 60 90 / 30%);
-  transform: translate(-50%, -50%);
+  width: clamp(14px, 1.5%, 26px);
+  height: auto;
+  filter: drop-shadow(0 2px 0 rgb(20 60 90 / 30%));
+  /* The float sits in the water to just under its orange cap. */
+  transform: translate(-50%, -42%);
   pointer-events: none;
 }
+.pond-bobber.is-flying { transform: translate(-50%, -24%); }
 
-.pond-bobber.is-bite { transform: translate(-50%, -30%) scale(0.92, 0.8); }
+.pond-bobber.is-bite { transform: translate(-50%, -18%) scale(0.94, 0.86); }
 
 .pond-water {
   position: absolute;

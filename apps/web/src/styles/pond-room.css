@@ -1594,9 +1594,9 @@
 /* The original animated otter welcomes visitors beside the bait counter. */
 .pond-shopkeeper {
   position: absolute;
-  left: -25%;
+  left: -21%;
   bottom: -3.4%;
-  width: 50%;
+  width: 42%;
   height: auto;
   aspect-ratio: 1640 / 2180;
   pointer-events: auto;
@@ -1865,6 +1865,19 @@
 @media (min-aspect-ratio: 1 / 1) {
   .pond-fishing .pond-world { left: 15%; transform: translateX(-15%); }
 }
+/*
+ * Wide screens: the painting is drawn to the screen's height, never stretched to its width,
+ * so it stays as sharp as the characters. The extra garden on its left fills the rest.
+ */
+@media (min-aspect-ratio: 1 / 1) {
+  .pond-fishing .pond-world {
+    --pond-fit: max(62.4%, calc(100dvh * var(--pond-aspect, 1.480475)));
+    left: max(calc(100% - var(--pond-fit)), calc((100% - var(--pond-fit)) * 0.15));
+    width: var(--pond-fit);
+    transform: none;
+  }
+  .pond-fishing .pond-world::after { left: -61%; }
+}
 .pond-room-panel .pond-room-dex-count strong { color: var(--pond-teal-deep); }
 
 /* Standing at a spot, its float tugs as if something is down there. */
@@ -2031,3 +2044,31 @@
 .pond-reel-meter.is-cast.is-sweet { border-color: #c99528; box-shadow: 0 0 0 3px rgb(231 185 78 / 45%), 0 10px 24px rgb(0 0 0 / 26%); }
 .pond-reel-meter.is-cast.is-sweet .pond-reel-status { color: #9a6a08; }
 .pond-fishing.is-touch .pond-bang { font-size: 58px; }
+
+/* The painted layers and props all share the painting's own pixel scale. */
+.pond-scene-left { inset: 0 auto 0 auto; }
+.pond-bridge { position: absolute; z-index: 1; display: block; pointer-events: none; user-select: none; }
+.pond-rod-art { position: absolute; z-index: 4; display: block; height: auto; pointer-events: none; user-select: none; will-change: transform; }
+.pond-line { stroke: rgb(244 250 248 / 92%); stroke-width: 1.8px; }
+.pond-sign { position: absolute; z-index: 1; display: block; height: auto; pointer-events: none; user-select: none; transform-origin: 50% 0; animation: pond-sign-sway 7s ease-in-out infinite; }
+@keyframes pond-sign-sway { 0%, 100% { transform: rotate(-0.7deg); } 50% { transform: rotate(0.7deg); } }
+.pond-score { position: absolute; z-index: 1; pointer-events: none; user-select: none; container-type: inline-size; }
+.pond-score > img { display: block; width: 100%; height: auto; }
+.pond-score-count { position: absolute; top: 31%; left: 52%; transform: translate(-50%, -50%) rotate(5.9deg); color: #6b3a22; font: 400 34cqw/1 var(--font-script); }
+.pond-score-count.is-fresh { animation: pond-score-tick 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes pond-score-tick { 0% { transform: translate(-50%, -50%) rotate(5.9deg) scale(1.6); } 100% { transform: translate(-50%, -50%) rotate(5.9deg) scale(1); } }
+.pond-world.is-still .pond-sign, .pond-world.is-still .pond-score-count { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pond-sign, .pond-score-count.is-fresh { animation: none; } }
+.pond-bucket { position: absolute; z-index: 3; display: block; width: auto; transform: translateX(-50%); transform-origin: 50% 100%; filter: drop-shadow(0 3px 0 rgb(40 70 20 / 28%)); pointer-events: none; user-select: none; }
+.pond-bucket.is-fresh { animation: pond-bucket-hop 0.55s cubic-bezier(0.2, 1.5, 0.4, 1); }
+@keyframes pond-bucket-hop {
+  0% { transform: translateX(-50%) scale(1); }
+  30% { transform: translateX(-50%) translateY(-12%) scale(0.94, 1.08); }
+  62% { transform: translateX(-50%) scale(1.07, 0.92); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+.pond-fishing.is-still .pond-bucket.is-fresh { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pond-bucket.is-fresh { animation: none; } }
+@media (max-height: 500px) {
+  .pond-fishing.is-touch .pond-action { min-height: 50px; }
+}

@@ -27,25 +27,16 @@ interface Pose {
   bottom: number
   height: number
   rodLength: number
-  /** Line weight, so the rod's outline matches the bunny's at either size. */
-  ink: number
 }
 
 const POSE: Record<'wide' | 'narrow', Pose> = {
-  wide: { right: 0.207, bottom: 0.82, height: 0.3, rodLength: 640, ink: 1 },
+  wide: { right: 0.207, bottom: 0.82, height: 0.3, rodLength: 640 },
   // On the bank in front of the water's left lobe (the room's own feet line), far enough right to stay on a phone.
-  narrow: { right: 0.24, bottom: 0.895, height: 0.24, rodLength: 580, ink: 0.8 },
+  narrow: { right: 0.24, bottom: 0.895, height: 0.24, rodLength: 580 },
 }
 
 /** The water's outline, traced from the scene and inset, so shadows never swim onto the grass. */
 const WATER_CLIP = `polygon(${layout.water.map(([x, y]) => `${x * 100}% ${y * 100}%`).join(', ')})`
-
-const LILY_STYLE: CSSProperties = {
-  left: `${layout.lily.x * 100}%`,
-  top: `${layout.lily.y * 100}%`,
-  width: `${layout.lily.w * 100}%`,
-  height: `${layout.lily.h * 100}%`,
-}
 
 interface Point {
   x: number
@@ -77,90 +68,49 @@ function rodAngle(phase: FishingPhase, power: number, flight: number, tension: n
   return rest
 }
 
-function quad(a: Point, c: Point, b: Point, t: number): Point {
-  const u = 1 - t
-  return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y }
+/** The painted rod, measured in its own pixels: where the paw holds it and where the line leaves. */
+const ROD = layout.rod
+const ROD_GRIP = { x: ROD.grip.x * ROD.width, y: ROD.grip.y * ROD.height }
+const ROD_TIP = { x: ROD.tip.x * ROD.width, y: ROD.tip.y * ROD.height }
+const ROD_REACH = Math.hypot(ROD_TIP.x - ROD_GRIP.x, ROD_TIP.y - ROD_GRIP.y)
+/** The angle the rod is drawn at, in degrees above the horizon. */
+const ROD_DRAWN = (Math.atan2(ROD_GRIP.y - ROD_TIP.y, ROD_TIP.x - ROD_GRIP.x) * 180) / Math.PI
+
+function box(entry: { x: number; y: number; w: number; h: number }): CSSProperties {
+  return { left: `${entry.x * 100}%`, top: `${entry.y * 100}%`, width: `${entry.w * 100}%`, height: `${entry.h * 100}%` }
 }
 
-interface Rod {
-  outline: string
-  nodes: { a: Point; b: Point }[]
-  grip: string
-  reel: Point
-  tip: Point
+const LEFT_STYLE: CSSProperties = {
+  right: `${(1 - layout.left.overlap) * 100}%`,
+  width: `${layout.left.w * 100}%`,
 }
 
-/** A tapered bamboo rod: a bent centre line, widened from butt to tip and outlined like the bunny. */
-function buildRod(paw: Point, length: number, ink: number, angleDeg: number, bend: number, pull: Point | null): Rod {
-  const angle = (angleDeg * Math.PI) / 180
-  const dir = { x: Math.cos(angle), y: -Math.sin(angle) }
-  const butt = { x: paw.x - dir.x * length * 0.1, y: paw.y - dir.y * length * 0.1 }
-  let tip = { x: paw.x + dir.x * length, y: paw.y + dir.y * length }
-  if (pull) {
-    const dx = pull.x - tip.x
-    const dy = pull.y - tip.y
-    const d = Math.hypot(dx, dy) || 1
-    const give = length * 0.16 * bend
-    tip = { x: tip.x + (dx / d) * give, y: tip.y + (dy / d) * give }
-  }
-  const normal = { x: dir.y, y: -dir.x }
-  const sag = length * (0.035 + 0.09 * bend)
-  const control = {
-    x: butt.x + (tip.x - butt.x) * 0.55 - normal.x * sag,
-    y: butt.y + (tip.y - butt.y) * 0.55 - normal.y * sag,
-  }
-  const samples = 28
-  const left: Point[] = []
-  const right: Point[] = []
-  const widthAt = (t: number) => (t < 0.18 ? 26 : 24 - 17 * t) * ink
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples
-    const p = quad(butt, control, tip, t)
-    const q = quad(butt, control, tip, Math.min(1, t + 0.01))
-    const r = quad(butt, control, tip, Math.max(0, t - 0.01))
-    const tx = q.x - r.x
-    const ty = q.y - r.y
-    const tl = Math.hypot(tx, ty) || 1
-    const n = { x: -ty / tl, y: tx / tl }
-    const w = widthAt(t) / 2
-    left.push({ x: p.x + n.x * w, y: p.y + n.y * w })
-    right.push({ x: p.x - n.x * w, y: p.y - n.y * w })
-  }
-  const outline = `M ${left.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ')} L ${right
-    .reverse()
-    .map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(' L ')} Z`
-
-  const nodes = [0.34, 0.47, 0.6, 0.72, 0.84].map((t) => {
-    const p = quad(butt, control, tip, t)
-    const q = quad(butt, control, tip, t + 0.01)
-    const tl = Math.hypot(q.x - p.x, q.y - p.y) || 1
-    const n = { x: -(q.y - p.y) / tl, y: (q.x - p.x) / tl }
-    const w = widthAt(t) / 2 + 1
-    return { a: { x: p.x + n.x * w, y: p.y + n.y * w }, b: { x: p.x - n.x * w, y: p.y - n.y * w } }
-  })
-
-  const gripPoints: Point[] = []
-  const gripBack: Point[] = []
-  for (let i = 0; i <= 6; i++) {
-    const t = (i / 6) * 0.2
-    const p = quad(butt, control, tip, t)
-    const q = quad(butt, control, tip, t + 0.01)
-    const tl = Math.hypot(q.x - p.x, q.y - p.y) || 1
-    const n = { x: -(q.y - p.y) / tl, y: (q.x - p.x) / tl }
-    const w = (34 * ink) / 2
-    gripPoints.push({ x: p.x + n.x * w, y: p.y + n.y * w })
-    gripBack.push({ x: p.x - n.x * w, y: p.y - n.y * w })
-  }
-  const grip = `M ${gripPoints.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ')} L ${gripBack
-    .reverse()
-    .map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(' L ')} Z`
-
-  const reelAt = quad(butt, control, tip, 0.25)
-  const reel = { x: reelAt.x - normal.x * 34 * ink, y: reelAt.y - normal.y * 34 * ink }
-  return { outline, nodes, grip, reel, tip }
+/** Where the catch bucket stands on the bank: its foot, and its height, as fractions of the world. */
+const BUCKET: Record<'wide' | 'narrow', { x: number; bottom: number; height: number }> = {
+  wide: { x: 0.855, bottom: 0.875, height: 0.11 },
+  narrow: { x: 0.345, bottom: 0.955, height: 0.085 },
 }
+const BUCKET_ASPECT = 777 / 774
+
+const SIGN_ASPECT = 1366 / 1156
+const SCORE_ASPECT = 922 / 1070
+/** The pond's name hangs over the bridge, and the day's tally is staked beside it. */
+const SIGN_WIDTH = 0.17
+const SIGN_STYLE: CSSProperties = {
+  left: `${(layout.bridge.x + layout.bridge.w / 2 - SIGN_WIDTH / 2) * 100}%`,
+  bottom: `${(1 - layout.bridge.y + 0.012) * 100}%`,
+  width: `${SIGN_WIDTH * 100}%`,
+  aspectRatio: SIGN_ASPECT,
+}
+const SCORE_STYLE: CSSProperties = {
+  left: `${(layout.bridge.x + layout.bridge.w + 0.004) * 100}%`,
+  bottom: `${(1 - layout.bridge.y - layout.bridge.h - 0.012) * 100}%`,
+  width: '8.6%',
+  aspectRatio: SCORE_ASPECT,
+}
+/** A phone sees only the left of the painting, so both signs move in beside the angler. */
+const SIGN_STYLE_NARROW: CSSProperties = { ...SIGN_STYLE, left: '22.5%' }
+const SCORE_STYLE_NARROW: CSSProperties = { ...SCORE_STYLE, left: '23%', bottom: '54.5%' }
 
 interface Splash {
   id: number
@@ -216,6 +166,8 @@ export interface WaterProps {
   reduced: boolean
   narrow: boolean
   pop: { id: number; text: string } | null
+  /** Fish landed this visit; the bucket hops when it goes up. */
+  catches: number
 }
 
 export default function Water({
@@ -231,9 +183,11 @@ export default function Water({
   reduced,
   narrow,
   pop,
+  catches,
 }: WaterProps) {
   const pose = POSE[narrow ? 'narrow' : 'wide']
-  const box = bunnyBox(pose)
+  const bunny = bunnyBox(pose)
+  const bucket = BUCKET[narrow ? 'narrow' : 'wide']
   const [rigPaw, setRigPaw] = useState<{ x: number; y: number } | null | undefined>(undefined)
   const paw = rigPaw ? { x: rigPaw.x * STAGE.width, y: rigPaw.y * STAGE.height } : pawPoint(pose)
 
@@ -262,8 +216,19 @@ export default function Water({
   const still = reduced
 
   const rest: FishPoint = { x: landing.x - progress * 0.2, y: landing.y + progress * 0.012 }
-  const rod = buildRod(paw, pose.rodLength, pose.ink, rodAngle(phase, power, flight, tension), phase === 'reeling' ? tension : 0, phase === 'reeling' ? { x: rest.x * STAGE.width, y: rest.y * STAGE.height } : null)
-  const tip = { x: rod.tip.x / STAGE.width, y: rod.tip.y / STAGE.height }
+  const lean = rodAngle(phase, power, flight, tension)
+  const leanRad = (lean * Math.PI) / 180
+  const rodTip = { x: paw.x + Math.cos(leanRad) * pose.rodLength, y: paw.y - Math.sin(leanRad) * pose.rodLength }
+  const rodScale = pose.rodLength / ROD_REACH
+  const rodStyle: CSSProperties = {
+    left: `${((paw.x - ROD_GRIP.x * rodScale) / STAGE.width) * 100}%`,
+    top: `${((paw.y - ROD_GRIP.y * rodScale) / STAGE.height) * 100}%`,
+    width: `${((ROD.width * rodScale) / STAGE.width) * 100}%`,
+    transformOrigin: `${ROD.grip.x * 100}% ${ROD.grip.y * 100}%`,
+    transform: `rotate(${(ROD_DRAWN - lean).toFixed(2)}deg)`,
+    visibility: rigPaw === undefined ? 'hidden' : undefined,
+  }
+  const tip = { x: rodTip.x / STAGE.width, y: rodTip.y / STAGE.height }
 
   let bobber: FishPoint = rest
   if (phase === 'flying') {
@@ -282,13 +247,13 @@ export default function Water({
     phase === 'flying' || phase === 'waiting' || phase === 'bite' || phase === 'reeling' || phase === 'landing'
 
   const lineEnd = { x: bobber.x * STAGE.width, y: bobber.y * STAGE.height }
-  const span = Math.hypot(lineEnd.x - rod.tip.x, lineEnd.y - rod.tip.y)
+  const span = Math.hypot(lineEnd.x - rodTip.x, lineEnd.y - rodTip.y)
   const slack = phase === 'flying' ? 0.14 : phase === 'reeling' ? 0.06 * (1 - tension) : phase === 'bite' ? 0.02 : 0.07
   const lineControl = {
-    x: (rod.tip.x + lineEnd.x) / 2,
-    y: (rod.tip.y + lineEnd.y) / 2 + span * slack,
+    x: (rodTip.x + lineEnd.x) / 2,
+    y: (rodTip.y + lineEnd.y) / 2 + span * slack,
   }
-  const linePath = `M ${rod.tip.x.toFixed(1)} ${rod.tip.y.toFixed(1)} Q ${lineControl.x.toFixed(1)} ${lineControl.y.toFixed(1)} ${lineEnd.x.toFixed(1)} ${lineEnd.y.toFixed(1)}`
+  const linePath = `M ${rodTip.x.toFixed(1)} ${rodTip.y.toFixed(1)} Q ${lineControl.x.toFixed(1)} ${lineControl.y.toFixed(1)} ${lineEnd.x.toFixed(1)} ${lineEnd.y.toFixed(1)}`
 
   const [splashes, setSplashes] = useState<Splash[]>([])
   const splashId = useRef(0)
@@ -328,9 +293,15 @@ export default function Water({
 
   return (
     <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
+      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: 3 })} alt="" style={LEFT_STYLE} draggable={false} />}
       <img className="pond-scene" src={assetUrl('pond/scene', { density: 3 })} alt="" draggable={false} />
-      <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: 3 })} alt="" draggable={false}
-        style={{ left: `${layout.sparkles.x * 100}%`, top: `${layout.sparkles.y * 100}%`, width: `${layout.sparkles.w * 100}%`, height: `${layout.sparkles.h * 100}%` }} />
+      <img className="pond-bridge" src={assetUrl('pond/bridge', { density: 3 })} alt="" style={box(layout.bridge)} draggable={false} />
+      <img className="pond-sign" src={assetUrl('pond/pond-sign', { density: 3 })} alt="" style={narrow ? SIGN_STYLE_NARROW : SIGN_STYLE} draggable={false} />
+      <div className="pond-score" style={narrow ? SCORE_STYLE_NARROW : SCORE_STYLE}>
+        <img src={assetUrl('pond/score-sign', { density: 3 })} alt="" draggable={false} />
+        <span key={catches} className={catches > 0 ? 'pond-score-count is-fresh' : 'pond-score-count'}>{catches}</span>
+      </div>
+      <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: 3 })} alt="" style={box(layout.sparkles)} draggable={false} />
 
       <div className="pond-water" style={{ clipPath: WATER_CLIP }}>
         {ambient.map((entry) => (
@@ -371,7 +342,7 @@ export default function Water({
         ) : null}
       </div>
 
-      <img className="pond-lily" src={assetUrl('pond/lily', { density: 3 })} alt="" style={LILY_STYLE} draggable={false} />
+      <img className="pond-lily" src={assetUrl('pond/lily', { density: 3 })} alt="" style={box(layout.lily)} draggable={false} />
 
       {splashes.map((splash) => {
         const scale = SPLASH_SCALE[splash.kind]
@@ -408,56 +379,37 @@ export default function Water({
 
       {chest ? <span className="pond-chest-fly" /> : null}
 
-      <svg className="pond-rod" style={{ visibility: rigPaw === undefined ? 'hidden' : undefined }} viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="pond-bamboo" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#e0b077" />
-            <stop offset="0.55" stopColor="#c48a52" />
-            <stop offset="1" stopColor="#9a6538" />
-          </linearGradient>
-        </defs>
-        <path d={rod.outline} fill="url(#pond-bamboo)" stroke="#3f2a22" strokeWidth={7 * pose.ink} strokeLinejoin="round" />
-        {rod.nodes.map((node, index) => (
-          <line
-            key={index}
-            x1={node.a.x}
-            y1={node.a.y}
-            x2={node.b.x}
-            y2={node.b.y}
-            stroke="#6e4527"
-            strokeWidth={6 * pose.ink}
-            strokeLinecap="round"
-          />
-        ))}
-        <path d={rod.grip} fill="#dcb47d" stroke="#3f2a22" strokeWidth={7 * pose.ink} strokeLinejoin="round" />
-        <g transform={`translate(${rod.reel.x} ${rod.reel.y}) scale(${pose.ink * 1.35})`}>
-          <line x1="0" y1="-14" x2="0" y2="0" stroke="#3f2a22" strokeWidth="6" strokeLinecap="round" />
-          <circle r="17" fill="#f2ebdf" stroke="#3f2a22" strokeWidth="5" />
-          <circle r="6" fill="#c9bba3" stroke="#3f2a22" strokeWidth="3" />
-          <line
-            x1="0"
-            y1="0"
-            x2="15"
-            y2="12"
-            stroke="#3f2a22"
-            strokeWidth="5"
-            strokeLinecap="round"
-            transform={phase === 'reeling' && reel?.holding && !still ? `rotate(${(time * 720) % 360})` : undefined}
-          />
-        </g>
-        <circle cx={rod.tip.x} cy={rod.tip.y} r={6 * pose.ink} fill="#3f2a22" />
-        {showBobber ? (
-          <path className={reel?.runActive ? 'pond-line is-shaking' : 'pond-line'} d={linePath} fill="none" vectorEffect="non-scaling-stroke" />
-        ) : null}
-      </svg>
+      <img
+        key={`bucket-${catches}`}
+        className={catches > 0 ? 'pond-bucket is-fresh' : 'pond-bucket'}
+        src={assetUrl('pond/bucket', { density: 3 })}
+        alt=""
+        style={{
+          left: `${bucket.x * 100}%`,
+          top: `${(bucket.bottom - bucket.height) * 100}%`,
+          height: `${bucket.height * 100}%`,
+          aspectRatio: BUCKET_ASPECT,
+        }}
+        draggable={false}
+      />
 
-      <Angler box={box} reduced={reduced} onPaw={setRigPaw} />
+      <img className="pond-rod-art" src={assetUrl('pond/rod', { density: 3 })} alt="" style={rodStyle} draggable={false} />
+      {showBobber ? (
+        <svg className="pond-rod" viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className={reel?.runActive ? 'pond-line is-shaking' : 'pond-line'} d={linePath} fill="none" vectorEffect="non-scaling-stroke" />
+        </svg>
+      ) : null}
+
+      <Angler box={bunny} reduced={reduced} onPaw={setRigPaw} />
 
       {showBobber ? (
         <>
-          <span
-            className={phase === 'bite' ? 'pond-bobber is-bite' : 'pond-bobber'}
+          <img
+            className={phase === 'bite' ? 'pond-bobber is-bite' : phase === 'flying' ? 'pond-bobber is-flying' : 'pond-bobber'}
+            src={assetUrl(phase === 'flying' ? 'pond/float-hook' : 'pond/float', { density: 3 })}
+            alt=""
             style={{ left: `${bobber.x * 100}%`, top: `${bobber.y * 100}%` }}
+            draggable={false}
           />
           {nibbleActive || phase === 'bite' ? (
             <span

@@ -11,7 +11,6 @@ import layout from '../../../../public/assets/pond/layout.json'
 import { FOREST_GATE, POND_LANDMARKS, type PondLandmark } from './landmarks'
 import { FAR_LIFT, depthAtLift, liftAt, pathX, scaleAt } from './depth'
 import { MAX_DEPTH, Walker, depthOf, pondFloor, toFloor } from './walk'
-import { pathSprite } from './paths'
 import { createShopkeeper } from './shopkeeper'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
@@ -35,6 +34,9 @@ const yAt = (fractionFromTop: number) => IMAGE_BOTTOM_Y + (1 - fractionFromTop) 
 
 const EDGE_WIDTH = SCENE_WIDTH * EDGE_BAND * (EDGE_BANDS + EDGE_OVERLAP)
 const EDGE_REACH = SCENE_WIDTH * EDGE_BAND * EDGE_OVERLAP
+/** The painted garden left of the original frame: its width, and the world x where it begins. */
+const LEFT_WIDTH = layout.left.w * SCENE_WIDTH
+const LEFT_X = -(layout.left.w - layout.left.overlap) * SCENE_WIDTH
 
 const MIN_X = FOREST_GATE.x
 // End the bank just beyond the journal's path, instead of continuing into empty woodland.
@@ -45,6 +47,8 @@ const ARRIVE_X = FOREST_GATE.arrivalX
 const EXIT_REACH = FOREST_GATE.reach
 const SPOT_REACH = 0.65
 const PATH_REACH = 0.6
+/** How far the painted path runs past the bank toward the viewer. */
+const PATH_NEAR = 0.35
 /** How deep the visitor stands to use a prop, just short of the treeline it stands on. */
 const STAND_DEPTH = 0.86
 /** Below this the visitor is on the bank, where the fishing spots and the gate are. */
@@ -156,8 +160,8 @@ function groundFill(grass: string, reach: number): THREE.Texture {
     const shade = context.createLinearGradient(0, 0, canvas.width, 0)
     const forestEnd = SCENE_WIDTH * EDGE_BAND * EDGE_BANDS
     shade.addColorStop(0, 'rgba(32, 69, 35, 1)')
-    shade.addColorStop(at(-forestEnd), 'rgba(32, 69, 35, 1)')
-    shade.addColorStop(at(-forestEnd * 0.6), 'rgba(32, 69, 35, 0)')
+    shade.addColorStop(at(LEFT_X - forestEnd), 'rgba(32, 69, 35, 1)')
+    shade.addColorStop(at(LEFT_X - forestEnd * 0.6), 'rgba(32, 69, 35, 0)')
     shade.addColorStop(at(SCENE_WIDTH + forestEnd * 0.6), 'rgba(32, 69, 35, 0)')
     shade.addColorStop(at(SCENE_WIDTH + forestEnd), 'rgba(32, 69, 35, 1)')
     shade.addColorStop(1, 'rgba(32, 69, 35, 1)')
@@ -217,10 +221,10 @@ export function createPondRoom({
         z: -0.98,
       })
       add({
-        width: SCENE_WIDTH,
+        width: SCENE_WIDTH - LEFT_X,
         height: 24,
         material: new THREE.MeshBasicMaterial({ color: art.sky }),
-        x: SCENE_WIDTH / 2,
+        x: (SCENE_WIDTH + LEFT_X) / 2,
         y: IMAGE_BOTTOM_Y + SCENE_HEIGHT + 12,
         z: -0.95,
       })
@@ -241,10 +245,26 @@ export function createPondRoom({
         z: -0.6,
       })
       add({
+        width: LEFT_WIDTH,
+        height: SCENE_HEIGHT,
+        material: new THREE.MeshBasicMaterial({ map: art.left }),
+        x: LEFT_X + LEFT_WIDTH / 2,
+        y: IMAGE_CENTER_Y,
+        z: -0.61,
+      })
+      add({
+        width: layout.bridge.w * SCENE_WIDTH,
+        height: layout.bridge.h * SCENE_HEIGHT,
+        material: new THREE.MeshBasicMaterial({ map: art.bridge, transparent: true, depthWrite: false }),
+        x: (layout.bridge.x + layout.bridge.w / 2) * SCENE_WIDTH,
+        y: yAt(layout.bridge.y + layout.bridge.h / 2),
+        z: -0.5,
+      })
+      add({
         width: EDGE_WIDTH,
         height: SCENE_HEIGHT,
         material: new THREE.MeshBasicMaterial({ map: art.edges.left, transparent: true, depthWrite: false }),
-        x: EDGE_REACH - EDGE_WIDTH / 2,
+        x: LEFT_X + EDGE_REACH - EDGE_WIDTH / 2,
         y: IMAGE_CENTER_Y,
         z: -0.55,
       })
@@ -274,16 +294,24 @@ export function createPondRoom({
         y: yAt(layout.sparkles.y + layout.sparkles.h / 2),
         z: -0.34,
       })
+      // One painted stepping-stone path, laid from each bank foot to its prop and flipped to lead the right way.
+      const stones = layout.path.centre
+      const run = stones[stones.length - 1] - stones[0]
       for (const landmark of POND_LANDMARKS) {
         if (!landmark.path) continue
-        const sprite = pathSprite(landmark.path, art.grass)
-        pathTextures.push(sprite.texture)
+        const { foot, end } = landmark.path
+        const width = Math.abs(end - foot) / run
+        const height = FAR_LIFT + PATH_NEAR
+        const flip = end < foot ? -1 : 1
+        const map = art.path.clone()
+        if (flip < 0) { map.repeat.x = -1; map.offset.x = 1 }
+        pathTextures.push(map)
         add({
-          width: sprite.width,
-          height: sprite.height,
-          material: new THREE.MeshBasicMaterial({ map: sprite.texture, transparent: true, depthWrite: false }),
-          x: sprite.x,
-          y: GROUND_Y + sprite.lift,
+          width,
+          height,
+          material: new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false }),
+          x: foot + flip * (0.5 - stones[0]) * width,
+          y: GROUND_Y - PATH_NEAR + height / 2,
           z: -0.3,
         })
       }

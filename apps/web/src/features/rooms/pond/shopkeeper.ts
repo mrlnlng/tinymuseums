@@ -7,8 +7,8 @@ export const SHOPKEEPER_NAME = 'Marlow'
 /** Painted for the otter rig's rest pose, so the hat follows the head and the apron the chest. */
 const OUTFIT: readonly RigPiece[] = [
   { bone: 'chest', image: assetUrl('pond/shopkeeper-apron'), x: 630, y: 1249, width: 623, height: 655, drawOrder: 3.1 },
-  { bone: 'arm_R', image: assetUrl('pond/shopkeeper-rod'), x: 1357, y: 358, width: 206, height: 1273, drawOrder: 3.9 },
-  { bone: 'head', image: assetUrl('pond/shopkeeper-hat'), x: 218, y: 214, width: 1133, height: 804, drawOrder: 12, hides: ['otter_star'] },
+  { bone: 'arm_R', image: assetUrl('pond/rod-upright', { density: 3 }), x: 1300, y: 290, width: 283, height: 1340, drawOrder: 3.9 },
+  { bone: 'head', image: assetUrl('pond/fishing-hat', { density: 3 }), x: 218, y: 250, width: 1133, height: 743, drawOrder: 12, hides: ['otter_star'] },
 ]
 
 /** Marlow's coat, as a hue in degrees and multipliers on the otter's own saturation and lightness. */

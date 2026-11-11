@@ -500,12 +500,12 @@
       "x2": {
         "w": 392,
         "h": 243,
-        "src": "pond-lily@2x.de79eb2357.webp"
+        "src": "pond-lily@2x.924efbb706.webp"
       },
       "x3": {
         "w": 587,
         "h": 364,
-        "src": "pond-lily@3x.560da4b882.webp"
+        "src": "pond-lily@3x.863d4faebc.webp"
       }
     },
     "pond/scene": {
@@ -514,26 +514,26 @@
       "x2": {
         "w": 1997,
         "h": 1349,
-        "src": "pond-scene@2x.35a36e38ff.webp"
+        "src": "pond-scene@2x.34f89fae1d.webp"
       },
       "x3": {
         "w": 2995,
         "h": 2023,
-        "src": "pond-scene@3x.80494669eb.webp"
+        "src": "pond-scene@3x.c56b95f73e.webp"
       }
     },
     "pond/splash": {
-      "w": 280,
-      "h": 219,
+      "w": 278,
+      "h": 218,
       "x2": {
-        "w": 187,
-        "h": 146,
-        "src": "pond-splash@2x.e0e93002cb.webp"
+        "w": 185,
+        "h": 145,
+        "src": "pond-splash@2x.f20b6bc492.webp"
       },
       "x3": {
-        "w": 280,
-        "h": 219,
-        "src": "pond-splash@3x.cb6106d607.webp"
+        "w": 278,
+        "h": 218,
+        "src": "pond-splash@3x.e18997f786.webp"
       }
     },
     "pond/forest-door": {
@@ -600,17 +600,199 @@
       }
     },
     "pond/sparkles": {
-      "w": 2214,
-      "h": 532,
+      "w": 2213,
+      "h": 531,
       "x2": {
-        "w": 1477,
-        "h": 355,
-        "src": "pond-sparkles@2x.c7ff9dd8d1.webp"
+        "w": 1475,
+        "h": 354,
+        "src": "pond-sparkles@2x.4c10647874.webp"
       },
       "x3": {
-        "w": 2214,
-        "h": 532,
-        "src": "pond-sparkles@3x.1733b617e3.webp"
+        "w": 2213,
+        "h": 531,
+        "src": "pond-sparkles@3x.cd1164e7da.webp"
+      }
+    },
+    "pond/scene-left": {
+      "w": 1817,
+      "h": 2023,
+      "x2": {
+        "w": 1212,
+        "h": 1349,
+        "src": "pond-scene-left@2x.5af353b81e.webp"
+      },
+      "x3": {
+        "w": 1817,
+        "h": 2023,
+        "src": "pond-scene-left@3x.6fc5e6c88c.webp"
+      }
+    },
+    "pond/bridge": {
+      "w": 1159,
+      "h": 514,
+      "x2": {
+        "w": 773,
+        "h": 343,
+        "src": "pond-bridge@2x.95727ae230.webp"
+      },
+      "x3": {
+        "w": 1159,
+        "h": 514,
+        "src": "pond-bridge@3x.05a9a56b05.webp"
+      }
+    },
+    "pond/rod": {
+      "w": 1510,
+      "h": 862,
+      "x2": {
+        "w": 1007,
+        "h": 575,
+        "src": "pond-rod@2x.bec1a82cbe.webp"
+      },
+      "x3": {
+        "w": 1510,
+        "h": 862,
+        "src": "pond-rod@3x.b886f90f1b.webp"
+      }
+    },
+    "pond/float": {
+      "w": 86,
+      "h": 154,
+      "x2": {
+        "w": 58,
+        "h": 103,
+        "src": "pond-float@2x.bb7db01f85.webp"
+      },
+      "x3": {
+        "w": 86,
+        "h": 154,
+        "src": "pond-float@3x.e5bf57c495.webp"
+      }
+    },
+    "pond/float-hook": {
+      "w": 98,
+      "h": 270,
+      "x2": {
+        "w": 65,
+        "h": 180,
+        "src": "pond-float-hook@2x.8bd1fbd58c.webp"
+      },
+      "x3": {
+        "w": 98,
+        "h": 270,
+        "src": "pond-float-hook@3x.96eb5a1cbb.webp"
+      }
+    },
+    "pond/bucket": {
+      "w": 777,
+      "h": 774,
+      "x2": {
+        "w": 518,
+        "h": 516,
+        "src": "pond-bucket@2x.216dc28b6a.webp"
+      },
+      "x3": {
+        "w": 777,
+        "h": 774,
+        "src": "pond-bucket@3x.c5befa956a.webp"
+      }
+    },
+    "pond/bait-shop": {
+      "w": 1747,
+      "h": 1388,
+      "x2": {
+        "w": 1164,
+        "h": 925,
+        "src": "pond-bait-shop@2x.05fcfede48.webp"
+      },
+      "x3": {
+        "w": 1747,
+        "h": 1388,
+        "src": "pond-bait-shop@3x.9395ba63b0.webp"
+      }
+    },
+    "pond/notice-sign": {
+      "w": 1304,
+      "h": 1266,
+      "x2": {
+        "w": 869,
+        "h": 844,
+        "src": "pond-notice-sign@2x.e0e64a25c9.webp"
+      },
+      "x3": {
+        "w": 1304,
+        "h": 1266,
+        "src": "pond-notice-sign@3x.5c306836cd.webp"
+      }
+    },
+    "pond/pond-sign": {
+      "w": 1366,
+      "h": 1156,
+      "x2": {
+        "w": 911,
+        "h": 771,
+        "src": "pond-pond-sign@2x.f7c611e304.webp"
+      },
+      "x3": {
+        "w": 1366,
+        "h": 1156,
+        "src": "pond-pond-sign@3x.22b970dd7f.webp"
+      }
+    },
+    "pond/score-sign": {
+      "w": 922,
+      "h": 1070,
+      "x2": {
+        "w": 614,
+        "h": 713,
+        "src": "pond-score-sign@2x.3bd146d52b.webp"
+      },
+      "x3": {
+        "w": 922,
+        "h": 1070,
+        "src": "pond-score-sign@3x.c93ecd5eb4.webp"
+      }
+    },
+    "pond/fishing-hat": {
+      "w": 1063,
+      "h": 697,
+      "x2": {
+        "w": 709,
+        "h": 465,
+        "src": "pond-fishing-hat@2x.256c479384.webp"
+      },
+      "x3": {
+        "w": 1063,
+        "h": 697,
+        "src": "pond-fishing-hat@3x.08e442f976.webp"
+      }
+    },
+    "pond/rod-upright": {
+      "w": 360,
+      "h": 1705,
+      "x2": {
+        "w": 240,
+        "h": 1137,
+        "src": "pond-rod-upright@2x.da6c91ac7e.webp"
+      },
+      "x3": {
+        "w": 360,
+        "h": 1705,
+        "src": "pond-rod-upright@3x.0552a2b5e7.webp"
+      }
+    },
+    "pond/stone-path": {
+      "w": 2381,
+      "h": 1691,
+      "x2": {
+        "w": 1587,
+        "h": 1127,
+        "src": "pond-stone-path@2x.6957717ca9.webp"
+      },
+      "x3": {
+        "w": 2381,
+        "h": 1691,
+        "src": "pond-stone-path@3x.bc88e1f6fe.webp"
       }
     }
   },

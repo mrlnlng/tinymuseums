@@ -267,9 +267,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/page.tsx": {
-    "mtime": 1794431065.660977,
-    "seen": 1794431188.5648236,
-    "ast_hash": "9bdc64a6ebbeebb26f2fb28165a71a41",
+    "mtime": 1794433049.150539,
+    "seen": 1794433263.2487004,
+    "ast_hash": "ad7443bcc49deabf874f3ac8f327072a",
     "semantic_hash": ""
   },
   "apps/web/src/app/q/[token]/route.ts": {
@@ -543,9 +543,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/backdrop.ts": {
-    "mtime": 1794429176.913538,
-    "seen": 1794429411.005082,
-    "ast_hash": "6f8057d7c87e45cdc4da96e8f42b19dc",
+    "mtime": 1794435227.68531,
+    "seen": 1794435356.583882,
+    "ast_hash": "8b00bfeb86416c9c603402546872f1b5",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/board.ts": {
@@ -591,9 +591,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1794429165.354444,
-    "seen": 1794429411.0050886,
-    "ast_hash": "efc2888b229a826daf380d3efb0176b0",
+    "mtime": 1794435227.684025,
+    "seen": 1794435356.5838897,
+    "ast_hash": "8de646a6881864bd4e2b71fc0571c906",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -873,9 +873,9 @@
     "semantic_hash": "796873e0bfdac77202e9e5f54c3f82f8"
   },
   "apps/web/src/generated/asset-manifest.json": {
-    "mtime": 1794428505.897026,
-    "seen": 1794429411.0052106,
-    "ast_hash": "1b70329a62a42a67208c3232f753b268",
+    "mtime": 1794433024.9858923,
+    "seen": 1794433263.2488866,
+    "ast_hash": "68236c482ebb41c8edfcf6367f5bcd98",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AssetImage.tsx": {
@@ -1653,9 +1653,9 @@
     "semantic_hash": ""
   },
   "apps/web/public/assets/README.md": {
-    "mtime": 1794386574.2128792,
-    "seen": 1794386635.1530297,
-    "ast_hash": "fe2f230986dddeb34b6f1464777682f9",
+    "mtime": 1794433019.50413,
+    "seen": 1794433263.2490158,
+    "ast_hash": "166bbbcbf325ca48819244753e4ab441",
     "semantic_hash": ""
   },
   "apps/web/public/audio/README.md": {
@@ -5493,15 +5493,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/ambience.ts": {
-    "mtime": 1794429170.099252,
-    "seen": 1794429411.0050766,
-    "ast_hash": "26bf8ff26e99e4bac3353807c550b755",
+    "mtime": 1794435227.6862206,
+    "seen": 1794435356.583876,
+    "ast_hash": "7eb446adf09e4af8417899174a21f45d",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/shadow.ts": {
-    "mtime": 1794384397.5971963,
-    "seen": 1794385477.4163344,
-    "ast_hash": "478a23251b1dd535d6a75029ea462a30",
+    "mtime": 1794435227.6829338,
+    "seen": 1794435356.5839136,
+    "ast_hash": "0d99222b8d5141f50424f45986c3de3c",
     "semantic_hash": ""
   },
   "apps/web/src/features/landing/LandingAccount.tsx": {
@@ -5511,39 +5511,69 @@
     "semantic_hash": ""
   },
   "apps/web/tooling/import-landing-assets.mjs": {
-    "mtime": 1794386171.3399806,
-    "seen": 1794386635.1529324,
-    "ast_hash": "e4bc669bbfc4e8fddd316b608fa574ef",
+    "mtime": 1794433019.5040205,
+    "seen": 1794433263.2489178,
+    "ast_hash": "d772ed9cece40de26ee38a3558fc3a19",
     "semantic_hash": ""
   },
   "apps/web/public/assets/landing/book.png": {
-    "mtime": 1794386171.4703345,
-    "seen": 1794386635.1531358,
+    "mtime": 1794433019.6387444,
+    "seen": 1794433263.249128,
     "ast_hash": "b4fda363e1ce4599aa39e9c429a7cb3e",
     "semantic_hash": ""
   },
   "apps/web/public/assets/landing/cat.png": {
-    "mtime": 1794386172.0803518,
-    "seen": 1794386635.1531367,
+    "mtime": 1794433020.2607617,
+    "seen": 1794433263.24913,
     "ast_hash": "d9e767b17c1fc0133f1ff199548df9db",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/landing-book@2x.68a31a4188.webp": {
-    "mtime": 1794386172.0733516,
-    "seen": 1794386635.1532862,
+    "mtime": 1794433020.2537615,
+    "seen": 1794433263.2492878,
     "ast_hash": "3b49933210ef8c003f45473a0965c108",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/landing-cat@2x.4163b0a300.webp": {
-    "mtime": 1794386172.5483649,
-    "seen": 1794386635.1532867,
+    "mtime": 1794433020.7327747,
+    "seen": 1794433263.2492893,
     "ast_hash": "97deac263b591d500addfea8c43621a7",
     "semantic_hash": ""
   },
   "apps/web/src/features/landing/LandingFx.tsx": {
-    "mtime": 1794431093.7082727,
-    "seen": 1794431188.564918,
-    "ast_hash": "7d99df989b04ff9b11bf353018bd4ac5",
+    "mtime": 1794433077.104296,
+    "seen": 1794433263.2487931,
+    "ast_hash": "2b9886c4855b19a68550f88d233c46a7",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/landing/cat.ts": {
+    "mtime": 1794433077.097333,
+    "seen": 1794433263.248794,
+    "ast_hash": "119dc2e1c00004f8b42db9635dbad0d6",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/landing/cat-walk.png": {
+    "mtime": 1794433019.4953928,
+    "seen": 1794433263.249129,
+    "ast_hash": "4ff088397e3c348892ab2ac433a77059",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/landing/chandelier.png": {
+    "mtime": 1794433019.495148,
+    "seen": 1794433263.2491307,
+    "ast_hash": "840832512936958826d14734ab5277bc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/landing-cat-walk@2x.2291f3f009.webp": {
+    "mtime": 1794433024.9848921,
+    "seen": 1794433263.2492886,
+    "ast_hash": "9187236f95d74d76f2ec787b96125d78",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/landing-chandelier@2x.8a5e37532e.webp": {
+    "mtime": 1794433023.82186,
+    "seen": 1794433263.24929,
+    "ast_hash": "c3b7a1c4980e98db232a0bedef3855ea",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

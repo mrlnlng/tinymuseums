@@ -151,8 +151,27 @@ body. The numbers in `prepare-models.mjs` were matched by overlaying the layer m
   The bow is two-thirds size on top of its head, in place of the star. The blue floral dress
   retains its original canvas fit, which already follows this torso well.
 
+- **Bruce:** every piece. The artist scaled one tutu drawing per body, which gives the map from
+  the bunny's canvas to Bruce's (`BRUCE_PLACE`: 1 / 1.035 about the bodice corner). The flat
+  layers (blue floral, gold set and cape) use it as it is; Kiki's dress and the four cardigans
+  use it about the middle of the torso with an 8° turn, since Bruce stands more upright than the
+  bunny (`BRUCE_FIT`). Everything draws under its head, which covers each collar, and over its
+  far arm, as the tutu does; sleeves and the cape also cover the near arm. The bow sits on its
+  left ear at three-quarter size.
+
+A fit is a move, a scale along the art's own axes and a turn (`rotate`, degrees clockwise), in
+`graftCostume`'s `fit` and `paintedCostume`'s `place`. `MODELS_ONLY=1 node
+tooling/prepare-models.mjs` rebuilds the rigs alone in a few seconds for trying one.
+
 They hold through the walk, but they are refits of bunny art; drawings made for each body would
 sit better.
+
+### Headpieces
+
+Placed per character in `HEADPIECES` and `CROWN` (`prepare-models.mjs`). A flower or the daisy
+tucks in at the base of an ear, clear of the eyes. The cap sits on the brow, sized to the head
+and turned to its lean, so the ears show behind it. The crown runs across the base of the ears
+(the bunny, Bruce) or over the top of the head (the cat, the otter).
 
 ## Art not supplied as files
 
@@ -179,10 +198,11 @@ reconstructs a matching bare torso. Bare, blue-dressed, and cardigan-dressed for
 share one canvas and floor position, so equipping a piece exposes its bare stand.
 
 `painted-costume.mjs` adds the flat artist layers to each existing GLB skeleton.
-The floral skirt blends chest and hip weights. The cardigan is fitted to the torso
-angle; its sleeves follow the arm bones with overlapping joins along the painted
-underarm seams. The crown follows the head bone and replaces the otter's star.
-All three rigs contain `blue-floral`, `floral-cardigan`, and `flower-crown`.
+The floral skirt blends chest and hip weights. The cardigan is drawn upright on its
+form, so its collar tie goes to each body's neck and it is widened, shortened and
+turned to the torso's lean (`FLORAL_CARDIGAN`), keeping its drawn shape; its sleeves
+follow the arm bones with overlapping joins along the painted underarm seams. The crown follows the head bone and replaces the otter's star.
+Every rig contains `blue-floral`, `floral-cardigan`, and `flower-crown`.
 The existing outfit slot persists and shares them in both museum rooms.
 
 Browser review screenshots are in `output/floral-review/`, covering all three
@@ -206,8 +226,7 @@ the form, and is the template every collection room follows (`ROOM_TEMPLATE`). T
 blue ribbon is the pink one dyed. The chandelier in that pack is in no mock, so it is not hung.
 
 **Bruce** is a character (250 coins), from `bruce_costume/rigs/bruce/bruce_v2_rig_tutu.glb`
-(`public/assets/bruce-rig.glb`). It wears only the tutu so far (`FITS`); the other pieces stay on
-their stands with a note until they are fitted to its body. Adding `bruce` to `CHARACTERS` means
+(`public/assets/bruce-rig.glb`). It wears every piece, fitted at build time (above). Adding `bruce` to `CHARACTERS` means
 the presence worker must be redeployed before other visitors can see Bruce.
 
 **The tutu** is two rigid planes on the hips, drawn once for Bruce and scaled per body by the

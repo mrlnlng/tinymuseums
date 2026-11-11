@@ -1,7 +1,7 @@
 # Graph Report - tiny-museum  (2026-11-11)
 
 ## Corpus Check
-- 496 files · ~272,769 words
+- 496 files · ~272,738 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 82 file(s) not represented in the graph (top: .avif 39, .glb 34, .css 4)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f0bf151f`
+- Built from commit: `e05a4120`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

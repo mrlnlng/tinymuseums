@@ -18,7 +18,7 @@ export const FITS: Record<CharacterKind, readonly string[]> = {
   bunny: COSTUMES,
   cat: COSTUMES,
   otter: COSTUMES,
-  bruce: ['tutu'],
+  bruce: COSTUMES,
 }
 
 export function lookOf(outfit: Outfit): Look {

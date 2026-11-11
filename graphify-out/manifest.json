@@ -897,9 +897,9 @@
     "semantic_hash": "f1eae512cc73927ef3c62aed081d8acc"
   },
   "apps/web/src/shared/components/ScreenChrome.tsx": {
-    "mtime": 1794384254.9340663,
-    "seen": 1794385477.4164662,
-    "ast_hash": "51d93edf208570b52899bdb0d55731e0",
+    "mtime": 1794435816.471604,
+    "seen": 1794435937.906626,
+    "ast_hash": "4ca1f407749a3d80d4d5671e974522b2",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/ServiceWorker.tsx": {

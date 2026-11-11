@@ -3,7 +3,9 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 
 // Add a painted layer to the existing skeleton. A subdivided dress blends chest/hips
 // weights so it follows breathing and walking without moving with either leg.
-export async function paintedCostume(glb, png, { costume, part = 'body', bone, drawOrder, hides = '', dx = 0, dy = 0, scale = 1, transform, mask }) {
+// `place` puts the art's `pivot` (art px) at `at` on the rig canvas, scaled along the art's own
+// axes and then turned about it (degrees, clockwise).
+export async function paintedCostume(glb, png, { costume, part = 'body', bone, drawOrder, hides = '', dx = 0, dy = 0, scale = 1, place, mask }) {
   const jsonLength = glb.readUInt32LE(12)
   const json = JSON.parse(glb.subarray(20, 20 + jsonLength))
   const binStart = 28 + jsonLength
@@ -47,8 +49,14 @@ export async function paintedCostume(glb, png, { costume, part = 'body', bone, d
   for (let row = 0; row <= rows; row++) for (let col = 0; col <= cols; col++) {
     const px = x0 + col / cols * info.width
     const py = y0 + row / rows * info.height
-    const x = transform ? transform.xx * (px - 834) + transform.x : (px - 834) * scale + dx + 834
-    const y = transform ? transform.yy * (py - 491) + transform.yx * (px - 834) + transform.y : (py - 1194) * scale + dy + 1194
+    let x = (px - 834) * scale + dx + 834
+    let y = (py - 1194) * scale + dy + 1194
+    if (place) {
+      const { pivot, at, scale: both = 1, scaleX = both, scaleY = both, rotate = 0 } = place
+      const c = Math.cos(rotate * Math.PI / 180), s = Math.sin(rotate * Math.PI / 180)
+      x = at[0] + c * scaleX * (px - pivot[0]) - s * scaleY * (py - pivot[1])
+      y = at[1] + s * scaleX * (px - pivot[0]) + c * scaleY * (py - pivot[1])
+    }
     positions.push((x - 834) / 1000, (1194 - y) / 1000, 0.02)
     uv.push(col / cols, row / rows)
     const chest = Math.max(0, Math.min(1, (1750 - y) / 450))

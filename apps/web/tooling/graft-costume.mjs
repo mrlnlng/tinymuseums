@@ -61,12 +61,20 @@ function invert(m) {
   ]
 }
 
-// A move and scale in the layer canvas (px, y down) as a world matrix: 1000 px per unit,
-// centred on the 1668 × 2388 canvas.
-function canvasFit({ dx = 0, dy = 0, scale = 1, scaleX = scale, scaleY = scale, pivot = [834, 1194] }) {
+// A move, scale and turn in the layer canvas (px, y down; rotate in degrees, clockwise) as a
+// world matrix: 1000 px per unit, centred on the 1668 × 2388 canvas. The part is scaled along
+// its own axes about the pivot, then turned about it.
+function canvasFit({ dx = 0, dy = 0, scale = 1, scaleX = scale, scaleY = scale, rotate = 0, pivot = [834, 1194] }) {
   const px = (pivot[0] - 834) / 1000
   const py = (1194 - pivot[1]) / 1000
-  return [scaleX, 0, 0, 0, 0, scaleY, 0, 0, 0, 0, 1, 0, px * (1 - scaleX) + dx / 1000, py * (1 - scaleY) - dy / 1000, 0, 1]
+  const c = Math.cos(rotate * Math.PI / 180)
+  const s = Math.sin(rotate * Math.PI / 180)
+  return [
+    c * scaleX, -s * scaleX, 0, 0,
+    s * scaleY, c * scaleY, 0, 0,
+    0, 0, 1, 0,
+    px - (c * scaleX * px + s * scaleY * py) + dx / 1000, py - (-s * scaleX * px + c * scaleY * py) - dy / 1000, 0, 1,
+  ]
 }
 
 function worldMatrices(json) {

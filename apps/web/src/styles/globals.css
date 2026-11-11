@@ -4785,15 +4785,15 @@ form > .account-switch {
   height: 56px;
 }
 
-/* On the atelier's dark walls, and on either floor, buttons sit on a cream disc. */
-.screen-chrome--on-dark .chrome-button,
+/* Every scene's corner buttons sit on the same cream disc, so they read on any wall. */
+.screen-chrome .chrome-button,
 .chat-dock .chrome-button {
   background: var(--wall);
   border-radius: 50%;
   box-shadow: 0 0 0 3px var(--wall), 0 2px 10px rgb(0 0 0 / 0.35);
 }
 
-.screen-chrome--on-dark .chrome-button {
+.screen-chrome .chrome-button {
   box-shadow: 0 0 0 3px var(--wall), 0 2px 10px rgb(0 0 0 / 0.35), 0 0 14px rgb(255 214 150 / 0.28);
 }
 

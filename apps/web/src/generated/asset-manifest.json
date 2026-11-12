@@ -155,12 +155,12 @@
       }
     },
     "floor": {
-      "w": 1655,
-      "h": 684,
+      "w": 1588,
+      "h": 329,
       "x2": {
-        "w": 1655,
-        "h": 684,
-        "src": "floor.1309ce327f.webp"
+        "w": 1588,
+        "h": 329,
+        "src": "floor.a7bfbda1d3.webp"
       }
     },
     "frame": {
@@ -1590,14 +1590,14 @@
       "height": 201
     },
     "curtains": {
-      "src": "atelier-curtains.3f1e25b386.webp",
-      "width": 489,
-      "height": 517
+      "src": "atelier-curtains.0076ff24c7.webp",
+      "width": 428,
+      "height": 756
     },
     "curtainSwag": {
-      "src": "atelier-curtain-swag.cf15e01072.webp",
-      "width": 425,
-      "height": 198
+      "src": "atelier-curtain-swag.2d573a4d5f.webp",
+      "width": 1160,
+      "height": 426
     },
     "curtainDrape": {
       "src": "atelier-curtain-drape.30dc2c96bd.webp",

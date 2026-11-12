@@ -13,15 +13,15 @@ export const CONFIG = {
   // The valance hangs from the top of the view; on short views it shrinks so it stays above clearY.
   curtain: { height: 1.25, minHeight: 0.85, clearY: 4.1, z: -0.3, bandColor: '#622331', parallax: 0.08, shadow: { opacity: 0.1, drop: 0.07 } },
   // A soft beam from above the view down onto each painting; drawn behind the frame, over the valance.
-  spotlight: { topY: 6.2, topWidth: 0.55, spread: 1.15, reach: 0.55, opacity: 0.34, z: -0.2, halo: 0.11, pool: 0.08, nearMargin: 1.3 },
+  spotlight: { topY: 6.2, topWidth: 0.55, spread: 1.15, reach: 0.55, opacity: 0.22, z: -0.2, halo: 0.11, pool: 0.08, nearMargin: 1.3 },
 
   ambience: {
     bulbs: {
       capacity: 512,
       diameter: 0.1,
       // Halo and pool diameters are multiples of a bulb's and the valance's height.
-      halo: { diameter: 2.4, base: 0.26, color: '#ffdea0', z: -0.28 },
-      pool: { diameter: 1.15, base: 0.05, color: '#ffbe78', z: -0.27 },
+      halo: { diameter: 2.4, base: 0.12, color: '#ffdea0', z: -0.28 },
+      pool: { diameter: 1.15, base: 0.022, color: '#ffbe78', z: -0.27 },
       twinkle: { minSpeed: 0.3, maxSpeed: 0.6 },
     },
     dust: {
@@ -55,12 +55,12 @@ export const CONFIG = {
     vignette: { scale: 1.04, z: 8, renderOrder: 999 },
   },
 
-  displayBottomY: 0.608,
+  displayBottomY: 0.47,
   displayTitleGap: 0.07,
 
   piece: { gap: 1.2, scale: 1.28 },
 
-  plaque: { width: 0.86, gap: 0.05, z: 0.4, titleWidth: 2.02 },
+  plaque: { width: 0.86, gap: 0.05, clearance: 0.03, z: 0.4, titleWidth: 2.02 },
 
   rope: { height: 1.27, centerY: 0.47, z: 0.5 },
 
@@ -222,7 +222,6 @@ export const CONFIG = {
   coin: {
     width: 0.3,
     frame: { peek: 0.55, heightRatio: 0.35, margin: [0.063, 0.093], z: -0.05 },
-    rope: { inset: 0.05, y: -0.04, z: 0.45, width: 0.26 },
     pedestal: { dx: 0.2, y: 0.02, z: 0.25 },
     wiggleEverySeconds: 3.2,
     vanishSeconds: 0.35,
@@ -238,7 +237,7 @@ export const CONFIG = {
     wall: { left: -10, right: 40, tile: 2.2 },
     // Below the painted strip the carpet carries on in its own red, for views taller than the art.
     carpet: { height: 1.25, depth: 3, color: '#890f06' },
-    curtains: { left: -40, width: 520, z: 0.5 },
+    curtains: { left: -40, width: 455, z: 0.5 },
     // Swags along the ceiling to a drape closing the far end, mirrored, its right edge on the
     // screen's edge when the camera reaches the end. widestHalf is half the widest view it
     // allows for; the swags run that far. Sized and hung as in bruce_mock_scene.png: edge to

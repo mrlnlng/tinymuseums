@@ -6,7 +6,6 @@ import { CONFIG } from './config'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
-import { ropeSlices } from './board'
 import { placeholderTexture } from './placeholder'
 import { createHiddenCoin, type HiddenCoin } from './coin'
 import { createPaintingLight, disposeSpotlights, type PaintingLight } from './spotlight'
@@ -274,7 +273,10 @@ export class HallScene {
     group.add(light.group)
 
     const plaqueHeight = CONFIG.plaque.width / this.assets.aspect.plaque
-    const plaqueY = bottom - CONFIG.plaque.gap - plaqueHeight / 2
+    const plaqueY = Math.max(
+      bottom - CONFIG.plaque.gap - plaqueHeight / 2,
+      CONFIG.baseboard.height + CONFIG.plaque.clearance + plaqueHeight / 2,
+    )
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(CONFIG.plaque.width, plaqueHeight),
       new THREE.MeshBasicMaterial({
@@ -285,12 +287,6 @@ export class HallScene {
     )
     plaque.position.set(0, plaqueY, CONFIG.plaque.z)
     group.add(plaque)
-
-    const ropes = ropeSlices(this.assets.textures.rope, this.assets.aspect.rope, width, 'ownedByDisplay')
-    for (const slice of ropes) group.add(slice)
-    const postShadowY = Math.min(-0.02, CONFIG.rope.centerY - CONFIG.rope.height / 2 + 0.03)
-    if (ropes[0]) group.add(groundShadow(0.34, ropes[0].position.x, postShadowY))
-    if (ropes.length > 1) group.add(groundShadow(0.34, ropes[ropes.length - 1].position.x, postShadowY))
 
     this.coin.attach({
       index: slot.index,

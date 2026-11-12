@@ -1,7 +1,7 @@
 {
   "room": {
     "wallColor": "#fff1d2",
-    "floorColor": "#8b5641",
+    "floorColor": "#623320",
     "floorTopRatio": 0.7766,
     "mockupSize": [
       1080,
@@ -65,8 +65,8 @@
   },
   "floor": {
     "size": [
-      1655,
-      684
+      1588,
+      329
     ]
   },
   "bunnyWalk": {

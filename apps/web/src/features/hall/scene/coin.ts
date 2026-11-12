@@ -3,7 +3,7 @@ import type { Assets } from './assets'
 import { CONFIG } from './config'
 import { isPaintedAt } from './hit'
 
-type Spot = 'frame' | 'rope' | 'pedestal'
+type Spot = 'frame' | 'pedestal'
 
 interface CoinWall {
   index: number
@@ -49,7 +49,7 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
     choose(totalWalls) {
       if (index !== null || totalWalls <= 0) return
       index = Math.floor(Math.random() * totalWalls)
-      spot = (['frame', 'rope', 'pedestal'] as const)[Math.floor(Math.random() * 3)]
+      spot = (['frame', 'pedestal'] as const)[Math.floor(Math.random() * 2)]
     },
 
     attach(wall) {
@@ -66,9 +66,6 @@ export function createHiddenCoin(assets: Assets): HiddenCoin {
           wall.bottom + wall.height * spec.frame.heightRatio,
           spec.frame.z,
         )
-      } else if (here === 'rope') {
-        mesh = build(spec.rope.width)
-        mesh.position.set(side * (wall.width / 2 - spec.rope.inset), spec.rope.y, spec.rope.z)
       } else {
         mesh = build(spec.width)
         mesh.position.set(wall.pedestalDx! + side * spec.pedestal.dx, spec.pedestal.y, spec.pedestal.z)

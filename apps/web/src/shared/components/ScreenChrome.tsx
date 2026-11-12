@@ -71,11 +71,13 @@ export default function ScreenChrome() {
             <svg viewBox="0 0 75 75" aria-hidden="true">
               <mask id="my-room-toggle-cutout">
                 <rect width="75" height="75" fill="white" />
-                <path fill="black" d="M25 58V21L47 16V58Z" />
-                <rect x="40" y="34" width="23" height="24" fill="black" />
-                <circle cx="45" cy="46" r="2.4" fill="white" />
+                <rect x="15" y="23" width="7" height="33" rx="3.5" fill="black" />
+                <rect x="53" y="38" width="7" height="18" rx="3.5" fill="black" />
+                <rect x="15" y="41" width="45" height="9" rx="3" fill="black" />
+                <rect x="25" y="31" width="13" height="8" rx="4" fill="black" />
+                <path fill="black" d="M41 39v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2Z" />
               </mask>
-              <circle cx="37.5" cy="37.5" r="37.5" mask="url(#my-room-toggle-cutout)" />
+              <circle cx="37.5" cy="37.5" r="37.5" fill="#c22252" mask="url(#my-room-toggle-cutout)" />
             </svg>
           </button>
         ) : null}

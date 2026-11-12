@@ -9,7 +9,6 @@ export const GALLERY_DOOR = {
   atelierX: -3.1,
   height: 2.8,
   lobbyBase: -0.26,
-  atelierBase: -0.42,
   clear: 0.85,
 } as const
 

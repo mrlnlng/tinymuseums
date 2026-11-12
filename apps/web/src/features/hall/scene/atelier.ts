@@ -23,6 +23,8 @@ export type AtelierArt = Record<AtelierImage, THREE.Texture>
 const wx = (px: number) => (px - mock.originX) / mock.unit
 const wy = (py: number) => (mock.floorY - py) / mock.unit + mock.floorWorld
 const units = (px: number) => px / mock.unit
+/** Tall enough for the tallest phone's view, as the hall's wall is. */
+const WALL_HEIGHT = 12
 const aspectOf = (name: AtelierImage) => manifest.atelier[name].width / manifest.atelier[name].height
 
 function load(url: string): Promise<THREE.Texture> {
@@ -189,7 +191,7 @@ export function createAtelierRoom(
   }
 
   const { wall } = atelier
-  const wallHeight = atelier.ceiling + 0.3 - mock.floorWorld
+  const wallHeight = WALL_HEIGHT
   const wallMap = art.wallpaper
   wallMap.wrapS = THREE.RepeatWrapping
   wallMap.wrapT = THREE.RepeatWrapping
@@ -205,10 +207,14 @@ export function createAtelierRoom(
   const carpet = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - wall.left, carpetHeight), new THREE.MeshBasicMaterial({ map: carpetMap }))
   carpet.position.set((wall.left + wall.right) / 2, mock.floorWorld - carpetHeight / 2, 0.15)
   shell.add(carpet)
+  const carpetDepth = atelier.carpet.depth - carpetHeight
+  const carpetFill = new THREE.Mesh(new THREE.PlaneGeometry(wall.right - wall.left, carpetDepth), new THREE.MeshBasicMaterial({ color: atelier.carpet.color }))
+  carpetFill.position.set((wall.left + wall.right) / 2, mock.floorWorld - carpetHeight - carpetDepth / 2 + 0.01, 0.14)
+  shell.add(carpetFill)
 
-  const door = createGalleryDoor(shell, image, GALLERY_DOOR.atelierX, GALLERY_DOOR.atelierBase)
+  const door = createGalleryDoor(shell, image, GALLERY_DOOR.atelierX)
   const sign = CONFIG.lobby.sign
-  const signY = sign.centerY - 0.16
+  const signY = sign.centerY
   shell.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
     signY, sign.z, sign.width, sign.height))
 
@@ -247,6 +253,10 @@ export function createAtelierRoom(
   const band = new THREE.Mesh(new THREE.PlaneGeometry(swagsTo - firstSwag, bandTop - bandBottom), new THREE.MeshBasicMaterial({ color: 0x951806 }))
   band.position.set((firstSwag + swagsTo) / 2, (bandTop + bandBottom) / 2, curtainSwags.z + 0.001)
   shell.add(band)
+  // Left of the swags the same band starts at the ceiling the entrance's curtain hangs from.
+  const lintel = new THREE.Mesh(new THREE.PlaneGeometry(firstSwag - wall.left, bandTop - atelier.ceiling), new THREE.MeshBasicMaterial({ color: 0x951806 }))
+  lintel.position.set((wall.left + firstSwag) / 2, (bandTop + atelier.ceiling) / 2, curtainSwags.z + 0.001)
+  shell.add(lintel)
 
   // Overlay nodes, placed each frame; a room's own come and go with it.
   const controls: Control[] = []

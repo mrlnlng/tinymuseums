@@ -231,11 +231,13 @@ export const CONFIG = {
   // The fashion area is laid out in the mocks' pixels (7.png's), then mapped to world units
   // around the room entrance. Its rooms are in atelier-layout.ts.
   atelier: {
-    mock: { unit: 198, originX: 297, floorY: 628, floorWorld: -0.25 },
+    // The mock's floor line sits on the hall's, so doors, signs and the visitor stand alike in both.
+    mock: { unit: 198, originX: 297, floorY: 628, floorWorld: 0 },
     ceiling: 4.97,
     max: (ATELIER_END_X - 297) / 198,
     wall: { left: -10, right: 40, tile: 2.2 },
-    carpet: { height: 1.25 },
+    // Below the painted strip the carpet carries on in its own red, for views taller than the art.
+    carpet: { height: 1.25, depth: 3, color: '#890f06' },
     curtains: { left: -40, width: 520, z: 0.5 },
     // Swags along the ceiling to a drape closing the far end, mirrored, its right edge on the
     // screen's edge when the camera reaches the end. widestHalf is half the widest view it

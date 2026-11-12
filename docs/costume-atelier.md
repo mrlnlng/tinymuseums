@@ -15,12 +15,16 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 
 - **Two pages.** The atelier is its own page, `/museum/atelier`, with its own scene, so each
   room loads only its own art.
-- **A room doorway.** Both rooms use a flat illustrated cream-and-rose museum archway,
-  with red curtains, a bow and a hanger emblem. Its plaque uses the visitor centre's
+- **A room doorway.** Both rooms use one doorway, drawn to match the atelier's props
+  (`public/assets/atelier/door.png`): no outlines, a polished
+  gilt frame like the mirror and jewellery box, a string of pearls, the red velvet of the
+  curtains tied back with gold tassels, a gold hanger under the artist's own bow, and the
+  hall door's slant of light and sparkles in a plum opening. It is drawn by
+  `tooling/atelier-door/draw.py` (see its header to redraw it). The plaque uses the visitor centre's
   actual board artwork and lettering style, as does the room's Back to museum sign.
   One existing cream museum pillar sits between the two entrances; the collection
-  stays in its original hall layout. The generated source is
-  `public/assets/atelier/gallery-door-red.png`; its prompt and style reference are in
+  stays in its original hall layout. The earlier generated doorway,
+  `public/assets/atelier/gallery-door-red.png`, is kept as a source only; its prompt is in
   `docs/gallery-door-imagegen-prompt.md`. Tap the doorway or its labelled sign to enter.
   The visitor walks to the entrance before the screen fades, then walks clear of the
   doorway on arrival. Reduced motion places the visitor directly clear of the door.

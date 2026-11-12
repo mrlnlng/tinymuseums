@@ -427,7 +427,8 @@ const manifest = JSON.parse(before)
 manifest.models = { ...manifest.models, ...models }
 if (atelier) {
   delete manifest.stairs
-  manifest.galleryDoor = await image('gallery-door-red', { lossless: true })
+  manifest.galleryDoor = await image('door', { lossless: true })
+  delete manifest.atelierDoor
   delete manifest.galleryLeadIn
   manifest.atelier = atelier
   manifest.atelier.plaque = { src: manifest.images.plaque.x2.src, width: manifest.images.plaque.x2.w, height: manifest.images.plaque.x2.h }

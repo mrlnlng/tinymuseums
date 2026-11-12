@@ -31,6 +31,8 @@ for (const [name, [width, height]] of Object.entries(EXPECTED)) {
 /** The source PNGs are one repeated tile, so keep only the pixels that tile seamlessly. */
 const WALLPAPER = { left: 0, top: 0, width: 1093, height: 551 }
 const WALLPAPER_COLOR = '#741633'
+/** The damask is redrawn in a lighter rose than the wall, as the atelier's is, and inked more heavily. */
+const WALLPAPER_LINE = { color: '#ad2f55', gain: 1.7 }
 const BASEBOARD = { left: 19, top: 0, width: 987, height: 35 }
 const CURTAIN = { left: 0, top: 8, width: 1903, height: 238 }
 
@@ -70,9 +72,20 @@ async function save(name, image, options = {}) {
   return info
 }
 
-await save('wallpaper', sharp(file('wallpaper.png')).extract(WALLPAPER).flatten({ background: WALLPAPER_COLOR }), {
-  x2Height: 252,
-  x3Height: 378,
+const wallpaperAlpha = await sharp(file('wallpaper.png'))
+  .extract(WALLPAPER)
+  .extractChannel('alpha')
+  .linear(WALLPAPER_LINE.gain, 0)
+  .raw()
+  .toBuffer()
+const wallpaperInk = await sharp({
+  create: { width: WALLPAPER.width, height: WALLPAPER.height, channels: 3, background: WALLPAPER_LINE.color },
+})
+  .joinChannel(wallpaperAlpha, { raw: { width: WALLPAPER.width, height: WALLPAPER.height, channels: 1 } })
+  .png()
+  .toBuffer()
+await save('wallpaper', sharp(wallpaperInk).flatten({ background: WALLPAPER_COLOR }), {
+  x2Height: 378,
 })
 await save('baseboard', sharp(file('baseboard.png')).extract(BASEBOARD))
 

@@ -8,7 +8,7 @@ export const CONFIG = {
   },
 
   wallpaper: { stripePairWidth: 0.62 },
-  wall: { tileWidth: 1.8, color: '#741633' },
+  wall: { tileWidth: 4.4, color: '#741633' },
   baseboard: { height: 0.17, z: -0.45 },
   // The valance hangs from the top of the view; on short views it shrinks so it stays above clearY.
   curtain: { height: 1.25, minHeight: 0.85, clearY: 4.1, z: -0.3, bandColor: '#622331', parallax: 0.08, shadow: { opacity: 0.1, drop: 0.07 } },

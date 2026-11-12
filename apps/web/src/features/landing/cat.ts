@@ -18,13 +18,25 @@ function between([low, high]: readonly [number, number]): number {
 }
 
 /**
- * The cat waits at the left edge, walks off to the right once, and from then on peeks in from a
- * random spot on the bottom or a side for about a second at a time. Returns the cleanup.
+ * The otter waits at the left edge and walks off to the right once. From then on a character
+ * peeks in from a random spot on the bottom or a side for about a second at a time: the otter
+ * or one of the others, never the same one twice running. Returns the cleanup.
  */
 export function runLandingCat(root: HTMLElement): () => void {
   const cat = root.querySelector<HTMLElement>('.landing-walker')
   const scene = cat?.offsetParent as HTMLElement | null
   if (!cat || !scene) return () => {}
+
+  // The otter is the walker's own image; the others are stills that take its place for a peek.
+  const guests = [...cat.querySelectorAll<HTMLElement>('.landing-peeker')]
+  let lastPeeker = -1
+  function choosePeeker(): void {
+    let pick = Math.floor(Math.random() * (guests.length + 1))
+    if (pick === lastPeeker) pick = (pick + 1) % (guests.length + 1)
+    lastPeeker = pick
+    guests.forEach((guest, index) => guest.classList.toggle('is-shown', index === pick))
+    cat!.classList.toggle('is-guest', pick < guests.length)
+  }
 
   let timer = 0
   let motion: Animation | null = null
@@ -71,6 +83,7 @@ export function runLandingCat(root: HTMLElement): () => void {
       shown = `translate(${out + into}px, ${y}px) rotate(${turn}deg)`
     }
 
+    choosePeeker()
     cat!.classList.remove('is-away')
     motion = cat!.animate(
       [
@@ -93,6 +106,7 @@ export function runLandingCat(root: HTMLElement): () => void {
     window.clearTimeout(timer)
     if (motion) motion.onfinish = null
     motion?.cancel()
-    cat.classList.remove('is-walking', 'is-away', 'is-peeking')
+    cat.classList.remove('is-walking', 'is-away', 'is-peeking', 'is-guest')
+    for (const guest of guests) guest.classList.remove('is-shown')
   }
 }

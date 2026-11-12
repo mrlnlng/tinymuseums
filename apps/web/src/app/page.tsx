@@ -62,10 +62,13 @@ export default function LandingPage() {
           <AssetImage name="landing/book" className="landing-book" />
         </div>
         <div className="landing-prop is-cat">
-          <AssetImage name="landing/cat" className="landing-cat" />
+          <AssetImage name="landing/otter" className="landing-cat" />
         </div>
         <div className="landing-walker">
-          <AssetImage name="landing/cat-walk" className="landing-walker-cat" />
+          <AssetImage name="landing/otter-walk" className="landing-walker-cat" />
+          <AssetImage name="landing/peek-bunny" className="landing-peeker" />
+          <AssetImage name="landing/peek-cat" className="landing-peeker" />
+          <AssetImage name="landing/peek-bruce" className="landing-peeker" />
         </div>
       </div>
 

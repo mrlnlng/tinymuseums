@@ -895,6 +895,51 @@
         "h": 718,
         "src": "landing-cat-walk@2x.2291f3f009.webp"
       }
+    },
+    "landing/otter": {
+      "w": 227,
+      "h": 405,
+      "x2": {
+        "w": 227,
+        "h": 405,
+        "src": "landing-otter@2x.49a083639a.webp"
+      }
+    },
+    "landing/otter-walk": {
+      "w": 5120,
+      "h": 718,
+      "x2": {
+        "w": 5120,
+        "h": 718,
+        "src": "landing-otter-walk@2x.9f390b5ea8.webp"
+      }
+    },
+    "landing/peek-bunny": {
+      "w": 640,
+      "h": 718,
+      "x2": {
+        "w": 640,
+        "h": 718,
+        "src": "landing-peek-bunny@2x.e11eac084c.webp"
+      }
+    },
+    "landing/peek-cat": {
+      "w": 640,
+      "h": 718,
+      "x2": {
+        "w": 640,
+        "h": 718,
+        "src": "landing-peek-cat@2x.5c929954c2.webp"
+      }
+    },
+    "landing/peek-bruce": {
+      "w": 640,
+      "h": 718,
+      "x2": {
+        "w": 640,
+        "h": 718,
+        "src": "landing-peek-bruce@2x.20cf10dc15.webp"
+      }
     }
   },
   "atlases": {

@@ -1685,16 +1685,18 @@ code.token {
   }
 
   /*
-   * The cat waits at the left edge, walks off to the right, then peeks back in now and then;
-   * LandingFx moves it. It hangs a little below the screen so its waddle never shows the cut edge.
+   * The otter waits at the left edge, walks off to the right, then peeks back in now and then;
+   * LandingFx moves it. It stands below the screen's edge, which hides its legs. Its image is the eight frames of its rig's walk, side by side; the
+   * walker shows one at a time.
    */
   .landing-walker {
     display: block;
     position: absolute;
-    left: calc(var(--u) * -12.8);
-    bottom: calc(var(--u) * -2.5);
+    left: calc(var(--u) * -3);
+    bottom: calc(var(--u) * -8);
     width: calc(var(--u) * 44.4);
     aspect-ratio: 640 / 718;
+    overflow: hidden;
     will-change: transform;
   }
 
@@ -1703,11 +1705,16 @@ code.token {
 
   .landing-scene .landing-walker-cat {
     position: static;
-    width: 100%;
-    transform-origin: 50% 100%;
+    width: 800%;
+    max-width: none;
   }
 
-  .landing-walker.is-walking .landing-walker-cat { animation: landing-waddle 0.3s ease-in-out infinite alternate; }
+  /* The other characters, one of which stands in for the otter on a peek. */
+  .landing-scene .landing-peeker { display: none; position: static; width: 100%; }
+  .landing-scene .landing-peeker.is-shown { display: block; }
+  .landing-scene .landing-walker.is-guest .landing-walker-cat { display: none; }
+
+  .landing-walker.is-walking .landing-walker-cat { animation: landing-walk-cycle 0.8s steps(8) infinite; }
 
   .landing-body {
     left: 50%;
@@ -1739,9 +1746,8 @@ code.token {
   }
 }
 
-@keyframes landing-waddle {
-  from { transform: rotate(-2.2deg); }
-  to { transform: translateY(-1.2%) rotate(2.2deg); }
+@keyframes landing-walk-cycle {
+  to { transform: translateX(-100%); }
 }
 
 /* Covers the page the moment a top-corner button is pressed: it answers the tap and swallows repeats. */

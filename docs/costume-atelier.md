@@ -55,6 +55,16 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
   shares the `bow` place, so wearing one gives back the one before. On the otter, a hibiscus or the daisy clip takes
   the place of its star. The gold set is supplied twice: upright for the form (`gold-sequin-*-display.png`) and on
   the bunny's tilted body for the rigs; headpieces are placed per character in `HEADPIECES` (`prepare-models.mjs`).
+- **The wardrobe.** A carved wardrobe stands at the entrance's end, before the first collection
+  (`CONFIG.atelier.wardrobe`; the art is `atelier/wardrobe-closed.png` and `wardrobe-open.png`,
+  trimmed from the supplied pair on one canvas). It stands closed; a tap opens it, and a tap
+  on its doors closes it again. Open, its rail hangs the costumes the member keeps, one to a
+  hanger (`HANGING` in `atelier.ts`, drawn from `atelier/hanger-<id>.png`, which
+  `compose-atelier.mjs` trims from each costume's upright art at one width; the hanger itself is
+  drawn there in SVG). Three hangers hang even when bare, as in the mock; more kept pieces bring
+  more, up to five, spread along the rail. A tap on a hanging piece tries it on, or returns it,
+  as on a form; the pieces stay hung while worn. Opened with nothing kept, a note says what
+  hangs there. Stars twinkle on its handles while it is closed, and over each hung piece.
 - **Exploring.** Nothing tells the visitor what to tap; the twinkling stars over each piece and
   portrait are the only invitation. A change of outfit or character bursts sparkles over the
   visitor (not with reduced motion).
@@ -89,7 +99,7 @@ staircase. 8.png continues 7.png 630 px to the right and 9.png continues it 1553
 | `apps/web/src/app/dev/rig` | Development-only rig preview: either character, any costume, facing, walk pose, and the helmet and cup on the hall's anchors. |
 
 Door positions are in `GALLERY_DOOR` (`scene/gallery-door.ts`). The rooms and what each
-holds are in `scene/atelier-layout.ts`, and the shared sizes in `CONFIG.atelier`
+holds are in `scene/atelier-layout.ts` (the entrance ends past the wardrobe), and the shared sizes in `CONFIG.atelier`
 (`scene/config.ts`). A one-form room is 1120 px wide, a two-form room 1400 px; positions inside a
 room are offsets from its centre. All are in the mocks' own pixels (198 px per world unit; the bunny is about 270 px tall there), so a
 change to the mock can be copied across directly.
@@ -104,6 +114,8 @@ change to the mock can be copied across directly.
    build its dressed form and its flying bundle, then run `npm run assets:models`.
 3. Add `<id>` to `COSTUMES` in `wardrobe.ts`. The `outfit` slot already accepts any id,
    so no version bump is needed. Saved ids the code does not know are worn as none.
+   Give it a hanger in `compose-atelier.mjs` and `prepare-models.mjs`, and its hung height in
+   `HANGING` (`atelier.ts`), so the wardrobe can hang it once kept.
 4. Give it a form in its collection's room in `atelier-layout.ts`, or a new room. One form per costume, at most one worn
    at a time. A form stands bare while its costume is worn.
 

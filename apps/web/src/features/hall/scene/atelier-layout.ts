@@ -6,8 +6,12 @@ import type { CharacterKind } from './rig.ts'
 /** One swag of the curtain. Each room hangs its own, starting SWAG_START into the room, so every tag hangs alike. */
 export const SWAG_STEP = 560
 export const SWAG_START = 195
-/** The entrance runs from the far left wall to where the first collection begins. */
-export const ENTRANCE = { startX: -1683, endX: 760 }
+/**
+ * The entrance runs from the far left wall to where the first collection begins. It ends past the
+ * wardrobe (`CONFIG.atelier.wardrobe`), which stands 87 px short of the first room's wall, as it
+ * does before Bruce's booth in the wardrobe mock.
+ */
+export const ENTRANCE = { startX: -1683, endX: 1497 }
 
 export type FormBase = 'mannequin' | 'floralMannequin'
 

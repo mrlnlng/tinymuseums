@@ -122,6 +122,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
           if (item) return { activate: () => closet.tapItem(item) }
           const kind = room.hitTestDisplay(raycaster)
           if (kind) return { activate: () => closet.tapDisplay(kind) }
+          if (room.hitTestWardrobe(raycaster)) return { activate: () => room.toggleWardrobe() }
           if (room.hitTestDoor(raycaster)) {
             return { activate: () => { track('stairs'); ctx.leave('gallery') } }
           }

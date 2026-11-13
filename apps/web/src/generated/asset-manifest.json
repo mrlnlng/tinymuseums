@@ -1894,6 +1894,71 @@
       "width": 219,
       "height": 55
     },
+    "wardrobeOpen": {
+      "src": "atelier-wardrobe-open.82edfc86e6.webp",
+      "width": 1493,
+      "height": 1528
+    },
+    "wardrobeClosed": {
+      "src": "atelier-wardrobe-closed.5cecf4db9e.webp",
+      "width": 1493,
+      "height": 1528
+    },
+    "hanger": {
+      "src": "atelier-hanger.11c2c8cf5e.webp",
+      "width": 400,
+      "height": 250
+    },
+    "hangerKiki": {
+      "src": "atelier-hanger-kiki.8c3b7d18fe.webp",
+      "width": 720,
+      "height": 780
+    },
+    "hangerTutu": {
+      "src": "atelier-hanger-tutu.6aff34da38.webp",
+      "width": 720,
+      "height": 688
+    },
+    "hangerBlueFloral": {
+      "src": "atelier-hanger-blue-floral.a401bdad62.webp",
+      "width": 720,
+      "height": 929
+    },
+    "hangerFloralCardigan": {
+      "src": "atelier-hanger-floral-cardigan.2f74cfb827.webp",
+      "width": 720,
+      "height": 931
+    },
+    "hangerGoldSequin": {
+      "src": "atelier-hanger-gold-sequin.b070801808.webp",
+      "width": 720,
+      "height": 1103
+    },
+    "hangerGoldCape": {
+      "src": "atelier-hanger-gold-cape.18b5aaff96.webp",
+      "width": 720,
+      "height": 851
+    },
+    "hangerCardiganRed": {
+      "src": "atelier-hanger-cardigan-red.670e4a5dd7.webp",
+      "width": 720,
+      "height": 413
+    },
+    "hangerCardiganForestGreen": {
+      "src": "atelier-hanger-cardigan-forest-green.3c39990f3c.webp",
+      "width": 720,
+      "height": 413
+    },
+    "hangerCardiganNavyBlue": {
+      "src": "atelier-hanger-cardigan-navy-blue.507d53e60b.webp",
+      "width": 720,
+      "height": 413
+    },
+    "hangerCardiganButterYellow": {
+      "src": "atelier-hanger-cardigan-butter-yellow.6b8e1f6907.webp",
+      "width": 720,
+      "height": 413
+    },
     "plaque": {
       "src": "plaque@2x.495da8a967.webp",
       "width": 811,

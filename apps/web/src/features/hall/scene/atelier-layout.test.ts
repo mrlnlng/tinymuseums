@@ -45,3 +45,12 @@ test('the camera stops inside the last room', () => {
   const last = ATELIER_ROOMS[ATELIER_ROOMS.length - 1]
   assert.ok(ATELIER_END_X > last.centerX! && ATELIER_END_X <= last.endX)
 })
+
+test('the wardrobe stands at the end of the entrance, clear of its props and the first room', () => {
+  const { wardrobe, portraitWink } = CONFIG.atelier
+  const left = wardrobe.x - wardrobe.width / 2
+  const right = wardrobe.x + wardrobe.width / 2
+  assert.ok(left > portraitWink.x + portraitWink.width / 2)
+  assert.ok(right < ATELIER_ROOMS[1].startX && right > ATELIER_ROOMS[1].startX - 100)
+  assert.ok(wardrobe.rail.left < wardrobe.rail.right && wardrobe.hanger.slots <= wardrobe.hanger.max)
+})

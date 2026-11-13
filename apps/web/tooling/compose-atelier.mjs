@@ -89,3 +89,29 @@ const tutu = await sharp(tutuSized)
   .extract({ left: Math.round((131.4 - padX) * scale), top: Math.round((57.7 - padTop) * scale), width, height })
   .png().toBuffer()
 await compose('mannequin-tutu', [body, { input: tutu, left: 0, top: 0 }])
+
+// The wardrobe hangs the costumes a member keeps. Each hangs from a wooden hanger drawn here,
+// trimmed from the upright art the forms wear (the display exports, or the cardigans as
+// scaled onto the form), at a shared width so every hanger holds its piece alike.
+const hanger = Buffer.from(`<svg width="400" height="250" viewBox="0 0 400 250">
+<path d="M200 104V72C200 50 232 50 232 68" fill="none" stroke="#d9a84a" stroke-width="11" stroke-linecap="round"/>
+<path d="M200 100L28 196Q20 212 40 212H360Q380 212 372 196Z" fill="#cf9342" stroke="#8d5a1f" stroke-width="8" stroke-linejoin="round"/>
+<path d="M40 212H360" stroke="#a9702a" stroke-width="12" stroke-linecap="round"/>
+<path d="M200 108L62 190" fill="none" stroke="#e8b25e" stroke-width="5" stroke-linecap="round"/>
+</svg>`)
+await sharp(hanger).png({ compressionLevel: 9 }).toFile(new URL('atelier/hanger.png', root).pathname)
+
+const hangerWidth = 720
+async function hung(costume, input) {
+  await sharp(input).trim().resize({ width: hangerWidth, kernel: 'lanczos3' })
+    .png({ compressionLevel: 9 }).toFile(new URL(`atelier/hanger-${costume}.png`, root).pathname)
+  console.log(`atelier/hanger-${costume}.png`)
+}
+const display = (name) => sharp(new URL(`atelier/${name}.png`, root).pathname).png().toBuffer()
+await hung('kiki', await display('kiki-dress-display'))
+await hung('tutu', await display('tutu-display'))
+await hung('blue-floral', await display('blue-floral-dress-display'))
+await hung('floral-cardigan', await sharp(await display('blue-floral-dress-display')).composite([{ input: await display('red-cardigan-display') }]).png().toBuffer())
+await hung('gold-sequin', await display('gold-sequin-set-display'))
+await hung('gold-cape', await sharp(await display('gold-sequin-set-display')).composite([{ input: await display('gold-sequin-cape-display') }]).png().toBuffer())
+for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) await hung(`cardigan-${colour}`, await display(`mannequin-cardigan-${colour}`))

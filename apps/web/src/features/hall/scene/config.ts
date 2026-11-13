@@ -259,6 +259,19 @@ export const CONFIG = {
       { id: 'blue-cap', image: 'blueCap', x: 236, y: 598, width: 130, rotation: -0.12, compartment: { x: 236, y: 569, width: 175, height: 145 } },
       { id: 'daisy-clip', image: 'daisyClip', x: 443, y: 606, width: 85, rotation: -0.15, compartment: { x: 443, y: 569, width: 175, height: 145 } },
     ],
+    // The wardrobe at the entrance's end, sized and stood as in the wardrobe mock (its feet a
+    // little above the columns' bases). Its rail is a fraction of its width and height in from
+    // its top left; the hangers spread along the rail, their hooks over it, and a kept costume
+    // hangs `drop` px below the rail. The tap target covers the doors.
+    wardrobe: {
+      x: 1100,
+      bottomY: 667,
+      width: 619,
+      z: 0.3,
+      rail: { top: 0.277, left: 0.3, right: 0.71 },
+      hanger: { width: 106, hook: 14, drop: 40, inset: 0.35, slots: 3, max: 5 },
+      handles: { y: 0.5, width: 150 },
+    },
     // Shared by every collection room.
     broom: { dx: 77, y: 522, width: 115, z: 0.42 },
     fishBag: { dx: -3, y: 352, width: 93, z: 0.36 },

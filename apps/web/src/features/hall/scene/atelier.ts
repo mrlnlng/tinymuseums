@@ -12,7 +12,7 @@ import { placeLabel, type Viewport } from './overlay'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from './rig'
 import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
-import { CARDIGANS, HIBISCUS } from './wardrobe'
+import { CARDIGANS, COSTUMES, HIBISCUS } from './wardrobe'
 
 const { atelier } = CONFIG
 const { mock } = atelier
@@ -86,6 +86,22 @@ export function keepName(item: ClothingItem): string {
   return name.startsWith('The ') ? name.slice(4) : name
 }
 
+/** The costumes the wardrobe can hang: each one's upright art, and how tall it hangs in mock px. */
+const HANGING: Partial<Record<string, { image: AtelierImage; height: number }>> = {
+  kiki: { image: 'hangerKiki', height: 215 },
+  tutu: { image: 'hangerTutu', height: 185 },
+  'blue-floral': { image: 'hangerBlueFloral', height: 230 },
+  'floral-cardigan': { image: 'hangerFloralCardigan', height: 230 },
+  'gold-sequin': { image: 'hangerGoldSequin', height: 200 },
+  'gold-cape': { image: 'hangerGoldCape', height: 200 },
+  'cardigan-red': { image: 'hangerCardiganRed', height: 115 },
+  'cardigan-forest-green': { image: 'hangerCardiganForestGreen', height: 115 },
+  'cardigan-navy-blue': { image: 'hangerCardiganNavyBlue', height: 115 },
+  'cardigan-butter-yellow': { image: 'hangerCardiganButterYellow', height: 115 },
+}
+/** In the order the rooms show them. */
+const HANGABLE: readonly string[] = COSTUMES.filter((id) => id in HANGING)
+
 export interface AtelierActions {
   onItem(item: ClothingItem): void
   onCharacter(kind: CharacterKind): void
@@ -102,6 +118,10 @@ export interface AtelierRoom {
   hitTestItem(raycaster: THREE.Raycaster): ClothingItem | null
   /** The character a portrait offers, if it is under the pointer. */
   hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
+  /** Whether the wardrobe is under the pointer (a costume hanging in it counts as an item). */
+  hitTestWardrobe(raycaster: THREE.Raycaster): boolean
+  /** Opens the wardrobe, or closes it again. Open, its rail hangs the costumes the member keeps. */
+  toggleWardrobe(): void
   /** What the visitor wears; a worn piece leaves its stand bare. */
   setWorn(costume: string | null, bow: string | null): void
   /** The member's owned catalog ids, or null while their wallet is still loading. */
@@ -146,13 +166,27 @@ interface Display {
   hop: number
 }
 
+/** One hanger on the wardrobe's rail, and the kept costume on it. */
+interface Hanger {
+  hanger: Painted
+  garment: Painted
+  costume: string | null
+  control: Control
+  glint: Control
+}
+
 interface BuiltRoom {
   pieces: Piece[]
   displays: Display[]
   glints: { node: HTMLDivElement; shown: () => boolean }[]
+  /** The wardrobe's body, where a tap opens or closes it. */
+  wardrobe?: Painted
+  hangers: Hanger[]
   refresh(): void
   dispose?(): void
 }
+
+type Own = (spot: Spot, node: HTMLElement, font: number) => Control
 
 export function createAtelierRoom(
   scene: THREE.Scene,
@@ -300,18 +334,23 @@ export function createAtelierRoom(
   let reflected = false
   let owned: Set<string> | null = null
   let visitorKind: CharacterKind | null = null
+  // The wardrobe stays open or closed as left, even once the entrance is rebuilt.
+  let wardrobeOpen = false
+  const kept = (): string[] => owned === null ? [] : HANGABLE.filter((id) => owned!.has(itemIdFor('costume', id)))
 
   const built = new Map<string, BuiltRoom>()
   const teardowns = new Map<string, () => void>()
   const placed = new Map(ATELIER_ROOMS.map((room) => [room.key, room]))
 
   /** What every room builds its displays with: buttons, price tags, glints, and pieces to try on. */
-  function roomKit(group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void) {
+  function roomKit(group: THREE.Group, own: Own) {
     const pieces: Piece[] = []
     const displays: Display[] = []
     const glints: BuiltRoom['glints'] = []
+    const hangers: Hanger[] = []
     const priceTags: { tag: HangTag; item: () => string }[] = []
     const cleanup: (() => void)[] = []
+    const refreshers: (() => void)[] = []
 
     function button(label: string, className: string, spot: Spot, click: () => void): HTMLButtonElement {
       const node = document.createElement('button')
@@ -332,7 +371,7 @@ export function createAtelierRoom(
       priceTags.push({ tag, item })
     }
     // A few small stars twinkle over each piece still on its stand, and over each portrait.
-    function glint(spot: Spot, aspect: number, shown: () => boolean): void {
+    function glint(spot: Spot, aspect: number, shown: () => boolean): Control {
       const node = document.createElement('div')
       node.className = 'atelier-glint'
       node.setAttribute('aria-hidden', 'true')
@@ -346,8 +385,9 @@ export function createAtelierRoom(
         star.style.animationDelay = `${-((seed + x * 0.031) % 2.6).toFixed(2)}s`
         node.append(star)
       }
-      own(spot, node, 0.1)
+      const control = own(spot, node, 0.1)
       glints.push({ node, shown })
+      return control
     }
 
     /** A headpiece resting on a cushion or a shelf; tapping where it lay gives it back. */
@@ -390,12 +430,111 @@ export function createAtelierRoom(
         tag.tag.setVisible(show)
         if (show && price !== null) tag.tag.setLabel(String(price))
       }
+      for (const fn of refreshers) fn()
     }
 
-    return { pieces, displays, button, priceTag, glint, headpiece, built: (): BuiltRoom => ({ pieces, displays, glints, refresh, dispose: () => { for (const fn of cleanup) fn() } }) }
+    return {
+      pieces, displays, hangers, button, priceTag, glint, headpiece,
+      onRefresh: (fn: () => void) => { refreshers.push(fn) },
+      built: (wardrobe?: Painted): BuiltRoom => ({ pieces, displays, glints, hangers, wardrobe, refresh, dispose: () => { for (const fn of cleanup) fn() } }),
+    }
   }
 
-  function buildEntrance(group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void): BuiltRoom {
+  /**
+   * The wardrobe at the entrance's end. It stands closed until tapped; open, its rail hangs the
+   * costumes the member keeps, one to a hanger, and a tap on one tries it on. Three hangers
+   * hang even when bare, as in the mock; more kept pieces bring more, spread along the rail.
+   */
+  function buildWardrobe(group: THREE.Group, kit: ReturnType<typeof roomKit>, own: Own): Painted {
+    const { wardrobe } = atelier
+    const W = wardrobe.width
+    const H = W / aspectOf('wardrobeOpen')
+    const top = wardrobe.bottomY - H
+    const body = plane(units(W), units(H), art.wardrobeClosed, wx(wardrobe.x), wy(top + H / 2), wardrobe.z) as Painted
+    group.add(body)
+    const railY = top + wardrobe.rail.top * H
+    const railLeft = wardrobe.x - W / 2 + wardrobe.rail.left * W
+    const railRight = wardrobe.x - W / 2 + wardrobe.rail.right * W
+    const { hanger: rack } = wardrobe
+    const hangerHeight = rack.width / aspectOf('hanger')
+    const hangerY = railY - rack.hook + hangerHeight / 2
+
+    const toggle = kit.button('Open the wardrobe', 'atelier-item atelier-wardrobe', { x: wardrobe.x, y: top + H / 2, width: W * 0.92 }, () => toggleWardrobe())
+    kit.glint({ x: wardrobe.x, y: top + wardrobe.handles.y * H, width: wardrobe.handles.width }, 1.4, () => !wardrobeOpen)
+
+    for (let i = 0; i < rack.max; i++) {
+      const hanger = plane(units(rack.width), units(hangerHeight), art.hanger, wx(wardrobe.x), wy(hangerY), wardrobe.z + 0.005) as Painted
+      hanger.visible = false
+      group.add(hanger)
+      const garment = plane(1, 1, art.hangerKiki, wx(wardrobe.x), wy(railY), wardrobe.z + 0.01) as Painted
+      garment.visible = false
+      group.add(garment)
+      const slot: Hanger = { hanger, garment, costume: null, control: null!, glint: null! }
+      const spot = { x: wardrobe.x, y: railY + rack.drop + 100, width: rack.width + 10 }
+      const node = document.createElement('button')
+      node.type = 'button'
+      node.className = 'atelier-item atelier-item-hung is-empty'
+      node.addEventListener('click', () => {
+        if (slot.costume !== null) actions?.onItem({ slot: 'costume', id: slot.costume })
+      })
+      slot.control = own(spot, node, 0.09)
+      slot.glint = kit.glint(spot, 0.75, () => wardrobeOpen && slot.costume !== null)
+      kit.hangers.push(slot)
+    }
+
+    kit.onRefresh(() => {
+      body.material.map = wardrobeOpen ? art.wardrobeOpen : art.wardrobeClosed
+      toggle.setAttribute('aria-label', wardrobeOpen ? 'Close the wardrobe' : 'Open the wardrobe')
+      toggle.setAttribute('aria-expanded', String(wardrobeOpen))
+      const hung = kept()
+      const count = Math.max(rack.slots, Math.min(rack.max, hung.length))
+      const inset = rack.width * rack.inset
+      const step = (railRight - railLeft - 2 * inset) / (count - 1)
+      kit.hangers.forEach((slot, i) => {
+        const x = wx(railLeft + inset + step * i)
+        const id = hung[i] ?? null
+        slot.hanger.visible = wardrobeOpen && i < count
+        slot.hanger.position.x = x
+        if (id !== slot.costume) {
+          slot.costume = id
+          const art_ = id === null ? null : HANGING[id]
+          if (art_) {
+            const h = units(art_.height)
+            slot.garment.geometry.dispose()
+            slot.garment.geometry = new THREE.PlaneGeometry(h * aspectOf(art_.image), h)
+            slot.garment.material.map = art[art_.image]
+            slot.garment.position.y = wy(railY + rack.drop) - h / 2
+            slot.control.mark.y = slot.garment.position.y
+            slot.glint.mark.y = slot.garment.position.y
+          }
+        }
+        slot.garment.visible = wardrobeOpen && id !== null
+        slot.garment.position.x = x
+        slot.control.mark.x = x
+        slot.glint.mark.x = x
+        const wearing = id !== null && worn === id
+        slot.control.node.classList.toggle('is-empty', !(wardrobeOpen && id !== null))
+        slot.control.node.setAttribute('aria-pressed', String(wearing))
+        if (id !== null) slot.control.node.setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName({ slot: 'costume', id }).toLowerCase()}`)
+      })
+    })
+    return body
+  }
+
+  function toggleWardrobe(): void {
+    wardrobeOpen = !wardrobeOpen
+    refreshAll()
+    if (wardrobeOpen && kept().length === 0) {
+      const { wardrobe } = atelier
+      const H = wardrobe.width / aspectOf('wardrobeOpen')
+      note.textContent = 'The pieces you keep hang here'
+      noteSpot.x = wx(wardrobe.x)
+      noteSpot.y = wy(wardrobe.bottomY - H + wardrobe.rail.top * H + 150)
+      noteFor = 2.6
+    }
+  }
+
+  function buildEntrance(group: THREE.Group, own: Own): BuiltRoom {
     for (const name of ['shelf', 'cabinet', 'jewelryBox', 'perfume', 'portraitWink', 'portraitBunny', 'ribbon'] as const) {
       picture(group, name, atelier[name])
     }
@@ -419,10 +558,10 @@ export function createAtelierRoom(
       group.add(hollow)
       kit.headpiece(spot, spot.x, [hollow])
     }
-    return kit.built()
+    return kit.built(buildWardrobe(group, kit, own))
   }
 
-  function buildCollection(room: PlacedRoom & { collection: CollectionRoom; centerX: number }, group: THREE.Group, own: (spot: Spot, node: HTMLElement, font: number) => void): BuiltRoom {
+  function buildCollection(room: PlacedRoom & { collection: CollectionRoom; centerX: number }, group: THREE.Group, own: Own): BuiltRoom {
     const { collection } = room
     const C = room.centerX
     const T = ROOM_TEMPLATE
@@ -582,7 +721,11 @@ export function createAtelierRoom(
     if (!room || built.has(key)) return () => {}
     const group = new THREE.Group()
     const owned: Control[] = []
-    const own = (spot: Spot, node: HTMLElement, font: number) => { owned.push(place(node, spot, font)) }
+    const own: Own = (spot, node, font) => {
+      const control = place(node, spot, font)
+      owned.push(control)
+      return control
+    }
     const contents = room.collection && room.centerX !== null
       ? buildCollection(room as PlacedRoom & { collection: CollectionRoom; centerX: number }, group, own)
       : buildEntrance(group, own)
@@ -613,6 +756,7 @@ export function createAtelierRoom(
 
   const allPieces = () => [...built.values()].flatMap((room) => room.pieces)
   const allDisplays = () => [...built.values()].flatMap((room) => room.displays)
+  const allHangers = () => [...built.values()].flatMap((room) => room.hangers)
   const refreshAll = () => { for (const room of built.values()) room.refresh() }
 
   return {
@@ -631,11 +775,23 @@ export function createAtelierRoom(
     },
 
     hitTestItem(raycaster) {
+      for (const slot of allHangers()) {
+        if (slot.costume !== null && slot.garment.visible && pickPainted(raycaster, [slot.garment])) return { slot: 'costume', id: slot.costume }
+      }
       for (const piece of allPieces()) {
         if (pickPainted(raycaster, piece.target > 0 ? piece.meshes : piece.bare)) return piece.item()
       }
       return null
     },
+
+    hitTestWardrobe(raycaster) {
+      for (const room of built.values()) {
+        if (room.wardrobe && pickPainted(raycaster, [room.wardrobe])) return true
+      }
+      return false
+    },
+
+    toggleWardrobe,
 
     hitTestDisplay(raycaster) {
       for (const display of allDisplays()) {

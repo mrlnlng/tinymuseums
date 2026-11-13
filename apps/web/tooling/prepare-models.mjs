@@ -419,6 +419,19 @@ const atelier = modelsOnly ? null : {
   fishBag: await image('fish-bag'),
   flowerBush: await image('flower-bush'),
   platformBlue: await image('platform-blue', { lossless: true }),
+  wardrobeOpen: await image('wardrobe-open'),
+  wardrobeClosed: await image('wardrobe-closed'),
+  hanger: await image('hanger', { lossless: true }),
+  hangerKiki: await image('hanger-kiki'),
+  hangerTutu: await image('hanger-tutu'),
+  hangerBlueFloral: await image('hanger-blue-floral'),
+  hangerFloralCardigan: await image('hanger-floral-cardigan'),
+  hangerGoldSequin: await image('hanger-gold-sequin'),
+  hangerGoldCape: await image('hanger-gold-cape'),
+  hangerCardiganRed: await image('hanger-cardigan-red'),
+  hangerCardiganForestGreen: await image('hanger-cardigan-forest-green'),
+  hangerCardiganNavyBlue: await image('hanger-cardigan-navy-blue'),
+  hangerCardiganButterYellow: await image('hanger-cardigan-butter-yellow'),
 }
 
 const path = new URL('src/generated/asset-manifest.json', root)

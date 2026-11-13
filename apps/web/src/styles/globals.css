@@ -4563,6 +4563,10 @@ form > .account-switch {
 }
 .atelier-item { aspect-ratio: 1.55; }
 .atelier-item-dress { aspect-ratio: 1; }
+/* The wardrobe's doors, and a costume hanging inside it once it is open. */
+.atelier-wardrobe { aspect-ratio: 0.9; }
+.atelier-item-hung { aspect-ratio: 0.75; }
+.atelier-item-hung.is-empty { display: none; }
 .atelier-choice { aspect-ratio: 0.85; }
 .atelier-choice:disabled { pointer-events: none; }
 .atelier-swatch {

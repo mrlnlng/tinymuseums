@@ -3,7 +3,9 @@ import { env } from '../infra/env.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { mulberry32 } from '../infra/random.ts'
 import { parsePlacements, validatePlacements, type Placement, type PlacementOwnership } from '../rooms/placements.ts'
+import { FULL_ROOM_WIDTH, roomSizeFor, sizedTheme } from '../rooms/sizes.ts'
 import { THEMES, type ThemeId } from '../rooms/themes.ts'
+import { CLOSET_MESSES, cleanItemId } from '../rooms/work.ts'
 import { newToken } from './auth.ts'
 import { nameOf } from './members.ts'
 import { sealEpoch } from './epoch.ts'
@@ -76,17 +78,57 @@ function roomSlug(): string {
   return slug
 }
 
+/** A new room is the storeroom closet: bare plaster, a grimy window, a few starter things, and dirt. */
 function starterPlacements(): Placement[] {
   return [
-    { id: 'starter-shelf', kind: 'prop', ref: 'shelf', zone: 'wall', x: 4 },
-    { id: 'starter-carpet', kind: 'prop', ref: 'carpet', zone: 'floor', x: 6.5 },
-    { id: 'starter-pillow', kind: 'prop', ref: 'pillow-red', zone: 'floor', x: 8.2 },
+    { id: 'finish-wallpaper', kind: 'finish', ref: 'wallpaper-plaster', zone: 'wallpaper', x: 0 },
+    { id: 'finish-baseboard', kind: 'finish', ref: 'baseboard-short', zone: 'baseboard', x: 0 },
+    { id: 'starter-hooks', kind: 'prop', ref: 'wall-hooks', zone: 'wall', x: 2.35, y: 1.55 },
+    { id: 'starter-cubby', kind: 'prop', ref: 'cubby', zone: 'floor', x: 2.6 },
+    { id: 'starter-bulb', kind: 'prop', ref: 'bare-bulb', zone: 'wall', x: 3.3, y: 2.3 },
+    { id: 'starter-window', kind: 'prop', ref: 'attic-window', zone: 'wall', x: 4.2, y: 2.25 },
+    ...CLOSET_MESSES,
   ]
 }
 
 export async function getRoom(slug: string): Promise<RoomRow | null> {
   const row = await queryOne<RoomDbRow>(`select ${ROOM_COLUMNS} from rooms where slug = $1`, [slug])
   return row ? toRoom(row) : null
+}
+
+/**
+ * For trying the closet on a test deployment: the member's room goes back to a new closet. Things
+ * they own stay owned; only the room's size and arrangement reset. Callers must refuse this outside
+ * test deployments.
+ */
+export async function restartInCloset(memberId: string): Promise<RoomRow> {
+  const room = await personalRoomFor(memberId)
+  return transaction(async (client) => {
+    await client.query(`select pg_advisory_xact_lock(hashtext($1))`, [`personal-room:${memberId}`])
+    // Sizes and paid cleaning go back, with their stamps, so the closet can be grown and cleaned again.
+    await client.query(`insert into wallets (member_id) values ($1) on conflict do nothing`, [memberId])
+    await client.query(`select balance from wallets where member_id = $1 for update`, [memberId])
+    const refunded = await client.query<{ price: number }>(
+      `delete from wallet_items where member_id = $1 and (item_id like 'room:%' or item_id like 'clean:%') returning price`,
+      [memberId],
+    )
+    const refund = refunded.rows.reduce((sum, row) => sum + Number(row.price), 0)
+    if (refund > 0) await client.query(`update wallets set balance = balance + $2 where member_id = $1`, [memberId, refund])
+    await client.query(
+      `insert into wallet_items (member_id, item_id, price) values ($1, 'room:closet', 0)`,
+      [memberId],
+    )
+    const placements = JSON.stringify(starterPlacements())
+    const updated = await client.query<RoomDbRow>(
+      `update rooms
+          set draft = $2::jsonb, published = $2::jsonb, draft_version = draft_version + 1,
+              published_at = now(), updated_at = now()
+        where slug = $1
+        returning ${ROOM_COLUMNS}`,
+      [room.slug, placements],
+    )
+    return toRoom(updated.rows[0])
+  })
 }
 
 export async function personalRoomFor(memberId: string): Promise<RoomRow> {
@@ -96,8 +138,18 @@ export async function personalRoomFor(memberId: string): Promise<RoomRow> {
       `select ${ROOM_COLUMNS} from rooms where kind = 'personal' and owner_member_id = $1`,
       [memberId],
     )
-    if (existing.rows[0]) return toRoom(existing.rows[0])
-
+    // Rooms from before closets were already full size; a new one starts as the closet.
+    const size = existing.rows[0] ? 'room:studio' : 'room:closet'
+    const sized = await client.query(
+      `select 1 from wallet_items where member_id = $1 and item_id like 'room:%' limit 1`,
+      [memberId],
+    )
+    if (sized.rows.length === 0) {
+      await client.query(
+        `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0) on conflict do nothing`,
+        [memberId, size],
+      )
+    }
     for (const itemId of STARTER_PROPS) {
       await client.query(
         `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
@@ -105,6 +157,8 @@ export async function personalRoomFor(memberId: string): Promise<RoomRow> {
         [memberId, itemId],
       )
     }
+
+    if (existing.rows[0]) return toRoom(existing.rows[0])
 
     const placements = JSON.stringify(starterPlacements())
     let row: RoomDbRow | undefined
@@ -141,7 +195,7 @@ export function canEdit(room: RoomRow, access: RoomAccess): boolean {
   return access.memberId !== null && access.memberId !== undefined && room.ownerMemberId === access.memberId
 }
 
-async function ownershipFor(room: RoomRow): Promise<PlacementOwnership> {
+async function ownershipFor(room: RoomRow): Promise<PlacementOwnership & { width: number; cleaned(placementId: string): boolean }> {
   const owned = new Set<string>()
   if (room.kind === 'personal' && room.ownerMemberId) {
     const rows = await query<{ item_id: string }>(
@@ -164,6 +218,9 @@ async function ownershipFor(room: RoomRow): Promise<PlacementOwnership> {
   return {
     ownsProp: (propId) => owned.has(`prop:${propId}`),
     hasPainting: (pieceId) => pieces.has(pieceId),
+    ownsFinish: (finishId) => owned.has(`finish:${finishId}`),
+    width: room.kind === 'personal' ? roomSizeFor(owned).width : FULL_ROOM_WIDTH,
+    cleaned: (placementId) => owned.has(cleanItemId(placementId)),
   }
 }
 
@@ -187,8 +244,13 @@ export async function saveDraft(
   const theme = THEMES[room.theme]
   if (!theme) return { ok: false, reason: 'unknown_theme' }
 
-  const result = validatePlacements(theme, parsed, await ownershipFor(room))
+  const ownership = await ownershipFor(room)
+  const result = validatePlacements(sizedTheme(theme, ownership.width), parsed, ownership)
   if (!result.ok) return result
+  // Junk only goes once it has been paid for.
+  const kept = new Set(parsed.map((placement) => placement.id))
+  const unpaid = room.draft.find((placement) => placement.kind === 'mess' && !kept.has(placement.id) && !ownership.cleaned(placement.id))
+  if (unpaid) return { ok: false, reason: 'not_cleaned', id: unpaid.id }
 
   const row = await queryOne<{ draftVersion: number }>(
     `update rooms
@@ -238,6 +300,8 @@ export interface RoomPageView {
   canEdit: boolean
   published: Placement[]
   ownerName: string | null
+  /** The room's length; a personal room grows from the closet as it is knocked through. */
+  width: number
 }
 
 /**
@@ -256,6 +320,7 @@ export async function roomPageView(
     canEdit: boolean
     display_name: string | null
     name_seed: number | null
+    sizes: string[] | null
   }>(
     `select r.slug, r.theme, r.published,
             (r.kind = 'shared'
@@ -263,7 +328,9 @@ export async function roomPageView(
               or (r.visibility = 'link' and r.share_token is not null and r.share_token = $3)) as "canView",
             ((r.kind = 'shared' and $4::boolean)
               or (r.kind = 'personal' and $2::uuid is not null and r.owner_member_id = $2::uuid)) as "canEdit",
-            m.display_name, m.name_seed
+            m.display_name, m.name_seed,
+            (select array_agg(w.item_id) from wallet_items w
+              where w.member_id = r.owner_member_id and w.item_id like 'room:%') as sizes
        from rooms r
        left join members m on m.id = r.owner_member_id
       where r.slug = $1`,
@@ -277,5 +344,6 @@ export async function roomPageView(
     canEdit: row.canEdit,
     published: row.canView ? parsePlacements(row.published) ?? [] : [],
     ownerName: row.canView && (row.display_name !== null || row.name_seed !== null) ? nameOf(row).name : null,
+    width: row.theme === 'cozy' ? roomSizeFor(row.sizes ?? []).width : FULL_ROOM_WIDTH,
   }
 }

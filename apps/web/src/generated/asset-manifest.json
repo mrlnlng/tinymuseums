@@ -940,6 +940,312 @@
         "h": 718,
         "src": "landing-peek-bruce@2x.20cf10dc15.webp"
       }
+    },
+    "home/door": {
+      "w": 558,
+      "h": 1040,
+      "x2": {
+        "w": 558,
+        "h": 1040,
+        "src": "home-door@2x.248000505f.webp"
+      }
+    },
+    "home/armchair": {
+      "w": 803,
+      "h": 800,
+      "x2": {
+        "w": 803,
+        "h": 800,
+        "src": "home-armchair@2x.5533a2b6ae.webp"
+      }
+    },
+    "home/chair": {
+      "w": 462,
+      "h": 722,
+      "x2": {
+        "w": 462,
+        "h": 722,
+        "src": "home-chair@2x.79caa8d79c.webp"
+      }
+    },
+    "home/cubby": {
+      "w": 421,
+      "h": 535,
+      "x2": {
+        "w": 421,
+        "h": 535,
+        "src": "home-cubby@2x.54a7b7ba9c.webp"
+      }
+    },
+    "home/gold-frame": {
+      "w": 503,
+      "h": 595,
+      "x2": {
+        "w": 503,
+        "h": 595,
+        "src": "home-gold-frame@2x.1484e2d5c8.webp"
+      }
+    },
+    "home/hanger": {
+      "w": 479,
+      "h": 270,
+      "x2": {
+        "w": 479,
+        "h": 270,
+        "src": "home-hanger@2x.3ad16ea8fc.webp"
+      }
+    },
+    "home/mug": {
+      "w": 245,
+      "h": 198,
+      "x2": {
+        "w": 245,
+        "h": 198,
+        "src": "home-mug@2x.2e40dc5f31.webp"
+      }
+    },
+    "home/plant": {
+      "w": 704,
+      "h": 998,
+      "x2": {
+        "w": 704,
+        "h": 998,
+        "src": "home-plant@2x.044806f635.webp"
+      }
+    },
+    "home/round-table": {
+      "w": 747,
+      "h": 501,
+      "x2": {
+        "w": 747,
+        "h": 501,
+        "src": "home-round-table@2x.eb0826a9c5.webp"
+      }
+    },
+    "home/rug": {
+      "w": 610,
+      "h": 199,
+      "x2": {
+        "w": 610,
+        "h": 199,
+        "src": "home-rug@2x.0748cfc7c8.webp"
+      }
+    },
+    "home/side-table": {
+      "w": 419,
+      "h": 585,
+      "x2": {
+        "w": 419,
+        "h": 585,
+        "src": "home-side-table@2x.d4d6d03e58.webp"
+      }
+    },
+    "home/tulip-vase": {
+      "w": 314,
+      "h": 418,
+      "x2": {
+        "w": 314,
+        "h": 418,
+        "src": "home-tulip-vase@2x.d10bdeea51.webp"
+      }
+    },
+    "home/wall-hooks": {
+      "w": 418,
+      "h": 196,
+      "x2": {
+        "w": 418,
+        "h": 196,
+        "src": "home-wall-hooks@2x.1b802b3bc0.webp"
+      }
+    },
+    "home/wall-shelf": {
+      "w": 674,
+      "h": 88,
+      "x2": {
+        "w": 674,
+        "h": 88,
+        "src": "home-wall-shelf@2x.c4887f9ae6.webp"
+      }
+    },
+    "home/window": {
+      "w": 563,
+      "h": 714,
+      "x2": {
+        "w": 563,
+        "h": 714,
+        "src": "home-window@2x.7218e9c2e9.webp"
+      }
+    },
+    "home/wallpaper-pink-stripes": {
+      "w": 380,
+      "h": 380,
+      "x2": {
+        "w": 380,
+        "h": 380,
+        "src": "home-wallpaper-pink-stripes@2x.a3355c773a.webp"
+      }
+    },
+    "home/wallpaper-blue-floral": {
+      "w": 1497,
+      "h": 569,
+      "x2": {
+        "w": 1497,
+        "h": 569,
+        "src": "home-wallpaper-blue-floral@2x.2e07bab480.webp"
+      }
+    },
+    "home/wallpaper-ornate": {
+      "w": 745,
+      "h": 741,
+      "x2": {
+        "w": 745,
+        "h": 741,
+        "src": "home-wallpaper-ornate@2x.cb107a0388.webp"
+      }
+    },
+    "home/baseboard-tall": {
+      "w": 627,
+      "h": 180,
+      "x2": {
+        "w": 627,
+        "h": 180,
+        "src": "home-baseboard-tall@2x.359756e725.webp"
+      }
+    },
+    "home/baseboard-short": {
+      "w": 1590,
+      "h": 57,
+      "x2": {
+        "w": 1590,
+        "h": 57,
+        "src": "home-baseboard-short@2x.1e236d63bb.webp"
+      }
+    },
+    "home/reading-lamp": {
+      "w": 276,
+      "h": 384,
+      "x2": {
+        "w": 276,
+        "h": 384,
+        "src": "home-reading-lamp@2x.6303ee3d41.webp"
+      }
+    },
+    "home/sketchbooks": {
+      "w": 384,
+      "h": 174,
+      "x2": {
+        "w": 384,
+        "h": 174,
+        "src": "home-sketchbooks@2x.0868554e53.webp"
+      }
+    },
+    "home/ammonite-display": {
+      "w": 362,
+      "h": 384,
+      "x2": {
+        "w": 362,
+        "h": 384,
+        "src": "home-ammonite-display@2x.292477c363.webp"
+      }
+    },
+    "home/pressed-fern": {
+      "w": 277,
+      "h": 384,
+      "x2": {
+        "w": 277,
+        "h": 384,
+        "src": "home-pressed-fern@2x.0ec9fd44f7.webp"
+      }
+    },
+    "home/patchwork-mat": {
+      "w": 640,
+      "h": 123,
+      "x2": {
+        "w": 640,
+        "h": 123,
+        "src": "home-patchwork-mat@2x.71e291dcd9.webp"
+      }
+    },
+    "home/gallery-runner": {
+      "w": 640,
+      "h": 86,
+      "x2": {
+        "w": 640,
+        "h": 86,
+        "src": "home-gallery-runner@2x.ba7627f41c.webp"
+      }
+    },
+    "home/moonwake-rug": {
+      "w": 640,
+      "h": 178,
+      "x2": {
+        "w": 640,
+        "h": 178,
+        "src": "home-moonwake-rug@2x.1a1dde788e.webp"
+      }
+    },
+    "home/lily-stitch-rug": {
+      "w": 640,
+      "h": 174,
+      "x2": {
+        "w": 640,
+        "h": 174,
+        "src": "home-lily-stitch-rug@2x.5390585691.webp"
+      }
+    },
+    "home/studio-stripe-carpet": {
+      "w": 640,
+      "h": 116,
+      "x2": {
+        "w": 640,
+        "h": 116,
+        "src": "home-studio-stripe-carpet@2x.47f9b60e44.webp"
+      }
+    },
+    "home/faded-floral-carpet": {
+      "w": 640,
+      "h": 139,
+      "x2": {
+        "w": 640,
+        "h": 139,
+        "src": "home-faded-floral-carpet@2x.6accfa9599.webp"
+      }
+    },
+    "home/opening-night-invite": {
+      "w": 384,
+      "h": 196,
+      "x2": {
+        "w": 384,
+        "h": 196,
+        "src": "home-opening-night-invite@2x.5304579464.webp"
+      }
+    },
+    "home/paint-stained-palette": {
+      "w": 384,
+      "h": 201,
+      "x2": {
+        "w": 384,
+        "h": 201,
+        "src": "home-paint-stained-palette@2x.2ca2098955.webp"
+      }
+    },
+    "home/storeroom-letter": {
+      "w": 384,
+      "h": 247,
+      "x2": {
+        "w": 384,
+        "h": 247,
+        "src": "home-storeroom-letter@2x.df75fcd4d2.webp"
+      }
+    },
+    "home/midnight-study": {
+      "w": 384,
+      "h": 221,
+      "x2": {
+        "w": 384,
+        "h": 221,
+        "src": "home-midnight-study@2x.800d5e3f96.webp"
+      }
     }
   },
   "atlases": {

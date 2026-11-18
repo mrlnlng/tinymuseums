@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import type { PoolClient } from 'pg'
-import { ITEMS, isBuyable, isCatalogItem, priceOf } from '../economy/catalog.ts'
+import { ITEMS, STARTER_PROPS, isBuyable, isCatalogItem, priceOf } from '../economy/catalog.ts'
 import { isPondBait } from '../economy/pond.ts'
 import { validateClaim, type ParsedClaim } from '../economy/rules.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
@@ -215,6 +216,78 @@ export async function claimBatch(
       balance = result.balance
     }
     return { results, balance }
+  })
+}
+
+/**
+ * For trying the game out on a test deployment: every catalog item, free, plus stamps to spend.
+ * Callers must refuse this outside test deployments; it is not an economy action.
+ */
+export async function unlockEverything(memberId: string, stamps: number): Promise<Wallet> {
+  return transaction(async (client) => {
+    await lockWallet(client, memberId)
+    await client.query(
+      `insert into wallet_items (member_id, item_id, price)
+       select $1, item_id, 0 from unnest($2::text[]) as item_id
+       on conflict do nothing`,
+      // Room sizes and cleaning are left out, so the stamps can try knocking through and paying to clean.
+      [memberId, Object.keys(ITEMS).filter((itemId) => !itemId.startsWith('room:') && !itemId.startsWith('clean:'))],
+    )
+    const amount = Math.max(0, Math.floor(stamps))
+    if (amount > 0) {
+      // Recorded as a claim, so the ledger still adds up to the balance.
+      await client.query(
+        `insert into coin_claims (member_id, claim_key, source, amount) values ($1, $2, 'admin', $3)`,
+        [memberId, `admin:${randomUUID()}`, amount],
+      )
+    }
+    const updated = await client.query<{ balance: number }>(
+      `update wallets set balance = balance + $2 where member_id = $1 returning balance`,
+      [memberId, amount],
+    )
+    return walletOf(client, memberId, updated.rows[0].balance)
+  })
+}
+
+/**
+ * Takes back what admin unlocks gave, so a tester can play as anyone else would: the free items
+ * (each unlock's rows share its claim's transaction time), the stamps, and, if some of those stamps
+ * were already spent, the newest things bought since, until the books balance again.
+ */
+export async function undoAdminUnlock(memberId: string): Promise<Wallet> {
+  return transaction(async (client) => {
+    let balance = await lockWallet(client, memberId)
+    const total = await client.query<{ stamps: number }>(
+      `select coalesce(sum(amount), 0)::int as stamps from coin_claims where member_id = $1 and source = 'admin'`,
+      [memberId],
+    )
+    const stamps = total.rows[0]?.stamps ?? 0
+    await client.query(
+      `delete from wallet_items w
+        where w.member_id = $1 and w.price = 0 and not (w.item_id = any($2::text[]))
+          and exists (select 1 from coin_claims c where c.member_id = w.member_id and c.source = 'admin' and c.at = w.at)`,
+      [memberId, [...STARTER_PROPS]],
+    )
+    if (balance < stamps) {
+      const spent = await client.query<{ item_id: string; price: number }>(
+        `select item_id, price from wallet_items
+          where member_id = $1 and price > 0
+            and at >= (select min(at) from coin_claims where member_id = $1 and source = 'admin')
+          order by at desc`,
+        [memberId],
+      )
+      for (const row of spent.rows) {
+        if (balance >= stamps) break
+        await client.query(`delete from wallet_items where member_id = $1 and item_id = $2`, [memberId, row.item_id])
+        balance += Number(row.price)
+      }
+    }
+    await client.query(`delete from coin_claims where member_id = $1 and source = 'admin'`, [memberId])
+    const updated = await client.query<{ balance: number }>(
+      `update wallets set balance = $2 where member_id = $1 returning balance`,
+      [memberId, Math.max(0, balance - stamps)],
+    )
+    return walletOf(client, memberId, updated.rows[0].balance)
   })
 }
 

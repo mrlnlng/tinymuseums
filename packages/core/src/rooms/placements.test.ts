@@ -7,8 +7,8 @@ function placement(overrides: Partial<Placement> = {}): Placement {
   return { id: 'pl-1', kind: 'prop', ref: 'carpet', zone: 'floor', x: 7, ...overrides }
 }
 
-const ownsAll = { ownsProp: () => true, hasPainting: () => true }
-const ownsNone = { ownsProp: () => false, hasPainting: () => false }
+const ownsAll = { ownsProp: () => true, hasPainting: () => true, ownsFinish: () => true }
+const ownsNone = { ownsProp: () => false, hasPainting: () => false, ownsFinish: () => false }
 
 test('parsePlacements accepts valid entries and drops unknown fields', () => {
   const parsed = parsePlacements([
@@ -84,7 +84,7 @@ test('a prop must be known, in one of its zones, and fully inside the zone', () 
     reason: 'wrong_zone',
     id: 'pl-1',
   })
-  assert.deepEqual(validatePlacements(theme, [placement({ x: 1.5 })], ownsAll), {
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 1.49 })], ownsAll), {
     ok: false,
     reason: 'out_of_bounds',
     id: 'pl-1',
@@ -94,14 +94,15 @@ test('a prop must be known, in one of its zones, and fully inside the zone', () 
     reason: 'out_of_bounds',
     id: 'pl-1',
   })
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 1.5 })], ownsAll), { ok: true })
   assert.deepEqual(validatePlacements(theme, [placement({ x: 3.1 })], ownsAll), { ok: true })
   assert.deepEqual(validatePlacements(theme, [placement({ x: 18.4 })], ownsAll), { ok: true })
 })
 
 test('a prop flush against a zone edge passes despite floating-point noise', () => {
   const theme = THEMES.cozy
-  assert.deepEqual(validatePlacements(theme, [placement({ x: 3.0999999999999996 })], ownsAll), { ok: true })
-  assert.deepEqual(validatePlacements(theme, [placement({ x: 3.09 })], ownsAll), {
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 1.4999999999999998 })], ownsAll), { ok: true })
+  assert.deepEqual(validatePlacements(theme, [placement({ x: 1.49 })], ownsAll), {
     ok: false,
     reason: 'out_of_bounds',
     id: 'pl-1',

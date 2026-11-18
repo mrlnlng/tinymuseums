@@ -12,11 +12,13 @@ import {
   getWallet,
   grantNote,
   grantWelcome,
+  undoAdminUnlock,
+  unlockEverything,
   useBait,
   type ClaimResult,
 } from '../src/domain/wallet.ts'
 import { closePool, query, queryOne } from '../src/infra/db.ts'
-import { ITEMS } from '../src/economy/catalog.ts'
+import { ITEMS, STARTER_PROPS } from '../src/economy/catalog.ts'
 import { localDay } from '../src/economy/day.ts'
 import { SECRET_FEATURES } from '../src/economy/rules.ts'
 
@@ -260,6 +262,44 @@ test('buying an owned item again does not charge twice', async () => {
   assert.deepEqual(first, { balance: 0, items: ['bow:kiki'], bait: {} })
   assert.deepEqual(await buy(id, 'bow:kiki'), { balance: 0, items: ['bow:kiki'], bait: {} })
   await assertInvariant(id)
+})
+
+test('admin unlock grants the whole catalog free, once, and adds stamps', async () => {
+  const id = await member()
+  const first = await unlockEverything(id, 1000)
+  assert.equal(first.balance, 1000)
+  assert.deepEqual(first.items, Object.keys(ITEMS).filter((itemId) => !itemId.startsWith('room:') && !itemId.startsWith('clean:')).sort())
+  const second = await unlockEverything(id, 1000)
+  assert.equal(second.balance, 2000)
+  assert.equal(second.items.length, first.items.length)
+  const paid = await query<{ price: number }>(`select price from wallet_items where member_id = $1 and price <> 0`, [id])
+  assert.equal(paid.length, 0)
+  await assertInvariant(id)
+})
+
+test('turning admin mode off takes back the unlocks, their stamps and what those stamps bought', async () => {
+  const id = await member()
+  await grantWelcome(id)
+  const mirror = await buy(id, 'prop:mirror')
+  assert.ok('items' in mirror)
+  const before = await getWallet(id, today)
+
+  await unlockEverything(id, 1000)
+  // Spends more than the member's own stamps: a column bought on admin stamps.
+  await query(`delete from wallet_items where member_id = $1 and item_id = 'prop:column'`, [id])
+  const column = await buy(id, 'prop:column')
+  assert.ok('items' in column)
+  const studio = await buy(id, 'room:storeroom')
+  assert.ok('items' in studio)
+
+  const after = await undoAdminUnlock(id)
+  // Starter things stay: a room grants them anyway.
+  assert.deepEqual(after.items.filter((item) => !(STARTER_PROPS as readonly string[]).includes(item)), before.items)
+  assert.equal(after.balance, before.balance)
+  await assertInvariant(id)
+
+  // Nothing left to undo.
+  assert.deepEqual(await undoAdminUnlock(id), after)
 })
 
 test('buying bait spends pearls and stacks the pack count', async () => {

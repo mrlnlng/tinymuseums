@@ -4,6 +4,8 @@ export { default as Purse } from './components/Purse'
 export { useEarnEvents, useWallet } from './hooks'
 export {
   buy,
+  undoAdminUnlock,
+  unlockEverything,
   earn,
   ensureStarted,
   flushOutbox,

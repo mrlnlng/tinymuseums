@@ -68,7 +68,6 @@ export default function LandingPage() {
           <AssetImage name="landing/otter-walk" className="landing-walker-cat" />
           <AssetImage name="landing/peek-bunny" className="landing-peeker" />
           <AssetImage name="landing/peek-cat" className="landing-peeker" />
-          <AssetImage name="landing/peek-bruce" className="landing-peeker" />
         </div>
       </div>
 

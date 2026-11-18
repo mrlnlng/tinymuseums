@@ -591,9 +591,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1794435227.684025,
-    "seen": 1794435356.5838897,
-    "ast_hash": "8de646a6881864bd4e2b71fc0571c906",
+    "mtime": 1794443344.6737478,
+    "seen": 1794443470.2711296,
+    "ast_hash": "22a159250f466655a7f2cda96a2377ab",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -873,9 +873,9 @@
     "semantic_hash": "796873e0bfdac77202e9e5f54c3f82f8"
   },
   "apps/web/src/generated/asset-manifest.json": {
-    "mtime": 1794433024.9858923,
-    "seen": 1794433263.2488866,
-    "ast_hash": "68236c482ebb41c8edfcf6367f5bcd98",
+    "mtime": 1794443358.46914,
+    "seen": 1794443470.2712812,
+    "ast_hash": "bc66b98e0b3f8c22a08db89f5ce644b4",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AssetImage.tsx": {
@@ -897,9 +897,9 @@
     "semantic_hash": "f1eae512cc73927ef3c62aed081d8acc"
   },
   "apps/web/src/shared/components/ScreenChrome.tsx": {
-    "mtime": 1794384254.9340663,
-    "seen": 1794385477.4164662,
-    "ast_hash": "51d93edf208570b52899bdb0d55731e0",
+    "mtime": 1794435816.471604,
+    "seen": 1794435937.906626,
+    "ast_hash": "4ca1f407749a3d80d4d5671e974522b2",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/ServiceWorker.tsx": {
@@ -3621,9 +3621,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/minimap.ts": {
-    "mtime": 1794078669.7192116,
-    "seen": 1794080850.793806,
-    "ast_hash": "f2b0f06a07c764d16ead1a9664158dcb",
+    "mtime": 1794436729.312492,
+    "seen": 1794436806.7697892,
+    "ast_hash": "f8481729b1a69a6e3c6463b9b37d0e29",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/minimap.test.ts": {
@@ -5403,68 +5403,68 @@
     "semantic_hash": ""
   },
   "apps/web/tooling/import-hall-assets.mjs": {
-    "mtime": 1794382411.981305,
-    "seen": 1794383074.9811306,
-    "ast_hash": "b12f3c36dbad7b6cf1e751f0e8c8cae0",
+    "mtime": 1794443355.9884622,
+    "seen": 1794443470.27132,
+    "ast_hash": "943687487b69d2a198348f0853e64043",
     "semantic_hash": ""
   },
   "apps/web/public/assets/hall/baseboard.png": {
-    "mtime": 1794382413.853014,
-    "seen": 1794383074.9813304,
+    "mtime": 1794443356.128076,
+    "seen": 1794443470.2715728,
     "ast_hash": "9d8e18b33791ff798f3e3989fc853fb5",
     "semantic_hash": ""
   },
   "apps/web/public/assets/hall/christmas-tree.png": {
-    "mtime": 1794382413.9015942,
-    "seen": 1794383074.9813313,
+    "mtime": 1794443356.1810777,
+    "seen": 1794443470.271574,
     "ast_hash": "16362ea52c0caf7d24b03ecf87a94381",
     "semantic_hash": ""
   },
   "apps/web/public/assets/hall/curtain.png": {
-    "mtime": 1794382413.9000154,
-    "seen": 1794383074.981332,
+    "mtime": 1794443356.1810777,
+    "seen": 1794443470.2715747,
     "ast_hash": "758a740a5dc7744d72f9e25d1a37c559",
     "semantic_hash": ""
   },
   "apps/web/public/assets/hall/wallpaper.png": {
-    "mtime": 1794382413.8490138,
-    "seen": 1794383074.9813328,
-    "ast_hash": "3e37ea0e813a13c4e25cd94d22f20654",
+    "mtime": 1794443356.123076,
+    "seen": 1794443470.2715757,
+    "ast_hash": "e681ed633c5b913fe7e08f6c7fae5d9a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-baseboard@2x.c4982d98c6.webp": {
-    "mtime": 1794382414.0410194,
-    "seen": 1794383074.9814892,
+    "mtime": 1794443356.3920834,
+    "seen": 1794443470.2717721,
     "ast_hash": "f1224356fd62d7ac6adb1681054d7c1d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-baseboard@3x.c4982d98c6.webp": {
-    "mtime": 1794382414.0400193,
-    "seen": 1794383074.98149,
+    "mtime": 1794443356.3880832,
+    "seen": 1794443470.271773,
     "ast_hash": "f1224356fd62d7ac6adb1681054d7c1d",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-christmas-tree@2x.f19bbb6d7e.webp": {
-    "mtime": 1794382415.9470742,
-    "seen": 1794383074.9814904,
+    "mtime": 1794443358.433139,
+    "seen": 1794443470.2717743,
     "ast_hash": "d72e8f0de39e506340f7e5be6ae53b32",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-christmas-tree@3x.f19bbb6d7e.webp": {
-    "mtime": 1794382415.9820752,
-    "seen": 1794383074.981491,
+    "mtime": 1794443358.4681401,
+    "seen": 1794443470.2717752,
     "ast_hash": "d72e8f0de39e506340f7e5be6ae53b32",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-curtain@2x.6611dc78d9.webp": {
-    "mtime": 1794382415.204053,
-    "seen": 1794383074.9814918,
+    "mtime": 1794443357.6661181,
+    "seen": 1794443470.271776,
     "ast_hash": "cfc2b7da0072fbb2105e289428fafae0",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/hall-curtain@3x.6611dc78d9.webp": {
-    "mtime": 1794382415.210053,
-    "seen": 1794383074.9814923,
+    "mtime": 1794443357.5981164,
+    "seen": 1794443470.2717767,
     "ast_hash": "cfc2b7da0072fbb2105e289428fafae0",
     "semantic_hash": ""
   },
@@ -5574,6 +5574,18 @@
     "mtime": 1794433023.82186,
     "seen": 1794433263.24929,
     "ast_hash": "c3b7a1c4980e98db232a0bedef3855ea",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-wallpaper@2x.b0def82e09.webp": {
+    "mtime": 1794443356.26608,
+    "seen": 1794443470.271778,
+    "ast_hash": "41decd4177dca0ce37892cf72b741ee8",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/hall-wallpaper@3x.97a57ced2a.webp": {
+    "mtime": 1794443356.304081,
+    "seen": 1794443470.2717803,
+    "ast_hash": "9e1f8759d3d2016bef0ea240eb43af38",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

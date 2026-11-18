@@ -5,6 +5,16 @@ import { THEMES } from '../../../../../../packages/core/src/rooms/themes.ts'
 import {
   categoryOf,
   clampX,
+  clampY,
+  finishLabel,
+  finishOf,
+  moveWithRiders,
+  putAwayWithRiders,
+  restAt,
+  restInView,
+  shopFinishIds,
+  surfacesIn,
+  withFinish,
   withoutRejected,
   cozyLevel,
   freeX,
@@ -29,12 +39,13 @@ function placement(overrides: Partial<Placement> = {}): Placement {
 }
 
 test('clampX keeps a prop fully inside its zone', () => {
-  assert.equal(clampX(cozy, 'shelf', 'wall', 0), 2.7)
-  assert.equal(clampX(cozy, 'shelf', 'wall', 99), 18.7)
+  assert.equal(clampX(cozy, 'shelf', 'wall', 0), 1)
+  assert.equal(clampX(cozy, 'shelf', 'wall', 99), 19)
   assert.equal(clampX(cozy, 'shelf', 'wall', 5), 5)
-  // 1.9 + 2.4 / 2 is 3.0999999999999996 in floating point, which the server once refused.
-  assert.equal(clampX(cozy, 'carpet', 'floor', -10), 3.1)
-  assert.equal(clampX(cozy, 'carpet', 'floor', 99), 18.4)
+  assert.equal(clampX(cozy, 'carpet', 'floor', -10), 1.5)
+  assert.equal(clampX(cozy, 'carpet', 'floor', 99), 18.5)
+  // Floating-point sums at a zone edge are rounded away; the server once refused 3.0999999999999996.
+  assert.equal(clampX(cozy, 'chair', 'floor', -10), 0.69)
   assert.equal(clampX(cozy, 'shelf', 'wall', 5.123456), 5.123)
 })
 
@@ -57,7 +68,7 @@ test('clampX leaves unknown props and zones alone', () => {
 test('clampX centres a prop wider than the zone', () => {
   const theme = {
     ...cozy,
-    props: { ...cozy.props, huge: { zones: ['floor'], width: 40 } },
+    props: { ...cozy.props, huge: { zones: ['floor'], width: 40, height: 1 } },
   }
   assert.equal(clampX(theme, 'huge', 'floor', 3), (cozy.zones.floor.minX + cozy.zones.floor.maxX) / 2)
 })
@@ -193,7 +204,10 @@ test('cozy level climbs as things are placed, and trophies count for more', () =
 
 test('drawer categories follow the prop zones', () => {
   assert.equal(categoryOf('mirror'), 'wall')
-  assert.equal(categoryOf('cabinet'), 'floor')
+  assert.equal(categoryOf('cabinet'), 'furniture')
+  assert.equal(categoryOf('window'), 'wall')
+  assert.equal(categoryOf('mug'), 'small')
+  assert.equal(categoryOf('pillow-red'), 'small')
   assert.equal(categoryOf('fish-koi'), 'fish')
 })
 
@@ -210,13 +224,112 @@ test('freeX finds the nearest gap beside things already there', () => {
   const x = freeX(cozy, 'pillow-blue', 'floor', [pillow], 6)
   assert.ok(Math.abs(x - 6) >= 0.8 + 0.05 - 1e-9)
   assert.ok(Math.abs(x - 6) < 1.1)
-  const carpet: Placement = { id: 'free-2', kind: 'prop', ref: 'carpet', zone: 'floor', x: 6 }
-  assert.equal(freeX(cozy, 'pillow-blue', 'floor', [carpet], 6), 6)
-  assert.equal(freeX(cozy, 'carpet', 'floor', [pillow], 6), 6)
+  for (const [ref, prop] of Object.entries(cozy.props)) {
+    if (!prop.floorCovering) continue
+    const carpet: Placement = { id: 'free-2', kind: 'prop', ref, zone: 'floor', x: 6 }
+    assert.equal(freeX(cozy, 'pillow-blue', 'floor', [carpet], 6), 6, ref)
+    assert.equal(freeX(cozy, ref, 'floor', [pillow], 6), 6, ref)
+  }
 })
 
 test('a trophy goes on the wall when held high and the floor when held low', () => {
   assert.equal(zoneAt(THEMES.cozy, 'fish-koi', 2), 'wall')
   assert.equal(zoneAt(THEMES.cozy, 'fish-koi', -0.4), 'floor')
   assert.equal(zoneAt(THEMES.cozy, 'cabinet', 3), 'floor')
+})
+
+const table: Placement = { id: 'table-1', kind: 'prop', ref: 'round-table', zone: 'floor', x: 5 }
+const tableTop = Math.round((cozy.floorY + 0.86 * 0.93) * 1000) / 1000
+
+test('a resting thing lands on the table under the pointer', () => {
+  const rest = restAt('mug', 5.1, tableTop + 0.1, [table])
+  assert.deepEqual(rest, { on: 'table-1', y: tableTop, x: 5.1 })
+})
+
+test('a resting thing held away from any surface finds none', () => {
+  assert.equal(restAt('mug', 5.1, tableTop + 1.5, [table]), null)
+  assert.equal(restAt('mug', 9, tableTop, [table]), null)
+  assert.equal(restAt('chair', 5, tableTop, [table]), null)
+})
+
+test('a resting thing is kept inside the surface span', () => {
+  const rest = restAt('mug', 5.49, tableTop, [table])
+  const right = 5 - 1.38 / 2 + 0.86 * 1.38
+  assert.ok(rest && Math.abs(rest.x - (right - 0.12)) < 0.002)
+})
+
+test('a cubby shelf only takes things short enough to fit', () => {
+  const cubby: Placement = { id: 'cubby-1', kind: 'prop', ref: 'cubby', zone: 'floor', x: 3 }
+  const shelfY = Math.round((cozy.floorY + 0.4 * 1.36) * 1000) / 1000
+  assert.equal(restAt('mug', 3, shelfY + 0.05, [cubby])?.y, shelfY)
+  assert.notEqual(restAt('tulip-vase', 3, shelfY + 0.1, [cubby])?.y, shelfY)
+})
+
+test('a flipped parent mirrors its surface spans', () => {
+  const chair: Placement = { id: 'chair-1', kind: 'prop', ref: 'armchair', zone: 'floor', x: 5 }
+  const [plain] = surfacesIn([chair])
+  const [flipped] = surfacesIn([{ ...chair, flip: true }])
+  assert.ok(Math.abs(plain.minX - 5 - (5 - flipped.maxX)) < 1e-9)
+  assert.ok(Math.abs(plain.maxX - 5 - (5 - flipped.minX)) < 1e-9)
+})
+
+test('a thing never rests on itself', () => {
+  assert.equal(surfacesIn([table], new Set(['table-1'])).length, 0)
+})
+
+test('tap to place finds a free spot on a surface in view', () => {
+  const mug: Placement = { id: 'mug-1', kind: 'prop', ref: 'mug', zone: 'top', x: 5, y: tableTop, on: 'table-1' }
+  const spot = restInView('tulip-vase', 2, 8, 5, [table, mug])
+  assert.ok(spot)
+  assert.equal(spot.on, 'table-1')
+  assert.ok(Math.abs(spot.x - 5) >= 0.12 + 0.17 - 1e-9)
+  assert.equal(restInView('tulip-vase', 10, 14, 12, [table]), null)
+})
+
+test('moving furniture carries what rests on it, and flipping mirrors it', () => {
+  const mug: Placement = { id: 'mug-1', kind: 'prop', ref: 'mug', zone: 'top', x: 5.2, y: tableTop, on: 'table-1' }
+  const moved = moveWithRiders([table, mug], { ...table, x: 7 })
+  assert.equal(moved[1].x, 7.2)
+  assert.equal(moved[1].y, tableTop)
+  const flipped = moveWithRiders([table, mug], { ...table, flip: true })
+  assert.equal(flipped[1].x, 4.8)
+})
+
+test('a wall shelf lifts what rests on it', () => {
+  const shelf: Placement = { id: 'shelf-1', kind: 'prop', ref: 'wall-shelf', zone: 'wall', x: 6, y: 1.4 }
+  const vase: Placement = { id: 'vase-1', kind: 'prop', ref: 'tulip-vase', zone: 'top', x: 6, y: 1.58, on: 'shelf-1' }
+  const moved = moveWithRiders([shelf, vase], { ...shelf, y: 2 })
+  assert.equal(moved[1].y, 2.18)
+})
+
+test('putting furniture away drops what rested on it to the floor', () => {
+  const mug: Placement = { id: 'mug-1', kind: 'prop', ref: 'mug', zone: 'top', x: 5.2, y: tableTop, on: 'table-1' }
+  assert.deepEqual(putAwayWithRiders([table, mug], 'table-1'), [{ id: 'mug-1', kind: 'prop', ref: 'mug', zone: 'floor', x: 5.2 }])
+})
+
+test('wall things stay on the wall', () => {
+  assert.equal(clampY('window', -3), 0.25)
+  assert.equal(clampY('window', 9), Math.round((3.8 - 1.84) * 1000) / 1000)
+  assert.equal(clampY('window', 1.5), 1.5)
+})
+
+test('finishes: one per slot, the default when none is chosen', () => {
+  assert.equal(finishOf([], 'wallpaper'), 'wallpaper-cream')
+  const papered = withFinish(withFinish([], 'wallpaper', 'wallpaper-ornate'), 'wallpaper', 'wallpaper-pink-stripes')
+  assert.equal(papered.length, 1)
+  assert.equal(finishOf(papered, 'wallpaper'), 'wallpaper-pink-stripes')
+  assert.equal(finishOf(papered, 'baseboard'), 'baseboard-tall')
+  assert.equal(finishLabel('baseboard-short'), 'Skirting only')
+})
+
+test('the shop sells finishes the member lacks, never the free ones', () => {
+  const shop = shopFinishIds(['finish:wallpaper-ornate'])
+  assert.ok(shop.includes('wallpaper-pink-stripes'))
+  assert.ok(!shop.includes('wallpaper-ornate'))
+  assert.ok(!shop.includes('wallpaper-cream'))
+})
+
+test('a chosen wallpaper adds to coziness, the default does not', () => {
+  assert.equal(cozyLevel(withFinish([], 'wallpaper', 'wallpaper-cream')).score, 0)
+  assert.equal(cozyLevel(withFinish([], 'wallpaper', 'wallpaper-ornate')).score, 3)
 })

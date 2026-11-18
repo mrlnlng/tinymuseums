@@ -37,6 +37,7 @@ export default async function RoomPage({
       ownerName={view.ownerName}
       shareKey={key ?? undefined}
       canEdit={view.canEdit}
+      width={view.width}
     />
   )
 }

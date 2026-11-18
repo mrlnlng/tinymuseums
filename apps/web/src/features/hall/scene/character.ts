@@ -40,6 +40,8 @@ export interface Character {
   wear(look: Look): Promise<boolean>
   /** 0 hides the character, 1 shows it; used to dissolve through a change of character. */
   setOpacity(opacity: number): void
+  /** Dims and warms the character to match a dark room's light; 1 and 0 leave it as drawn. */
+  setShade(brightness: number, warmth: number): void
   /** A little hop, as other visitors see when this one says something. */
   bounce(): void
   perch(perch: Perch | null): void
@@ -98,6 +100,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let rigTransform = ''
   let rigOrigin = ''
   let opacity = ''
+  let shade = ''
   const rigPose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
   let look: Look = { ...initial }
   let loading: Promise<boolean> = Promise.resolve(false)
@@ -235,6 +238,14 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       canvas.style.opacity = next
       sprite.style.opacity = next
       floorShadow.style.opacity = next
+    },
+
+    setShade(brightness, warmth) {
+      const next = brightness >= 0.995 && warmth <= 0.005 ? '' : `brightness(${brightness.toFixed(2)}) sepia(${warmth.toFixed(2)})`
+      if (next === shade) return
+      shade = next
+      canvas.style.filter = next
+      sprite.style.filter = next
     },
 
     perch(perch) {

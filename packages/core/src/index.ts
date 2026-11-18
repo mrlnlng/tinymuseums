@@ -104,6 +104,8 @@ export {
   getWallet,
   grantNote,
   grantWelcome,
+  undoAdminUnlock,
+  unlockEverything,
   useBait,
   type BuyBaitResult,
   type BuyResult,
@@ -221,12 +223,15 @@ export {
 export * from './rooms/themes.ts'
 export * from './rooms/placements.ts'
 export * from './rooms/spots.ts'
+export * from './rooms/sizes.ts'
+export * from './rooms/work.ts'
 export {
   canEdit,
   canView,
   getRoom,
   roomPageView,
   personalRoomFor,
+  restartInCloset,
   publish,
   saveDraft,
   setSharing,

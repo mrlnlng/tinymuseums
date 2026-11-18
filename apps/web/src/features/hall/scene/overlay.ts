@@ -16,7 +16,7 @@ export interface Viewport {
 
 const projected = new THREE.Vector3()
 
-type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity'
+type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity' | 'filter'
 
 const written = new WeakMap<HTMLElement, Partial<Record<StyledProperty, string>>>()
 

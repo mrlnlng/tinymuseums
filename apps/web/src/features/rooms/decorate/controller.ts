@@ -3,7 +3,7 @@ import type { Placement } from '@tiny/core/rooms'
 import type { Character } from '@/features/hall/scene/character'
 import { centerYFor } from '@/features/hall/scene/config'
 import type { Traversal } from '@/features/hall/scene/traversal'
-import type { GhostOptions, PlacementLayer } from '../themes/cozy'
+import type { GhostOptions, HighlightArea, PlacementLayer, WorkKind } from '../themes/cozy'
 
 export interface DecorLive {
   camera: THREE.OrthographicCamera
@@ -35,16 +35,18 @@ export interface DecorController {
   pick(clientX: number, clientY: number): Placement | null
   worldXAt(clientX: number): number
   worldYAt(clientY: number): number
-  panBy(dxPixels: number): void
+  /** Drags the view; a downward drag in decorating looks up the wall, as far as the room's normal view. */
+  panBy(dxPixels: number, dyPixels?: number): void
   /** Glides the view to centre on a world x. */
   panTo(x: number): void
   /** The world x range the view shows now. */
   viewRange(): { left: number; right: number } | null
   ghost(placement: Placement | null, options?: GhostOptions): void
-  highlight(zone: string | null, valid: boolean): void
+  highlight(zone: string | null, valid: boolean, area?: HighlightArea): void
   select(id: string | null): void
-  hide(id: string | null): void
+  hide(ids: string | readonly string[] | null): void
   bounce(id: string): void
+  work(id: string, kind: WorkKind, t: number | null): void
   setCharacterOpacity(opacity: number): void
   /** Where a placement is drawn, in pixels from the canvas's top left. */
   screenBox(id: string): ScreenBox | null
@@ -65,6 +67,8 @@ export function createDecorController(): DecorController {
   let editing = false
   let drawerShare = 0
   let rise = 0
+  /** How far decorating's lowered view has been dragged back up, in world units. */
+  let peek = 0
   /** After decorating, the view glides back to the character before the leash comes back on. */
   let returning = false
   let glideTo: number | null = null
@@ -117,6 +121,7 @@ export function createDecorController(): DecorController {
       }
       live = null
       editing = false
+      peek = 0
       returning = false
       glideTo = null
       rise = 0
@@ -137,13 +142,16 @@ export function createDecorController(): DecorController {
       } else if (!next && editing) {
         returning = true
         glideTo = null
+        peek = 0
       }
       editing = next
       drawerShare = Math.max(0, Math.min(0.6, share))
     },
 
     tick(_now, dt) {
-      const target = targetRise()
+      const lowered = targetRise()
+      peek = Math.min(peek, -lowered)
+      const target = lowered + peek
       rise += (target - rise) * Math.min(1, dt * 7)
       if (Math.abs(target - rise) < 0.001) rise = target
       if (glideTo !== null && live) {
@@ -207,9 +215,14 @@ export function createDecorController(): DecorController {
       return live.camera.position.y + (ndc * (live.camera.top - live.camera.bottom)) / 2
     },
 
-    panBy(dxPixels) {
+    panBy(dxPixels, dyPixels = 0) {
       const rect = canvasRect()
-      if (!live || !rect || rect.width <= 0 || dxPixels === 0) return
+      if (!live || !rect || rect.width <= 0) return
+      if (dyPixels !== 0 && editing && rect.height > 0) {
+        const lift = dyPixels * ((live.camera.top - live.camera.bottom) / rect.height)
+        peek = Math.max(0, Math.min(-targetRise(), peek + lift))
+      }
+      if (dxPixels === 0) return
       const step = dxPixels * ((live.camera.right - live.camera.left) / rect.width)
       const next = Math.min(live.maxX, Math.max(live.minX, live.traversal.cameraX - step))
       live.traversal.cameraX = next
@@ -232,20 +245,24 @@ export function createDecorController(): DecorController {
       live?.layer.ghost(placement, options)
     },
 
-    highlight(zone, valid) {
-      live?.layer.highlight(zone, valid)
+    highlight(zone, valid, area) {
+      live?.layer.highlight(zone, valid, area)
     },
 
     select(id) {
       live?.layer.select(id)
     },
 
-    hide(id) {
-      live?.layer.hide(id)
+    hide(ids) {
+      live?.layer.hide(ids)
     },
 
     bounce(id) {
       live?.layer.bounce(id)
+    },
+
+    work(id, kind, t) {
+      live?.layer.work(id, kind, t)
     },
 
     setCharacterOpacity(value) {

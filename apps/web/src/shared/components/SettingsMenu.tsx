@@ -6,6 +6,8 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import SoundToggle from '@/features/sound/components/SoundToggle'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
 import { openAccount } from '@/features/account/lib/account'
+import { ADMIN_MODE } from '@/shared/lib/admin-mode'
+import AdminTools from './AdminTools'
 
 export default function SettingsMenu() {
   const pathname = usePathname()
@@ -88,6 +90,7 @@ export default function SettingsMenu() {
             <span>Bug Report</span>
           </button>
           <SoundToggle inSettings />
+          {ADMIN_MODE ? <AdminTools /> : null}
         </div>
       ) : null}
     </div>

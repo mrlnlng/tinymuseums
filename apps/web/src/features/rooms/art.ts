@@ -63,8 +63,8 @@ export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
   },
   personal: {
     async load() {
-      const [cozy, door] = await Promise.all([loadCozyArt(), loadGalleryDoor()])
-      return { cozy, door }
+      const cozy = await loadCozyArt()
+      return { cozy, door: cozy.door }
     },
     unload({ cozy }) {
       disposeCozyArt(cozy)

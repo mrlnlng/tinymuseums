@@ -12,8 +12,20 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { THEMES, type Placement } from '@tiny/core/rooms'
-import { useWallet } from '@/features/economy'
+import {
+  ROOM_SIZES,
+  THEMES,
+  buildSecondsFor,
+  WEAR,
+  cleanItemId,
+  cleanupFor,
+  isRepair,
+  nextRoomSize,
+  roomSizeFor,
+  sizedTheme,
+  type Placement,
+} from '@tiny/core/rooms'
+import { buy, stampLabel, useWallet } from '@/features/economy'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { hrefFor } from '@/features/rooms/links'
@@ -22,17 +34,34 @@ import { createPersonalRoom } from '@/features/rooms/personal/room'
 import type { DoorRef } from '@/features/rooms/types'
 import DecorDrawer, { type SharingState } from '@/features/rooms/decorate/DecorDrawer'
 import { createDecorController } from '@/features/rooms/decorate/controller'
+import type { WorkKind } from '@/features/rooms/themes/cozy'
+import { CEILING } from '@/features/rooms/themes/room-light'
 import {
   clampX,
+  clampY,
   cozyLevel,
   freeX,
+  messLabel,
+  messNote,
+  moveWithRiders,
   newPlacementId,
+  propHeight,
+  putAwayWithRiders,
   reasonLabel,
+  restAt,
+  restInView,
+  ridersAfter,
+  ridersOf,
   samePlacements,
+  surfacesIn,
+  THING_LIMIT,
+  thingsIn,
   trayPropIds,
+  withFinish,
   withoutRejected,
   zoneAt,
   zoneFor,
+  type FinishSlot,
 } from '@/features/rooms/decorate/logic'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { defaultStore } from '@/shared/lib/slots'
@@ -44,6 +73,8 @@ interface PersonalRoomProps {
   ownerName?: string | null
   shareKey?: string
   canEdit: boolean
+  /** The room's length when the page was made; the owner's wallet updates it as they knock through. */
+  width: number
 }
 
 interface Carry {
@@ -59,6 +90,23 @@ interface Carry {
   touch: boolean
 }
 
+/** Something being built or cleaned away; it takes its time, shown by a ring over it. */
+interface Job {
+  id: string
+  kind: WorkKind
+  seconds: number
+  startedAt: number
+  /** Where to show the ring, in room units, for work spread over a whole surface. */
+  at?: { x: number; y: number }
+}
+
+/** A piece of junk or damage on offer; `at` is where a whole-surface one was tapped. */
+interface Offer {
+  id: string
+  ref: string
+  at?: { x: number; y: number }
+}
+
 interface Puff {
   id: number
   left: number
@@ -67,6 +115,10 @@ interface Puff {
 }
 
 const COZY = THEMES.cozy
+
+function sizeOfWidth(width: number) {
+  return ROOM_SIZES.find((size) => size.width >= width - 1e-6) ?? ROOM_SIZES[ROOM_SIZES.length - 1]
+}
 const SEEN_KEY = 'tm:room:seen'
 const HISTORY_LIMIT = 40
 const DRAG_START_PX = 6
@@ -113,15 +165,30 @@ function errorReason(body: unknown): string | null {
   return typeof reason === 'string' ? reason : null
 }
 
-export default function PersonalRoom({ slug, placements, ownerName, shareKey, canEdit }: PersonalRoomProps) {
+export default function PersonalRoom({ slug, placements, ownerName, shareKey, canEdit, width }: PersonalRoomProps) {
   const router = useRouter()
   const { play } = useSound()
   const wallet = useWallet()
   const controller = useMemo(() => createDecorController(), [])
+  // The owner sees their room grow the moment they knock through; everyone else sees the page's size.
+  const ownsSize = canEdit && wallet.items.some((item) => item.startsWith('room:'))
+  const roomSize = ownsSize ? roomSizeFor(wallet.items) : sizeOfWidth(width)
+  const widthRef = useRef(roomSize.width)
+  widthRef.current = roomSize.width
+  const sizedRef = useRef(sizedTheme(COZY, roomSize.width))
+  sizedRef.current = sizedTheme(COZY, roomSize.width)
   // Rebuild the room only when what it shows changes, not on every re-render of the page.
   const placementsKey = JSON.stringify(placements)
   const room = useMemo(
-    () => createPersonalRoom({ slug, placements: JSON.parse(placementsKey) as Placement[], ownerName, shareKey, decor: controller }),
+    () =>
+      createPersonalRoom({
+        slug,
+        placements: JSON.parse(placementsKey) as Placement[],
+        ownerName,
+        shareKey,
+        decor: controller,
+        width: () => widthRef.current,
+      }),
     [slug, placementsKey, ownerName, shareKey, controller],
   )
 
@@ -141,6 +208,13 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   const [toast, setToast] = useState<string | null>(null)
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   const [offscreen, setOffscreen] = useState({ left: 0, right: 0 })
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [offer, setOffer] = useState<Offer | null>(null)
+  const [paying, setPaying] = useState(false)
+  const jobsRef = useRef<Job[]>([])
+  const payingRef = useRef(false)
+  const ringsRef = useRef(new Map<string, HTMLDivElement>())
+  const offerRef = useRef<HTMLDivElement>(null)
 
   const draftRef = useRef<Placement[]>(draft)
   draftRef.current = draft
@@ -148,7 +222,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   const publishedRef = useRef<Placement[]>(placements)
   const loadedRef = useRef(false)
   const carryRef = useRef<Carry | null>(null)
-  const panRef = useRef<{ pointerId: number; lastX: number; moved: boolean } | null>(null)
+  const panRef = useRef<{ pointerId: number; lastX: number; lastY: number; moved: boolean; dismissing: boolean } | null>(null)
   const drawerRef = useRef<HTMLElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const puffId = useRef(0)
@@ -223,6 +297,23 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     setToast(text)
     later(() => setToast((current) => (current === text ? null : current)), 2600)
   }, [])
+
+  // Knocking a wall through: dust where the boards were, a fanfare, and a look at the new space.
+  const shownWidth = useRef(roomSize.width)
+  useEffect(() => {
+    const before = shownWidth.current
+    shownWidth.current = roomSize.width
+    if (roomSize.width <= before) return
+    play('harp')
+    showToast(`You knocked through! Welcome to your ${roomSize.label.toLowerCase()}.`)
+    controller.panTo(before + 1)
+    const spot = controller.screenPoint(before, 1.5)
+    if (spot) {
+      const puff = { id: ++puffId.current, left: spot.left, top: spot.top, big: true }
+      setPuffs((current) => [...current, puff])
+      later(() => setPuffs((current) => current.filter((entry) => entry.id !== puff.id)), 900)
+    }
+  }, [controller, play, roomSize.label, roomSize.width, showToast])
 
   /** Every change to the arrangement goes through here, so it can be undone. */
   const apply = useCallback(
@@ -480,6 +571,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
       let left = 0
       let right = 0
       for (const placement of draftRef.current) {
+        if (placement.kind !== 'prop') continue
         if (placement.x < view.left + 0.3) left++
         else if (placement.x > view.right - 0.3) right++
       }
@@ -492,11 +584,75 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     return () => cancelAnimationFrame(handle)
   }, [controller, isEditing, loaded])
 
+  // Jobs tick on every frame: the room shows the work and a ring counts it down.
+  useEffect(() => {
+    if (jobs.length === 0) return
+    let handle = 0
+    const tick = () => {
+      handle = requestAnimationFrame(tick)
+      const now = performance.now()
+      for (const job of jobsRef.current) {
+        // Undone, or swapped out by another tab: nothing left to work on.
+        if (!draftRef.current.some((placement) => placement.id === job.id)) {
+          finishJob(job, false)
+          continue
+        }
+        const t = (now - job.startedAt) / (job.seconds * 1000)
+        if (t >= 1) {
+          finishJob(job, true)
+          continue
+        }
+        controller.work(job.id, job.kind, t)
+        const ring = ringsRef.current.get(job.id)
+        const box = anchorOf(job.id, job.at)
+        if (!ring) continue
+        if (!box) {
+          ring.style.opacity = '0'
+          continue
+        }
+        ring.style.opacity = '1'
+        ring.style.transform = `translate3d(${box.left.toFixed(1)}px, ${(job.kind === 'build' && box.bottom !== undefined ? box.bottom - 70 : box.top - 6).toFixed(1)}px, 0) translate(-50%, -100%)`
+        ring.style.setProperty('--p', t.toFixed(3))
+        const label = ring.firstElementChild
+        const left = `${Math.ceil(job.seconds * (1 - t))}s`
+        if (label && label.textContent !== left) label.textContent = left
+      }
+    }
+    tick()
+    return () => cancelAnimationFrame(handle)
+    // finishJob only reads refs and stable callbacks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controller, jobs])
+
+  // The offer to clear a piece of junk rides above it, like the toolbar.
+  useEffect(() => {
+    if (!offer) return
+    let handle = 0
+    const follow = () => {
+      handle = requestAnimationFrame(follow)
+      const box = anchorOf(offer.id, offer.at)
+      const card = offerRef.current
+      if (!card) return
+      if (!box) {
+        card.style.opacity = '0'
+        return
+      }
+      card.style.opacity = '1'
+      // Kept inside the frame, so junk at a phone's edge still shows its whole offer.
+      const frameWidth = (card.offsetParent as HTMLElement | null)?.clientWidth ?? window.innerWidth
+      const half = card.offsetWidth / 2
+      const x = Math.min(Math.max(box.left, half + 8), frameWidth - half - 8)
+      card.style.transform = `translate3d(${x.toFixed(1)}px, ${Math.max(box.top - 8, card.offsetHeight + 8).toFixed(1)}px, 0) translate(-50%, -100%)`
+    }
+    follow()
+    return () => cancelAnimationFrame(handle)
+  }, [controller, offer])
+
   const panToward = useCallback(
     (side: 'left' | 'right') => {
       const view = controller.viewRange()
       if (!view) return
-      const xs = draftRef.current.map((placement) => placement.x)
+      const xs = draftRef.current.filter((placement) => placement.kind === 'prop').map((placement) => placement.x)
       const target =
         side === 'left'
           ? Math.max(...xs.filter((x) => x < view.left + 0.3))
@@ -511,7 +667,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
       setSelected(id)
       controller.select(id)
       const placement = id === null ? null : draftRef.current.find((entry) => entry.id === id)
-      controller.highlight(placement ? placement.zone : null, true)
+      controller.highlight(placement?.zone === 'floor' ? 'floor' : null, true)
     },
     [controller],
   )
@@ -563,6 +719,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     controller.hide(null)
     controller.setCharacterOpacity(1)
     setSelected(null)
+    setOffer(null)
     isEditingRef.current = false
     setIsEditing(false)
     setLoaded(false)
@@ -570,6 +727,15 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   }, [controller])
 
   const done = useCallback(async () => {
+    if (payingRef.current) {
+      setNotice('Hold on, still paying for that.')
+      return
+    }
+    if (jobsRef.current.length > 0) {
+      const left = Math.max(...jobsRef.current.map((job) => job.startedAt + job.seconds * 1000 - performance.now()))
+      setNotice(`Hold on, still working: about ${Math.max(1, Math.ceil(left / 1000))}s to go.`)
+      return
+    }
     setNotice(null)
     setSaving(true)
     clearRetry()
@@ -644,9 +810,25 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     [slug],
   )
 
+  const applyFinish = useCallback(
+    (zone: FinishSlot, ref: string) => {
+      apply(withFinish(draftRef.current, zone, ref))
+      play('click')
+    },
+    [apply, play],
+  )
+
+  /** Shows a wallpaper or baseboard from the shop on the room without changing the draft. */
+  const previewFinish = useCallback(
+    (zone: FinishSlot, ref: string | null) => {
+      controller.setPlacements(ref ? withFinish(draftRef.current, zone, ref) : draftRef.current)
+    },
+    [controller],
+  )
+
   const putAway = useCallback(
     (id: string) => {
-      apply(draftRef.current.filter((placement) => placement.id !== id))
+      apply(putAwayWithRiders(draftRef.current, id))
       select(null)
       play('click')
     },
@@ -655,7 +837,9 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
 
   const flip = useCallback(
     (id: string) => {
-      apply(draftRef.current.map((placement) => (placement.id === id ? { ...placement, flip: !placement.flip } : placement)), id)
+      const placement = draftRef.current.find((entry) => entry.id === id)
+      if (!placement) return
+      apply(moveWithRiders(draftRef.current, { ...placement, flip: !placement.flip }), id)
       play('click')
     },
     [apply, play],
@@ -671,6 +855,7 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
         undo()
         return
       }
+      if (event.key === 'Escape') setOffer(null)
       if (selected === null) return
       if (event.key === 'Escape') return select(null)
       if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -678,12 +863,13 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
         return putAway(selected)
       }
       if (event.key.toLowerCase() === 'f') return flip(selected)
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
       const placement = draftRef.current.find((item) => item.id === selected)
       if (!placement) return
       event.preventDefault()
-      const x = clampX(COZY, placement.ref, placement.zone, placement.x + (event.key === 'ArrowLeft' ? -0.1 : 0.1))
-      apply(draftRef.current.map((item) => (item.id === selected ? { ...item, x } : item)))
+      const step = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -0.1 : 0.1
+      const next = nudged(placement, event.key === 'ArrowUp' || event.key === 'ArrowDown' ? 'y' : 'x', step)
+      if (next) apply(moveWithRiders(draftRef.current, next))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -701,7 +887,9 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     if (!carry.moved) {
       carry.moved = true
       setCarrying(carry.kind)
-      if (carry.kind === 'move') controller.hide(carry.placement.id)
+      if (carry.kind === 'move') {
+        controller.hide([carry.placement.id, ...ridersOf(carry.placement.id, draftRef.current).map((rider) => rider.id)])
+      }
       play('click')
     }
     const velocity = (clientX - carry.lastX) / Math.max(1, now - carry.lastAt)
@@ -710,22 +898,63 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     carry.lastAt = now
     const over = overDrawer(clientX, clientY)
     setOverTray(over)
-    const zone = zoneAt(COZY, carry.placement.ref, controller.worldYAt(clientY)) ?? carry.placement.zone
-    carry.placement = {
-      ...carry.placement,
-      zone,
-      x: clampX(COZY, carry.placement.ref, zone, controller.worldXAt(clientX)),
+    const { placement, surface } = carriedTo(carry, controller.worldXAt(clientX), controller.worldYAt(clientY))
+    carry.placement = placement
+    const before = carry.kind === 'move' ? draftRef.current.find((entry) => entry.id === placement.id) : undefined
+    const riders = before ? ridersAfter(before, placement, draftRef.current) : []
+    controller.ghost(placement, { valid: !over, tilt: carry.tilt, riders })
+    if (surface) controller.highlight('top', !over, surface)
+    else controller.highlight(placement.zone, !over)
+  }
+
+  /** Where a carried thing would land with the pointer at a world point. */
+  function carriedTo(carry: Carry, worldX: number, worldY: number): { placement: Placement; surface: { minX: number; maxX: number; y: number } | null } {
+    const { y: _y, on: _on, ...plain } = carry.placement
+    const ref = plain.ref
+    const prop = COZY.props[ref]
+    const exclude = new Set([plain.id, ...ridersOf(plain.id, draftRef.current).map((rider) => rider.id)])
+    if (prop?.rests) {
+      const rest = restAt(ref, worldX, worldY, draftRef.current, exclude)
+      if (rest) {
+        const surface = surfacesIn(draftRef.current, exclude).find((entry) => entry.parentId === rest.on && entry.y === rest.y)
+        return {
+          placement: { ...plain, zone: 'top', x: rest.x, y: rest.y, on: rest.on },
+          surface: surface ? { minX: surface.minX, maxX: surface.maxX, y: surface.y } : null,
+        }
+      }
+      return { placement: { ...plain, zone: 'floor', x: clampX(sizedRef.current, ref, 'floor', worldX) }, surface: null }
     }
-    controller.ghost(carry.placement, { valid: !over, tilt: carry.tilt })
-    controller.highlight(carry.placement.zone, !over)
+    const zone = zoneAt(COZY, ref, worldY) ?? plain.zone
+    const x = clampX(sizedRef.current, ref, zone, worldX)
+    if (zone === 'wall') return { placement: { ...plain, zone, x, y: clampY(ref, worldY - propHeight(ref) / 2) }, surface: null }
+    return { placement: { ...plain, zone, x }, surface: null }
+  }
+
+  /** A placement moved one keyboard step; a resting thing stays on its surface or doesn't move. */
+  function nudged(placement: Placement, axis: 'x' | 'y', step: number): Placement | null {
+    if (placement.zone === 'top') {
+      if (axis === 'y' || placement.y === undefined) return null
+      const exclude = new Set([placement.id])
+      const surface = surfacesIn(draftRef.current, exclude).find((entry) => entry.parentId === placement.on && entry.y === placement.y)
+      if (!surface) return null
+      const half = (COZY.props[placement.ref]?.width ?? 0) / 2
+      const x = Math.round(Math.min(surface.maxX - half, Math.max(surface.minX + half, placement.x + step)) * 1000) / 1000
+      return { ...placement, x }
+    }
+    if (axis === 'y') {
+      if (placement.zone !== 'wall') return null
+      const base = placement.y ?? 2.3 - propHeight(placement.ref) / 2
+      return { ...placement, y: clampY(placement.ref, base + step) }
+    }
+    return { ...placement, x: clampX(sizedRef.current, placement.ref, placement.zone, placement.x + step) }
   }
 
   /** Whether a new thing may come out of the drawer; says why not when it can't. */
   function canPlaceNew(ref: string): boolean {
     // Each thing is owned once: a fast double tap must not put it out twice.
     if (draftRef.current.some((placement) => placement.kind === 'prop' && placement.ref === ref)) return false
-    if (draftRef.current.length >= COZY.maxPlacements) {
-      setNotice(`Your room holds ${COZY.maxPlacements} things at most. Put something away to make space.`)
+    if (thingsIn(draftRef.current) >= THING_LIMIT) {
+      setNotice(`Your room holds ${THING_LIMIT} things at most. Put something away to make space.`)
       return false
     }
     return true
@@ -734,13 +963,21 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   function placeNew(ref: string): void {
     const zone = zoneFor(COZY, ref)
     if (!zone || !canPlaceNew(ref)) return
-    // Dropped in the middle of the view, nudged to the nearest free spot.
-    const x = freeX(COZY, ref, zone, draftRef.current, controller.centerX())
-    const next: Placement = { id: newPlacementId(), kind: 'prop', ref, zone, x }
-    apply([...draftRef.current, next], next.id)
+    // Dropped in the middle of the view, nudged to the nearest free spot; small things look for a table first.
+    const center = controller.centerX()
+    const view = controller.viewRange()
+    const rest = view ? restInView(ref, view.left, view.right, center, draftRef.current) : null
+    const id = newPlacementId()
+    const next: Placement = rest
+      ? { id, kind: 'prop', ref, zone: 'top', x: rest.x, y: rest.y, on: rest.on }
+      : zone === 'wall'
+        ? { id, kind: 'prop', ref, zone, x: freeX(sizedRef.current, ref, zone, draftRef.current, center), y: clampY(ref, 2.3 - propHeight(ref) / 2) }
+        : { id, kind: 'prop', ref, zone, x: freeX(sizedRef.current, ref, zone, draftRef.current, center) }
+    apply([...draftRef.current, next])
     markSeen(ref)
-    select(next.id)
-    play('jump')
+    select(null)
+    startJob(next.id, 'build', buildSecondsFor(ref))
+    play('click')
   }
 
   function carryEnd(carry: Carry, clientX: number, clientY: number, cancelled: boolean): void {
@@ -773,11 +1010,14 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
         controller.highlight(null, true)
         return
       }
-      apply([...draftRef.current, placement], placement.id)
+      apply([...draftRef.current, placement])
       markSeen(placement.ref)
-    } else {
-      apply(draftRef.current.map((entry) => (entry.id === placement.id ? placement : entry)), placement.id)
+      select(null)
+      startJob(placement.id, 'build', buildSecondsFor(placement.ref))
+      play('click')
+      return
     }
+    apply(moveWithRiders(draftRef.current, placement), placement.id)
     select(placement.id)
     play('jump')
   }
@@ -814,6 +1054,73 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     return carry
   }
 
+  /** Where a job's ring or an offer sits: the tapped spot for whole-surface wear, else over the thing. */
+  function anchorOf(id: string, at?: { x: number; y: number }): { left: number; top: number; bottom?: number } | null {
+    if (!at) return controller.screenBox(id)
+    return controller.screenPoint(at.x, at.y)
+  }
+
+  function startJob(id: string, kind: WorkKind, seconds: number, at?: { x: number; y: number }): void {
+    const job = { id, kind, seconds, startedAt: performance.now(), at }
+    jobsRef.current = [...jobsRef.current.filter((entry) => entry.id !== id), job]
+    setJobs(jobsRef.current)
+    controller.work(id, kind, 0)
+  }
+
+  /** A job ends: built things settle with a puff; junk that was being cleaned is gone for good. */
+  function finishJob(job: Job, completed: boolean): void {
+    jobsRef.current = jobsRef.current.filter((entry) => entry.id !== job.id)
+    setJobs(jobsRef.current)
+    controller.work(job.id, job.kind, null)
+    if (!completed) return
+    if (job.kind === 'build') {
+      controller.bounce(job.id)
+      puffAt(job.id)
+      play('jump')
+      return
+    }
+    const box = controller.screenBox(job.id)
+    const next = draftRef.current.filter((placement) => placement.id !== job.id)
+    const isLast = !next.some((placement) => placement.kind === 'mess')
+    // It was paid for, so undo never brings it back.
+    setHistory((stack) => stack.map((entry) => entry.filter((placement) => placement.id !== job.id)))
+    replaceDraft(next)
+    if (box) {
+      const puff = { id: ++puffId.current, left: box.left, top: (box.top + box.bottom) / 2, big: isLast }
+      setPuffs((current) => [...current, puff])
+      later(() => setPuffs((current) => current.filter((entry) => entry.id !== puff.id)), 900)
+    }
+    if (isLast) {
+      play('harp')
+      showToast('All clean! The place looks brighter already.')
+    } else {
+      play('click')
+    }
+  }
+
+  /** Pays for a piece of junk (unless it already is) and starts clearing it. */
+  async function confirmClean(): Promise<void> {
+    if (!offer || paying) return
+    const { id, ref, at } = offer
+    const itemId = cleanItemId(id)
+    if (!wallet.items.includes(itemId)) {
+      setPaying(true)
+      payingRef.current = true
+      const outcome = await buy(itemId).finally(() => {
+        payingRef.current = false
+      })
+      setPaying(false)
+      if (outcome !== 'ok') {
+        setNotice(outcome === 'insufficient' ? `Not enough stamps to ${isRepair(ref) ? 'repair' : 'clear'} that yet.` : 'That could not be paid for just now.')
+        return
+      }
+      play('coin')
+    }
+    setOffer(null)
+    // Paid for but not started (left Decorate meanwhile): tapping it later finishes the job for free.
+    if (isEditingRef.current && draftRef.current.some((placement) => placement.id === id)) startJob(id, 'clean', cleanupFor(ref).seconds, at)
+  }
+
   /** Keyboard activation of a card (Enter or Space); pointer taps go through the carry instead. */
   function onCardKey(ref: string): void {
     if (!loaded) return
@@ -844,11 +1151,20 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     event.preventDefault()
     setNotice(null)
     const hit = controller.pick(event.clientX, event.clientY)
+    if (hit?.kind === 'mess') {
+      select(null)
+      setOffer({ id: hit.id, ref: hit.ref })
+      play('click')
+      return
+    }
+    setOffer(null)
     if (hit) {
       startCarry('move', hit, event)
       return
     }
-    panRef.current = { pointerId: event.pointerId, lastX: event.clientX, moved: false }
+    // A tap that only closes what's open shouldn't also open the wear offer underneath.
+    const dismissing = offerRef.current !== null || selected !== null
+    panRef.current = { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: false, dismissing }
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
     } catch {}
@@ -858,9 +1174,11 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     const pan = panRef.current
     if (pan && pan.pointerId === event.pointerId) {
       const dx = event.clientX - pan.lastX
+      const dy = event.clientY - pan.lastY
       pan.lastX = event.clientX
-      if (Math.abs(dx) > 1) pan.moved = true
-      controller.panBy(dx)
+      pan.lastY = event.clientY
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) pan.moved = true
+      controller.panBy(dx, dy)
       return
     }
     if (event.pointerType === 'mouse' && !carryRef.current) {
@@ -872,7 +1190,21 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     const pan = panRef.current
     if (!pan || pan.pointerId !== event.pointerId) return
     panRef.current = null
-    if (!pan.moved) select(null)
+    if (pan.moved) return
+    select(null)
+    if (!pan.dismissing) offerWear(event.clientX, event.clientY)
+  }
+
+  /** A tap on bare wall or floor: offer to fix all of its wear at once. */
+  function offerWear(clientX: number, clientY: number): void {
+    const x = controller.worldXAt(clientX)
+    const y = controller.worldYAt(clientY)
+    if (x < 0 || x > widthRef.current || y > CEILING) return
+    const surface = y >= 0 ? 'wall' : 'floor'
+    const wear = draftRef.current.find((placement) => placement.kind === 'mess' && WEAR[placement.ref] === surface)
+    if (!wear || jobsRef.current.some((job) => job.id === wear.id)) return
+    setOffer({ id: wear.id, ref: wear.ref, at: { x, y } })
+    play('click')
   }
 
   if (error) {
@@ -929,13 +1261,44 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
             </div>
           ) : null}
 
+          {offer
+            ? (() => {
+                const cost = cleanupFor(offer.ref)
+                const paid = wallet.items.includes(cleanItemId(offer.id))
+                const short = !paid && (wallet.balance ?? 0) < cost.price
+                return (
+                  <div ref={offerRef} className="decor-offer" style={{ opacity: 0 }} role="dialog" aria-label={`${isRepair(offer.ref) ? 'Repair' : 'Clear'} the ${messLabel(offer.ref).toLowerCase()}`}>
+                    <p className="decor-offer-title">{messLabel(offer.ref)}</p>
+                    {messNote(offer.ref) ? <p className="decor-offer-meta">{messNote(offer.ref)}</p> : null}
+                    <p className="decor-offer-meta">
+                      {paid ? 'Paid for' : stampLabel(cost.price)} · takes {cost.seconds}s
+                    </p>
+                    <div className="decor-offer-actions">
+                      <button type="button" className="decor-buy" disabled={paying || short} onClick={() => void confirmClean()}>
+                        {paying
+                          ? '…'
+                          : paid
+                            ? isRepair(offer.ref) ? 'Finish repairing' : 'Finish cleaning'
+                            : short
+                              ? 'Not enough stamps'
+                              : isRepair(offer.ref) ? 'Repair' : 'Clean up'}
+                      </button>
+                      <button type="button" className="decor-offer-close" onClick={() => setOffer(null)} aria-label="Never mind">
+                        {'×'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()
+            : null}
+
           <DecorDrawer
             ref={drawerRef}
             slug={slug}
             placements={draft}
             saveState={saveState}
             saveLabel={SAVE_LABELS[saveState]}
-            maxPlacements={COZY.maxPlacements}
+            maxPlacements={THING_LIMIT}
             notice={notice}
             sharing={sharing}
             sharingBusy={sharingBusy}
@@ -951,11 +1314,29 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
             onDone={() => void done()}
             onSharingChange={(on) => void changeSharing(on)}
             onBought={unseeBought}
+            onFinish={applyFinish}
+            onPreviewFinish={previewFinish}
+            roomSize={roomSize}
+            nextSize={canEdit ? nextRoomSize(roomSize) : null}
+            dirt={draft.filter((placement) => placement.kind === 'mess').length}
           />
         </>
       ) : null}
 
       <div className="decor-fx" aria-hidden="true">
+        {jobs.map((job) => (
+          <div
+            key={job.id}
+            ref={(element) => {
+              if (element) ringsRef.current.set(job.id, element)
+              else ringsRef.current.delete(job.id)
+            }}
+            className={`decor-work is-${job.kind}`}
+            style={{ opacity: 0 }}
+          >
+            <span>{job.seconds}s</span>
+          </div>
+        ))}
         {puffs.map((puff) => (
           <span key={puff.id} className={`decor-puff${puff.big ? ' is-big' : ''}`} style={{ left: puff.left, top: puff.top }}>
             {Array.from({ length: puff.big ? 10 : 6 }, (_, i) => (

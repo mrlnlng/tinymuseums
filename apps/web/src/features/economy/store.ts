@@ -479,6 +479,44 @@ export async function buy(itemId: string): Promise<BuyOutcome> {
   return 'ok'
 }
 
+/** Admin mode only: the server refuses this outside gamma and local development. */
+export async function unlockEverything(): Promise<'ok' | 'error'> {
+  ensureStarted()
+  const id = memberId
+  if (id === null) return 'error'
+  let response: Response
+  try {
+    response = await fetch('/api/wallet/admin', { method: 'POST', headers: { 'X-TM-Member': id } })
+  } catch {
+    return 'error'
+  }
+  if (!response.ok) return 'error'
+  const body: unknown = await response.json().catch(() => null)
+  if (memberId !== id || !isBuyReply(body)) return 'error'
+  wallet = { balance: body.balance, items: body.items, bait: body.bait, today: wallet?.today ?? EMPTY_TODAY }
+  publish()
+  return 'ok'
+}
+
+/** Admin mode only: takes back what `unlockEverything` gave. */
+export async function undoAdminUnlock(): Promise<'ok' | 'error'> {
+  ensureStarted()
+  const id = memberId
+  if (id === null) return 'error'
+  let response: Response
+  try {
+    response = await fetch('/api/wallet/admin', { method: 'DELETE', headers: { 'X-TM-Member': id } })
+  } catch {
+    return 'error'
+  }
+  if (!response.ok) return 'error'
+  const body: unknown = await response.json().catch(() => null)
+  if (memberId !== id || !isBuyReply(body)) return 'error'
+  wallet = { balance: body.balance, items: body.items, bait: body.bait, today: wallet?.today ?? EMPTY_TODAY }
+  publish()
+  return 'ok'
+}
+
 export function subscribeEvents(listener: (event: EconomyEvent) => void): () => void {
   eventListeners.add(listener)
   ensureStarted()

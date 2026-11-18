@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { env, hit, type Member } from '@tiny/core'
 import { currentMember, setMemberCookie } from './member-session'
+import { isSameOriginMutation } from './mutation-guard'
 import { readJsonBody } from './read-json-body'
 
 const NO_STORE = 'private, no-store'
@@ -33,36 +34,8 @@ export async function readMemberBody(request: Request, maxBytes: number, invalid
   }
 }
 
-const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
-
-// Outside production a loopback origin is also accepted, but only when it is the
-// host the request was actually sent to, so local dev works on localhost too.
-function allowedOrigin(request: Request, origin: string | null): boolean {
-  if (origin === null) return false
-  if (origin === new URL(env.publicBaseUrl).origin) return true
-  if (process.env.NODE_ENV === 'production') return false
-  let parsed: URL
-  try {
-    parsed = new URL(origin)
-  } catch {
-    return false
-  }
-  return LOOPBACK.has(parsed.hostname) && parsed.host === request.headers.get('host')
-}
-
-// Same-origin JSON posts only (CSRF). sign-out has no body, so it is held to
-// the Origin half only; a browser's cross-site POST always carries Origin.
 export function checkMutation(request: Request, requireJson: boolean): Response | null {
-  if (!allowedOrigin(request, request.headers.get('origin'))) {
-    return json({ error: 'forbidden' }, 403)
-  }
-  if (requireJson) {
-    const type = request.headers.get('content-type') ?? ''
-    if (type.split(';')[0].trim().toLowerCase() !== 'application/json') {
-      return json({ error: 'forbidden' }, 403)
-    }
-  }
-  return null
+  return isSameOriginMutation(request, requireJson) ? null : json({ error: 'forbidden' }, 403)
 }
 
 export type MemberRequest = { ok: true; member: Member; token: string } | { ok: false; response: Response }

@@ -32,6 +32,11 @@ export async function hit(bucket: string, { limit, windowSeconds }: RateLimit): 
   return { allowed: hits <= limit, retryAfterSeconds: row?.retry_after ?? windowSeconds }
 }
 
+// The longest window is one hour, so no live bucket is removed.
+export async function purgeRateLimits(): Promise<void> {
+  await queryOne(`delete from rate_limits where window_start < now() - interval '1 day'`)
+}
+
 // Addresses are stored only as a keyed hash. Without an address there is nothing to limit by.
 export async function hitForVisitor(
   scope: string,

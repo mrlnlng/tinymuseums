@@ -2,9 +2,9 @@
 export { BRAND } from './brand.ts'
 export { env, repoRoot } from './infra/env.ts'
 export { closePool, query, queryOne, transaction } from './infra/db.ts'
-export { hit, hitForVisitor, type RateLimit } from './infra/rate-limit.ts'
+export { hit, hitForVisitor, purgeRateLimits, type RateLimit } from './infra/rate-limit.ts'
 export { getStorage, verifyUploadSignature } from './media/storage.ts'
-export { claim, complete, fail, hasPendingJob, requeueStale } from './infra/jobs.ts'
+export { claim, complete, fail, requeueStale } from './infra/jobs.ts'
 export {
   artistForSession,
   createSession,
@@ -98,7 +98,6 @@ export {
   buyBait,
   claim as claimCoins,
   claimBatch,
-  collect,
   ensureWallet,
   exportWallet,
   getWallet,
@@ -106,14 +105,11 @@ export {
   grantWelcome,
   undoAdminUnlock,
   unlockEverything,
-  useBait,
   type BuyBaitResult,
   type BuyResult,
-  type CollectResult,
   type ClaimBatchResult,
   type ClaimOutcome,
   type ClaimResult,
-  type UseBaitResult,
   type Wallet,
   type WalletExport,
   type WalletToday,

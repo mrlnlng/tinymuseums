@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { query, queryOne } from '../infra/db.ts'
 
@@ -20,6 +20,10 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
+
 export function newToken(bytes = 32): string {
   return randomBytes(bytes).toString('base64url')
 }
@@ -27,8 +31,10 @@ export function newToken(bytes = 32): string {
 export async function createSession(artistId: string): Promise<{ token: string; expiresAt: Date }> {
   const token = newToken()
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000)
+  await query(`delete from sessions where expires_at <= now()`)
+  // Only the hash is stored, so a database leak does not hand out live sessions.
   await query(`insert into sessions (token, artist_id, expires_at) values ($1, $2, $3)`, [
-    token,
+    hashToken(token),
     artistId,
     expiresAt,
   ])
@@ -42,12 +48,12 @@ export async function artistForSession(token: string | undefined): Promise<Authe
        from sessions s
        join artists a on a.id = s.artist_id
       where s.token = $1 and s.expires_at > now()`,
-    [token],
+    [hashToken(token)],
   )
 }
 
 export async function destroySession(token: string): Promise<void> {
-  await query(`delete from sessions where token = $1`, [token])
+  await query(`delete from sessions where token = $1`, [hashToken(token)])
 }
 
 export async function uniqueSlug(displayName: string): Promise<string> {

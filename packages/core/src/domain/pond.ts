@@ -146,7 +146,7 @@ async function savePondState(client: PoolClient, memberId: string, state: PondSt
   )
 }
 
-async function baitOf(client: PoolClient, memberId: string): Promise<Record<string, number>> {
+export async function baitOf(client: PoolClient, memberId: string): Promise<Record<string, number>> {
   const { rows } = await client.query<{ bait_id: string; count: number }>(
     `select bait_id, count from wallet_bait
       where member_id = $1 and bait_id <> 'worm' and count > 0

@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto'
-import { hashPassword, newToken, verifyPassword } from './auth.ts'
+import { hashPassword, hashToken, newToken, verifyPassword } from './auth.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { checkDisplayName, nameFromSeed, type NameCheck } from '../presence/names.ts'
 import { SLOTS, docBytes, slotDef, upgrade, type SlotDef } from '../slots/index.ts'
@@ -20,9 +19,7 @@ export function canonicalEmail(raw: string): string {
   return raw.trim().toLowerCase()
 }
 
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
-}
+export { hashToken }
 
 function validPassword(password: string): boolean {
   return (

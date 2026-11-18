@@ -1,4 +1,4 @@
-import { claim, complete, fail, hasPendingJob, requeueStale } from '@tiny/core'
+import { claim, complete, fail, purgeRateLimits, requeueStale } from '@tiny/core'
 import { repairUnframed, runJob } from '@tiny/core/worker'
 
 const TIME_BUDGET_MS = 105_000
@@ -9,9 +9,7 @@ export interface DrainResult {
   drained: boolean
 }
 
-// enqueue does not deduplicate, so repairs wait until the previous round has drained.
 async function repairFrames(): Promise<void> {
-  if (await hasPendingJob('render_display')) return
   const artists = await repairUnframed()
   if (artists > 0) {
     console.log(`[worker] requeued frame rendering for ${artists} artist(s)`)
@@ -24,6 +22,7 @@ export async function handler(): Promise<DrainResult> {
   let failed = 0
 
   await requeueStale()
+  await purgeRateLimits().catch((error) => console.error('[worker] rate limit purge failed', error))
   await repairFrames()
 
   while (Date.now() < deadline) {

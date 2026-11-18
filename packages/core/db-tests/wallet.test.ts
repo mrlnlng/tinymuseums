@@ -7,14 +7,12 @@ import {
   buyBait,
   claim,
   claimBatch,
-  collect,
   exportWallet,
   getWallet,
   grantNote,
   grantWelcome,
   undoAdminUnlock,
   unlockEverything,
-  useBait,
   type ClaimResult,
 } from '../src/domain/wallet.ts'
 import { closePool, query, queryOne } from '../src/infra/db.ts'
@@ -326,66 +324,11 @@ test('buying bait is refused when pearls are short', async () => {
   assert.deepEqual(wallet.bait, {})
 })
 
-test('using bait spends one except for the unlimited worm', async () => {
-  const id = await member()
-  assert.deepEqual(await useBait(id, 'worm'), { balance: 0, items: [], bait: {} })
-  assert.deepEqual(await useBait(id, 'shrimp'), { error: 'no_bait' })
-
-  await grantWelcome(id)
-  await grantPearls(id, 40)
-  await buyBait(id, 'cupcake')
-  assert.deepEqual(await useBait(id, 'worm'), { balance: 60, items: [], bait: { cupcake: 3 } })
-  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: { cupcake: 2 } })
-  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: { cupcake: 1 } })
-  assert.deepEqual(await useBait(id, 'cupcake'), { balance: 60, items: [], bait: {} })
-  assert.deepEqual(await useBait(id, 'cupcake'), { error: 'no_bait' })
-})
-
-test('concurrent bait uses never spend more than the pack', async () => {
-  const id = await member()
-  await grantPearls(id, 20)
-  await buyBait(id, 'berry')
-
-  const results = await Promise.all(Array.from({ length: 8 }, () => useBait(id, 'berry')))
-  assert.equal(results.filter((result) => 'balance' in result).length, 5)
-  assert.equal(results.filter((result) => 'error' in result).length, 3)
-  assert.deepEqual((await getWallet(id, today)).bait, {})
-})
-
 test('the account export includes bait stock', async () => {
   const id = await member()
   await grantPearls(id, 40)
   await buyBait(id, 'cupcake')
   assert.deepEqual((await exportWallet(id)).bait, [{ bait_id: 'cupcake', count: 3 }])
-})
-
-test('a fish prop is collected once for free', async () => {
-  const id = await member()
-  assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
-    balance: 0,
-    items: ['prop:fish-minnow'],
-    bait: {},
-    collected: true,
-  })
-  assert.deepEqual(await collect(id, 'prop:fish-minnow'), {
-    balance: 0,
-    items: ['prop:fish-minnow'],
-    bait: {},
-    collected: false,
-  })
-  const wallet = await getWallet(id, today)
-  assert.deepEqual(wallet.items, ['prop:fish-minnow'])
-  assert.equal(wallet.balance, 0)
-  await assertInvariant(id)
-})
-
-test('collect refuses buyable and unknown items', async () => {
-  const id = await member()
-  assert.deepEqual(await collect(id, 'bow:kiki'), { error: 'unknown_item' })
-  assert.deepEqual(await collect(id, 'character:bunny'), { error: 'unknown_item' })
-  assert.deepEqual(await collect(id, 'bow:nope'), { error: 'unknown_item' })
-  assert.deepEqual((await getWallet(id, today)).items, [])
-  await assertInvariant(id)
 })
 
 test('buy still refuses fish props', async () => {

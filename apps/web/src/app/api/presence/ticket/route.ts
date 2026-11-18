@@ -50,7 +50,6 @@ export async function POST(request: Request) {
         .map((item) => item.item_id)
         // Only what others can see worn; a room server built before props would refuse them.
         .filter((id) => isCatalogItem(id) && ITEMS[id].kind !== 'prop' && ITEMS[id].kind !== 'clean')
-        .slice(0, Object.keys(ITEMS).length)
     : []
   const exp = Date.now() + TICKET_TTL_MS
   // A ticket without `own` still passes a room server deployed before ownership existed.

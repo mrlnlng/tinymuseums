@@ -7,6 +7,7 @@ import {
   createSession,
   deletePiece,
   destroySession,
+  env,
   discardLocation,
   locationStates,
   nudgeInRow,
@@ -30,6 +31,7 @@ import {
   verifyPassword,
 } from '@tiny/core'
 import { clientIp } from '@/shared/lib/client-ip'
+import { checkPasswordRateLimit } from '@/shared/lib/member-route'
 import {
   clearSessionCookie,
   requireArtist,
@@ -56,6 +58,9 @@ export async function registerAction(formData: FormData): Promise<void> {
   if (name.length < 2) back('/studio/register', 'Tell us what to call you', 'bad')
   if (!isEmail(email)) back('/studio/register', 'That email does not look right', 'bad')
   if (password.length < 8) back('/studio/register', 'Use at least 8 characters', 'bad')
+  // The owner account is made by hand, so nobody can claim admin by signing up with its email first.
+  const owner = env.hallOwnerEmail.trim().toLowerCase()
+  if (owner !== '' && email === owner) back('/studio/register', 'That email already has a wall', 'bad')
   if (await isThrottled('register', 5, 60 * 60)) {
     back('/studio/register', 'Too many attempts. Try again later.', 'bad')
   }
@@ -83,6 +88,9 @@ export async function signInAction(formData: FormData): Promise<void> {
   const password = String(formData.get('password') ?? '')
 
   if (await isThrottled('sign-in', 10, 15 * 60)) {
+    back('/studio/sign-in', 'Too many attempts. Try again in a few minutes.', 'bad')
+  }
+  if (await checkPasswordRateLimit(email)) {
     back('/studio/sign-in', 'Too many attempts. Try again in a few minutes.', 'bad')
   }
 

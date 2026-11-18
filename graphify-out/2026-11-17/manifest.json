@@ -2966,9 +2966,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/economy/catalog.test.ts": {
-    "mtime": 1794981777.8400617,
-    "seen": 1794982084.643819,
-    "ast_hash": "6f2f2d26079d13b3ea4d6b6600662e9a",
+    "mtime": 1794983245.2180839,
+    "seen": 1794983384.6128752,
+    "ast_hash": "e0747213f25a7d4463cd7df61885e481",
     "semantic_hash": ""
   },
   "packages/core/src/economy/catalog.ts": {
@@ -3236,9 +3236,9 @@
     "semantic_hash": ""
   },
   "packages/core/db-tests/rooms.test.ts": {
-    "mtime": 1794981720.9440525,
-    "seen": 1794982084.6437867,
-    "ast_hash": "f467312b1a2815db8e86f4f9ffa774e5",
+    "mtime": 1794983273.1961288,
+    "seen": 1794983384.6128373,
+    "ast_hash": "4f3251c436b268c1cae97ae702dadffd",
     "semantic_hash": ""
   },
   "packages/core/schema/rooms.sql": {
@@ -3266,9 +3266,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/rooms/themes.ts": {
-    "mtime": 1794980491.1322038,
-    "seen": 1794980820.554744,
-    "ast_hash": "03542c40a9ccc0c099e0acffbf394d00",
+    "mtime": 1794983037.2014713,
+    "seen": 1794983384.6129167,
+    "ast_hash": "53954e8b2448958a02606d6601cc8de3",
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/home/page.tsx": {
@@ -3284,9 +3284,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/PersonalRoom.tsx": {
-    "mtime": 1794981967.3965836,
-    "seen": 1794982084.6436136,
-    "ast_hash": "bff1705e3f9db6f9e3810e1f9176be75",
+    "mtime": 1794983144.0188434,
+    "seen": 1794983384.612627,
+    "ast_hash": "1e54c1682051681301222b717b6df186",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/personal/HomeSignIn.tsx": {
@@ -3296,15 +3296,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/personal/room.ts": {
-    "mtime": 1794980392.4071174,
-    "seen": 1794980820.5545886,
-    "ast_hash": "19c172d216c642567d513c9a3d25b595",
+    "mtime": 1794983124.8328424,
+    "seen": 1794983384.6127477,
+    "ast_hash": "8679ed8d912b8c6630229c4e2f06a748",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/themes/cozy.ts": {
-    "mtime": 1794981375.5289853,
-    "seen": 1794982084.643722,
-    "ast_hash": "c83378bb2a30a457e2528d086a3c4bcb",
+    "mtime": 1794983245.217972,
+    "seen": 1794983384.612759,
+    "ast_hash": "7510a0a5ff37fb0682802598fa6752fe",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/wallet/collect/route.ts": {
@@ -3332,9 +3332,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/decorate/logic.ts": {
-    "mtime": 1794981419.384111,
-    "seen": 1794982084.6437032,
-    "ast_hash": "f4132131093a3217502a37d7dc4ff83c",
+    "mtime": 1794983124.8327467,
+    "seen": 1794983384.6127372,
+    "ast_hash": "3cc054a129fa13a08e6da5b499ce2e15",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/index.ts": {
@@ -3344,9 +3344,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/decorate/DecorDrawer.tsx": {
-    "mtime": 1794981419.3842168,
-    "seen": 1794982084.6437001,
-    "ast_hash": "607fdd5547645f11fdcfd840de5ee675",
+    "mtime": 1794983124.8329165,
+    "seen": 1794983384.6127334,
+    "ast_hash": "727a5e593a3ab4b29b6f0f741460629e",
     "semantic_hash": ""
   },
   "docs/personal-room-issues.md": {
@@ -5828,9 +5828,9 @@
     "semantic_hash": ""
   },
   "docs/custom-room.md": {
-    "mtime": 1794982576.2799394,
-    "seen": 1794982647.3018088,
-    "ast_hash": "df2f80f3bc46caee5db69e8155f1059b",
+    "mtime": 1794983316.7151897,
+    "seen": 1794983384.6129417,
+    "ast_hash": "a992cba7fab753ecf37dc1fb93c28b25",
     "semantic_hash": ""
   },
   "apps/web/public/assets/home/armchair.png": {
@@ -6296,15 +6296,15 @@
     "semantic_hash": ""
   },
   "packages/core/src/rooms/work.test.ts": {
-    "mtime": 1794981720.9448643,
-    "seen": 1794982084.6438537,
-    "ast_hash": "bd17db07b018b877031e74f72ffb6b02",
+    "mtime": 1794983245.2181385,
+    "seen": 1794983384.6129177,
+    "ast_hash": "f0b63bae1751ee835c1e73502aab6ed8",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/work.ts": {
-    "mtime": 1794981310.4415126,
-    "seen": 1794982084.6438546,
-    "ast_hash": "d1a7517d6f9a7f3ae69d71ff93a459a6",
+    "mtime": 1794983037.2015479,
+    "seen": 1794983384.6129189,
+    "ast_hash": "f7971dd46f9df6060962f4af6c7cb603",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

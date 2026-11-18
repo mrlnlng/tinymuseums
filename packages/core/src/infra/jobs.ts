@@ -61,14 +61,6 @@ export async function fail(id: number, attempts: number, error: unknown): Promis
   )
 }
 
-export async function hasPendingJob(kind: JobKind): Promise<boolean> {
-  const rows = await query<{ id: number }>(
-    `select id from jobs where kind = $1 and status in ('pending', 'running') limit 1`,
-    [kind],
-  )
-  return rows.length > 0
-}
-
 // The threshold must exceed the worker's timeout, or a live job gets run twice.
 export async function requeueStale(olderThanMinutes = 3): Promise<number> {
   const rows = await query<{ id: number }>(

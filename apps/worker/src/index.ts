@@ -1,4 +1,4 @@
-import { claim, complete, closePool, fail, requeueStale } from '@tiny/core'
+import { claim, complete, closePool, fail, purgeRateLimits, requeueStale } from '@tiny/core'
 import { repairUnframed, runJob } from '@tiny/core/worker'
 
 const IDLE_DELAY_MS = 750
@@ -11,6 +11,7 @@ async function sweepStale(): Promise<void> {
   try {
     const recovered = await requeueStale()
     if (recovered > 0) console.log(`[worker] requeued ${recovered} stale job(s)`)
+    await purgeRateLimits()
   } catch (error) {
     console.error('[worker] stale sweep failed', error)
   }

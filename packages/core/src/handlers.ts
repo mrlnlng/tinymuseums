@@ -177,7 +177,13 @@ export async function repairUnframed(): Promise<number> {
       where p.order_index between 1 and $1
         and (p.flattened_key is null or p.flattened_version <> $2
              or p.sketch_key is null or p.sketch_version <> $3)
-        and a.status = 'ready'`,
+        and a.status = 'ready'
+        -- enqueue does not deduplicate: skip artists already queued, and give a failing render a day's rest.
+        and not exists (
+          select 1 from jobs j
+           where j.kind = 'render_display' and j.payload->>'artistId' = p.artist_id::text
+             and (j.status in ('pending', 'running')
+                  or (j.status = 'failed' and j.run_after > now() - interval '1 day')))`,
     [MAX_STANDS, FRAME_VERSION, SKETCH_VERSION],
   )
   for (const row of rows) await enqueue('render_display', { artistId: row.artist_id })

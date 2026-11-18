@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import type { PoolClient } from 'pg'
-import { ITEMS, STARTER_PROPS, isBuyable, isCatalogItem, priceOf } from '../economy/catalog.ts'
-import { isPondBait } from '../economy/pond.ts'
+import { ITEMS, STARTER_PROPS, isBuyable, priceOf } from '../economy/catalog.ts'
 import { validateClaim, type ParsedClaim } from '../economy/rules.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
+import { baitOf } from './pond.ts'
 
 export { buyPondBait as buyBait, type PondBaitResult as BuyBaitResult } from './pond.ts'
 
@@ -46,10 +46,6 @@ export interface WalletExport {
 
 export type BuyResult = Wallet | { error: 'unknown_item' | 'insufficient' }
 
-export type UseBaitResult = Wallet | { error: 'no_bait' }
-
-export type CollectResult = (Wallet & { collected: boolean }) | { error: 'unknown_item' }
-
 const MAX_BATCH = 64
 
 export async function ensureWallet(memberId: string): Promise<void> {
@@ -75,16 +71,6 @@ async function itemsOf(client: PoolClient, memberId: string): Promise<string[]> 
 
 function baitCounts(rows: { bait_id: string; count: number }[]): Record<string, number> {
   return Object.fromEntries(rows.map((row) => [row.bait_id, row.count]))
-}
-
-async function baitOf(client: PoolClient, memberId: string): Promise<Record<string, number>> {
-  const { rows } = await client.query<{ bait_id: string; count: number }>(
-    `select bait_id, count from wallet_bait
-      where member_id = $1 and bait_id <> 'worm' and count > 0
-      order by bait_id`,
-    [memberId],
-  )
-  return baitCounts(rows)
 }
 
 async function walletOf(client: PoolClient, memberId: string, balance: number): Promise<Wallet> {
@@ -312,51 +298,6 @@ export async function buy(memberId: string, itemId: string): Promise<BuyResult> 
       [memberId, price],
     )
     return walletOf(client, memberId, updated.rows[0].balance)
-  })
-}
-
-export async function useBait(memberId: string, baitId: string): Promise<UseBaitResult> {
-  if (baitId === 'worm') {
-    return transaction(async (client) => {
-      const { rows } = await client.query<{ balance: number }>(
-        `select balance from wallets where member_id = $1`,
-        [memberId],
-      )
-      return walletOf(client, memberId, rows[0]?.balance ?? 0)
-    })
-  }
-  if (!isPondBait(baitId)) return { error: 'no_bait' }
-  return transaction(async (client) => {
-    const balance = await lockWallet(client, memberId)
-    const spent = await client.query(
-      `update wallet_bait set count = count - 1
-        where member_id = $1 and bait_id = $2 and count > 0
-        returning count`,
-      [memberId, baitId],
-    )
-    if (spent.rows.length === 0) return { error: 'no_bait' as const }
-    return walletOf(client, memberId, balance)
-  })
-}
-
-function isCollectable(itemId: string): boolean {
-  return isCatalogItem(itemId) && ITEMS[itemId].earnedBy !== undefined
-}
-
-export async function collect(memberId: string, itemId: string): Promise<CollectResult> {
-  if (!isCollectable(itemId)) return { error: 'unknown_item' }
-  return transaction(async (client) => {
-    const balance = await lockWallet(client, memberId)
-    const inserted = await client.query<{ item_id: string }>(
-      `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
-       on conflict do nothing
-       returning item_id`,
-      [memberId, itemId],
-    )
-    return {
-      ...(await walletOf(client, memberId, balance)),
-      collected: inserted.rows.length > 0,
-    }
   })
 }
 

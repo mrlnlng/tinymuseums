@@ -49,7 +49,8 @@ function painted(width: number, height: number, draw: (ink: Ink) => void, densit
   return texture
 }
 
-const GRASS = ['#5a912f', '#6a9d33', '#78a938', '#86b43d', '#9cc44a']
+// Close to the painted lawn's own tones, so clumps sit in it rather than on it.
+const GRASS = ['#66992f', '#6e9f33', '#76a536', '#7eab39']
 const BLOOMS = [
   { petal: '#fff7e8', heart: '#f6c445' },
   { petal: '#f79abd', heart: '#fbe08a' },
@@ -98,10 +99,11 @@ function rooted(ink: Ink, width: number, height: number, band: number): void {
 function tuftTexture(seed: number, flowers: number): THREE.CanvasTexture {
   const random = mulberry(seed)
   return painted(192, 192, (ink) => {
-    const blades = 18 + Math.floor(random() * 8)
+    // A few short blades at the foot; the flowers carry the clump.
+    const blades = 6 + Math.floor(random() * 4)
     for (let i = 0; i < blades; i++) {
-      const offset = (random() - 0.5) * 120
-      const tall = (42 + random() * 62) * (1 - Math.abs(offset) / 150)
+      const offset = (random() - 0.5) * 90
+      const tall = (26 + random() * 34) * (1 - Math.abs(offset) / 150)
       blade(ink, 96 + offset, 192, tall, offset / 110 + (random() - 0.5) * 0.7, 13 + random() * 10, GRASS[Math.floor(random() * GRASS.length)])
     }
     for (let i = 0; i < flowers; i++) {
@@ -121,33 +123,8 @@ function tuftTexture(seed: number, flowers: number): THREE.CanvasTexture {
   })
 }
 
-function reedTexture(seed: number): THREE.CanvasTexture {
-  const random = mulberry(seed)
-  return painted(160, 320, (ink) => {
-    for (let i = 0; i < 9; i++) {
-      blade(ink, 80 + (random() - 0.5) * 70, 320, 150 + random() * 150, (random() - 0.5) * 0.5, 9 + random() * 6, ['#3f7a2e', '#55923a', '#74a840'][Math.floor(random() * 3)])
-    }
-    for (let i = 0; i < 3; i++) {
-      const x = 42 + i * 36 + (random() - 0.5) * 14
-      const top = 34 + random() * 70
-      ink.strokeStyle = '#5c8a34'
-      ink.lineWidth = 4
-      ink.beginPath()
-      ink.moveTo(x, 318)
-      ink.lineTo(x + 3, top)
-      ink.stroke()
-      ink.fillStyle = '#7a4a2a'
-      ink.beginPath()
-      ink.roundRect(x - 4, top + 6, 14, 46, 7)
-      ink.fill()
-      ink.fillStyle = '#a06a3e'
-      ink.beginPath()
-      ink.roundRect(x - 2, top + 9, 5, 38, 3)
-      ink.fill()
-    }
-    rooted(ink, 160, 320, 0.1)
-  })
-}
+/** Height over width of the cattail clump art. */
+const CATTAIL_ASPECT = 846 / 655
 
 function glowTexture(): THREE.CanvasTexture {
   return painted(64, 64, (ink) => {
@@ -485,12 +462,12 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
       .some(([dx, dy]) => insidePolygon(WATER, at.x + dx, at.y + dy))
   }
   const onPath = (x: number, depth: number): boolean => POND_LANDMARKS.some(({ path }) =>
-    path && depth > -0.25 && Math.abs(x - pathX(path, Math.max(0, depth))) < pathHalfWidth(path, depth) + 0.3)
+    path && depth > -0.25 && Math.abs(x - pathX(path, Math.max(0, depth))) < pathHalfWidth(path, depth) + 0.35)
   const underProp = (x: number, depth: number): boolean => POND_LANDMARKS.some((landmark) => {
     const reach = (landmark.width * scaleAt(landmark.depth)) / 2 + 0.35
     if (landmark.kind === 'exit') return Math.abs(x - landmark.x) < reach + 0.5
     const left = landmark.kind === 'fishmonger' ? reach * 1.7 : reach
-    return depth > 0.72 && x > landmark.x - left && x < landmark.x + reach
+    return depth > landmark.depth * 0.72 && x > landmark.x - left && x < landmark.x + reach
   })
 
   // Props stand on the lawn rather than floating over it.
@@ -584,7 +561,6 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
 
   // Grass, wildflowers and reeds that lean with the breeze.
   const tuftMaps = [0, 0, 1, 2, 3, 0, 2].map((flowers, index) => keep(tuftTexture(41 + index * 17, flowers)))
-  const reedMaps = [0, 1, 2].map((index) => keep(reedTexture(7 + index * 13)))
   const plants: { mesh: THREE.Mesh; phase: number; bend: number; x: number; depth: number }[] = []
   const spots: { x: number; depth: number; size: number; map: THREE.Texture; reed: boolean }[] = []
   // Plants gather in drifts, as they do in a meadow, with open lawn between.
@@ -593,13 +569,15 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
     depth: -0.2 + Math.pow(random(), 0.8) * 1.25,
     flowers: random() < 0.6,
   }))
-  for (let attempt = 0; attempt < 1600 && spots.length < 120; attempt++) {
+  for (let attempt = 0; attempt < 1600 && spots.length < 110; attempt++) {
     const drift = drifts[attempt % drifts.length]
     const x = drift.x + (random() - 0.5) * 1.9
     const depth = drift.depth + (random() - 0.5) * 0.3
     if (depth < -0.22 || depth > 1.08) continue
     if (inWater(x, depth, 0.02) || onPath(x, depth) || underProp(x, depth)) continue
     if (spots.some((spot) => Math.abs(spot.x - x) < 0.3 && Math.abs(spot.depth - depth) < 0.07)) continue
+    // Bare grass clumps stay rare so the lawn reads as the painting's own.
+    if (!drift.flowers && random() < 0.75) continue
     const map = tuftMaps[drift.flowers ? Math.floor(random() * tuftMaps.length) : random() < 0.5 ? 0 : 1]
     spots.push({ x, depth, size: 0.5 + random() * 0.3, map, reed: false })
   }
@@ -609,14 +587,14 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
   ]
   for (const [fx, fy] of reedBeds) {
     const lift = (layout.scene.feet - fy) * H
-    spots.push({ x: fx * W + (random() - 0.5) * 0.12, depth: depthAtLift(lift), size: 0.5 + random() * 0.2, map: reedMaps[Math.floor(random() * 3)], reed: true })
+    spots.push({ x: fx * W + (random() - 0.5) * 0.12, depth: depthAtLift(lift), size: 0.55 + random() * 0.25, map: art.cattail, reed: true })
   }
   spots.sort((a, b) => b.depth - a.depth)
   spots.forEach((spot, index) => {
     const mesh = sprite(spot.map, { rooted: true })
     const scale = scaleAt(spot.depth)
     const width = spot.size * scale * (random() < 0.5 ? -1 : 1)
-    mesh.scale.set(width, Math.abs(width) * (spot.reed ? 2 : 1), 1)
+    mesh.scale.set(width, Math.abs(width) * (spot.reed ? CATTAIL_ASPECT : 1), 1)
     mesh.position.set(spot.x, groundY + liftAt(spot.depth) - 0.03 * scale, -0.29 + index * 0.0002)
     plants.push({ mesh, phase: random() * Math.PI * 2, bend: spot.reed ? 0.05 : 0.075, x: spot.x, depth: spot.depth })
   })

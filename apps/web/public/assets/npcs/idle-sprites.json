@@ -1,0 +1,169 @@
+{
+  "frame": {
+    "width": 256,
+    "height": 224,
+    "count": 4,
+    "direction": "right",
+    "layout": "row"
+  },
+  "poses": [
+    "neutral",
+    "inhale",
+    "exhale",
+    "blink"
+  ],
+  "timeline": [
+    {
+      "cel": 0,
+      "until": 620
+    },
+    {
+      "cel": 1,
+      "until": 1020
+    },
+    {
+      "cel": 0,
+      "until": 1470
+    },
+    {
+      "cel": 2,
+      "until": 1890
+    },
+    {
+      "cel": 0,
+      "until": 2420
+    },
+    {
+      "cel": 3,
+      "until": 2540
+    },
+    {
+      "cel": 0,
+      "until": 3200
+    }
+  ],
+  "worldHeight": 0.68,
+  "designHeight": 192,
+  "characters": [
+    {
+      "id": "pip",
+      "name": "Pip",
+      "role": "Stamp clerk",
+      "asset": "npcs/pip-idle",
+      "anchor": {
+        "x": 131,
+        "y": 208
+      }
+    },
+    {
+      "id": "thimble",
+      "name": "Thimble",
+      "role": "Textile mender",
+      "asset": "npcs/thimble-idle",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "fig",
+      "name": "Fig",
+      "role": "Frame repairer",
+      "asset": "npcs/fig-idle",
+      "anchor": {
+        "x": 141,
+        "y": 208
+      }
+    },
+    {
+      "id": "moss",
+      "name": "Moss",
+      "role": "Pond sketcher",
+      "asset": "npcs/moss-idle",
+      "anchor": {
+        "x": 125,
+        "y": 208
+      }
+    },
+    {
+      "id": "hazel",
+      "name": "Hazel",
+      "role": "Framer",
+      "asset": "npcs/hazel-idle",
+      "anchor": {
+        "x": 157,
+        "y": 208
+      }
+    },
+    {
+      "id": "percy",
+      "name": "Percy",
+      "role": "Post carrier",
+      "asset": "npcs/percy-idle",
+      "anchor": {
+        "x": 130,
+        "y": 208
+      }
+    },
+    {
+      "id": "dot",
+      "name": "Dot",
+      "role": "Gallery registrar",
+      "asset": "npcs/dot-idle",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "mabel",
+      "name": "Mabel",
+      "role": "Night guard",
+      "asset": "npcs/mabel-idle",
+      "anchor": {
+        "x": 124,
+        "y": 208
+      }
+    },
+    {
+      "id": "clove",
+      "name": "Clove",
+      "role": "Gallery guide",
+      "asset": "npcs/clove-idle",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "nell",
+      "name": "Nell",
+      "role": "Archivist",
+      "asset": "npcs/nell-idle",
+      "anchor": {
+        "x": 120,
+        "y": 208
+      }
+    },
+    {
+      "id": "miso",
+      "name": "Miso",
+      "role": "Storeroom keeper",
+      "asset": "npcs/miso-idle",
+      "anchor": {
+        "x": 132,
+        "y": 208
+      }
+    },
+    {
+      "id": "pearl",
+      "name": "Pearl",
+      "role": "Painting caretaker",
+      "asset": "npcs/pearl-idle",
+      "anchor": {
+        "x": 135,
+        "y": 208
+      }
+    }
+  ]
+}

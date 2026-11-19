@@ -266,18 +266,45 @@ export interface Minimap {
   dispose(): void
 }
 
+const COLLAPSED_KEY = 'tiny-museum:minimap-collapsed'
+
+/** Storage can be unavailable (private windows, blocked site data); the map then just starts open. */
+function readCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(COLLAPSED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeCollapsed(collapsed: boolean): void {
+  try {
+    if (collapsed) window.localStorage.setItem(COLLAPSED_KEY, '1')
+    else window.localStorage.removeItem(COLLAPSED_KEY)
+  } catch {
+    // The choice simply lasts for this visit.
+  }
+}
+
 export function createMinimap(host: HTMLElement): Minimap {
   const root = document.createElement('nav')
   root.className = 'minimap'
   root.hidden = true
   root.setAttribute('aria-label', 'Map')
-  const heading = document.createElement('p')
+  // The heading is the map's handle: pressing it folds the plan away and brings it back.
+  const heading = document.createElement('button')
+  heading.type = 'button'
   heading.className = 'minimap-place'
+  const names = document.createElement('span')
+  names.className = 'minimap-names'
   const title = document.createElement('span')
   title.className = 'minimap-title'
   const here = document.createElement('span')
   here.className = 'minimap-here'
-  heading.append(title, here)
+  names.append(title, here)
+  const fold = svg('svg', { viewBox: '0 0 12 12', 'aria-hidden': 'true' }, 'minimap-fold')
+  fold.append(svg('path', { d: 'M2.5 4.5 6 8l3.5-3.5' }))
+  heading.append(names, fold)
   const view = document.createElement('div')
   view.className = 'minimap-window'
   const canvas = svg('svg', { 'aria-hidden': 'true' }, 'minimap-plan')
@@ -289,6 +316,21 @@ export function createMinimap(host: HTMLElement): Minimap {
   view.append(canvas, you)
   root.append(heading, view)
   host.append(root)
+
+  let collapsed = readCollapsed()
+  function applyCollapsed(): void {
+    root.classList.toggle('is-collapsed', collapsed)
+    heading.setAttribute('aria-expanded', String(!collapsed))
+    heading.title = collapsed ? 'Show the map' : 'Hide the map'
+  }
+  heading.addEventListener('click', (event) => {
+    collapsed = !collapsed
+    writeCollapsed(collapsed)
+    applyCollapsed()
+    // A pointer press hands the keyboard straight back, so Space and Enter keep moving the visitor.
+    if (event.detail > 0) heading.blur()
+  })
+  applyCollapsed()
 
   const seen = new Map<RoomId, FloorSketch>()
   let place: MapPlace | null = null
@@ -391,6 +433,7 @@ export function createMinimap(host: HTMLElement): Minimap {
       place = next
       const info = MAP_PLACES[next.id]!
       root.className = `minimap is-${info.theme}`
+      applyCollapsed()
       title.textContent = info.title
       here.textContent = ''
       root.hidden = false

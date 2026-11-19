@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { contains } from '../floor.ts'
 import { MAX_DEPTH, Walker, pondFloor, toFloor } from './walk.ts'
 import { FOREST_GATE, POND_LANDMARKS } from './landmarks.ts'
+import { PROP_DEPTH } from './depth.ts'
 import layout from '../../../../public/assets/pond/layout.json' with { type: 'json' }
 
 const WIDTH = (8 * layout.scene.width) / layout.scene.height
@@ -13,12 +14,12 @@ test('the shortened bank ends at the gate and journal while every landmark stays
   assert.ok(!contains(area, toFloor(13.1, 0)))
   assert.ok(contains(area, toFloor(FOREST_GATE.x, 0)))
   for (const landmark of POND_LANDMARKS) {
-    if (landmark.standX !== undefined) assert.ok(contains(area, toFloor(landmark.standX, 0.86)), landmark.title)
+    if (landmark.standX !== undefined) assert.ok(contains(area, toFloor(landmark.standX, PROP_DEPTH * 0.86)), landmark.title)
   }
 })
 
 test('the grass is walkable from the bank to the treeline, but not the pond', () => {
-  assert.ok(contains(area, toFloor(-3, 0.5)))
+  assert.ok(contains(area, toFloor(-3, PROP_DEPTH * 0.5)))
   assert.ok(contains(area, toFloor(12, MAX_DEPTH - 0.01)))
   assert.ok(contains(area, toFloor(WIDTH / 2, 0)))
   assert.ok(!contains(area, toFloor(WIDTH / 2, 0.5)))
@@ -28,8 +29,8 @@ test('the grass is walkable from the bank to the treeline, but not the pond', ()
 })
 
 test('walks round the near shore to cross the pond', () => {
-  const walker = new Walker(area, 1, 0.6)
-  walker.walkTo(10, 0.6)
+  const walker = new Walker(area, 1, MAX_DEPTH)
+  walker.walkTo(10, MAX_DEPTH)
   let seconds = 0
   let shallowest = 1
   while (walker.walking && seconds < 30) {
@@ -38,7 +39,7 @@ test('walks round the near shore to cross the pond', () => {
     seconds += 1 / 60
   }
   assert.ok(!walker.walking)
-  assert.ok(Math.abs(walker.x - 10) < 1e-6 && Math.abs(walker.depth - 0.6) < 1e-6)
+  assert.ok(Math.abs(walker.x - 10) < 1e-6 && Math.abs(walker.depth - MAX_DEPTH) < 1e-6)
   assert.ok(shallowest < 0.2)
 })
 

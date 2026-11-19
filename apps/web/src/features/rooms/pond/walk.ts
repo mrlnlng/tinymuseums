@@ -1,5 +1,5 @@
 import { findPath, nearestInside, slide, type FloorPoint, type WalkArea } from '../floor.ts'
-import { depthAtLift, scaleAt } from './depth.ts'
+import { PROP_DEPTH, depthAtLift, scaleAt } from './depth.ts'
 import layout from '../../../../public/assets/pond/layout.json' with { type: 'json' }
 
 /**
@@ -7,8 +7,8 @@ import layout from '../../../../public/assets/pond/layout.json' with { type: 'js
  * between the bank and the treeline, so a step into the picture is as long as one across it.
  */
 export const DEPTH_SPAN = 2.6
-/** The visitor stays in front of the props, which stand at depth 1. */
-export const MAX_DEPTH = 0.9
+/** The visitor stays in front of the props, which stand at PROP_DEPTH. */
+export const MAX_DEPTH = PROP_DEPTH * 0.9
 
 const PICTURE = { height: 8, feet: layout.scene.feet }
 

@@ -30,6 +30,7 @@ import type { HallLayout, HallRoomSpan } from '@/features/hall/scene/layout'
 import { HallScene } from '@/features/hall/scene/scene'
 import { createSitting, type Sitting } from '@/features/hall/scene/sitting'
 import { followOutfit, lookOf, ownedLook } from '@/features/hall/scene/wardrobe'
+import { hallRoomInfo } from '@/features/npcs/room-places'
 import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
@@ -478,6 +479,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
 
       return {
         floor: { kind: 'strip', minX: CONFIG.lobby.minX, maxX: () => hall.layout.totalLength },
+        npc: { info: () => hallRoomInfo(hall.layout, GALLERY_DOOR.lobbyX) },
         cameraBounds: {
           minX: GALLERY_DOOR.lobbyX - Math.max(
             GALLERY_DOOR.height * door.naturalWidth / door.naturalHeight,

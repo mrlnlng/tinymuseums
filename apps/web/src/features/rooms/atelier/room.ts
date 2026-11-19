@@ -5,6 +5,7 @@ import { createAtelierRoom } from '@/features/hall/scene/atelier'
 import { CONFIG } from '@/features/hall/scene/config'
 import { GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { createWardrobe, followOutfit, type Wardrobe } from '@/features/hall/scene/wardrobe'
+import { atelierRoomInfo } from '@/features/npcs/room-places'
 import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
 import type { AtelierArtwork } from '../art'
@@ -101,6 +102,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
 
       return {
         floor: { kind: 'strip', minX: GALLERY_DOOR.atelierX, maxX: () => CONFIG.atelier.max - 0.45 },
+        npc: { info: () => atelierRoomInfo(GALLERY_DOOR.atelierX) },
         cameraBounds: {
           minX: GALLERY_DOOR.atelierX - Math.max(
             GALLERY_DOOR.height * door.naturalWidth / door.naturalHeight,

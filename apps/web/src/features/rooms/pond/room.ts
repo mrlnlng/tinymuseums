@@ -6,11 +6,14 @@ import { defaultStore } from '@/shared/lib/slots'
 import type { Item } from '@tiny/core/presence/wire'
 import { CONFIG } from '@/features/hall/scene/config'
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
+import { pondRoomInfo } from '@/features/npcs/room-places'
 import type { Room } from '@/features/presence/lib/join-room'
 import layout from '../../../../public/assets/pond/layout.json'
 import { FOREST_GATE, POND_LANDMARKS, type PondLandmark } from './landmarks'
-import { FAR_LIFT, depthAtLift, liftAt, pathX, scaleAt } from './depth'
+import { FAR_LIFT, PROP_DEPTH, depthAtLift, liftAt, pathX, scaleAt } from './depth'
 import { MAX_DEPTH, Walker, depthOf, pondFloor, toFloor } from './walk'
+import { findPath } from '../floor'
+import type { FloorSpot } from '@/features/npcs/jobs'
 import { createShopkeeper } from './shopkeeper'
 import { createPondAmbience } from './ambience'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
@@ -50,8 +53,8 @@ const SPOT_REACH = 0.65
 const PATH_REACH = 0.6
 /** How far the painted path runs past the bank toward the viewer. */
 const PATH_NEAR = 0.35
-/** How deep the visitor stands to use a prop, just short of the treeline it stands on. */
-const STAND_DEPTH = 0.86
+/** How deep the visitor stands to use a prop, just in front of it. */
+const STAND_DEPTH = PROP_DEPTH * 0.86
 /** Below this the visitor is on the bank, where the fishing spots and the gate are. */
 const BANK_DEPTH = 0.1
 const KEY_SPEED = 3
@@ -302,7 +305,7 @@ export function createPondRoom({
         if (!landmark.path) continue
         const { foot, end } = landmark.path
         const width = Math.abs(end - foot) / run
-        const height = FAR_LIFT + PATH_NEAR
+        const height = liftAt(PROP_DEPTH) + PATH_NEAR
         const flip = end < foot ? -1 : 1
         const map = art.path.clone()
         if (flip < 0) { map.repeat.x = -1; map.offset.x = 1 }
@@ -460,8 +463,8 @@ export function createPondRoom({
       function approach(landmark: PondLandmark): void {
         const { path, standX } = landmark
         if (!path || standX === undefined) return
-        const via = walker.depth < 0.35
-          ? [0.04, 0.2, 0.4, 0.6, 0.76].map((d) => toFloor(pathX(path, d), d))
+        const via = walker.depth < PROP_DEPTH * 0.35
+          ? [0.04, 0.2, 0.4, 0.6, 0.76].map((d) => toFloor(pathX(path, d * PROP_DEPTH), d * PROP_DEPTH))
           : []
         walkTo(standX, STAND_DEPTH, () => openPanel(landmark), landmark, via)
       }
@@ -553,7 +556,7 @@ export function createPondRoom({
           if (!landmark.path || landmark.standX === undefined) {
             return depth < BANK_DEPTH && Math.abs(x - landmark.x) < landmark.width / 2 + 0.15
           }
-          const beside = depth > STAND_DEPTH - 0.2 && Math.abs(x - landmark.standX) < 0.75
+          const beside = depth > STAND_DEPTH - PROP_DEPTH * 0.2 && Math.abs(x - landmark.standX) < 0.75
           const atFoot = depth < BANK_DEPTH && Math.abs(x - landmark.path.foot) < PATH_REACH
           return beside || atFoot
         })
@@ -597,9 +600,30 @@ export function createPondRoom({
       window.addEventListener('blur', letGo)
 
       control.release = releaseSpot
+      // NPCs walk the visitor's own WalkArea; depth stays walker.depth so both share one stance.
+      const npcGround = {
+        route(from: FloorSpot, to: FloorSpot): FloorSpot[] {
+          const start = toFloor(from.x, from.d)
+          const route: FloorSpot[] = [{ x: start.x, d: depthOf(start) }]
+          for (const point of findPath(FLOOR, start, toFloor(to.x, to.d))) {
+            const last = route[route.length - 1]
+            const d = depthOf(point)
+            if (Math.abs(point.x - last.x) < 1e-9 && Math.abs(d - last.d) < 1e-9) continue
+            route.push({ x: point.x, d })
+          }
+          return route
+        },
+        place: (d: number) => ({ lift: liftAt(d), scale: scaleAt(d) }),
+        playerD: () => walker.depth,
+      }
+      const npcInfo = pondRoomInfo({
+        minX: MIN_X, maxX: MAX_X, doorX: EXIT_X, spots: POND_SPOTS, landmarks: POND_LANDMARKS,
+        area: FLOOR, ground: npcGround,
+      })
 
       return {
         floor: { kind: 'strip', minX: MIN_X, maxX: () => MAX_X },
+        npc: { info: () => npcInfo },
         isCovered: () => activeSpot !== null,
         cameraBounds: {
           minX: VIEW_LEFT,
@@ -625,7 +649,7 @@ export function createPondRoom({
           // Ease out the wide-screen offset near the entrance so the whole gate remains visible.
           let target = wide ? Math.min(1.35, Math.max(0, frame.camera.position.x - VIEW_LEFT - viewWidth / 2)) : 0
           // On a narrow screen, keep the prop the visitor is walking to, or standing at, in the picture with them.
-          const focus = heading ?? (walker.depth > 0.5 ? nearbyLandmark()?.landmark : undefined)
+          const focus = heading ?? (walker.depth > PROP_DEPTH * 0.5 ? nearbyLandmark()?.landmark : undefined)
           if (!wide && focus?.path) {
             const halfView = (frame.camera.right - frame.camera.left) / 2
             const center = frame.camera.position.x
@@ -732,7 +756,7 @@ export function createPondRoom({
               const otterX = landmark.x - placed.width / 2
               const otterShown = Math.abs(projected.x - (placed.width / 2) * (2 / (frame.camera.right - frame.camera.left))) < 0.9
               const offset = walker.x - otterX
-              const coming = otterShown && !frame.quiet && walker.depth > 0.45 && Math.abs(offset) < 1.9
+              const coming = otterShown && !frame.quiet && walker.depth > PROP_DEPTH * 0.45 && Math.abs(offset) < 1.9
               const visitor = coming ? Math.sign(offset) * Math.min(1, Math.abs(offset)) : null
               shopkeeper.update(width, frame.quiet ? 0 : frame.dt, onStage, reducedMotion, visitor)
             }

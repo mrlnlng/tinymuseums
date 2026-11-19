@@ -15,6 +15,9 @@ export function liftAt(d: number): number {
   return (FAR_LIFT * (1 - scaleAt(d))) / (1 - FAR_SCALE)
 }
 
+/** The depth the noticeboard, bait shop and journal stand at, halfway back to the treeline. */
+export const PROP_DEPTH = 0.5
+
 export function depthAtLift(lift: number): number {
   const scale = 1 - (lift * (1 - FAR_SCALE)) / FAR_LIFT
   if (scale <= 0) return Infinity
@@ -24,7 +27,7 @@ export function depthAtLift(lift: number): number {
 export interface PondPath {
   /** Where the path leaves the bank. */
   foot: number
-  /** Where it meets the prop at the treeline: under the middle of its base. */
+  /** Where it meets the prop at PROP_DEPTH: under the middle of its base. */
   end: number
   /** A sideways sway through the middle of the path, in world units. */
   sway: number
@@ -33,7 +36,7 @@ export interface PondPath {
 }
 
 export function pathX(path: PondPath, d: number): number {
-  const t = Math.min(1, Math.max(0, d))
+  const t = Math.min(1, Math.max(0, d / PROP_DEPTH))
   const eased = t * t * (3 - 2 * t)
   return path.foot + (path.end - path.foot) * eased + path.sway * Math.sin(Math.PI * t)
 }

@@ -1,6 +1,7 @@
 import { THEMES, WEAR, type Placement } from '@tiny/core/rooms'
 import { GALLERY_DOOR, createGalleryDoor } from '@/features/hall/scene/gallery-door'
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
+import { personalRoomInfo, personalShade } from '@/features/npcs/room-places'
 import type { DecorController } from '../decorate/controller'
 import { cozyLevel } from '../decorate/logic'
 import {
@@ -68,14 +69,13 @@ function lightOf(placements: readonly Placement[]): RoomLight {
 }
 
 export function createPersonalRoom({ slug, placements, ownerName, shareKey, decor, width }: PersonalRoomOptions): RoomDef<PersonalArt> {
+  const doors = { hall: { x: DOOR_X, clearX: DOOR_X + DOOR_CLEAR } }
   return {
     id: 'personal',
     className: 'cozy',
     clearColor: '#f6e7cf',
     gatesItself: false,
-    doors: {
-      hall: { x: DOOR_X, clearX: DOOR_X + DOOR_CLEAR },
-    },
+    doors,
 
     build(ctx, { cozy, door }) {
       let shownWidth = width()
@@ -149,6 +149,10 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
 
       return {
         floor: { kind: 'strip', minX: MIN_X, maxX: () => width() - WALK_GAP },
+        npc: {
+          info: () => personalRoomInfo({ doors, placements: arrangement, minX: MIN_X, maxX: width() - WALK_GAP }),
+          shade: (x) => personalShade(shadeAt(x, 0.1), lit.gloom),
+        },
         cameraBounds: { minX: ROOM_LEFT, maxX: () => width() },
 
         presence: { key: slug, ticketKey: shareKey },

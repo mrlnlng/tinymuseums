@@ -5,6 +5,7 @@ import type { Viewport } from '@/features/hall/scene/overlay'
 import type { Traversal } from '@/features/hall/scene/traversal'
 import type { Pose, Room } from '@/features/presence/lib/join-room'
 import type { VisitorScenery } from '@/features/presence/scene/remote-visitors'
+import type { NpcRoomInfo } from '@/features/npcs/jobs'
 import type { EffectName } from '@/features/sound/hooks/useSoundEffects'
 
 export type RoomId = 'hall' | 'atelier' | 'personal' | 'pond'
@@ -85,6 +86,8 @@ export interface Frame {
 
 export interface RoomContents {
   floor: Floor
+  /** What NPCs need to know about this room's floor; rooms without it get the floor and doors only. */
+  npc?: { info(): NpcRoomInfo; shade?(x: number): string | null }
   /** Illustrated edges of the room; the whole camera window stays within these bounds. */
   cameraBounds?: { minX: number; maxX(): number }
   presence: { key: string; ticketKey?: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }

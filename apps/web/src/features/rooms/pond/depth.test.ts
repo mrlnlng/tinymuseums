@@ -37,7 +37,7 @@ test('leads every path into its prop and stands the visitor clear beside it', ()
       continue
     }
     assert.ok(landmark.path && landmark.standX !== undefined)
-    close(pathX(landmark.path, 1), landmark.x)
+    close(pathX(landmark.path, landmark.depth), landmark.x)
     const half = (landmark.width * scaleAt(landmark.depth)) / 2
     assert.ok(Math.abs(landmark.standX - landmark.x) > half)
   }

@@ -10,6 +10,8 @@ import { createPixelRatioGovernor } from '@/features/hall/scene/quality'
 import { createRoomPassage } from '@/features/hall/scene/room-passage'
 import { Traversal } from '@/features/hall/scene/traversal'
 import { lookOf } from '@/features/hall/scene/wardrobe'
+import type { NpcRoomInfo } from '@/features/npcs/jobs'
+import { createNpcLayer } from '@/features/npcs/npc-layer'
 import { joinRoom, type Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { ROOM_ART, type RoomArt } from './art'
@@ -78,6 +80,7 @@ interface Entry {
   joined: Map<string, JoinedContents>
   nearby: Nearby
   presence: Room | null
+  npcLayer: ReturnType<typeof createNpcLayer> | null
   holdsArt: boolean
   warm: boolean
   disposed: boolean
@@ -185,6 +188,8 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     }
     entry.presence?.dispose()
     entry.presence = null
+    entry.npcLayer?.dispose()
+    entry.npcLayer = null
     minimap.hide()
     entry.contents = null
     entry.scene = null
@@ -291,6 +296,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       joined: new Map(),
       nearby: createNearby(JOINED_REACH),
       presence: null,
+      npcLayer: null,
       holdsArt: false,
       warm: false,
       disposed: false,
@@ -510,6 +516,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
             scenery: entry.contents.presence.scenery,
           })
           entry.presence = presence
+          entry.npcLayer = createNpcLayer(hosts.character, entry.room.id)
           entry.contents.onJoined?.(presence)
           if (entry.arrival.kind === 'door' && placed !== true) {
             const door = entry.room.doors[entry.arrival.door]
@@ -545,6 +552,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       }
       if (entry.contents.isCovered?.()) {
         entry.presence?.update(dt, rig.camera, viewport, false)
+        entry.npcLayer?.hide()
         for (const part of partsOf(entry)) part.update(frame)
         sound().setWalking(false)
         return
@@ -567,6 +575,20 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         scale,
       )
       entry.presence?.update(dt, rig.camera, viewport)
+      const npcInfo: NpcRoomInfo = entry.contents.npc?.info() ?? {
+        minX: entry.contents.floor.minX,
+        maxX: entry.contents.floor.maxX(),
+        places: Object.entries(entry.room.doors).map(([name, door]) => ({ x: door.x, kind: 'door' as const, name })),
+      }
+      entry.npcLayer?.update({
+        dt,
+        nowMs: now,
+        camera: rig.camera,
+        viewport,
+        info: npcInfo,
+        shade: entry.contents.npc?.shade,
+        playerX: traversal.x,
+      })
       for (const part of partsOf(entry)) part.update(frame)
       sound().setWalking(!traversal.isAirborne && Math.abs(walk) > WALKING_SPEED)
       entry.frameCount += 1

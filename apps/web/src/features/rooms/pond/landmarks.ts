@@ -1,5 +1,5 @@
 import type { PondPanelKind } from './room'
-import type { PondPath } from './depth'
+import { PROP_DEPTH, type PondPath } from './depth'
 import type { AssetName } from '@/shared/lib/assets'
 
 /** The woodland entrance shares the costume-gallery door's scale and interaction. */
@@ -7,7 +7,7 @@ export const FOREST_GATE = { x: -5.6, arrivalX: -4.85, reach: 0.6 } as const
 
 export interface PondLandmark {
   kind: PondPanelKind | 'exit'
-  /** World position of the sprite's foot; the gate stands on the bank, the rest at the treeline. */
+  /** World position of the sprite's foot; the gate stands on the bank, the rest at PROP_DEPTH. */
   x: number
   depth: number
   /** Width as drawn on the bank; it shrinks with depth. */
@@ -40,7 +40,7 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
   {
     kind: 'bounties',
     x: -2.7,
-    depth: 1,
+    depth: PROP_DEPTH,
     width: 2.05,
     baseY: 0,
     aspect: 1304 / 1266,
@@ -53,12 +53,12 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
   {
     kind: 'fishmonger',
     x: 0.6,
-    depth: 1,
+    depth: PROP_DEPTH,
     width: 3.7,
     baseY: 0,
     aspect: 1747 / 1388,
     path: { foot: 1.9, end: 0.6, sway: 0.24, width: 0.95 },
-    standX: 2,
+    standX: 2.25,
     title: 'Bait shop',
     description: 'Buy bait & trade pearls',
     image: 'pond/bait-shop',
@@ -66,12 +66,12 @@ export const POND_LANDMARKS: readonly PondLandmark[] = [
   {
     kind: 'fishdex',
     x: 12.6,
-    depth: 1,
+    depth: PROP_DEPTH,
     width: 2.8,
     baseY: 0,
     aspect: 1380 / 770,
     path: { foot: 11.4, end: 12.6, sway: -0.28, width: 0.95 },
-    standX: 11.5,
+    standX: 11.3,
     title: 'Fish journal',
     description: 'Your catches & discoveries',
     image: 'pond/forest-journal-signed',

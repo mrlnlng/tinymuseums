@@ -1,0 +1,134 @@
+{
+  "frame": {
+    "width": 256,
+    "height": 224,
+    "count": 6,
+    "fps": 8,
+    "direction": "right",
+    "layout": "row"
+  },
+  "worldHeight": 0.68,
+  "designHeight": 192,
+  "characters": [
+    {
+      "id": "pip",
+      "name": "Pip",
+      "role": "Stamp clerk",
+      "asset": "npcs/pip-walk",
+      "anchor": {
+        "x": 131,
+        "y": 208
+      }
+    },
+    {
+      "id": "thimble",
+      "name": "Thimble",
+      "role": "Textile mender",
+      "asset": "npcs/thimble-walk",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "fig",
+      "name": "Fig",
+      "role": "Frame repairer",
+      "asset": "npcs/fig-walk",
+      "anchor": {
+        "x": 141,
+        "y": 208
+      }
+    },
+    {
+      "id": "moss",
+      "name": "Moss",
+      "role": "Pond sketcher",
+      "asset": "npcs/moss-walk",
+      "anchor": {
+        "x": 125,
+        "y": 208
+      }
+    },
+    {
+      "id": "hazel",
+      "name": "Hazel",
+      "role": "Framer",
+      "asset": "npcs/hazel-walk",
+      "anchor": {
+        "x": 157,
+        "y": 208
+      }
+    },
+    {
+      "id": "percy",
+      "name": "Percy",
+      "role": "Post carrier",
+      "asset": "npcs/percy-walk",
+      "anchor": {
+        "x": 130,
+        "y": 208
+      }
+    },
+    {
+      "id": "dot",
+      "name": "Dot",
+      "role": "Gallery registrar",
+      "asset": "npcs/dot-walk",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "mabel",
+      "name": "Mabel",
+      "role": "Night guard",
+      "asset": "npcs/mabel-walk",
+      "anchor": {
+        "x": 124,
+        "y": 208
+      }
+    },
+    {
+      "id": "clove",
+      "name": "Clove",
+      "role": "Gallery guide",
+      "asset": "npcs/clove-walk",
+      "anchor": {
+        "x": 123,
+        "y": 208
+      }
+    },
+    {
+      "id": "nell",
+      "name": "Nell",
+      "role": "Archivist",
+      "asset": "npcs/nell-walk",
+      "anchor": {
+        "x": 120,
+        "y": 208
+      }
+    },
+    {
+      "id": "miso",
+      "name": "Miso",
+      "role": "Storeroom keeper",
+      "asset": "npcs/miso-walk",
+      "anchor": {
+        "x": 132,
+        "y": 208
+      }
+    },
+    {
+      "id": "pearl",
+      "name": "Pearl",
+      "role": "Painting caretaker",
+      "asset": "npcs/pearl-walk",
+      "anchor": {
+        "x": 135,
+        "y": 208
+      }
+    }
+  ]
+}

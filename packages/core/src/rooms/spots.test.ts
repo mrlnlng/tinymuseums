@@ -23,7 +23,7 @@ test('the fashion area accepts one painting in each of its frames', () => {
 })
 
 test('a frame holds one painting, and only frames are spots', () => {
-  const full = validatePlacements(THEMES.atelier, [painting('floral.left', 'a'), { ...painting('floral.left', 'b'), id: 's-other' }], ownsAll)
+  const full = validatePlacements(THEMES.atelier, [painting('bruce.left', 'a'), { ...painting('bruce.left', 'b'), id: 's-other' }], ownsAll)
   assert.equal(full.ok, false)
   assert.equal(!full.ok && full.reason, 'zone_full')
   const unknown = validatePlacements(THEMES.atelier, [painting('kiki.left', 'a')], ownsAll)

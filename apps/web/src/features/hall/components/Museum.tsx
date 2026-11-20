@@ -74,7 +74,6 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const [sketchGame, setSketchGame] = useState<PreparedGame | null>(null)
   const [openGame, setOpenGame] = useState<null | 'desktop' | MinigameId>(null)
   const [sketchSession, setSketchSession] = useState(0)
-  const [unkeptNote, setUnkeptNote] = useState(false)
   const [arrangeRoom, setArrangeRoom] = useState<HallRoomData | null>(null)
   const [isArrangerOpen, setIsArrangerOpen] = useState(false)
   const hideHint = useCallback(() => setIsHintShown(false), [])
@@ -95,18 +94,6 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       })
       .catch(() => {})
     return () => abort.abort()
-  }, [])
-
-  useEffect(() => {
-    let timer = 0
-    try {
-      if (window.sessionStorage.getItem('tm:economy:unkept') === '1') {
-        window.sessionStorage.removeItem('tm:economy:unkept')
-        setUnkeptNote(true)
-        timer = window.setTimeout(() => setUnkeptNote(false), 4200)
-      }
-    } catch {}
-    return () => window.clearTimeout(timer)
   }, [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
@@ -213,12 +200,6 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       <div className="hall-guestboard-notes" ref={guestBoardNotesRef} aria-hidden="true">
         <PinnedNotes notes={guestNotes} avoidSitArea />
       </div>
-
-      {unkeptNote ? (
-        <p className="economy-note" role="status">
-          The unkept pieces went back to their stands.
-        </p>
-      ) : null}
 
       {arrangeRoom && isReady && !isArrangerOpen ? (
         <button type="button" className="arranger-open" onClick={() => setIsArrangerOpen(true)}>

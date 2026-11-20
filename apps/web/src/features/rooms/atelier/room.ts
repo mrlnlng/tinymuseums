@@ -1,16 +1,31 @@
-import { outfit } from '@tiny/core/slots'
+import * as THREE from 'three'
+import { outfit, restamp } from '@tiny/core/slots'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
 import { walletReady } from '@/features/economy/lib/ownership'
 import { createAtelierRoom } from '@/features/hall/scene/atelier'
 import { CONFIG } from '@/features/hall/scene/config'
 import { GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
-import { createWardrobe, followOutfit, type Wardrobe } from '@/features/hall/scene/wardrobe'
+import { keepStamps } from '@/features/hall/scene/keep-stamps'
+import { createLiveReflection } from '@/features/hall/scene/mirror-reflection'
+import { createWardrobe, followOutfit, lookOf, ownedLook, type Wardrobe } from '@/features/hall/scene/wardrobe'
 import { atelierRoomInfo } from '@/features/npcs/room-places'
 import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
 import type { AtelierArtwork } from '../art'
 import type { SpotPainting } from '@tiny/core'
+import type { CharacterKind } from '@/features/hall/scene/rig'
 import type { JoinedRoom, RoomDef } from '../types'
+
+/** How the page reaches into the room: it hears when the mirror is tapped, and asks the room to change character. */
+export interface AtelierHooks {
+  onMirror(): void
+  onCloset(): void
+  become: { current: ((kind: CharacterKind) => void) | null }
+  /** Puts on what was chosen in the closet. */
+  dress: { current: ((costume: string | null, bow: string | null) => void) | null }
+  /** Opens or shuts the wardrobe's doors with the closet. */
+  wardrobeDoors: { current: ((open: boolean) => void) | null }
+}
 
 const SPARKLE_TINTS = ['#fbd99a', '#f7a8c4', '#fff4dc']
 
@@ -40,7 +55,7 @@ function sparkle(host: HTMLElement): void {
 }
 
 /** The fashion area, its frames showing the paintings the owner published to them. */
-export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting>>): RoomDef<AtelierArtwork> {
+export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting>>, hooks: AtelierHooks): RoomDef<AtelierArtwork> {
   return {
     id: 'atelier',
     className: 'atelier',
@@ -65,10 +80,40 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         room,
         outfit: outfitSlot,
         onChange: (change) => { track(change); sparkle(ctx.characterHost) },
-        onMisfit: (item, kind) => room.showMisfit(item, kind),
         onIdle: follower.sync,
       })
       const closet = wardrobe
+      function openMirror(): void {
+        room.markMirrorSeen()
+        hooks.onMirror()
+      }
+      hooks.become.current = (kind) => closet.tapDisplay(kind)
+      hooks.dress.current = (costume, bow) => closet.dress(costume, bow)
+      hooks.wardrobeDoors.current = (open) => room.setWardrobeOpen(open)
+      const reflection = createLiveReflection(ctx.characterHost, ctx.character)
+      const corner = new THREE.Vector3()
+
+      // Walking out, anything unkept leaves the visitor and flies home before the room goes.
+      let leaving = false
+      function leaveByDoor(): void {
+        if (leaving) return
+        leaving = true
+        track('stairs')
+        const snapshot = getWalletSnapshot()
+        const look = lookOf(outfitSlot.snapshot())
+        const figure = ctx.characterHost.querySelector<HTMLElement>('.hall-bunny-rig:not([hidden]), .hall-bunny:not([hidden])')
+        const flight = figure ? room.flyHome(keepStamps(look, snapshot), figure.getBoundingClientRect()) : 0
+        if (flight > 0) {
+          const kept = ownedLook(look, snapshot)
+          outfitSlot.update((o) => ({
+            ...o,
+            character: restamp(o.character, kept.kind),
+            costume: restamp(o.costume, kept.costume),
+            bow: restamp(o.bow, kept.bow),
+          }))
+        }
+        window.setTimeout(() => ctx.leave('gallery'), flight)
+      }
       let disposed = false
       const stopWallet = subscribeWallet(() => {
         const snapshot = getWalletSnapshot()
@@ -96,8 +141,9 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
 
       room.setActions({
         onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
-        onCharacter: (kind) => { if (!ctx.isQuiet()) closet.tapDisplay(kind) },
-        onLeave: () => { if (!ctx.isQuiet()) { track('stairs'); ctx.leave('gallery') } },
+        onMirror: () => { if (!ctx.isQuiet()) openMirror() },
+        onWardrobe: () => { if (!ctx.isQuiet()) hooks.onCloset() },
+        onLeave: () => { if (!ctx.isQuiet()) leaveByDoor() },
       })
 
       return {
@@ -122,11 +168,10 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         hitTest(raycaster) {
           const item = room.hitTestItem(raycaster)
           if (item) return { activate: () => closet.tapItem(item) }
-          const kind = room.hitTestDisplay(raycaster)
-          if (kind) return { activate: () => closet.tapDisplay(kind) }
-          if (room.hitTestWardrobe(raycaster)) return { activate: () => room.toggleWardrobe() }
+          if (room.hitTestMirror(raycaster)) return { activate: openMirror }
+          if (room.hitTestWardrobe(raycaster)) return { activate: () => hooks.onCloset() }
           if (room.hitTestDoor(raycaster)) {
-            return { activate: () => { track('stairs'); ctx.leave('gallery') } }
+            return { activate: leaveByDoor }
           }
           return null
         },
@@ -134,10 +179,24 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         update(frame) {
           room.update(frame.dt, ctx.traversal.x)
           room.sync(frame.camera, frame.viewport, !frame.quiet)
+          // The glass and the wall's foot on screen, in the character host's pixels, as the character draws itself.
+          const toScreenX = (x: number) => (corner.set(x, 0, 0).project(frame.camera).x * 0.5 + 0.5) * frame.viewport.width
+          const toScreenY = (y: number) => (-corner.set(0, y, 0).project(frame.camera).y * 0.5 + 0.5) * frame.viewport.height
+          const glass = room.mirrorGlass()
+          reflection.update(frame.dt, glass && {
+            left: toScreenX(glass.left),
+            right: toScreenX(glass.right),
+            top: toScreenY(glass.top),
+            bottom: toScreenY(glass.bottom),
+          }, toScreenY(0))
         },
 
         dispose() {
           disposed = true
+          hooks.become.current = null
+          hooks.dress.current = null
+          hooks.wardrobeDoors.current = null
+          reflection.dispose()
           stopWallet()
           follower.dispose()
           closet.dispose()

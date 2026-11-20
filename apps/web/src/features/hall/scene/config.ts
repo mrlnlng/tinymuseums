@@ -251,30 +251,37 @@ export const CONFIG = {
     cabinet: { x: 330, y: 566, width: 463, z: 0.25 },
     jewelryBox: { x: 285, y: 403, width: 172, z: 0.27 },
     perfume: { x: 430, y: 398, width: 129, z: 0.27 },
-    portraitWink: { x: 651, y: 204, width: 153, z: 0.2 },
-    portraitBunny: { x: 650, y: 339, width: 110, z: 0.2 },
-    ribbon: { x: 650, y: 415, width: 64, z: 0.21 },
     // Accessories with no room of their own, one in each of the cabinet's compartments.
     cabinetPieces: [
       { id: 'blue-cap', image: 'blueCap', x: 236, y: 598, width: 130, rotation: -0.12, compartment: { x: 236, y: 569, width: 175, height: 145 } },
       { id: 'daisy-clip', image: 'daisyClip', x: 443, y: 606, width: 85, rotation: -0.15, compartment: { x: 443, y: 569, width: 175, height: 145 } },
     ],
+    // Headpieces resting on the cabinet top, either side of the jewelry box and perfume.
+    shelfPieces: [
+      { id: 'kiki', image: 'bow', x: 150, y: 427, width: 72, rotation: 0.08, compartment: { x: 150, y: 427, width: 80, height: 70 } },
+      { id: 'flower-crown', image: 'flowerCrown', x: 524, y: 440, width: 78, rotation: -0.08, compartment: { x: 524, y: 440, width: 84, height: 45 } },
+    ],
+    // The dressing mirror between the cabinet and the wardrobe, where the visitor changes character.
+    // Its glass is a fraction of the art in from each side; the gems sit along the frame's top bar.
+    mirror: {
+      x: 676,
+      bottomY: 655,
+      height: 500,
+      z: 0.3,
+      glass: { left: 0.142, right: 0.874, top: 0.186, bottom: 0.897 },
+      gems: { y: 0.158, width: 0.5 },
+    },
     // The wardrobe at the entrance's end, sized and stood as in the wardrobe mock (its feet a
-    // little above the columns' bases). Its rail is a fraction of its width and height in from
-    // its top left; the hangers spread along the rail, their hooks over it, and a kept costume
-    // hangs `drop` px below the rail. The tap target covers the doors.
+    // little above the columns' bases). It opens the closet; the tap target covers the doors.
     wardrobe: {
       x: 1100,
       bottomY: 667,
       width: 619,
       z: 0.3,
-      rail: { top: 0.277, left: 0.3, right: 0.71 },
-      hanger: { width: 106, hook: 14, drop: 40, inset: 0.35, slots: 3, max: 5 },
       handles: { y: 0.5, width: 150 },
     },
     // Shared by every collection room.
     broom: { dx: 77, y: 522, width: 115, z: 0.42 },
-    fishBag: { dx: -3, y: 352, width: 93, z: 0.36 },
     // Bruce's booth only. Sized and raised as in bruce_mock_scene.png, so the flowers hug the
     // platform and hide the shadow under it.
     bush: { dx: -11, y: 627, width: 371, z: 0.4 },

@@ -4,7 +4,7 @@ import type { Attachment } from './carried'
 import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 import type { CharacterKind, Rig, RigAttachmentPose } from './rig'
-import { createRigState, GROUNDED, rigFacing, stepRigState, type JumpPose } from './rig-motion'
+import { createRigState, GROUNDED, rigFacing, stepRigState, type JumpPose, type RigState } from './rig-motion'
 
 export interface Pose {
   x: number
@@ -34,6 +34,15 @@ export interface Character {
   readonly look: Look
   /** Sitting has painted art only for the plain bunny. */
   readonly canSit: boolean
+  /** The rig's pose as last stepped: walking, facing, jumping. A mirror copies it. */
+  readonly motion: Readonly<RigState>
+  /** How tall the character stood on screen at its last update, in CSS pixels. */
+  readonly drawnHeight: number
+  /**
+   * How it was drawn at its last update, in its host's CSS pixels: its feet, where they would be
+   * on the floor without a jump, and its somersault turn in degrees. A mirror copies this.
+   */
+  readonly drawnPose: { x: number; feet: number; ground: number; rotation: number }
   /** Settles once every requested look has loaded (true) or fallen back (false). */
   readonly ready: Promise<boolean>
   /** Resolves once the look shows (true), or the rig for it failed (false). */
@@ -174,6 +183,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let screenX = 0
   let screenY = 0
   let drawnHeight = 0
+  let groundFeet = 0
   let scale = 1
   let currentHeight = ''
   let currentTransform = ''
@@ -210,6 +220,15 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       return look
     },
 
+    get motion() {
+      return motion
+    },
+    get drawnHeight() {
+      return drawnHeight
+    },
+    get drawnPose() {
+      return { x: screenX, feet: screenY + drawnHeight / 2, ground: groundFeet, rotation: bodyRotation }
+    },
     get canSit() {
       return look.kind === 'bunny' && look.costume === null && look.bow === null
     },
@@ -332,6 +351,12 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       const worldHeight = perched ? perched.height : CONFIG.character.height * depthScale
       const heightPx = (worldHeight / frustumHeight) * viewport.height
       drawnHeight = heightPx
+      if (jump.lift > 0 && !perched) {
+        projected.set(x, centerY - jump.lift * CONFIG.jump.height * depthScale, 0).project(camera)
+        groundFeet = (-projected.y * 0.5 + 0.5) * viewport.height + heightPx / 2
+      } else {
+        groundFeet = screenY + heightPx / 2
+      }
       // The same hop as remote-visitors.ts draws when others say something.
       const bounce = performance.now() - bouncedAt
       if (bounce < BOUNCE_MS) screenY -= Math.sin((Math.PI * bounce) / BOUNCE_MS) * heightPx * 0.08

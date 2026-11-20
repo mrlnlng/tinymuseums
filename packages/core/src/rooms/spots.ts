@@ -1,7 +1,6 @@
 // Every place the owner can hang a painting, by location. A location is a shared room row; the
 // studio lists these so a painting can be placed in any of them. Frames that do something other
-// than show a painting (a portrait that changes your character, the Kiki painting fixed in its own
-// frame) are not spots.
+// than show a painting (a portrait that changes your character) are not spots.
 
 export interface SpotSpec {
   id: string
@@ -26,9 +25,6 @@ const roomFrames = (room: string, name: string, sides: readonly ('left' | 'right
   sides.map((side) => ({ id: `${room}.${side}`, label: `${name} · ${side} frame`, aspect: FRAME_ASPECT[side] }))
 
 export const ATELIER_SPOTS: readonly SpotSpec[] = [
-  ...roomFrames('kiki', 'The Kiki Collection', ['right']),
-  ...roomFrames('floral', 'The Floral Collection', ['left', 'right']),
-  ...roomFrames('gold', 'The Gold Collection', ['left', 'right']),
   ...roomFrames('bruce', "Bruce's Chronicles", ['left', 'right']),
 ]
 

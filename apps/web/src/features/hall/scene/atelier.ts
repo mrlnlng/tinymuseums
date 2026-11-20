@@ -1,18 +1,18 @@
 import * as THREE from 'three'
+import { itemIdFor } from '@tiny/core/economy'
 import manifest from '@/generated/asset-manifest.json'
-import { FREE_CHARACTERS, itemIdFor, priceOf } from '@tiny/core/economy'
-import { STAMP_ASPECT, STAMP_URL } from '@/features/economy/lib/stamp'
 import { builtUrl } from '@/shared/lib/assets'
-import { plane, stretchedBoard } from './board'
+import { plane } from './board'
 import { CONFIG } from './config'
 import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
-import { createHangTag, type HangTag, type HangTagStyle } from './hang-tag'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from './rig'
 import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
 import { CARDIGANS, COSTUMES, HIBISCUS } from './wardrobe'
+import { MIRROR_KINDS } from './mirror'
+import { pieceUrl } from './piece-art'
 
 const { atelier } = CONFIG
 const { mock } = atelier
@@ -86,25 +86,12 @@ export function keepName(item: ClothingItem): string {
   return name.startsWith('The ') ? name.slice(4) : name
 }
 
-/** The costumes the wardrobe can hang: each one's upright art, and how tall it hangs in mock px. */
-const HANGING: Partial<Record<string, { image: AtelierImage; height: number }>> = {
-  kiki: { image: 'hangerKiki', height: 215 },
-  tutu: { image: 'hangerTutu', height: 185 },
-  'blue-floral': { image: 'hangerBlueFloral', height: 230 },
-  'floral-cardigan': { image: 'hangerFloralCardigan', height: 230 },
-  'gold-sequin': { image: 'hangerGoldSequin', height: 200 },
-  'gold-cape': { image: 'hangerGoldCape', height: 200 },
-  'cardigan-red': { image: 'hangerCardiganRed', height: 115 },
-  'cardigan-forest-green': { image: 'hangerCardiganForestGreen', height: 115 },
-  'cardigan-navy-blue': { image: 'hangerCardiganNavyBlue', height: 115 },
-  'cardigan-butter-yellow': { image: 'hangerCardiganButterYellow', height: 115 },
-}
-/** In the order the rooms show them. */
-const HANGABLE: readonly string[] = COSTUMES.filter((id) => id in HANGING)
-
 export interface AtelierActions {
   onItem(item: ClothingItem): void
-  onCharacter(kind: CharacterKind): void
+  /** The visitor tapped the wardrobe: the closet opens. */
+  onWardrobe(): void
+  /** The visitor tapped the mirror's glass. */
+  onMirror(): void
   onLeave(): void
 }
 
@@ -116,20 +103,28 @@ export interface AtelierRoom {
   setActions(actions: AtelierActions): void
   hitTestDoor(raycaster: THREE.Raycaster): boolean
   hitTestItem(raycaster: THREE.Raycaster): ClothingItem | null
-  /** The character a portrait offers, if it is under the pointer. */
-  hitTestDisplay(raycaster: THREE.Raycaster): CharacterKind | null
-  /** Whether the wardrobe is under the pointer (a costume hanging in it counts as an item). */
+  /** Whether the mirror's glass is under the pointer. */
+  hitTestMirror(raycaster: THREE.Raycaster): boolean
+  /** Whether the wardrobe is under the pointer. */
   hitTestWardrobe(raycaster: THREE.Raycaster): boolean
-  /** Opens the wardrobe, or closes it again. Open, its rail hangs the costumes the member keeps. */
-  toggleWardrobe(): void
+  /** Opens the wardrobe's doors while the closet is up, and shuts them after. */
+  setWardrobeOpen(open: boolean): void
   /** What the visitor wears; a worn piece leaves its stand bare. */
   setWorn(costume: string | null, bow: string | null): void
   /** The member's owned catalog ids, or null while their wallet is still loading. */
   setOwned(items: readonly string[] | null): void
-  /** The portraits show the characters the visitor is not. */
+  /** Who the visitor is; the mirror reflects them and lights their gem. */
   setVisitor(kind: CharacterKind): void
-  /** Says by the piece that it does not fit this character. */
-  showMisfit(item: ClothingItem, kind: CharacterKind): void
+  /** The mirror's glass in world units, while the entrance is built. */
+  mirrorGlass(): { left: number; right: number; top: number; bottom: number } | null
+  /** The mirror has been opened, so its glint can rest. */
+  markMirrorSeen(): void
+  /**
+   * Sends each unkept thing from the visitor (`from`, in page pixels) back to where it lives: a
+   * costume to the wardrobe or its form, a headpiece to its stand, a character into the mirror.
+   * Returns how long the flight takes, 0 when there is nothing to show.
+   */
+  flyHome(things: readonly { part: 'character' | 'costume' | 'bow'; id: string }[], from: DOMRect): number
   sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean): void
   update(dt: number, visitorX: number): void
   dispose(): void
@@ -148,40 +143,17 @@ interface Piece {
   /** What a tap on the empty stand hits, to give the piece back. */
   bare: Painted[]
   button: HTMLButtonElement
-  /** Where a note about the piece shows, in mock px. */
-  at: { x: number; y: number }
   target: number
   shown: number
 }
 
-/** A portrait offering a character, or the bunny while the visitor is that character. */
-interface Display {
-  own: CharacterKind
-  offered: CharacterKind
-  shows: Partial<Record<CharacterKind, Painted>>
-  spot: Spot
-  rest: THREE.Vector3
-  button: HTMLButtonElement
-  near: boolean
-  hop: number
-}
-
-/** One hanger on the wardrobe's rail, and the kept costume on it. */
-interface Hanger {
-  hanger: Painted
-  garment: Painted
-  costume: string | null
-  control: Control
-  glint: Control
-}
-
 interface BuiltRoom {
   pieces: Piece[]
-  displays: Display[]
   glints: { node: HTMLDivElement; shown: () => boolean }[]
   /** The wardrobe's body, where a tap opens or closes it. */
   wardrobe?: Painted
-  hangers: Hanger[]
+  /** The mirror, whose glass a tap opens. */
+  mirror?: Painted
   refresh(): void
   dispose?(): void
 }
@@ -197,15 +169,6 @@ export function createAtelierRoom(
 ): AtelierRoom {
   const shell = new THREE.Group()
   scene.add(shell)
-  // Price tags are drawn into the scene in the buttons' font, with a stamp.
-  const liveTags = new Set<HangTag>()
-  let swayClock = 0
-  const stamp = new Image()
-  const tagStyle: HangTagStyle = { font: getComputedStyle(host).getPropertyValue('--font-button').trim() || 'sans-serif', stamp, stampAspect: STAMP_ASPECT }
-  const redrawTags = () => { for (const tag of liveTags) tag.redraw() }
-  stamp.addEventListener('load', redrawTags)
-  stamp.src = STAMP_URL
-  void document.fonts?.load(`30px ${tagStyle.font}`).then(redrawTags, () => {})
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   /** A picture by its centre and width in mock px. */
@@ -247,10 +210,6 @@ export function createAtelierRoom(
   shell.add(carpetFill)
 
   const door = createGalleryDoor(shell, image, GALLERY_DOOR.atelierX)
-  const sign = CONFIG.lobby.sign
-  const signY = sign.centerY
-  shell.add(stretchedBoard(art.plaque, aspectOf('plaque'), GALLERY_DOOR.atelierX,
-    signY, sign.z, sign.width, sign.height))
 
   const { curtains } = atelier
   const curtainWidth = units(curtains.width)
@@ -309,24 +268,30 @@ export function createAtelierRoom(
   }
 
   let actions: AtelierActions | null = null
+  // The door itself is the way out; this unseen button over it lets keyboards and screen readers leave too.
   const exit = document.createElement('button')
   exit.type = 'button'
-  exit.className = 'lobby-sign gallery-door-cue atelier-exit'
-  exit.setAttribute('aria-label', 'Back to museum')
-  exit.textContent = 'Back to museum'
+  exit.className = 'atelier-item atelier-exit'
+  exit.setAttribute('aria-label', 'To the hall')
+  exit.style.aspectRatio = String(image.naturalWidth / image.naturalHeight)
   exit.addEventListener('click', () => actions?.onLeave())
   place(exit, {
     x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
-    y: mock.floorY - (signY - mock.floorWorld) * mock.unit,
-    width: sign.width * 0.76 * mock.unit,
+    y: mock.floorY - (GALLERY_DOOR.height / 2) * mock.unit,
+    width: GALLERY_DOOR.height * image.naturalWidth / image.naturalHeight * mock.unit,
   }, 0.12)
-
-  const note = document.createElement('p')
-  note.className = 'atelier-note'
-  note.setAttribute('role', 'status')
-  const noteSpot = place(note, { x: 0, y: 0, width: 260 }, 0.075).mark
-  let noteFor = 0
-
+  // The door's fairy lights breathe so it reads as the way out from across the room, and brighten close by.
+  const doorGlow = document.createElement('div')
+  doorGlow.className = 'atelier-door-glow'
+  doorGlow.setAttribute('aria-hidden', 'true')
+  doorGlow.style.aspectRatio = String(image.naturalWidth / image.naturalHeight)
+  place(doorGlow, {
+    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
+    y: mock.floorY - (GALLERY_DOOR.height / 2) * mock.unit,
+    width: GALLERY_DOOR.height * image.naturalWidth / image.naturalHeight * mock.unit * 1.15,
+  }, 0.12)
+  let lastCamera: THREE.OrthographicCamera | null = null
+  let lastViewport: Viewport | null = null
 
   // What the visitor wears, owns and is; each room reads these when it is built.
   let worn: string | null = null
@@ -336,7 +301,6 @@ export function createAtelierRoom(
   let visitorKind: CharacterKind | null = null
   // The wardrobe stays open or closed as left, even once the entrance is rebuilt.
   let wardrobeOpen = false
-  const kept = (): string[] => owned === null ? [] : HANGABLE.filter((id) => owned!.has(itemIdFor('costume', id)))
 
   const built = new Map<string, BuiltRoom>()
   const teardowns = new Map<string, () => void>()
@@ -345,10 +309,7 @@ export function createAtelierRoom(
   /** What every room builds its displays with: buttons, price tags, glints, and pieces to try on. */
   function roomKit(group: THREE.Group, own: Own) {
     const pieces: Piece[] = []
-    const displays: Display[] = []
     const glints: BuiltRoom['glints'] = []
-    const hangers: Hanger[] = []
-    const priceTags: { tag: HangTag; item: () => string }[] = []
     const cleanup: (() => void)[] = []
     const refreshers: (() => void)[] = []
 
@@ -360,15 +321,6 @@ export function createAtelierRoom(
       node.addEventListener('click', click)
       own(spot, node, 0.09)
       return node
-    }
-    /** A price tag hanging from the piece by its string, tied at `knot` (mock px). */
-    function priceTag(item: () => string, knot: { x: number; y: number }): void {
-      const tag = createHangTag(tagStyle, { x: wx(knot.x), y: wy(knot.y) }, units(23), 0.45)
-      tag.setVisible(false)
-      group.add(tag.pivot)
-      liveTags.add(tag)
-      cleanup.push(() => { liveTags.delete(tag); tag.dispose() })
-      priceTags.push({ tag, item })
     }
     // A few small stars twinkle over each piece still on its stand, and over each portrait.
     function glint(spot: Spot, aspect: number, shown: () => boolean): Control {
@@ -390,6 +342,15 @@ export function createAtelierRoom(
       return control
     }
 
+    /** A small gold seal on a piece the member has kept, in place of the price it no longer needs. */
+    function seal(spot: Spot, itemId: string, shown: () => boolean = () => true): void {
+      const node = document.createElement('div')
+      node.className = 'atelier-seal'
+      node.setAttribute('aria-hidden', 'true')
+      own(spot, node, 0.1)
+      glints.push({ node, shown: () => owned !== null && owned.has(itemId) && shown() })
+    }
+
     /** A headpiece resting on a cushion or a shelf; tapping where it lay gives it back. */
     function headpiece(spot: { id: string; image: string; y: number; width: number; rotation: number }, x: number, stand: Painted[]): void {
       const mesh = picture(group, spot.image as AtelierImage, { x, y: spot.y, width: spot.width, z: 0.36 })
@@ -402,13 +363,12 @@ export function createAtelierRoom(
         meshes: [mesh],
         bare: [...stand, mesh],
         button: node,
-        at: { x, y: spot.y - 70 },
         target: 1,
         shown: 1,
       }
       pieces.push(piece)
-      priceTag(() => itemIdFor('bow', spot.id), { x: x + spot.width * 0.28, y: spot.y + 8 })
       glint({ x, y: spot.y, width: Math.max(90, spot.width) }, 1.6, () => piece.target > 0)
+      seal({ x: x + spot.width * 0.42, y: spot.y - spot.width * 0.2, width: 26 }, itemIdFor('bow', spot.id), () => piece.target > 0)
     }
 
     function refresh(): void {
@@ -418,124 +378,85 @@ export function createAtelierRoom(
         piece.button.setAttribute('aria-pressed', String(wearing))
         piece.button.setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName(piece.item()).toLowerCase()}`)
       }
-      for (const display of displays) {
-        display.offered = visitorKind === display.own ? 'bunny' : display.own
-        for (const [shown, mesh] of Object.entries(display.shows)) mesh!.visible = shown === display.offered
-        display.button.setAttribute('aria-label', `Walk as ${CHARACTER_NAMES[display.offered]}`)
-      }
-      for (const tag of priceTags) {
-        const id = tag.item()
-        const price = priceOf(id)
-        const show = owned !== null && price !== null && !owned.has(id)
-        tag.tag.setVisible(show)
-        if (show && price !== null) tag.tag.setLabel(String(price))
-      }
       for (const fn of refreshers) fn()
     }
 
     return {
-      pieces, displays, hangers, button, priceTag, glint, headpiece,
+      pieces, button, glint, seal, headpiece,
       onRefresh: (fn: () => void) => { refreshers.push(fn) },
-      built: (wardrobe?: Painted): BuiltRoom => ({ pieces, displays, glints, hangers, wardrobe, refresh, dispose: () => { for (const fn of cleanup) fn() } }),
+      onDispose: (fn: () => void) => { cleanup.push(fn) },
+      built: (extra: { wardrobe?: Painted; mirror?: Painted } = {}): BuiltRoom => ({ pieces, glints, ...extra, refresh, dispose: () => { for (const fn of cleanup) fn() } }),
     }
   }
 
-  /**
-   * The wardrobe at the entrance's end. It stands closed until tapped; open, its rail hangs the
-   * costumes the member keeps, one to a hanger, and a tap on one tries it on. Three hangers
-   * hang even when bare, as in the mock; more kept pieces bring more, spread along the rail.
-   */
-  function buildWardrobe(group: THREE.Group, kit: ReturnType<typeof roomKit>, own: Own): Painted {
+  /** The wardrobe at the entrance's end. A tap opens the closet; its doors stand open while it is up. */
+  function buildWardrobe(group: THREE.Group, kit: ReturnType<typeof roomKit>): Painted {
     const { wardrobe } = atelier
     const W = wardrobe.width
     const H = W / aspectOf('wardrobeOpen')
     const top = wardrobe.bottomY - H
     const body = plane(units(W), units(H), art.wardrobeClosed, wx(wardrobe.x), wy(top + H / 2), wardrobe.z) as Painted
     group.add(body)
-    const railY = top + wardrobe.rail.top * H
-    const railLeft = wardrobe.x - W / 2 + wardrobe.rail.left * W
-    const railRight = wardrobe.x - W / 2 + wardrobe.rail.right * W
-    const { hanger: rack } = wardrobe
-    const hangerHeight = rack.width / aspectOf('hanger')
-    const hangerY = railY - rack.hook + hangerHeight / 2
-
-    const toggle = kit.button('Open the wardrobe', 'atelier-item atelier-wardrobe', { x: wardrobe.x, y: top + H / 2, width: W * 0.92 }, () => toggleWardrobe())
+    kit.button('Open the closet', 'atelier-item atelier-wardrobe', { x: wardrobe.x, y: top + H / 2, width: W * 0.92 }, () => actions?.onWardrobe())
     kit.glint({ x: wardrobe.x, y: top + wardrobe.handles.y * H, width: wardrobe.handles.width }, 1.4, () => !wardrobeOpen)
+    kit.onRefresh(() => { body.material.map = wardrobeOpen ? art.wardrobeOpen : art.wardrobeClosed })
+    return body
+  }
 
-    for (let i = 0; i < rack.max; i++) {
-      const hanger = plane(units(rack.width), units(hangerHeight), art.hanger, wx(wardrobe.x), wy(hangerY), wardrobe.z + 0.005) as Painted
-      hanger.visible = false
-      group.add(hanger)
-      const garment = plane(1, 1, art.hangerKiki, wx(wardrobe.x), wy(railY), wardrobe.z + 0.01) as Painted
-      garment.visible = false
-      group.add(garment)
-      const slot: Hanger = { hanger, garment, costume: null, control: null!, glint: null! }
-      const spot = { x: wardrobe.x, y: railY + rack.drop + 100, width: rack.width + 10 }
-      const node = document.createElement('button')
-      node.type = 'button'
-      node.className = 'atelier-item atelier-item-hung is-empty'
-      node.addEventListener('click', () => {
-        if (slot.costume !== null) actions?.onItem({ slot: 'costume', id: slot.costume })
+  /**
+   * The dressing mirror. Four gems along its frame show the characters, the visitor's lit; the
+   * visitor's live reflection is drawn over its glass by the room. It glints until first opened.
+   */
+  function buildMirror(group: THREE.Group, kit: ReturnType<typeof roomKit>): Painted {
+    const { mirror: spec } = atelier
+    const H = spec.height
+    const W = H * aspectOf('mirror')
+    const top = spec.bottomY - H
+    const body = standing(group, 'mirror', spec.x, spec.bottomY, H, spec.z)
+    const glassWidth = (glass.right - glass.left) * W
+    const glassX = spec.x - W / 2 + (glass.left + glass.right) / 2 * W
+
+    // The gems: a small painted strip, redrawn when the visitor changes or keeps a character.
+    const gemCanvas = document.createElement('canvas')
+    gemCanvas.width = 256
+    gemCanvas.height = 64
+    const gemMap = new THREE.CanvasTexture(gemCanvas)
+    gemMap.colorSpace = THREE.SRGBColorSpace
+    const gemWidth = W * spec.gems.width
+    const gems = plane(units(gemWidth), units(gemWidth / 4), gemMap, wx(spec.x), wy(top + spec.gems.y * H), spec.z + 0.003) as Painted
+    gems.material.transparent = true
+    group.add(gems)
+    function paintGems(): void {
+      const paint = gemCanvas.getContext('2d')!
+      paint.clearRect(0, 0, 256, 64)
+      MIRROR_KINDS.forEach((kind, i) => {
+        const x = 32 + i * 64
+        const lit = kind === visitorKind
+        paint.beginPath()
+        paint.arc(x, 32, lit ? 20 : 15, 0, Math.PI * 2)
+        paint.fillStyle = lit ? '#ffd9ec' : '#7a1f3a'
+        paint.shadowColor = lit ? '#ffe7a3' : 'transparent'
+        paint.shadowBlur = lit ? 16 : 0
+        paint.fill()
+        paint.shadowBlur = 0
+        paint.lineWidth = 5
+        paint.strokeStyle = '#d9a441'
+        paint.stroke()
       })
-      slot.control = own(spot, node, 0.09)
-      slot.glint = kit.glint(spot, 0.75, () => wardrobeOpen && slot.costume !== null)
-      kit.hangers.push(slot)
+      gemMap.needsUpdate = true
     }
 
-    kit.onRefresh(() => {
-      body.material.map = wardrobeOpen ? art.wardrobeOpen : art.wardrobeClosed
-      toggle.setAttribute('aria-label', wardrobeOpen ? 'Close the wardrobe' : 'Open the wardrobe')
-      toggle.setAttribute('aria-expanded', String(wardrobeOpen))
-      const hung = kept()
-      const count = Math.max(rack.slots, Math.min(rack.max, hung.length))
-      const inset = rack.width * rack.inset
-      const step = (railRight - railLeft - 2 * inset) / (count - 1)
-      kit.hangers.forEach((slot, i) => {
-        const x = wx(railLeft + inset + step * i)
-        const id = hung[i] ?? null
-        slot.hanger.visible = wardrobeOpen && i < count
-        slot.hanger.position.x = x
-        if (id !== slot.costume) {
-          slot.costume = id
-          const art_ = id === null ? null : HANGING[id]
-          if (art_) {
-            const h = units(art_.height)
-            slot.garment.geometry.dispose()
-            slot.garment.geometry = new THREE.PlaneGeometry(h * aspectOf(art_.image), h)
-            slot.garment.material.map = art[art_.image]
-            slot.garment.position.y = wy(railY + rack.drop) - h / 2
-            slot.control.mark.y = slot.garment.position.y
-            slot.glint.mark.y = slot.garment.position.y
-          }
-        }
-        slot.garment.visible = wardrobeOpen && id !== null
-        slot.garment.position.x = x
-        slot.control.mark.x = x
-        slot.glint.mark.x = x
-        const wearing = id !== null && worn === id
-        slot.control.node.classList.toggle('is-empty', !(wardrobeOpen && id !== null))
-        slot.control.node.setAttribute('aria-pressed', String(wearing))
-        if (id !== null) slot.control.node.setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName({ slot: 'costume', id }).toLowerCase()}`)
-      })
+    kit.button('Look in the mirror', 'atelier-item atelier-mirror', { x: glassX, y: top + (glass.top + glass.bottom) / 2 * H, width: glassWidth }, () => actions?.onMirror())
+    kit.glint({ x: spec.x, y: top + H * 0.3, width: W * 0.8 }, 0.8, () => !mirrorSeen)
+    kit.onRefresh(paintGems)
+    kit.onDispose(() => {
+      gemMap.dispose()
     })
     return body
   }
 
-  function toggleWardrobe(): void {
-    wardrobeOpen = !wardrobeOpen
-    refreshAll()
-    if (wardrobeOpen && kept().length === 0) {
-      const { wardrobe } = atelier
-      const H = wardrobe.width / aspectOf('wardrobeOpen')
-      note.textContent = 'The pieces you keep hang here'
-      noteSpot.x = wx(wardrobe.x)
-      noteSpot.y = wy(wardrobe.bottomY - H + wardrobe.rail.top * H + 150)
-      noteFor = 2.6
-    }
-  }
-
   function buildEntrance(group: THREE.Group, own: Own): BuiltRoom {
-    for (const name of ['shelf', 'cabinet', 'jewelryBox', 'perfume', 'portraitWink', 'portraitBunny', 'ribbon'] as const) {
+    for (const name of ['shelf', 'cabinet', 'jewelryBox', 'perfume'] as const) {
       picture(group, name, atelier[name])
     }
     const title = document.createElement('div')
@@ -546,9 +467,9 @@ export function createAtelierRoom(
     plaque.className = 'atelier-plaque'
     plaque.textContent = "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn."
     own(atelier.plaque, plaque, 0.058)
-    // Accessories without a room of their own rest in the cabinet's compartments.
+    // Accessories without a room of their own rest in the cabinet's compartments and on its top.
     const kit = roomKit(group, own)
-    for (const spot of atelier.cabinetPieces) {
+    for (const spot of [...atelier.cabinetPieces, ...atelier.shelfPieces]) {
       const { compartment } = spot
       const hollow = new THREE.Mesh(
         new THREE.PlaneGeometry(units(compartment.width), units(compartment.height)),
@@ -558,7 +479,7 @@ export function createAtelierRoom(
       group.add(hollow)
       kit.headpiece(spot, spot.x, [hollow])
     }
-    return kit.built(buildWardrobe(group, kit, own))
+    return kit.built({ wardrobe: buildWardrobe(group, kit), mirror: buildMirror(group, kit) })
   }
 
   function buildCollection(room: PlacedRoom & { collection: CollectionRoom; centerX: number }, group: THREE.Group, own: Own): BuiltRoom {
@@ -566,7 +487,7 @@ export function createAtelierRoom(
     const C = room.centerX
     const T = ROOM_TEMPLATE
     const kit = roomKit(group, own)
-    const { pieces, displays, button, priceTag, glint } = kit
+    const { pieces, button, glint } = kit
 
     // A frame the owner has filled shows that painting, cropped to fill the frame's opening;
     // the placeholder shows until it loads, or if it cannot.
@@ -659,13 +580,12 @@ export function createAtelierRoom(
         meshes,
         bare: [bare],
         button: node,
-        at: { x, y: 150 },
         target: 1,
         shown: 1,
       }
       pieces.push(piece)
-      priceTag(() => itemIdFor('costume', item.id), { x: x + 50, y: 262 })
       glint({ x, y: 300, width: 210 }, 0.95, () => piece.target > 0)
+      kit.seal({ x: x + 70, y: 200, width: 30 }, itemIdFor('costume', spot.costume), () => piece.target > 0)
     }
     const formDx = collection.forms.length === 2 ? T.pair.formDx : 0
     collection.forms.forEach((spot, i) => form(spot, C + (i === 0 ? -formDx : formDx)))
@@ -675,35 +595,11 @@ export function createAtelierRoom(
     standing(group, 'column', pillarX, atelier.column.bottomY, atelier.column.height, atelier.column.z)
     const pillow = picture(group, pillar.pillow.image, { x: pillarX, y: pillar.pillow.y, width: pillar.pillow.width, z: 0.34 })
     for (const spot of pillar.pieces) kit.headpiece(spot, pillarX + spot.dx, [pillow])
-    if (pillar.fishBag) picture(group, 'fishBag', { ...atelier.fishBag, x: pillarX + atelier.fishBag.dx })
 
     const portrait = collection.portrait
     const portraitSpot = { x: C + T.portrait.dx + out, y: T.portrait.y, width: portrait.width }
     picture(group, collection.ribbon, { ...T.ribbon, x: C + T.ribbon.dx + out })
-    if (collection.fish) picture(group, 'fishWall', { ...T.fish, x: C + T.fish.dx + out })
-    const kind = portrait.own
-    if (kind === null) {
-      picture(group, portrait.image as AtelierImage, { ...portraitSpot, z: T.portrait.z })
-    } else {
-      const mine = picture(group, portrait.image as AtelierImage, { ...portraitSpot, z: T.portrait.z })
-      const bunny = picture(group, 'portraitBunny', { ...portraitSpot, width: portrait.width * 0.92, z: T.portrait.z })
-      bunny.visible = false
-      const display: Display = {
-        own: kind,
-        offered: kind,
-        shows: { [kind]: mine, bunny },
-        spot: portraitSpot,
-        rest: mine.position.clone(),
-        button: button(`Walk as ${CHARACTER_NAMES[kind]}`, 'atelier-choice', portraitSpot, () => actions?.onCharacter(display.offered)),
-        near: false,
-        hop: -1,
-      }
-      displays.push(display)
-      if (!(FREE_CHARACTERS as readonly string[]).includes(kind)) {
-        priceTag(() => itemIdFor('character', kind), { x: portraitSpot.x + portrait.width * 0.38, y: portraitSpot.y + portrait.width * 0.4 })
-      }
-      glint(portraitSpot, 1, () => true)
-    }
+    picture(group, portrait.image as AtelierImage, { ...portraitSpot, z: T.portrait.z })
 
     const contents = kit.built()
     return {
@@ -754,9 +650,13 @@ export function createAtelierRoom(
     return teardown
   }
 
+  const MIRROR_SEEN = 'tm:atelier:mirror-seen'
+  let mirrorSeen = false
+  try { mirrorSeen = window.sessionStorage.getItem(MIRROR_SEEN) === '1' } catch {}
+  const { glass } = atelier.mirror
+  const onGlass = (u: number, v: number) => u >= glass.left && u <= glass.right && v >= glass.top && v <= glass.bottom
+
   const allPieces = () => [...built.values()].flatMap((room) => room.pieces)
-  const allDisplays = () => [...built.values()].flatMap((room) => room.displays)
-  const allHangers = () => [...built.values()].flatMap((room) => room.hangers)
   const refreshAll = () => { for (const room of built.values()) room.refresh() }
 
   return {
@@ -775,9 +675,6 @@ export function createAtelierRoom(
     },
 
     hitTestItem(raycaster) {
-      for (const slot of allHangers()) {
-        if (slot.costume !== null && slot.garment.visible && pickPainted(raycaster, [slot.garment])) return { slot: 'costume', id: slot.costume }
-      }
       for (const piece of allPieces()) {
         if (pickPainted(raycaster, piece.target > 0 ? piece.meshes : piece.bare)) return piece.item()
       }
@@ -791,13 +688,19 @@ export function createAtelierRoom(
       return false
     },
 
-    toggleWardrobe,
+    setWardrobeOpen(open) {
+      if (open === wardrobeOpen) return
+      wardrobeOpen = open
+      refreshAll()
+    },
 
-    hitTestDisplay(raycaster) {
-      for (const display of allDisplays()) {
-        if (pickPainted(raycaster, [display.shows[display.offered]!])) return display.offered
+    hitTestMirror(raycaster) {
+      for (const room of built.values()) {
+        if (!room.mirror) continue
+        const uv = raycaster.intersectObject(room.mirror)[0]?.uv
+        if (uv && onGlass(uv.x, 1 - uv.y)) return true
       }
-      return null
+      return false
     },
 
     setWorn(costume, bowId) {
@@ -814,26 +717,35 @@ export function createAtelierRoom(
       refreshAll()
     },
 
-    showMisfit(item, kind) {
-      note.textContent = `${itemName(item)} doesn't fit ${CHARACTER_NAMES[kind]} yet`
-      const piece = allPieces().find((p) => p.item().id === item.id)
-      if (piece) {
-        noteSpot.x = wx(piece.at.x)
-        noteSpot.y = wy(piece.at.y + 80)
+    mirrorGlass() {
+      if (!built.get('entrance')?.mirror) return null
+      const { mirror: spec } = atelier
+      const W = spec.height * aspectOf('mirror')
+      const left = spec.x - W / 2
+      const top = spec.bottomY - spec.height
+      return {
+        left: wx(left + glass.left * W),
+        right: wx(left + glass.right * W),
+        top: wy(top + glass.top * spec.height),
+        bottom: wy(top + glass.bottom * spec.height),
       }
-      noteFor = 2.6
+    },
+
+    markMirrorSeen() {
+      mirrorSeen = true
+      try { window.sessionStorage.setItem(MIRROR_SEEN, '1') } catch {}
     },
 
     sync(camera, viewport, enabled) {
+      lastCamera = camera
+      lastViewport = viewport
       const half = (camera.right - camera.left) / 2
       if (half !== drapeForHalf) {
         drapeForHalf = half
         drape.position.x = atelier.max + Math.min(half, curtainDrape.widestHalf) - drapeWidth / 2
       }
       const perUnit = viewport.width / (camera.right - camera.left)
-      note.hidden = noteFor <= 0
       for (const { node, mark, font } of controls) {
-        if (node === note && note.hidden) continue
         const visible = placeLabel(node, mark, perUnit, camera, viewport, font)
         if (node instanceof HTMLButtonElement) {
           node.disabled = !enabled
@@ -844,11 +756,7 @@ export function createAtelierRoom(
     },
 
     update(dt, visitorX) {
-      // Price tags sway a little on their strings.
-      swayClock += dt
-      if (!reducedMotion) {
-        for (const tag of liveTags) tag.pivot.rotation.z = 0.035 * Math.sin(swayClock * 1.2 + tag.pivot.position.x * 1.7)
-      }
+      doorGlow.classList.toggle('is-near', Math.abs(visitorX - GALLERY_DOOR.atelierX) < 1.4)
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
       const pieces = allPieces()
@@ -860,30 +768,49 @@ export function createAtelierRoom(
         }
       }
       for (const room of built.values()) for (const glint of room.glints) glint.node.hidden = !glint.shown()
-      noteFor = Math.max(0, noteFor - dt)
+    },
 
-      note.style.setProperty('--fade', String(Math.min(1, noteFor / 0.4)))
-
-      // A portrait hops as the visitor comes near, an invitation to step into it.
-      for (const display of allDisplays()) {
-        const near = Math.abs(visitorX - wx(display.spot.x)) < 1.1
-        if (near && !display.near && !reducedMotion) display.hop = 0
-        display.near = near
-        let lift = 0
-        if (display.hop >= 0) {
-          display.hop += dt
-          const p = display.hop / 0.42
-          lift = p < 1 ? 0.08 * Math.sin(Math.PI * p) : 0
-          if (p >= 1) display.hop = -1
-        }
-        for (const mesh of Object.values(display.shows)) {
-          mesh!.position.y = display.rest.y + lift
-          mesh!.rotation.z = 0.05 * Math.sin(Math.PI * Math.max(0, Math.min(1, display.hop / 0.42)) * 2)
-        }
+    flyHome(things, from) {
+      if (reducedMotion || !lastCamera || !lastViewport || things.length === 0) return 0
+      const camera = lastCamera
+      const viewport = lastViewport
+      const origin = host.getBoundingClientRect()
+      // A piece with a stand of its own goes back to it; everything else lives in the closet.
+      const home = (part: string, id: string): THREE.Vector3 | null => {
+        const room = built.get('entrance')
+        if (part === 'character') return room?.mirror?.position.clone() ?? null
+        const piece = allPieces().find((p) => p.item().id === id && p.item().slot === (part === 'bow' ? 'bow' : 'costume'))
+        return piece ? piece.bare[0].position.clone() : room?.wardrobe?.position.clone() ?? null
       }
+      let flying = 0
+      things.forEach((thing, i) => {
+        const at = home(thing.part, thing.id)
+        const src = pieceUrl(thing.part, thing.id)
+        if (!at || !src) return
+        at.project(camera)
+        const toX = viewport.left + (at.x * 0.5 + 0.5) * viewport.width
+        const toY = viewport.top + (-at.y * 0.5 + 0.5) * viewport.height
+        const fromX = from.left + from.width / 2 - origin.left
+        const fromY = from.top + from.height * (thing.part === 'bow' ? 0.2 : 0.5) - origin.top
+        const node = document.createElement('img')
+        node.src = src
+        node.alt = ''
+        node.className = 'atelier-flying'
+        node.style.translate = `${fromX}px ${fromY}px`
+        node.style.transitionDelay = `${i * 90}ms`
+        host.append(node)
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          node.style.translate = `${toX}px ${toY}px`
+          node.classList.add('is-home')
+        }))
+        window.setTimeout(() => node.remove(), 900 + i * 90)
+        flying = Math.max(flying, 650 + i * 90)
+      })
+      return flying
     },
 
     dispose() {
+      doorGlow.remove()
       for (const teardown of [...teardowns.values()]) teardown()
       scene.remove(shell)
       door.dispose()

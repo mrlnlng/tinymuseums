@@ -46,13 +46,11 @@ export interface CollectionRoom {
   /** A character to become, or a portrait that only hangs there. */
   portrait: { own: CharacterKind; image: string; width: number } | { own: null; image: string; width: number }
   ribbon: 'ribbon' | 'ribbonBlue'
-  fish?: boolean
   /** Flowers around the form's platform: Jazlyn's own touch for Bruce's booth. */
   flowers?: boolean
   pillar: {
     pillow: { image: 'pillowBlue' | 'pillowRed'; y: number; width: number }
     pieces: readonly HeadpieceSpot[]
-    fishBag?: boolean
   }
 }
 
@@ -68,65 +66,12 @@ export const ROOM_TEMPLATE = {
   rightFrame: { dx: 336, y: 148, width: 201, fill: 0.72 },
   portrait: { dx: 148, y: 211, z: 0.2 },
   ribbon: { dx: 151, y: 282, width: 60, z: 0.21 },
-  fish: { dx: 155, y: 306, width: 118, z: 0.21 },
   pillar: { dx: 324 },
   /** A two-form room's walls move out by this, its forms stand this far either side, keeping the template's gaps. */
   pair: { spread: 140, formDx: 150 },
 }
 
 export const COLLECTIONS: readonly CollectionRoom[] = [
-  {
-    key: 'kiki',
-    title: 'The Kiki Collection',
-    tagImage: 'tagBlank',
-    forms: [{ costume: 'kiki', base: 'mannequin', image: 'mannequinDress', broom: true }],
-    left: { painting: 'painting', framed: { width: 381, y: 230 } },
-    right: { painting: 'placeholderPainting' },
-    portrait: { own: 'cat', image: 'portraitJiji', width: 127 },
-    ribbon: 'ribbon',
-    pillar: {
-      pillow: { image: 'pillowBlue', y: 447, width: 233 },
-      pieces: [{ id: 'kiki', image: 'bow', dx: -6, y: 383, width: 216, rotation: 0 }],
-    },
-  },
-  {
-    key: 'floral',
-    title: 'The Floral Collection',
-    tagImage: 'tagBlank',
-    forms: [
-      { costume: 'blue-floral', base: 'floralMannequin', image: 'blueFloral' },
-      { costume: 'floral-cardigan', base: 'floralMannequin', image: 'floralCardigan' },
-    ],
-    left: { painting: 'placeholderPainting' },
-    right: { painting: 'placeholderPainting' },
-    portrait: { own: 'otter', image: 'portraitOtter', width: 107 },
-    ribbon: 'ribbon',
-    pillar: {
-      pillow: { image: 'pillowBlue', y: 445, width: 210 },
-      pieces: [{ id: 'flower-crown', image: 'flowerCrown', dx: 0, y: 405, width: 165, rotation: -Math.PI / 10 }],
-    },
-  },
-  {
-    key: 'gold',
-    title: 'The Gold Collection',
-    tagImage: 'tagBlank',
-    forms: [
-      { costume: 'gold-sequin', base: 'floralMannequin', image: 'goldSequin' },
-      { costume: 'gold-cape', base: 'floralMannequin', image: 'goldCape' },
-    ],
-    left: { painting: 'placeholderPainting' },
-    right: { painting: 'placeholderPainting' },
-    portrait: { own: null, image: 'portraitBunny', width: 110 },
-    ribbon: 'ribbon',
-    pillar: {
-      pillow: { image: 'pillowBlue', y: 445, width: 210 },
-      pieces: [
-        { id: 'hibiscus-blue', image: 'hibiscusBlue', dx: -62, y: 410, width: 78, rotation: 0.2 },
-        { id: 'hibiscus-yellow', image: 'hibiscusYellow', dx: 0, y: 398, width: 78, rotation: 0 },
-        { id: 'hibiscus-pink', image: 'hibiscusPink', dx: 62, y: 410, width: 78, rotation: -0.2 },
-      ],
-    },
-  },
   {
     key: 'bruce',
     title: "Bruce's Chronicles",
@@ -136,12 +81,14 @@ export const COLLECTIONS: readonly CollectionRoom[] = [
     right: { painting: 'brucePaintingPond' },
     portrait: { own: 'bruce', image: 'portraitBruce', width: 116 },
     ribbon: 'ribbonBlue',
-    fish: true,
     flowers: true,
     pillar: {
       pillow: { image: 'pillowRed', y: 433, width: 210 },
-      pieces: [],
-      fishBag: true,
+      pieces: [
+        { id: 'hibiscus-blue', image: 'hibiscusBlue', dx: -62, y: 398, width: 78, rotation: 0.2 },
+        { id: 'hibiscus-yellow', image: 'hibiscusYellow', dx: 0, y: 386, width: 78, rotation: 0 },
+        { id: 'hibiscus-pink', image: 'hibiscusPink', dx: 62, y: 398, width: 78, rotation: -0.2 },
+      ],
     },
   },
 ]

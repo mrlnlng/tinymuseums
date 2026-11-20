@@ -75,6 +75,8 @@ export interface Wardrobe {
   readonly busy: boolean
   reflect(): void
   tapItem(item: ClothingItem): void
+  /** Puts on a whole outfit and headpiece at once, as chosen in the closet. */
+  dress(costume: string | null, bow: string | null): void
   tapDisplay(kind: CharacterKind): void
   dispose(): void
 }
@@ -84,12 +86,11 @@ interface Options {
   room: AtelierRoom
   outfit: SlotHandle<Outfit>
   onChange: (change: 'costume_on' | 'costume_off' | 'character') => void
-  onMisfit: (item: ClothingItem, kind: CharacterKind) => void
   onIdle: () => void
 }
 
 /** Outfit changes never hold traversal or fade the working character out. */
-export function createWardrobe({ character, room, outfit, onChange, onMisfit, onIdle }: Options): Wardrobe {
+export function createWardrobe({ character, room, outfit, onChange, onIdle }: Options): Wardrobe {
   let queue = Promise.resolve()
   let pending = 0
   let disposed = false
@@ -117,17 +118,25 @@ export function createWardrobe({ character, room, outfit, onChange, onMisfit, on
     reflect,
     tapItem({ slot: key, id }) {
       enqueue(async () => {
-        const { kind } = character.look
-        if (!FITS[kind].includes(id)) {
-          onMisfit({ slot: key, id }, kind)
-          return
-        }
+        if (!FITS[character.look.kind].includes(id)) return
         const wearing = character.look[key] === id
         const value = wearing ? null : id
         if (!await character.wear({ ...character.look, [key]: value })) return
         if (disposed) return
         outfit.update((o) => ({ ...o, [key]: restamp(o[key], value) }))
         onChange(wearing ? 'costume_off' : 'costume_on')
+      })
+    },
+    dress(costume, bow) {
+      enqueue(async () => {
+        const { kind } = character.look
+        const fit = (id: string | null) => id !== null && FITS[kind].includes(id) ? id : null
+        const next = { ...character.look, costume: fit(costume), bow: fit(bow) }
+        if (next.costume === character.look.costume && next.bow === character.look.bow) return
+        if (!await character.wear(next)) return
+        if (disposed) return
+        outfit.update((o) => ({ ...o, costume: restamp(o.costume, next.costume), bow: restamp(o.bow, next.bow) }))
+        onChange(next.costume === null && next.bow === null ? 'costume_off' : 'costume_on')
       })
     },
     tapDisplay(kind) {

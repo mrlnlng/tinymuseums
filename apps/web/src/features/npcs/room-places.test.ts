@@ -82,7 +82,7 @@ test('the hall lists every gallery painting, its desks, boards, seat and both do
 
 test('the atelier lists its wall paintings by collection, the rail and the gallery door', () => {
   const info = atelierRoomInfo(-3.1)
-  assert.ok(info.places.filter((place) => place.kind === 'painting').length >= 12)
+  assert.ok(info.places.filter((place) => place.kind === 'painting').length >= 3)
   assert.ok(info.places.some((place) => place.kind === 'rail'))
   assert.deepEqual(info.places.filter((place) => place.kind === 'door'), [{ x: -3.1, kind: 'door', name: 'gallery' }])
   assert.ok(info.places.every((place) => place.x >= info.minX && place.x <= info.maxX))

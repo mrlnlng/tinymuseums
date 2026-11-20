@@ -17,7 +17,6 @@ test('every room has the whole template: two paintings, a portrait, a column and
   for (const { collection } of collections) {
     assert.ok(collection!.left.painting && collection!.right.painting, collection!.key)
     assert.ok(collection!.portrait.image, collection!.key)
-    assert.notEqual(collection!.pillar.pieces.length > 0, Boolean(collection!.pillar.fishBag), collection!.key)
     assert.ok(collection!.forms.length >= 1, collection!.key)
   }
 })
@@ -47,10 +46,17 @@ test('the camera stops inside the last room', () => {
 })
 
 test('the wardrobe stands at the end of the entrance, clear of its props and the first room', () => {
-  const { wardrobe, portraitWink } = CONFIG.atelier
+  const { wardrobe, cabinet } = CONFIG.atelier
   const left = wardrobe.x - wardrobe.width / 2
   const right = wardrobe.x + wardrobe.width / 2
-  assert.ok(left > portraitWink.x + portraitWink.width / 2)
+  assert.ok(left > cabinet.x + cabinet.width / 2)
   assert.ok(right < ATELIER_ROOMS[1].startX && right > ATELIER_ROOMS[1].startX - 100)
-  assert.ok(wardrobe.rail.left < wardrobe.rail.right && wardrobe.hanger.slots <= wardrobe.hanger.max)
+})
+
+test('the mirror stands on the floor between the cabinet and the wardrobe, touching neither', () => {
+  const { mirror, cabinet, wardrobe } = CONFIG.atelier
+  const width = mirror.height * 190 / 474
+  assert.ok(mirror.x - width / 2 > cabinet.x + cabinet.width / 2)
+  assert.ok(mirror.x + width / 2 < wardrobe.x - wardrobe.width / 2)
+  assert.ok(mirror.glass.left < mirror.glass.right && mirror.glass.top < mirror.glass.bottom)
 })

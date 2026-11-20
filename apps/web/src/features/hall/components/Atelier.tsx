@@ -2,22 +2,36 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SpotPainting } from '@tiny/core'
 import { AnimatePresence } from 'motion/react'
 import { outfit, restamp } from '@tiny/core/slots'
 import AtelierKeeps from '@/features/hall/components/AtelierKeeps'
 import AtelierLoading from '@/features/hall/components/AtelierLoading'
-import { createAtelierRoomDef } from '@/features/rooms/atelier/room'
+import ClosetView from '@/features/hall/components/ClosetView'
+import MirrorView from '@/features/hall/components/MirrorView'
+import { createAtelierRoomDef, type AtelierHooks } from '@/features/rooms/atelier/room'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { DoorRef } from '@/features/rooms/types'
 import { lookOf, ownedLook, shouldRewriteOutfit } from '@/features/hall/scene/wardrobe'
-import { useWallet } from '@/features/economy'
+import { allowedCharacter, owns, useWallet } from '@/features/economy'
+import type { CharacterKind } from '@/features/hall/scene/rig'
 import { useSlot } from '@/shared/lib/slots'
 
 export default function Atelier({ spots }: { spots: Record<string, SpotPainting> }) {
-  const [atelierRoom] = useState(() => createAtelierRoomDef(spots))
+  const [mirrorOpen, setMirrorOpen] = useState(false)
+  const [becoming, setBecoming] = useState<CharacterKind | null>(null)
+  const [closetOpen, setClosetOpen] = useState(false)
+  const [dressing, setDressing] = useState<{ costume: string | null; bow: string | null } | null>(null)
+  const [hooks] = useState<AtelierHooks>(() => ({
+    onMirror: () => setMirrorOpen(true),
+    onCloset: () => setClosetOpen(true),
+    become: { current: null },
+    dress: { current: null },
+    wardrobeDoors: { current: null },
+  }))
+  const [atelierRoom] = useState(() => createAtelierRoomDef(spots, hooks))
   const router = useRouter()
   const wallet = useWallet()
   const [outfitDoc, updateOutfit] = useSlot(outfit)
@@ -32,12 +46,24 @@ export default function Atelier({ spots }: { spots: Record<string, SpotPainting>
         costume: restamp(value.costume, next.costume),
         bow: restamp(value.bow, next.bow),
       }))
-      try {
-        window.sessionStorage.setItem('tm:economy:unkept', '1')
-      } catch {}
     }
     router.push(hrefFor(to))
   }
+
+  // The room ignores taps while a dialog is up, so the change waits until the mirror has gone.
+  useEffect(() => {
+    if (mirrorOpen || becoming === null) return
+    hooks.become.current?.(becoming)
+    setBecoming(null)
+  }, [mirrorOpen, becoming, hooks])
+
+  // The wardrobe's doors stand open while the closet is up; what was chosen goes on once it has shut.
+  useEffect(() => { hooks.wardrobeDoors.current?.(closetOpen) }, [closetOpen, hooks])
+  useEffect(() => {
+    if (closetOpen || dressing === null) return
+    hooks.dress.current?.(dressing.costume, dressing.bow)
+    setDressing(null)
+  }, [closetOpen, dressing, hooks])
 
   const { isReady, error } = useRoom({
     room: atelierRoom,
@@ -56,6 +82,26 @@ export default function Atelier({ spots }: { spots: Record<string, SpotPainting>
   return (
     <>
       <AtelierKeeps />
+      {closetOpen ? (
+        <ClosetView
+          kind={lookOf(outfitDoc).kind}
+          costume={lookOf(outfitDoc).costume}
+          bow={lookOf(outfitDoc).bow}
+          kept={(itemId) => owns(wallet, itemId)}
+          onDone={(costume, bow) => { setDressing({ costume, bow }); setClosetOpen(false) }}
+          onClose={() => setClosetOpen(false)}
+        />
+      ) : null}
+      {mirrorOpen ? (
+        <MirrorView
+          kind={lookOf(outfitDoc).kind}
+          costume={lookOf(outfitDoc).costume}
+          bow={lookOf(outfitDoc).bow}
+          kept={(kind) => allowedCharacter(wallet, kind)}
+          onBecome={(kind) => { setBecoming(kind); setMirrorOpen(false) }}
+          onClose={() => setMirrorOpen(false)}
+        />
+      ) : null}
       <AnimatePresence>{isReady ? null : <AtelierLoading key="loading" />}</AnimatePresence>
     </>
   )

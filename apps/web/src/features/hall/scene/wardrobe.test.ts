@@ -29,13 +29,12 @@ function setup() {
   } as unknown as Character
   const worn: (string | null)[][] = []
   const room = { setWorn(costume: string | null, bow: string | null) { worn.push([costume, bow]) }, setVisitor() {} } as unknown as AtelierRoom
-  const misfits: string[] = []
   let idle: (() => void) | null = null
   const wardrobe = createWardrobe({
-    character, room, outfit: slot, onChange() {}, onMisfit(item, kind) { misfits.push(`${item.id}:${kind}`) }, onIdle() { idle?.() },
+    character, room, outfit: slot, onChange() {}, onIdle() { idle?.() },
   })
   const settled = async () => { for (let i = 0; i < 25 && wardrobe.busy; i++) await new Promise(resolve => setTimeout(resolve, 0)); assert.equal(wardrobe.busy, false) }
-  return { slot, character, wardrobe, settled, worn, misfits, fail() { fail = true }, get attempts() { return attempts }, get opacity() { return opacity }, onIdle(fn: () => void) { idle = fn } }
+  return { slot, character, wardrobe, settled, worn, fail() { fail = true }, get attempts() { return attempts }, get opacity() { return opacity }, onIdle(fn: () => void) { idle = fn } }
 }
 
 test('bow and dress toggle independently and rapid actions retain their order', async () => {
@@ -89,7 +88,7 @@ test('a cardigan replaces the dress, and changing colour swaps it', async () => 
   assert.equal(lookOf(s.slot.snapshot()).costume, null)
 })
 
-test('every character wears the same cardigan, and an unfitted piece only says so', async () => {
+test('every character wears the same cardigan, and an unknown piece changes nothing', async () => {
   const s = setup()
   s.wardrobe.tapItem(navy)
   s.wardrobe.tapDisplay('otter')
@@ -98,7 +97,6 @@ test('every character wears the same cardigan, and an unfitted piece only says s
   assert.deepEqual(s.worn.at(-1), ['cardigan-navy-blue', null])
   s.wardrobe.tapItem({ slot: 'costume', id: 'cape' })
   await s.settled()
-  assert.deepEqual(s.misfits, ['cape:otter'])
   assert.equal(lookOf(s.slot.snapshot()).costume, 'cardigan-navy-blue')
 })
 
@@ -124,7 +122,6 @@ test('floral outfits and crown equip, persist, carry across characters, and retu
   s.wardrobe.tapItem(layered)
   await s.settled()
   assert.deepEqual(s.worn.at(-1), [null, null])
-  assert.deepEqual(s.misfits, [])
 })
 
 test('a headpiece replaces the one worn before it, and the gold set keeps it', async () => {
@@ -138,5 +135,15 @@ test('a headpiece replaces the one worn before it, and the gold set keeps it', a
   s.wardrobe.tapItem({ slot: 'bow', id: 'blue-cap' })
   await s.settled()
   assert.deepEqual(s.worn.at(-1), ['gold-sequin', null])
-  assert.deepEqual(s.misfits, [])
+})
+
+test('the closet dresses an outfit and headpiece together, and can take both off', async () => {
+  const s = setup()
+  s.wardrobe.dress('gold-cape', 'hibiscus-pink')
+  await s.settled()
+  assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: 'gold-cape', bow: 'hibiscus-pink' })
+  assert.deepEqual(s.worn.at(-1), ['gold-cape', 'hibiscus-pink'])
+  s.wardrobe.dress('unknown', null)
+  await s.settled()
+  assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: null, bow: null })
 })

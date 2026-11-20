@@ -1268,8 +1268,8 @@
       "x2": {
         "w": 1536,
         "h": 224,
-        "src": "npcs-pip-walk@2x.f43eddabcb.webp",
-        "avif": "npcs-pip-walk@2x.791d1b894f.avif"
+        "src": "npcs-pip-walk@2x.1c424f5f27.webp",
+        "avif": "npcs-pip-walk@2x.50864fad12.avif"
       }
     },
     "npcs/thimble-walk": {
@@ -1318,8 +1318,8 @@
       "x2": {
         "w": 1536,
         "h": 224,
-        "src": "npcs-percy-walk@2x.2380bc231d.webp",
-        "avif": "npcs-percy-walk@2x.8c38b15f82.avif"
+        "src": "npcs-percy-walk@2x.eefc195fdc.webp",
+        "avif": "npcs-percy-walk@2x.588b650bd8.avif"
       }
     },
     "npcs/dot-walk": {
@@ -1388,7 +1388,7 @@
       "x2": {
         "w": 1024,
         "h": 224,
-        "src": "npcs-pip-idle@2x.a5e9736cb2.webp"
+        "src": "npcs-pip-idle@2x.c7dca5dd1a.webp"
       }
     },
     "npcs/thimble-idle": {
@@ -1433,7 +1433,7 @@
       "x2": {
         "w": 1024,
         "h": 224,
-        "src": "npcs-percy-idle@2x.041b6cae75.webp"
+        "src": "npcs-percy-idle@2x.66a36fa1c7.webp"
       }
     },
     "npcs/dot-idle": {

@@ -35,12 +35,12 @@ export function idleCel(elapsedMs: number): number {
 export const WORLD_PER_PX = 0.68 / 192
 
 export const CAST: readonly NpcCharacter[] = [
-  { id: 'pip', name: 'Pip', role: 'Stamp clerk', asset: 'npcs/pip-walk', anchorX: 131, stride: 0.360 },
+  { id: 'pip', name: 'Pip', role: 'Stamp clerk', asset: 'npcs/pip-walk', anchorX: 138, stride: 0.355 },
   { id: 'thimble', name: 'Thimble', role: 'Textile mender', asset: 'npcs/thimble-walk', anchorX: 123, stride: 0.497 },
   { id: 'fig', name: 'Fig', role: 'Frame repairer', asset: 'npcs/fig-walk', anchorX: 141, stride: 0.532 },
   { id: 'moss', name: 'Moss', role: 'Pond sketcher', asset: 'npcs/moss-walk', anchorX: 125, stride: 0.557 },
   { id: 'hazel', name: 'Hazel', role: 'Framer', asset: 'npcs/hazel-walk', anchorX: 157, stride: 0.570 },
-  { id: 'percy', name: 'Percy', role: 'Post carrier', asset: 'npcs/percy-walk', anchorX: 130, stride: 0.487 },
+  { id: 'percy', name: 'Percy', role: 'Post carrier', asset: 'npcs/percy-walk', anchorX: 130, stride: 0.475 },
   { id: 'dot', name: 'Dot', role: 'Gallery registrar', asset: 'npcs/dot-walk', anchorX: 123, stride: 0.491 },
   { id: 'mabel', name: 'Mabel', role: 'Night guard', asset: 'npcs/mabel-walk', anchorX: 124, stride: 0.519 },
   { id: 'clove', name: 'Clove', role: 'Gallery guide', asset: 'npcs/clove-walk', anchorX: 123, stride: 0.360 },

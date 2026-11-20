@@ -71,6 +71,7 @@ const ATELIER_PROPS: Record<string, AtelierImage> = {
 }
 
 const HOME_PROPS = [
+  'old-paint',
   'window',
   'wall-hooks',
   'wall-shelf',
@@ -888,48 +889,6 @@ function plasterCanvas(): HTMLCanvasElement {
   return canvas
 }
 
-/** A dried-up paint tin with its brush, crusted in someone else's colours. */
-function oldPaintCanvas(): HTMLCanvasElement {
-  const [canvas, ctx] = drawingOn(170, 120)
-  ctx.strokeStyle = INK
-  ctx.lineWidth = 3.5
-  ctx.fillStyle = '#9ea4a8'
-  ctx.beginPath()
-  ctx.moveTo(30, 34)
-  ctx.lineTo(30, 108)
-  ctx.quadraticCurveTo(70, 118, 110, 108)
-  ctx.lineTo(110, 34)
-  ctx.closePath()
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = '#d98ba0'
-  ctx.beginPath()
-  ctx.ellipse(70, 34, 40, 10, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  for (const [x, length, color] of [[42, 40, '#d98ba0'], [88, 26, '#8fb8d8'], [64, 52, '#d98ba0']] as const) {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(x - 6, 38)
-    ctx.lineTo(x + 6, 38)
-    ctx.lineTo(x + 4, 38 + length)
-    ctx.arc(x, 38 + length, 4, 0, Math.PI)
-    ctx.closePath()
-    ctx.fill()
-  }
-  ctx.save()
-  ctx.translate(132, 86)
-  ctx.rotate(-0.5)
-  ctx.fillStyle = '#c99357'
-  ctx.fillRect(-6, -60, 12, 50)
-  ctx.strokeRect(-6, -60, 12, 50)
-  ctx.fillStyle = '#8fb8d8'
-  ctx.fillRect(-10, -12, 20, 26)
-  ctx.strokeRect(-10, -12, 20, 26)
-  ctx.restore()
-  return canvas
-}
-
 /** A bare bulb on a long cord, glowing warm. */
 function bareBulbCanvas(): HTMLCanvasElement {
   const [canvas, ctx] = drawingOn(110, 392)
@@ -977,7 +936,6 @@ const DRAWN: Record<string, () => HTMLCanvasElement> = {
   dust: dustCanvas,
   'old-canvases': oldCanvasesCanvas,
   'attic-window': atticWindowCanvas,
-  'old-paint': oldPaintCanvas,
   'bare-bulb': bareBulbCanvas,
   boards: boardsCanvas,
 }
@@ -1517,7 +1475,7 @@ export function createCozyBackdrop(scene: THREE.Scene, art: CozyArt, width = ROO
     for (const lamp of lit.lamps) {
       const halo = glow(BULBLIGHT, 0, lamp.x, lamp.y, 2.2, 2.2)
       const core = glow(BULBLIGHT, 0, lamp.x, lamp.y, 0.42, 0.46)
-      bulbs.push({ mesh: halo, base: 0.16 + 0.22 * dirty, phase: random() * 6.28 }, { mesh: core, base: 0.85, phase: random() * 6.28 })
+      bulbs.push({ mesh: halo, base: 0.05 + 0.07 * dirty, phase: random() * 6.28 }, { mesh: core, base: 0.35, phase: random() * 6.28 })
     }
     airMotes.points.visible = dirty > 0.01
     airMotes.material.opacity = 0.32 * dirty

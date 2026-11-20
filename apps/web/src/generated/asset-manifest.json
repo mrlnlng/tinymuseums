@@ -1489,6 +1489,24 @@
         "h": 224,
         "src": "npcs-pearl-idle@2x.84591dbce4.webp"
       }
+    },
+    "home/old-paint": {
+      "w": 420,
+      "h": 420,
+      "x2": {
+        "w": 420,
+        "h": 420,
+        "src": "home-old-paint@2x.23b3b3a3ba.webp"
+      }
+    },
+    "home/name-sign": {
+      "w": 719,
+      "h": 548,
+      "x2": {
+        "w": 719,
+        "h": 548,
+        "src": "home-name-sign@2x.a335b6ba5b.webp"
+      }
     }
   },
   "atlases": {
@@ -2184,9 +2202,9 @@
       "height": 201
     },
     "curtains": {
-      "src": "atelier-curtains.0076ff24c7.webp",
-      "width": 428,
-      "height": 756
+      "src": "atelier-curtains.b8df014c58.webp",
+      "width": 874,
+      "height": 1512
     },
     "curtainSwag": {
       "src": "atelier-curtain-swag.2d573a4d5f.webp",

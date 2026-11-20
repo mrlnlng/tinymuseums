@@ -3,7 +3,6 @@ import { GALLERY_DOOR, createGalleryDoor } from '@/features/hall/scene/gallery-d
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
 import { personalRoomInfo, personalShade } from '@/features/npcs/room-places'
 import type { DecorController } from '../decorate/controller'
-import { cozyLevel } from '../decorate/logic'
 import {
   type RoomLight,
   cozyTheme,
@@ -23,7 +22,10 @@ const WALK_GAP = 0.6
 const ROOM_LEFT = 0
 /** Engraved on the door's brass plate: centred at 0.496 of its width and 0.627 of its height. */
 const DOOR_SIGN = { x: DOOR_X - 0.006, y: DOOR_BASE + 0.627 * GALLERY_DOOR.height, width: 0.42 }
-const NAME_SIGN = { x: 1.9, y: 4.1, width: 4.2 }
+/** The owner's name on a board hung from the plate; its ropes meet at the image's top edge. */
+const NAME_SIGN_WIDTH = 0.8
+const NAME_SIGN_HEIGHT = NAME_SIGN_WIDTH * (548 / 719)
+const NAME_SIGN = { x: DOOR_SIGN.x, y: DOOR_SIGN.y - 0.05 - NAME_SIGN_HEIGHT / 2, width: NAME_SIGN_WIDTH }
 
 export interface PersonalRoomOptions {
   slug: string
@@ -35,15 +37,11 @@ export interface PersonalRoomOptions {
   width: () => number
 }
 
-function nameSignText(ownerName: string | null | undefined): string {
-  return ownerName ? `${ownerName}’s room` : 'A cozy room'
-}
-
-/** Long names shrink so the sign stays about as wide as a short one. */
-const NAME_FITS = 20
+/** Long names shrink so they stay on the board. */
+const NAME_FITS = 7.5
 
 function nameScale(text: string): number {
-  return Math.max(0.55, Math.min(1, NAME_FITS / text.length))
+  return Math.max(0.4, Math.min(1, NAME_FITS / text.length))
 }
 
 /** The closet's darkness: thicker the more dirt is left, and gone once it's clean. */
@@ -108,28 +106,19 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
       doorSign.className = 'room-door-plate'
       doorSign.textContent = 'Museum'
       const nameSign = document.createElement('div')
-      nameSign.className = 'room-sign room-name-sign'
+      nameSign.className = 'room-name-sign'
       const nameLine = document.createElement('span')
-      nameLine.className = 'room-name-sign-name'
-      nameLine.textContent = nameSignText(ownerName)
-      nameLine.style.fontSize = `${(1.25 * nameScale(nameLine.textContent)).toFixed(3)}em`
-      const levelLine = document.createElement('span')
-      levelLine.className = 'room-name-sign-level'
-      nameSign.append(nameLine, levelLine)
-      ctx.overlay.append(doorSign, nameSign)
+      nameLine.textContent = ownerName ?? ''
+      nameLine.style.fontSize = `${nameScale(nameLine.textContent).toFixed(3)}em`
+      nameSign.append(nameLine)
+      ctx.overlay.append(doorSign)
+      if (ownerName) ctx.overlay.append(nameSign)
 
       function showArrangement(next: Placement[]): void {
         arrangement = next
         backdrop.setFinishes(next)
         light()
-        showLevel(next)
       }
-
-      function showLevel(next: Placement[]): void {
-        const level = cozyLevel(next)
-        levelLine.textContent = `${'♥'.repeat(level.hearts)}${'♡'.repeat(level.maxHearts - level.hearts)} ${level.name}`
-      }
-      showLevel(placements)
 
       const canvas = ctx.overlay.parentElement?.querySelector<HTMLCanvasElement>('canvas.hall-canvas')
       if (decor && canvas) {
@@ -185,9 +174,7 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
           layer.update(frame.now)
           const perUnit = frame.viewport.width / (frame.camera.right - frame.camera.left)
           placeLabel(doorSign, DOOR_SIGN, perUnit, frame.camera, frame.viewport, 0.2)
-          // While decorating the view lifts and the sign would slide under the corner buttons.
-          if (decor?.isEditing()) writeStyle(nameSign, 'opacity', '0')
-          else placeLabel(nameSign, NAME_SIGN, perUnit, frame.camera, frame.viewport, 0.04)
+          placeLabel(nameSign, NAME_SIGN, perUnit, frame.camera, frame.viewport, 0.17)
         },
 
         cameraRise() {

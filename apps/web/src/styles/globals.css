@@ -5263,32 +5263,25 @@ form > .account-switch {
 }
 
 .room-name-sign {
-  /* placeLabel sets a width to scale the font by; the sign itself hugs its text. */
-  width: max-content !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  aspect-ratio: 719 / 548;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.18em;
-  padding-block: 0.45em 0.4em;
-}
-
-.room-name-sign {
-  max-width: 15em;
-  text-align: center;
-}
-
-.room-name-sign-name {
+  justify-content: center;
+  /* In em, which placeLabel scales with the sign's width: the board starts below its ropes. */
+  padding: 1.5em 0.45em 0.2em;
+  box-sizing: border-box;
+  background: var(--asset-home-name-sign) center / 100% 100% no-repeat;
+  color: #5a3414;
   font-family: var(--font-title);
-  color: var(--script);
-  font-size: 1.25em;
-  overflow-wrap: anywhere;
-}
-
-.room-name-sign-level {
-  color: #e0607e;
-  font-size: 0.72em;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 /* Decorate button and first-visit hint. */
@@ -5335,7 +5328,6 @@ form > .account-switch {
   bottom: 0;
   z-index: 30;
   display: flex;
-  flex-direction: column;
   gap: 6px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 3px solid var(--plaque);
@@ -6328,7 +6320,6 @@ form > .account-switch {
 .minimap-plan .is-giftShop { --tile: #eadaf3; }
 .minimap-plan .is-atelierEntrance { --tile: #6e1616; }
 .minimap-plan .is-collection { --tile: #962531; }
-.minimap-plan .is-bruce { --tile: #8fc6e6; --icon: rgb(45 93 122 / 0.85); --icon-here: #1f4a66; }
 .map-wall {
   fill: var(--wall);
   stroke: var(--wall);

@@ -64,7 +64,7 @@ export const MAP_PLACES: Partial<Record<RoomId, PlaceInfo>> = {
       rooms: ATELIER_ROOMS.map(({ key, startX, endX, collection }) => ({
         key,
         label: collection?.title ?? 'The entrance',
-        tint: key === 'entrance' ? 'atelierEntrance' : key === 'bruce' ? 'bruce' : 'collection',
+        tint: key === 'entrance' ? 'atelierEntrance' : 'collection',
         startX: atelierX(startX),
         endX: atelierX(endX),
       })),
@@ -83,6 +83,8 @@ const WALL = 3
 export interface PlannedRoom {
   place: RoomId
   key: string
+  /** Every floor room this map room covers; joined rooms of one kind are drawn as one. */
+  keys: string[]
   label?: string
   tint: MapTint
   unknown: boolean
@@ -176,6 +178,7 @@ export function planMap(floors: readonly FloorSketch[]): MapPlan {
       const planned: PlannedRoom = {
         place: floor.id,
         key: room.key,
+        keys: [room.key],
         label: room.label,
         tint: room.tint ?? FALLBACK_TINT[info.theme],
         unknown: room.unknown ?? false,
@@ -186,6 +189,11 @@ export function planMap(floors: readonly FloorSketch[]): MapPlan {
       }
       const previous = own[own.length - 1]
       if (previous && Math.abs(previous.x + previous.w - planned.x) < 0.5) {
+        if (previous.tint === planned.tint && previous.unknown === planned.unknown) {
+          previous.w += planned.w
+          previous.keys.push(room.key)
+          continue
+        }
         openings.push({ x: planned.x, y: y + ROOM_DEPTH * 0.25, h: ROOM_DEPTH * 0.5, left: previous, right: planned })
       }
       own.push(planned)
@@ -238,7 +246,6 @@ const ICONS: Partial<Record<MapTint, { d: string; stroke?: boolean }[]>> = {
   giftShop: [{ d: 'M1.8 4H8.2L7.6 9H2.4Z' }, { d: 'M3.5 4.5V3.2A1.5 1.5 0 0 1 6.5 3.2V4.5', stroke: true }],
   atelierEntrance: [{ d: 'M2 9V5A3 3 0 0 1 8 5V9Z' }],
   collection: [{ d: 'M4 2.6A1 1 0 1 1 5 3.6V4.4L8.8 7.6H1.2L5 4.4', stroke: true }],
-  bruce: [{ d: 'M1.2 5Q4 1.6 7 5Q4 8.4 1.2 5ZM7 5 9 3V7Z' }],
 }
 
 const SVG = 'http://www.w3.org/2000/svg'
@@ -370,7 +377,7 @@ export function createMinimap(host: HTMLElement): Minimap {
       name.textContent = room.label
       group.append(name)
     }
-    nodes.set(`${room.place}:${room.key}`, group)
+    for (const key of room.keys) nodes.set(`${room.place}:${key}`, group)
     layer.append(group)
   }
 

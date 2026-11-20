@@ -54,7 +54,14 @@ test('a passage joins the two entrances through the door, and joined rooms open 
   assert.deepEqual([passage.from.place, passage.from.key, passage.to.place, passage.to.key], ['hall', 'entrance', 'atelier', 'entrance'])
   assert.equal(passage.y, passage.to.y + passage.to.h)
   assert.equal(passage.y + passage.h, passage.from.y)
-  assert.equal(plan.openings.length, hall.rooms.length - 1 + atelier.rooms.length - 1)
+  assert.equal(plan.openings.length, plan.rooms.length - 2)
+})
+
+test('joined rooms of one kind are drawn as a single room', () => {
+  const plan = planMap([hall, atelier])
+  const collections = plan.rooms.filter((room) => room.place === 'atelier' && room.tint === 'collection')
+  assert.equal(collections.length, 1)
+  assert.deepEqual(collections[0].keys, atelier.rooms.filter((room) => room.tint === 'collection').map((room) => room.key))
 })
 
 test('before the hall is visited the map shows its entrance and a faint way on', () => {

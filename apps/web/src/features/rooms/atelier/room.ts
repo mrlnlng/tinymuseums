@@ -87,7 +87,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         startX,
         endX,
         label,
-        tint: key === 'entrance' ? 'atelierEntrance' : key === 'bruce' ? 'bruce' : 'collection',
+        tint: key === 'entrance' ? 'atelierEntrance' : 'collection',
         build() {
           const teardown = room.buildRoom(key)
           return { hitTest: () => null, update() {}, dispose: teardown }

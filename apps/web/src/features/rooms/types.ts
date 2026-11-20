@@ -24,7 +24,7 @@ export interface DoorDef {
 }
 
 /** How the map draws a row of joined rooms: each room's look, matching its walls. */
-export type MapTint = 'entrance' | 'gallery' | 'cafe' | 'giftShop' | 'atelierEntrance' | 'collection' | 'bruce'
+export type MapTint = 'entrance' | 'gallery' | 'cafe' | 'giftShop' | 'atelierEntrance' | 'collection'
 
 /** The ground a visitor may stand on. Flat rooms are a strip; rooms with depth will add walkable areas. */
 export interface StripFloor {

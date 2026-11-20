@@ -181,7 +181,7 @@ export const THEMES: Record<ThemeId, ThemeSpec> = {
       'peeling-paper': prop(['wall'], 0.8, 1.0),
       dust: prop(['floor'], 0.75, 0.28),
       'old-canvases': prop(['floor'], 1.5, 1.25),
-      'old-paint': prop(['floor'], 0.6, 0.42),
+      'old-paint': prop(['floor'], 0.6, 0.6),
       boards: prop(['wall'], 1.3, 3.7),
       // Wear across the whole wall or floor, fixed as one; drawn over the room, not as a thing in it.
       'wall-wear': prop(['wall'], 0.1, 0.1),

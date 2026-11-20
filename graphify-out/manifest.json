@@ -530,9 +530,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/atelier.ts": {
-    "mtime": 1795151339.4224613,
-    "seen": 1795151624.9916954,
-    "ast_hash": "603b1e079050eaba710f0deea595cd88",
+    "mtime": 1795152769.2254632,
+    "seen": 1795152896.410526,
+    "ast_hash": "45bb467b201fe27f8e0624b9215a74ae",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/backdrop.ts": {
@@ -584,9 +584,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1795151339.4252996,
-    "seen": 1795151624.9917042,
-    "ast_hash": "fc1c4766bd2ea7c1782fdfe47c3a347a",
+    "mtime": 1795152769.225555,
+    "seen": 1795152896.410536,
+    "ast_hash": "a6b0753246e33673575a4c0a6a109359",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -3536,9 +3536,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/atelier-layout.ts": {
-    "mtime": 1795145827.536183,
-    "seen": 1795146031.3696613,
-    "ast_hash": "e7da67fd8dd4c52ca4b458282643bd54",
+    "mtime": 1795152769.2256181,
+    "seen": 1795152896.4105237,
+    "ast_hash": "076d7d51aee7d64430175ae4e4390eb9",
     "semantic_hash": ""
   },
   "apps/web/public/assets/atelier/tag-blank.png": {
@@ -6770,9 +6770,9 @@
     "semantic_hash": ""
   },
   "docs/plans/atelier-mirror.md": {
-    "mtime": 1795151625.1606095,
-    "seen": 1795152457.2711923,
-    "ast_hash": "92bf29a532ca4d704246ed9e4ab6dfc0",
+    "mtime": 1795152457.447788,
+    "seen": 1795152896.4108276,
+    "ast_hash": "e95238dec9d9b309e04d3e646ddb54bd",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/mirror-reflection.ts": {

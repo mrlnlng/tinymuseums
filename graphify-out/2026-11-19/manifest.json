@@ -6770,9 +6770,9 @@
     "semantic_hash": ""
   },
   "docs/plans/atelier-mirror.md": {
-    "mtime": 1795148667.6765003,
-    "seen": 1795149638.0712087,
-    "ast_hash": "36b6a1d44122a78be6d74e40ff83f402",
+    "mtime": 1795151625.1606095,
+    "seen": 1795152457.2711923,
+    "ast_hash": "92bf29a532ca4d704246ed9e4ab6dfc0",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/mirror-reflection.ts": {
@@ -6782,9 +6782,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/ClosetView.tsx": {
-    "mtime": 1795151412.1265795,
-    "seen": 1795151624.9916785,
-    "ast_hash": "f4d8942d84df5d162a46671dcc59a401",
+    "mtime": 1795152167.9511409,
+    "seen": 1795152457.2708833,
+    "ast_hash": "a49af3ce99c7d84809db1a663440fd76",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/dialog-keys.ts": {
@@ -6794,15 +6794,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/closet.test.ts": {
-    "mtime": 1795151303.1129646,
-    "seen": 1795151624.991701,
-    "ast_hash": "f463761945aed06fb84fda381be28ae4",
+    "mtime": 1795152202.0158825,
+    "seen": 1795152457.2709067,
+    "ast_hash": "fd1a9ba39b11dca97d731918be788eae",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/closet.ts": {
-    "mtime": 1795151302.8954923,
-    "seen": 1795151624.9917018,
-    "ast_hash": "bd1fc46d6426e23553fda7d3c45e3bc7",
+    "mtime": 1795152202.015053,
+    "seen": 1795152457.2709076,
+    "ast_hash": "b2b781e3b384dc1a71e7a7a5c0192171",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

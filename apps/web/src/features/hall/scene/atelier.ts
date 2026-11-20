@@ -351,26 +351,6 @@ export function createAtelierRoom(
       glints.push({ node, shown: () => owned !== null && owned.has(itemId) && shown() })
     }
 
-    /** A headpiece resting on a cushion or a shelf; tapping where it lay gives it back. */
-    function headpiece(spot: { id: string; image: string; y: number; width: number; rotation: number }, x: number, stand: Painted[]): void {
-      const mesh = picture(group, spot.image as AtelierImage, { x, y: spot.y, width: spot.width, z: 0.36 })
-      mesh.rotation.z = spot.rotation
-      const item: ClothingItem = { slot: 'bow', id: spot.id }
-      const node = button('', 'atelier-item atelier-item-bow', { x, y: spot.y, width: Math.min(220, spot.width + 10) }, () => actions?.onItem(item))
-      const piece: Piece = {
-        item: () => item,
-        wornBy: (_, bow) => bow === spot.id,
-        meshes: [mesh],
-        bare: [...stand, mesh],
-        button: node,
-        target: 1,
-        shown: 1,
-      }
-      pieces.push(piece)
-      glint({ x, y: spot.y, width: Math.max(90, spot.width) }, 1.6, () => piece.target > 0)
-      seal({ x: x + spot.width * 0.42, y: spot.y - spot.width * 0.2, width: 26 }, itemIdFor('bow', spot.id), () => piece.target > 0)
-    }
-
     function refresh(): void {
       for (const piece of pieces) {
         const wearing = piece.wornBy(worn, wornBow)
@@ -382,7 +362,7 @@ export function createAtelierRoom(
     }
 
     return {
-      pieces, button, glint, seal, headpiece,
+      pieces, button, glint, seal,
       onRefresh: (fn: () => void) => { refreshers.push(fn) },
       onDispose: (fn: () => void) => { cleanup.push(fn) },
       built: (extra: { wardrobe?: Painted; mirror?: Painted } = {}): BuiltRoom => ({ pieces, glints, ...extra, refresh, dispose: () => { for (const fn of cleanup) fn() } }),
@@ -467,18 +447,8 @@ export function createAtelierRoom(
     plaque.className = 'atelier-plaque'
     plaque.textContent = "Costumes that inspired the works of Tiny Museum's permanent collection, presented here to be worn."
     own(atelier.plaque, plaque, 0.058)
-    // Accessories without a room of their own rest in the cabinet's compartments and on its top.
+    // Every accessory lives in the closet now; the cabinet keeps only its jewelry box and perfume.
     const kit = roomKit(group, own)
-    for (const spot of [...atelier.cabinetPieces, ...atelier.shelfPieces]) {
-      const { compartment } = spot
-      const hollow = new THREE.Mesh(
-        new THREE.PlaneGeometry(units(compartment.width), units(compartment.height)),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
-      ) as Painted
-      hollow.position.set(wx(compartment.x), wy(compartment.y), 0.255)
-      group.add(hollow)
-      kit.headpiece(spot, spot.x, [hollow])
-    }
     return kit.built({ wardrobe: buildWardrobe(group, kit), mirror: buildMirror(group, kit) })
   }
 
@@ -593,8 +563,11 @@ export function createAtelierRoom(
     const { pillar } = collection
     const pillarX = C + T.pillar.dx + out
     standing(group, 'column', pillarX, atelier.column.bottomY, atelier.column.height, atelier.column.z)
-    const pillow = picture(group, pillar.pillow.image, { x: pillarX, y: pillar.pillow.y, width: pillar.pillow.width, z: 0.34 })
-    for (const spot of pillar.pieces) kit.headpiece(spot, pillarX + spot.dx, [pillow])
+    picture(group, pillar.pillow.image, { x: pillarX, y: pillar.pillow.y, width: pillar.pillow.width, z: 0.34 })
+    // The cushion's flowers are Bruce's own decoration; they are tried on from the closet.
+    for (const spot of pillar.pieces) {
+      picture(group, spot.image as AtelierImage, { x: pillarX + spot.dx, y: spot.y, width: spot.width, z: 0.36 }).rotation.z = spot.rotation
+    }
 
     const portrait = collection.portrait
     const portraitSpot = { x: C + T.portrait.dx + out, y: T.portrait.y, width: portrait.width }

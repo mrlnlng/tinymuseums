@@ -48,6 +48,7 @@ export interface CollectionRoom {
   ribbon: 'ribbon' | 'ribbonBlue'
   /** Flowers around the form's platform: Jazlyn's own touch for Bruce's booth. */
   flowers?: boolean
+  /** The column beside the form: a cushion and the decoration resting on it. */
   pillar: {
     pillow: { image: 'pillowBlue' | 'pillowRed'; y: number; width: number }
     pieces: readonly HeadpieceSpot[]

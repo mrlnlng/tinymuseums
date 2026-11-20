@@ -251,16 +251,6 @@ export const CONFIG = {
     cabinet: { x: 330, y: 566, width: 463, z: 0.25 },
     jewelryBox: { x: 285, y: 403, width: 172, z: 0.27 },
     perfume: { x: 430, y: 398, width: 129, z: 0.27 },
-    // Accessories with no room of their own, one in each of the cabinet's compartments.
-    cabinetPieces: [
-      { id: 'blue-cap', image: 'blueCap', x: 236, y: 598, width: 130, rotation: -0.12, compartment: { x: 236, y: 569, width: 175, height: 145 } },
-      { id: 'daisy-clip', image: 'daisyClip', x: 443, y: 606, width: 85, rotation: -0.15, compartment: { x: 443, y: 569, width: 175, height: 145 } },
-    ],
-    // Headpieces resting on the cabinet top, either side of the jewelry box and perfume.
-    shelfPieces: [
-      { id: 'kiki', image: 'bow', x: 150, y: 427, width: 72, rotation: 0.08, compartment: { x: 150, y: 427, width: 80, height: 70 } },
-      { id: 'flower-crown', image: 'flowerCrown', x: 524, y: 440, width: 78, rotation: -0.08, compartment: { x: 524, y: 440, width: 84, height: 45 } },
-    ],
     // The dressing mirror between the cabinet and the wardrobe, where the visitor changes character.
     // Its glass is a fraction of the art in from each side; the gems sit along the frame's top bar.
     mirror: {

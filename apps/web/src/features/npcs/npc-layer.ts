@@ -175,10 +175,15 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       opacity: 0,
     }
 
+    return view
+  }
+
+  function preloadSheets(view: NpcView): void {
     // Show neither sheet until both have decoded, so a fresh sprite never flashes a walk cel.
     const walking = new Image()
     view.preload.push(walking)
-    walking.src = walkUrl
+    walking.src = view.walkUrl
+    const idle = view.idle
     const standing = idle ? new Image() : null
     if (standing) view.preload.push(standing)
     if (idle && standing) standing.src = idle.url
@@ -187,8 +192,6 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       loaded.push(standing.decode().then(() => { idle.ready = true }, () => {}))
     }
     void Promise.all(loaded).then(() => { view.ready = true })
-
-    return view
   }
 
   function createResidentView(id: string): ResidentView {
@@ -329,11 +332,6 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
     depthScale: number,
     front: boolean | null,
   ): void {
-    if (!view.ready) {
-      hideView(view)
-      return
-    }
-
     const anchorX = castMember(view.id).anchorX * scale
     const anchorY = FRAME.anchorY * scale
     PROJECTED.set(x, floorY, 0).project(frame.camera)
@@ -341,7 +339,12 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
     const screenY = (-PROJECTED.y * 0.5 + 0.5) * frame.viewport.height
     const reach = Math.max(anchorX, celWidth - anchorX)
 
-    if (!Number.isFinite(screenX) || !Number.isFinite(screenY) || screenX + reach < 0 || screenX - reach > frame.viewport.width) {
+    // Warm the original sheets one viewport ahead of the sprite in either direction.
+    if (!view.ready && view.preload.length === 0 &&
+        screenX + reach >= -frame.viewport.width && screenX - reach <= 2 * frame.viewport.width) {
+      preloadSheets(view)
+    }
+    if (!view.ready || !Number.isFinite(screenX) || !Number.isFinite(screenY) || screenX + reach < 0 || screenX - reach > frame.viewport.width) {
       hideView(view)
       return
     }

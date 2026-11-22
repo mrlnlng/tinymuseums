@@ -1529,6 +1529,20 @@
         "h": 548,
         "src": "home-name-sign@2x.a335b6ba5b.webp"
       }
+    },
+    "pond/stone-path-baked": {
+      "w": 2381,
+      "h": 1691,
+      "x2": {
+        "w": 1587,
+        "h": 1127,
+        "src": "pond-stone-path-baked@2x.197ce32c7f.webp"
+      },
+      "x3": {
+        "w": 2381,
+        "h": 1691,
+        "src": "pond-stone-path-baked@3x.22f038bd4a.webp"
+      }
     }
   },
   "atlases": {
@@ -1608,7 +1622,8 @@
               291,
               460
             ]
-          }
+          },
+          "ktx2": "atlas-entrance-avif-q70@2x.dd743e2ccb.ktx2"
         },
         {
           "w": 1336,
@@ -1722,7 +1737,8 @@
               196,
               195
             ]
-          }
+          },
+          "ktx2": "atlas-entrance-avif-q62@3x.49e155cac2.ktx2"
         },
         {
           "w": 472,
@@ -1736,7 +1752,8 @@
               436,
               690
             ]
-          }
+          },
+          "ktx2": "atlas-entrance-avif-q70@3x.400c790846.ktx2"
         },
         {
           "w": 1464,
@@ -1870,7 +1887,8 @@
               380,
               263
             ]
-          }
+          },
+          "ktx2": "atlas-scenery-avif-q62@2x.5c4b29d20b.ktx2"
         },
         {
           "w": 756,
@@ -1972,7 +1990,8 @@
               380,
               263
             ]
-          }
+          },
+          "ktx2": "atlas-scenery-avif-q62@3x.ec19a464c3.ktx2"
         },
         {
           "w": 756,
@@ -2194,22 +2213,24 @@
       ]
     }
   },
-  "ktx2": null,
+  "ktx2": {
+    "transcoder": "basis-0.169.0/"
+  },
   "models": {
     "bunnyRig": {
-      "src": "bunny-rig-v2-dressed.03dcb13731.glb"
+      "src": "bunny-rig-v2-dressed.94b9d5d071.glb"
     },
     "bunnyRigBow": {
       "src": "bunny-rig-bow.021c8341a1.png"
     },
     "catRig": {
-      "src": "cat-rig-dressed.b698549bcd.glb"
+      "src": "cat-rig-dressed.7bae38af91.glb"
     },
     "otterRig": {
-      "src": "otter-rig-dressed.53826ca9d9.glb"
+      "src": "otter-rig-dressed.f4564747ed.glb"
     },
     "bruceRig": {
-      "src": "bruce-rig-dressed.40e9bd44f4.glb"
+      "src": "bruce-rig-dressed.126e940741.glb"
     }
   },
   "atelier": {

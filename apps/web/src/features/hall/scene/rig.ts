@@ -326,6 +326,8 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   })
 
   const scene = new THREE.Scene()
+  // Posing computes the complete model hierarchy before the bow and foot shadows.
+  scene.matrixWorldAutoUpdate = false
   scene.add(model)
   const frameHeight = frame.bottom - frame.top
   const halfHeight = frameHeight / 2000
@@ -576,8 +578,7 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
         height = nextHeight
         ratio = nextRatio
         if (!layer) {
-          renderer.setPixelRatio(ratio)
-          renderer.setSize(width, height, false)
+          renderer.setDrawingBufferSize(width, height, ratio)
         }
       }
       clock += dt
@@ -675,6 +676,7 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       lift += 0.03 * hop
       shadow.position.x = shadowAt.x * model.scale.x
       shadow.scale.set(Math.max(0.6, Math.abs(across)) * (1 - 2.5 * lift), 1 - 2.5 * lift, 1)
+      shadow.updateMatrixWorld()
       shadowMaterial.opacity = Math.max(0, 1 - 6 * lift) * (1 - state.air)
       floorShadow.x = ((spec.shadow.x - frame.centerX) * model.scale.x) / frameHeight
       floorShadow.y = (spec.shadow.y - frame.feet) / frameHeight

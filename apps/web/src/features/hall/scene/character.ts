@@ -75,8 +75,13 @@ const BOUNCE_MS = 360
 
 export function createCharacter(assets: CharacterSprites, host: HTMLElement, initial: Look): Character {
   const idle = assets.bunnyIdle
-  const cycle = (side: 'left' | 'right'): HTMLImageElement[] =>
-    assets.walk[side].length > 0 ? assets.walk[side] : [idle[side]]
+  let walk: Awaited<ReturnType<CharacterSprites['loadWalk']>> | undefined
+  let requestedWalk = false
+  function loadFallbackWalk(): void {
+    if (requestedWalk) return
+    requestedWalk = true
+    void assets.loadWalk().then((frames) => { walk = frames }).catch(() => { requestedWalk = false })
+  }
 
   const sprite = document.createElement('img')
   sprite.className = 'hall-bunny'
@@ -116,6 +121,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
 
   function loseRig(): void {
     rigFailed = true
+    loadFallbackWalk()
     usingRig = false
     rig?.dispose()
     rig = null
@@ -168,7 +174,10 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   }
 
   loading = loadKind(look.kind).then((ok) => {
-    if (!ok && look.kind !== 'bunny') look = { kind: 'bunny', costume: null, bow: null }
+    if (!ok && !disposed) {
+      look = { kind: 'bunny', costume: null, bow: null }
+      loadFallbackWalk()
+    }
     return ok
   })
 
@@ -323,8 +332,8 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       distance += speed * dt
       if (perched) {
         setFrame(perched.image)
-      } else if (moving) {
-        const frames = cycle(facing)
+      } else if (moving && !rig && walk?.[facing].length) {
+        const frames = walk[facing]
         const step = Math.floor(distance * CONFIG.character.cyclesPerUnit * frames.length)
         setFrame(frames[((step % frames.length) + frames.length) % frames.length])
       } else {
@@ -435,12 +444,14 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
           loseRig()
         }
       }
-      canvas.hidden = !usingRig
+      // Written only on change: setting .hidden every frame showed up as 0.4 s in a phone trace.
+      if (canvas.hidden !== !usingRig) canvas.hidden = !usingRig
       if (!usingRig || motion.air === 0) {
         if (!floorShadow.hidden) floorShadow.hidden = true
       }
       // The sprites are the plain bunny; anyone else stays hidden until their rig is drawing.
-      sprite.hidden = usingRig || (!rigFailed && look.kind !== 'bunny')
+      const spriteHidden = usingRig || (!rigFailed && look.kind !== 'bunny')
+      if (sprite.hidden !== spriteHidden) sprite.hidden = spriteHidden
     },
 
     dispose() {

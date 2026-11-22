@@ -96,6 +96,9 @@ export default function LandingFx() {
     let frameId = 0
     let last = performance.now()
 
+    let lastX = ''
+    let lastY = ''
+
     function tick(now: number): void {
       frameId = requestAnimationFrame(tick)
       const dt = Math.min(0.05, (now - last) / 1000)
@@ -109,8 +112,12 @@ export default function LandingFx() {
       const ease = 1 - Math.exp(-dt * 2.2)
       camX += (targetX - camX) * ease
       camY += (targetY - camY) * ease
-      root!.style.setProperty('--px', camX.toFixed(4))
-      root!.style.setProperty('--py', camY.toFixed(4))
+      const x = camX.toFixed(4)
+      const y = camY.toFixed(4)
+      if (x !== lastX) root!.style.setProperty('--px', x)
+      if (y !== lastY) root!.style.setProperty('--py', y)
+      lastX = x
+      lastY = y
 
       g!.clearRect(0, 0, width, height)
       g!.globalCompositeOperation = 'lighter'

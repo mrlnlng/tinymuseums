@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { assetUrl } from '@/shared/lib/assets'
+import { assetUrl, maxDensity } from '@/shared/lib/assets'
 import { avifKnown } from '@/shared/lib/avif'
 import Angler from './Angler'
 import layout from '../../../../public/assets/pond/layout.json'
@@ -355,15 +355,15 @@ export default function Water({
 
   return (
     <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
-      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: 3, avif: avifKnown() })} alt="" style={LEFT_STYLE} draggable={false} />}
-      <img className="pond-scene" src={assetUrl('pond/scene', { density: 3, avif: avifKnown() })} alt="" draggable={false} />
-      <img className="pond-bridge" src={assetUrl('pond/bridge', { density: 3 })} alt="" style={box(layout.bridge)} draggable={false} />
+      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: maxDensity(), avif: avifKnown() })} alt="" style={LEFT_STYLE} draggable={false} />}
+      <img className="pond-scene" src={assetUrl('pond/scene', { density: maxDensity(), avif: avifKnown() })} alt="" draggable={false} />
+      <img className="pond-bridge" src={assetUrl('pond/bridge', { density: maxDensity() })} alt="" style={box(layout.bridge)} draggable={false} />
       <img className="pond-sign" src={assetUrl('pond/pond-sign', { density: 3 })} alt="" style={narrow ? SIGN_STYLE_NARROW : SIGN_STYLE} draggable={false} />
       <div className="pond-score" style={narrow ? SCORE_STYLE_NARROW : SCORE_STYLE}>
         <img src={assetUrl('pond/score-sign', { density: 3 })} alt="" draggable={false} />
         <span key={catches} className={catches > 0 ? 'pond-score-count is-fresh' : 'pond-score-count'}>{catches}</span>
       </div>
-      <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: 3 })} alt="" style={box(layout.sparkles)} draggable={false} />
+      <img className="pond-sparkles" src={assetUrl('pond/sparkles', { density: maxDensity() })} alt="" style={box(layout.sparkles)} draggable={false} />
 
       <div className="pond-water" style={{ clipPath: WATER_CLIP }}>
         {glints.map((glint) => (
@@ -417,7 +417,7 @@ export default function Water({
         ) : null}
       </div>
 
-      <img className="pond-lily" src={assetUrl('pond/lily', { density: 3 })} alt="" style={box(layout.lily)} draggable={false} />
+      <img className="pond-lily" src={assetUrl('pond/lily', { density: maxDensity() })} alt="" style={box(layout.lily)} draggable={false} />
 
       {phase === 'bite' ? <span className="pond-focus" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100}%` }} /> : null}
 

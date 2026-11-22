@@ -454,3 +454,33 @@ test('residents only take rooms whose kinds their job visits', () => {
     }
   }
 })
+
+test('sampling a pond stay reuses its routes until the schedule or room layout changes', () => {
+  let routes = 0
+  const info = {
+    ...GROUND_INFO,
+    ground: {
+      ...FIXTURE_GROUND,
+      route(from: FloorSpot, to: FloorSpot) {
+        routes++
+        return FIXTURE_GROUND.route(from, to)
+      },
+    },
+  }
+  const view = { room: 'pond' as const, info }
+  let time = 0
+  while (time < COVERAGE_MS) {
+    residentsAt(time, view)
+    if (routes > 0) break
+    time += SLOT_MS
+  }
+  assert.ok(routes > 0)
+  const planned = routes
+  residentsAt(time + 16, view)
+  assert.equal(routes, planned)
+  residentsAt(time + 16, { ...view, info: { ...info } })
+  assert.ok(routes > planned)
+  for (const instant of [time + SLOT_MS, time - SLOT_MS, time]) {
+    assert.deepEqual(residentsAt(instant, view), residentsAt(instant, { ...view, info: { ...info } }))
+  }
+})

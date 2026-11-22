@@ -19,6 +19,7 @@ import type { HallRoomData } from '@/features/rooms/decorate/HallArranger'
 import type { DoorRef } from '@/features/rooms/types'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { preloadFrames } from '@/features/artwork/lib/frame'
+import { deferPrefetch } from '@/shared/lib/connection'
 import { MUSEUM_START_MARK } from '@/shared/lib/vitals-marks'
 
 const loadGuestBoard = () => import('@/features/guestboard/components/GuestBoard')
@@ -174,7 +175,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   }, [isSuspended, setWalking])
 
   useEffect(() => {
-    if (!isReady) return
+    if (!isReady || deferPrefetch()) return
     const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 4000))
     const cancel = window.cancelIdleCallback ?? window.clearTimeout
     const handle = idle(

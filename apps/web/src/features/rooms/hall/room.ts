@@ -168,12 +168,6 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       let guestBoard: GuestBoard | null = null
       let sitting: Sitting | null = null
 
-      /** Gallery rooms built right now; only their paintings and pedestals are kept. */
-      const builtGalleries = new Set<string>()
-      const near = (x: number): boolean => {
-        const room = hall.layout.rooms.find((r) => x >= r.startX && x < r.endX)
-        return room !== undefined && builtGalleries.has(room.key)
-      }
       const tapWith = (phase: 'hover' | 'tap' | undefined, tap: () => boolean): Interaction | null =>
         phase === 'tap' && !traversal.isIntro ? { silent: true, activate: tap } : null
 
@@ -216,9 +210,9 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         }
       }
 
-      /** A gallery's paintings and pedestals come and go with it through `near`; the last one also holds Coming Soon. */
+      /** The last gallery also holds Coming Soon. */
       function galleryRoom(key: string): JoinedContents {
-        builtGalleries.add(key)
+        hall.setGalleryBuilt(key, true)
         let comingSoon: ComingSoon | null = null
         let note: ComingSoonNote | null = null
         return {
@@ -233,7 +227,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
             note?.sync(frame.camera, frame.viewport)
           },
           dispose() {
-            builtGalleries.delete(key)
+            hall.setGalleryBuilt(key, false)
             note?.clear()
             comingSoon?.dispose()
           },
@@ -560,7 +554,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           }
           wasAirborne = airborne
           ambience.update(frame.now, frame.dt, frame.camera, viewTop)
-          hall.update(frame.now, frame.dt, traversal.cameraX, near)
+          hall.update(frame.now, frame.dt, traversal.cameraX)
           if (!ctx.isQuiet()) hall.releaseCoin()
           placards.sync(hall.getMounted(), frame.camera, frame.viewport)
           for (const voice of hall.nearbyVoices()) ctx.sound.prepare(voice)

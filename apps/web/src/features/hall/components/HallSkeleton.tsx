@@ -1,7 +1,6 @@
-import { atlasSheets, builtUrl, ktx2TranscoderPath, pictureSources } from '@/shared/lib/assets'
+import { LARGE_ASSET_MEDIA, atlasSheets, builtUrl, ktx2TranscoderPath, pictureSources } from '@/shared/lib/assets'
 
-// Density media queries mirror screenDensity(): 3x above a device pixel ratio of 2.
-const DENSITY_MEDIA = { 2: '(max-resolution: 2dppx)', 3: '(min-resolution: 2.01dppx)' } as const
+const DENSITY_MEDIA = { 2: `not all and ${LARGE_ASSET_MEDIA}`, 3: LARGE_ASSET_MEDIA } as const
 
 // These must name the exact files the hall loader will ask for, in the same CORS mode,
 // or they are fetched twice. A typed AVIF preload is skipped by browsers that cannot decode it, which

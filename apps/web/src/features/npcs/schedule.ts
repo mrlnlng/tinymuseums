@@ -765,7 +765,7 @@ function stateFromPlan(plan: ResidentPlan, time: number, id: string): ResidentSt
   const x = at?.x ?? null
   const d = at?.d ?? null
   const walk = hasSpot && phase.length > 1e-9
-    ? { from: phase.from!, to: phase.to!, length: phase.length, done }
+    ? { from: { ...phase.from! }, to: { ...phase.to! }, length: phase.length, done }
     : null
 
   let emote: string | null = null
@@ -788,6 +788,10 @@ function stateFromPlan(plan: ResidentPlan, time: number, id: string): ResidentSt
   }
 }
 
+// A room publishes a new info object when its walkable layout changes. Positions and
+// emotes still interpolate every frame; the underlying itinerary changes once per slot.
+const plans = new WeakMap<NpcRoomInfo, { room: NpcRoom; seed: number; slot: number; plan: StayPlan }>()
+
 /** Every resident's state at one wall-clock instant; pure and independent of the browser. */
 export function residentsAt(
   timeMs: number,
@@ -801,14 +805,19 @@ export function residentsAt(
 
   let plan: StayPlan | null = null
   if (view && rooms.some((room) => room === view.room)) {
-    const pos = posMod(block + seedOffset(seed), ROOM_TABLE.length)
-    const run = RUN_BY_POS[pos]
-    const startBlock = block - (pos - run.startPos)
-    const endBlock = startBlock + run.length
-    const residents = RESIDENT_IDS.map((_, index) => index).filter((index) => rooms[index] === view.room)
-    const slotInStay = Math.floor((timeMs - startBlock * BLOCK_MS) / SLOT_MS)
-    const buildUntil = startBlock * BLOCK_MS + (slotInStay + 1) * SLOT_MS
-    plan = buildStayPlan(view.room, view.info, seed, startBlock, endBlock, residents, buildUntil)
+    const slot = Math.floor(timeMs / SLOT_MS)
+    const cached = plans.get(view.info)
+    if (cached && cached.room === view.room && cached.seed === seed && cached.slot === slot) {
+      plan = cached.plan
+    } else {
+      const pos = posMod(block + seedOffset(seed), ROOM_TABLE.length)
+      const run = RUN_BY_POS[pos]
+      const startBlock = block - (pos - run.startPos)
+      const endBlock = startBlock + run.length
+      const residents = RESIDENT_IDS.map((_, index) => index).filter((index) => rooms[index] === view.room)
+      plan = buildStayPlan(view.room, view.info, seed, startBlock, endBlock, residents, (slot + 1) * SLOT_MS)
+      plans.set(view.info, { room: view.room, seed, slot, plan })
+    }
   }
 
   return RESIDENT_IDS.map((id, index) => {

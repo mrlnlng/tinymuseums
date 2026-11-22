@@ -57,8 +57,18 @@ export function modelUrl(name: keyof typeof manifest.models): string {
   return builtUrl(manifest.models[name].src)
 }
 
+// Use the same query for the loader and the server-rendered preload hints.
+// Phones stay on @2x: a phone trace spent 5.6 s uploading textures, and 2x is already sharp at phone size.
+export const PHONE_MEDIA = '(max-width: 1023px)'
+export const LARGE_ASSET_MEDIA = '(min-resolution: 2.01dppx) and (min-width: 1024px)'
+
+/** The densest variant worth fetching here: 2 on phones, otherwise 3. */
+export function maxDensity(): 2 | 3 {
+  return typeof window !== 'undefined' && window.matchMedia(PHONE_MEDIA).matches ? 2 : 3
+}
+
 export function screenDensity(): 2 | 3 {
-  return typeof window !== 'undefined' && window.devicePixelRatio > 2 ? 3 : 2
+  return typeof window !== 'undefined' && window.matchMedia(LARGE_ASSET_MEDIA).matches ? 3 : 2
 }
 
 export function assetVariant(name: AssetName, density: 2 | 3 = screenDensity()): BuiltImage {
@@ -139,5 +149,5 @@ export function assetCssVariables(): string {
   const at3 = CSS_IMAGES.filter((name) => images[name].x3).map(
     (name) => `${cssVariableName(name)}:url(${builtUrl(images[name].x3!.src)})`,
   )
-  return `:root{${at2.join(';')}}@media (min-resolution:2.5dppx){:root{${at3.join(';')}}}`
+  return `:root{${at2.join(';')}}@media ${LARGE_ASSET_MEDIA}{:root{${at3.join(';')}}}`
 }

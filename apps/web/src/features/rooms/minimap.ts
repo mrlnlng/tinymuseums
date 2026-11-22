@@ -433,7 +433,9 @@ export function createMinimap(host: HTMLElement): Minimap {
   }
 
   const redraw = () => { if (place && !root.hidden) draw() }
-  window.addEventListener('resize', redraw)
+  // Watches the map's own box, so update() never reads clientWidth (a forced layout every frame).
+  const resized = new ResizeObserver(() => { if (view.clientWidth !== size.w || view.clientHeight !== size.h) redraw() })
+  resized.observe(view)
 
   return {
     show(next) {
@@ -455,7 +457,7 @@ export function createMinimap(host: HTMLElement): Minimap {
     update(x) {
       if (!place) return
       // The hall grows as paintings arrive; redraw when its rooms or length change.
-      if (place.rooms() !== drawnRooms || Math.abs(place.maxX() - drawnMax) > 0.01 || view.clientWidth !== size.w) draw()
+      if (place.rooms() !== drawnRooms || Math.abs(place.maxX() - drawnMax) > 0.01) draw()
       follow(x)
       const room = roomAt(drawnRooms ?? [], x)
       if (room === current) return
@@ -466,7 +468,7 @@ export function createMinimap(host: HTMLElement): Minimap {
       root.setAttribute('aria-label', room?.label ? `Map: ${name}, ${room.label}` : `Map: ${name}`)
     },
     dispose() {
-      window.removeEventListener('resize', redraw)
+      resized.disconnect()
       root.remove()
     },
   }

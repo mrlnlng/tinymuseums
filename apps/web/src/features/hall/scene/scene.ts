@@ -69,6 +69,11 @@ export class HallScene {
   private slots = new Map<number, SlotRuntime>()
   private mounted = new Map<number, MountedDisplay>()
   private inFlight = 0
+  private disposed = false
+  private builtGalleries = new Set<string>()
+  private galleriesChanged = true
+  private nearbySlots = new Set<SlotRuntime>()
+  private nearbyPedestals: number[] = []
   onTextureReady: ((texture: THREE.Texture) => void) | null = null
   private pedestals = new Map<number, Pedestal>()
   private mountedList: MountedDisplay[] = []
@@ -105,6 +110,7 @@ export class HallScene {
     }
     const isComplete = this.nextIndex === null && widths.length === this.totalSlots
     this.layout = computeLayout(widths, isComplete)
+    this.galleriesChanged = true
 
     for (const mount of this.mounted.values()) {
       const x = this.layout.centerX[mount.index]
@@ -124,24 +130,43 @@ export class HallScene {
     return visitorX > lastCenter - CONFIG.loading.prefetchAheadUnits
   }
 
-  /** `near` says whether the gallery room holding a point is built; only its slots are kept. */
-  update(now: number, dt: number, cameraX: number, near: (x: number) => boolean): void {
+  setGalleryBuilt(key: string, built: boolean): void {
+    if (built) this.builtGalleries.add(key)
+    else this.builtGalleries.delete(key)
+    this.galleriesChanged = true
+  }
+
+  /** Reconcile once when a gallery is built, removed, or resized by a new slice. */
+  private syncGalleries(): void {
+    if (!this.galleriesChanged) return
+    this.galleriesChanged = false
+    const spans = this.layout.rooms.filter((room) => this.builtGalleries.has(room.key))
+    const near = (x: number) => spans.some((room) => x >= room.startX && x < room.endX)
+    const next = new Set<SlotRuntime>()
+    for (const slot of this.slots.values()) {
+      if (near(this.layout.centerX[slot.index])) next.add(slot)
+    }
+    for (const slot of this.nearbySlots) {
+      if (next.has(slot)) continue
+      // A pending image may be used if the visitor walks back before it arrives.
+      if (slot.status === 'loading') this.unmountMesh(slot.index)
+      else this.unmount(slot.index)
+    }
+    this.nearbySlots = next
+    this.nearbyPedestals = []
+    this.layout.pedestalX.forEach((x, index) => {
+      if (near(x)) this.nearbyPedestals.push(index)
+      else if (this.pedestals.has(index)) this.removePedestal(index)
+    })
+  }
+
+  update(now: number, dt: number, cameraX: number): void {
+    this.syncGalleries()
     const wanted: { slot: SlotRuntime; distance: number }[] = []
     let mountedThisFrame = false
 
-    for (const slot of this.slots.values()) {
-      const centerX = this.layout.centerX[slot.index]
-      if (centerX === undefined) continue
-
-      const distance = Math.abs(centerX - cameraX)
-
-      if (!near(centerX)) {
-        // A texture that loaded but never went up is freed too, and an exhausted slot is reset so
-        // walking back gives it fresh attempts. A load still in flight is freed once it lands.
-        if (this.mounted.has(slot.index) || slot.status === 'ready' || slot.status === 'error') this.unmount(slot.index)
-        continue
-      }
-
+    for (const slot of this.nearbySlots) {
+      const distance = Math.abs(this.layout.centerX[slot.index] - cameraX)
       const mounted = this.mounted.get(slot.index)
       if (slot.status !== 'ready' && !mounted && slot.piece.image.thumbhash) {
         if (!mountedThisFrame) {
@@ -184,7 +209,7 @@ export class HallScene {
     }
 
     this.updateFades(now)
-    this.updatePedestals(dt, near)
+    this.updatePedestals(dt)
     for (const mount of this.mountedList) {
       const level = Math.abs(cameraX - mount.centerX) < mount.width / 2 + CONFIG.spotlight.nearMargin ? 1 : 0
       mount.light.update(dt, level)
@@ -235,6 +260,11 @@ export class HallScene {
         this.inFlight -= 1
       })
       .then((texture) => {
+        if (this.disposed || !this.nearbySlots.has(slot)) {
+          disposeDisplayTexture(texture)
+          slot.status = 'idle'
+          return
+        }
         this.onTextureReady?.(texture)
         slot.texture = texture
         slot.status = 'ready'
@@ -242,6 +272,10 @@ export class HallScene {
         slot.attempts = 0
       })
       .catch(() => {
+        if (this.disposed || !this.nearbySlots.has(slot)) {
+          slot.status = 'idle'
+          return
+        }
         const attempts = (slot.attempts ?? 0) + 1
         slot.status = 'error'
         slot.attempts = attempts
@@ -315,13 +349,8 @@ export class HallScene {
     this.mountedList = [...this.mounted.values()]
   }
 
-  private updatePedestals(dt: number, near: (x: number) => boolean): void {
-    for (let i = 0; i < this.layout.pedestalX.length; i++) {
-      if (!near(this.layout.pedestalX[i])) {
-        if (this.pedestals.has(i)) this.removePedestal(i)
-        continue
-      }
-
+  private updatePedestals(dt: number): void {
+    for (const i of this.nearbyPedestals) {
       let pedestal = this.pedestals.get(i)
       if (!pedestal) {
         pedestal = createPedestal(
@@ -470,7 +499,9 @@ export class HallScene {
   }
 
   dispose(): void {
-    for (const index of [...this.mounted.keys()]) this.unmount(index)
+    this.disposed = true
+    for (const slot of this.nearbySlots) this.unmount(slot.index)
+    this.nearbySlots.clear()
     for (const index of [...this.pedestals.keys()]) this.removePedestal(index)
     disposeSpotlights()
     disposeGroundShadows()

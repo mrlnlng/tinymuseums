@@ -13,6 +13,7 @@ import { lookOf } from '@/features/hall/scene/wardrobe'
 import type { NpcRoomInfo } from '@/features/npcs/jobs'
 import { createNpcLayer } from '@/features/npcs/npc-layer'
 import { joinRoom, type Room } from '@/features/presence/lib/join-room'
+import { deferPrefetch } from '@/shared/lib/connection'
 import { defaultStore } from '@/shared/lib/slots'
 import { ROOM_ART, type RoomArt } from './art'
 import { createArtCache } from './art-cache'
@@ -87,6 +88,7 @@ interface Entry {
   disposed: boolean
   frameCount: number
   approached: Set<string>
+  prefetchX: number | null
   prefetchCheckAt: number
 }
 
@@ -311,6 +313,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       disposed: false,
       frameCount: 0,
       approached: new Set(),
+      prefetchX: null,
       prefetchCheckAt: 0,
     }
     const previous = current
@@ -464,9 +467,13 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     function prefetchNearDoors(entry: Entry, now: number): void {
       if (now < entry.prefetchCheckAt || now - entry.readyAt < PREFETCH_AFTER_READY_MS) return
       entry.prefetchCheckAt = now + PREFETCH_CHECK_MS
+      const previousX = entry.prefetchX
+      entry.prefetchX = traversal.x
+      if (previousX === null || previousX === traversal.x || traversal.isIntro || deferPrefetch()) return
       const reach = rig.viewWidth * PREFETCH_SCREENS
       for (const [name, door] of Object.entries(entry.room.doors)) {
-        if (Math.abs(traversal.x - door.x) > reach) continue
+        const distance = Math.abs(traversal.x - door.x)
+        if (distance > reach || distance >= Math.abs(previousX - door.x)) continue
         const to = linkedDoor({ room: entry.room.id, door: name })
         if (!to) continue
         artCache.prefetch(to.room)

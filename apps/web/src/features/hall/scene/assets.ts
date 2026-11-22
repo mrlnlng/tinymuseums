@@ -81,8 +81,6 @@ export interface Assets {
   manifest: AssetManifest
   textures: Record<EntranceName, THREE.Texture>
   aspect: Record<EntranceName, number>
-  walk: { left: HTMLImageElement[]; right: HTMLImageElement[] }
-  bunnyIdle: { left: HTMLImageElement; right: HTMLImageElement }
   pedestals: PedestalSprite[]
   helpCat: Sprite[]
 }
@@ -283,20 +281,31 @@ function spriteFrom(sheets: Map<string, Sprite>, file: string): Sprite {
   return sprite
 }
 
-export type CharacterSprites = Pick<Assets, 'walk' | 'bunnyIdle'>
+type Facing = 'left' | 'right'
 
-/** The bunny's sprites: its fallback when no rig can draw, and its sitting and display poses. */
+export interface CharacterSprites {
+  bunnyIdle: Record<Facing, HTMLImageElement>
+  loadWalk(): Promise<Record<Facing, HTMLImageElement[]>>
+}
+
+/** Idle poses also serve while the animated rig or its sprite fallback is loading. */
 export async function loadCharacterSprites(): Promise<CharacterSprites> {
   useAvif = await supportsAvif()
-  const { left: leftFiles, right: rightFiles } = manifest.bunnyWalk.byFacing
-  const [walkRight, idleLeft, idleRight] = await Promise.all([
-    loadTolerant(rightFiles.map((f) => assetUrl(f))),
+  const [left, right] = await Promise.all([
     loadRetrying(assetUrl('bunny-left.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
     loadRetrying(assetUrl('bunny-right.png')).catch(() => loadRetrying(assetUrl('bunny.png'))),
   ])
-  const walkLeft: HTMLImageElement[] = []
-  void loadTolerant(leftFiles.map((f) => assetUrl(f))).then((images) => walkLeft.push(...images))
-  return { walk: { left: walkLeft, right: walkRight }, bunnyIdle: { left: idleLeft, right: idleRight } }
+  return {
+    bunnyIdle: { left, right },
+    async loadWalk() {
+      const files = manifest.bunnyWalk.byFacing
+      const [left, right] = await Promise.all([
+        loadTolerant(files.left.map((file) => assetUrl(file))),
+        loadTolerant(files.right.map((file) => assetUrl(file))),
+      ])
+      return { left, right }
+    },
+  }
 }
 
 export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets> {
@@ -305,10 +314,9 @@ export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets>
   const names = Object.keys(ENTRANCE_FILES) as EntranceName[]
 
   const packed = inSheets('entrance')
-  const [sheets, standalone, sprites] = await Promise.all([
+  const [sheets, standalone] = await Promise.all([
     loadSheets('entrance'),
     loadStandalone(names.map((n) => ENTRANCE_FILES[n]).filter((f) => !packed.has(stem(f)))),
-    loadCharacterSprites(),
   ])
   void loadMasks()
 
@@ -321,7 +329,6 @@ export async function loadAssets(renderer: THREE.WebGLRenderer): Promise<Assets>
     manifest,
     textures,
     aspect,
-    ...sprites,
     pedestals: manifest.pedestals.map((p) => ({ ...spriteFrom(sheets, p.file), file: p.file })),
     helpCat: HELP_CAT_FRAMES.map((f) => spriteFrom(sheets, f)),
   }

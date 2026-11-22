@@ -101,12 +101,17 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   host.appendChild(floorShadow)
   let shadowStyle = ''
 
-  let canvas = document.createElement('canvas')
+  const canvas = document.createElement('canvas')
   canvas.className = 'hall-bunny hall-bunny-rig'
   canvas.setAttribute('aria-hidden', 'true')
   canvas.hidden = true
   host.appendChild(canvas)
   let rig: Rig | null = null
+  // One renderer on one canvas for the character's whole life: a new context per change of
+  // character re-uploaded every texture and recompiled every shader.
+  let rigApi: typeof import('./rig') | null = null
+  let layer: THREE.WebGLRenderer | null = null
+  let layerSize = ''
   let disposed = false
   let rigFailed = false
   let usingRig = false
@@ -138,38 +143,27 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   }
   canvas.addEventListener('webglcontextlost', contextLost)
 
-  // Build the replacement separately; a failed or slow load keeps the working character.
+  // Load the replacement beside the current rig; a failed or slow load keeps the working character.
   async function loadKind(kind: CharacterKind, next: Look = look): Promise<boolean> {
-    const nextCanvas = document.createElement('canvas')
-    nextCanvas.className = canvas.className
-    nextCanvas.setAttribute('aria-hidden', 'true')
-    nextCanvas.hidden = true
-    host.appendChild(nextCanvas)
     try {
-      const { loadRig } = await import('./rig')
-      const loaded = await loadRig(nextCanvas, kind)
+      rigApi ??= await import('./rig')
+      layer ??= rigApi.createRigLayer(canvas)
+      const loaded = await rigApi.loadRig(null, kind, layer)
       if (disposed || rigFailed) {
         loaded.dispose()
-        nextCanvas.remove()
         return false
       }
       loaded.setCostume(next.costume, next.bow)
       const previous = rig
-      const previousCanvas = canvas
-      previousCanvas.removeEventListener('webglcontextlost', contextLost)
       rig = loaded
-      canvas = nextCanvas
       look = { ...next }
-      canvas.style.opacity = opacity
-      canvas.addEventListener('webglcontextlost', contextLost)
       rigHeight = ''
       rigTransform = ''
       rigOrigin = ''
+      layerSize = ''
       previous?.dispose()
-      previousCanvas.remove()
       return true
     } catch (error) {
-      nextCanvas.remove()
       if (!disposed) console.warn(`[hall] ${kind} rig unavailable; keeping the current character`, error)
       return false
     }
@@ -425,7 +419,16 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
           drawnBox.top = rigTop
           drawnBox.width = canvasHeight * rig.aspect
           drawnBox.height = canvasHeight
-          rig.render(motion, dt, canvasHeight, window.devicePixelRatio)
+          // Matches the clamp rig.render applies, so the layer's buffer is the rig's own size.
+          const ratio = Math.min(3, Math.max(2, window.devicePixelRatio))
+          const size = `${canvasHeight * rig.aspect}|${canvasHeight}|${ratio}`
+          if (layer && size !== layerSize) {
+            layerSize = size
+            layer.setPixelRatio(ratio)
+            layer.setSize(canvasHeight * rig.aspect, canvasHeight, false)
+          }
+          if (layer) rigApi?.clearRigLayer(layer)
+          rig.render(motion, dt, canvasHeight, ratio, { left: 0, top: 0 })
           if (motion.air > 0) {
             // Where the feet would stand, without the jump's height.
             projected.set(x, centerY - jump.lift * CONFIG.jump.height * depthScale, 0).project(camera)
@@ -479,6 +482,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       disposed = true
       canvas.removeEventListener('webglcontextlost', contextLost)
       rig?.dispose()
+      if (layer) rigApi?.disposeRigLayer(layer)
       canvas.remove()
       sprite.remove()
       floorShadow.remove()

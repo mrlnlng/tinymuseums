@@ -262,31 +262,22 @@ async function loadTemplate(kind: CharacterKind): Promise<Template> {
   return { scene: gltf.scene, clip, bowMap, resources }
 }
 
-// A layer's rigs share each character's model, so a crowd parses and uploads it once.
-const layerTemplates = new WeakMap<THREE.WebGLRenderer, Map<CharacterKind, Promise<Template>>>()
+// Each character's model is parsed once per page and kept; every rig poses its own clone. Loading
+// a fresh copy per rig re-fetched, decoded and parsed the model each time (seconds on a phone).
+const templates = new Map<CharacterKind, Promise<Template>>()
 
-function sharedTemplate(layer: THREE.WebGLRenderer, kind: CharacterKind): Promise<Template> {
-  let templates = layerTemplates.get(layer)
-  if (!templates) {
-    templates = new Map()
-    layerTemplates.set(layer, templates)
-  }
+function sharedTemplate(kind: CharacterKind): Promise<Template> {
   let template = templates.get(kind)
   if (!template) {
-    const cache = templates
     template = loadTemplate(kind)
-    template.catch(() => cache.delete(kind))
+    template.catch(() => templates.delete(kind))
     templates.set(kind, template)
   }
   return template
 }
 
-/** Releases a layer and the models its rigs shared; dispose its rigs first. */
+/** Releases a layer; dispose its rigs first. The models stay cached for the next rig. */
 export function disposeRigLayer(layer: THREE.WebGLRenderer): void {
-  for (const template of layerTemplates.get(layer)?.values() ?? []) {
-    void template.then((loaded) => release(loaded.resources), () => {})
-  }
-  layerTemplates.delete(layer)
   layer.dispose()
   layer.forceContextLoss()
 }
@@ -306,12 +297,12 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
 
   let template: Template
   try {
-    template = await (layer ? sharedTemplate(layer, kind) : loadTemplate(kind))
+    template = await sharedTemplate(kind)
   } catch (error) {
     releaseRenderer()
     throw error
   }
-  const model = layer ? cloneSkinned(template.scene) : template.scene
+  const model = cloneSkinned(template.scene)
   const { clip, bowMap } = template
   // What this rig adds to the model: its shadow and the chest bow.
   const own = newResources()
@@ -506,7 +497,6 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
     mixer.uncacheRoot(model)
     release(own)
     for (const skeleton of skeletons) skeleton.dispose()
-    if (!layer) release(template.resources)
     releaseRenderer()
   }
 
@@ -548,7 +538,10 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
       if (layer) return
       model.traverse((node) => {
         if (!(node instanceof THREE.Mesh) || node.userData.layer !== 'character') return
-        const material = node.material as THREE.MeshBasicMaterial
+        // The material is shared with every clone of this model; repaint a copy of it.
+        const material = (node.material as THREE.MeshBasicMaterial).clone()
+        node.material = material
+        own.materials.add(material)
         const source = material.map?.image as CanvasImageSource & { width: number; height: number } | undefined
         if (!material.map || !source) return
         const canvas = document.createElement('canvas')

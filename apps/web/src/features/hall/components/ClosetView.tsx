@@ -52,6 +52,10 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
     stage.current?.append(canvas)
     let disposed = false
     let frame = 0
+    // Read on resize only: clientHeight in the draw loop forced a layout every frame.
+    let stageHeight = stage.current?.clientHeight ?? 300
+    const resized = new ResizeObserver(() => { stageHeight = stage.current?.clientHeight ?? stageHeight })
+    if (stage.current) resized.observe(stage.current)
     void import('../scene/rig').then(({ loadRig }) => loadRig(canvas, kind)).then((rig) => {
       if (disposed) { rig.dispose(); return }
       rigRef.current = rig
@@ -65,7 +69,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
         previous = now
         stepRigState(motion, dt, false, 'right', 0, rig.cycleSeconds)
         // The figure stands most of the stage tall, its feet on the podium.
-        const canvasHeight = (stage.current?.clientHeight ?? 300) * 0.74 * rig.spriteScale
+        const canvasHeight = stageHeight * 0.74 * rig.spriteScale
         const size = `${canvasHeight.toFixed(1)}px`
         if (canvas.style.height !== size) {
           canvas.style.height = size
@@ -78,6 +82,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
     return () => {
       disposed = true
       cancelAnimationFrame(frame)
+      resized.disconnect()
       rigRef.current?.dispose()
       rigRef.current = null
       canvas.remove()

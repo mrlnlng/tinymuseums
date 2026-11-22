@@ -24,11 +24,6 @@ import {
   type FinishSlot,
 } from './logic'
 
-export interface SharingState {
-  on: boolean
-  token: string | null
-}
-
 type Tab = DrawerCategory | 'walls' | 'room' | 'shop'
 
 const TABS: { id: Tab; label: string }[] = [
@@ -51,8 +46,6 @@ interface DecorDrawerProps {
   saveLabel: string
   maxPlacements: number
   notice: string | null
-  sharing: SharingState | null
-  sharingBusy: boolean
   saving: boolean
   canUndo: boolean
   /** A placed thing is being carried; the drawer takes it back. */
@@ -67,7 +60,6 @@ interface DecorDrawerProps {
   onFocusPlaced(id: string): void
   onUndo(): void
   onDone(): void
-  onSharingChange(on: boolean): void
   onBought(ref: string): void
   /** Puts up a wallpaper or baseboard the member owns. */
   onFinish(zone: FinishSlot, ref: string): void
@@ -88,8 +80,6 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
     saveLabel,
     maxPlacements,
     notice,
-    sharing,
-    sharingBusy,
     saving,
     canUndo,
     dropActive,
@@ -100,7 +90,6 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
     onFocusPlaced,
     onUndo,
     onDone,
-    onSharingChange,
     onBought,
     onFinish,
     onPreviewFinish,
@@ -117,9 +106,6 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
   const [justBought, setJustBought] = useState<{ name: string; where: string } | null>(null)
   const [trying, setTrying] = useState<{ zone: FinishSlot; ref: string } | null>(null)
   const [shopNote, setShopNote] = useState<string | null>(null)
-  const [isShareOpen, setIsShareOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const copyRef = useRef<HTMLInputElement>(null)
   const timers = useRef<number[]>([])
 
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), [])
@@ -157,10 +143,6 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
   const isFull = thingsIn(placements) >= maxPlacements
   const shop = shopPropIds(wallet.items)
   const level = cozyLevel(placements)
-  const shareUrl =
-    sharing?.on && sharing.token
-      ? `${typeof window === 'undefined' ? '' : window.location.origin}/museum/r/${slug}?key=${sharing.token}`
-      : null
 
   /** `bought` is the "is yours" note; null when the room celebrates the purchase itself. */
   async function purchase(itemId: string, bought: { name: string; where: string } | null, then: () => void): Promise<void> {
@@ -216,24 +198,6 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
     return image ? { backgroundImage: `url(${image})` } : {}
   }
 
-  async function copyLink(): Promise<void> {
-    if (!shareUrl) return
-    try {
-      await navigator.clipboard.writeText(shareUrl)
-      setCopied(true)
-    } catch {
-      const input = copyRef.current
-      if (input) {
-        input.focus()
-        input.select()
-        try {
-          if (document.execCommand('copy')) setCopied(true)
-        } catch {}
-      }
-    }
-    later(() => setCopied(false), 1800)
-  }
-
   const balance = wallet.balance ?? 0
 
   return (
@@ -268,44 +232,11 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
           <button type="button" className="decor-icon-btn" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
             {'↶'}
           </button>
-          {sharing ? (
-            <button
-              type="button"
-              className={`decor-icon-btn${sharing.on ? ' is-on' : ''}`}
-              onClick={() => setIsShareOpen((open) => !open)}
-              aria-expanded={isShareOpen}
-              aria-label="Share your room"
-            >
-              {'\u{1F517}'}
-            </button>
-          ) : null}
           <button type="button" className="button decor-done" onClick={onDone} disabled={saving}>
             {saving ? 'Saving…' : 'Done ✓'}
           </button>
         </div>
       </header>
-
-      {isShareOpen && sharing ? (
-        <div className="decor-share">
-          <label className="decor-share-toggle">
-            <input
-              type="checkbox"
-              checked={sharing.on}
-              disabled={sharingBusy}
-              onChange={(event) => onSharingChange(event.target.checked)}
-            />
-            <span>Anyone with the link can visit</span>
-          </label>
-          {shareUrl ? (
-            <div className="decor-share-row">
-              <input ref={copyRef} className="decor-share-url" readOnly value={shareUrl} aria-label="Share link" />
-              <button type="button" className="decor-copy" onClick={() => void copyLink()}>
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       {notice ? (
         <p className="decor-notice" role="alert">

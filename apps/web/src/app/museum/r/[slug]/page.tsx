@@ -7,23 +7,14 @@ import { currentArtist, isHallOwner } from '@/shared/lib/session'
 
 export const dynamic = 'force-dynamic'
 
-export default async function RoomPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>
-  searchParams: Promise<{ key?: string | string[] }>
-}) {
+export default async function RoomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const requested = (await searchParams).key
-  const key = typeof requested === 'string' ? requested : null
 
   const session = await currentMember()
   const artist = await currentArtist()
   const view = await roomPageView(slug, {
     memberId: session?.member.id ?? null,
     isOwnerArtist: artist ? isHallOwner(artist) : false,
-    shareToken: key,
   })
   if (!view) notFound()
   // A private room says so, rather than a bare 404 (also what its owner sees after signing out).
@@ -35,7 +26,7 @@ export default async function RoomPage({
       theme={view.theme}
       placements={view.published}
       ownerName={view.ownerName}
-      shareKey={key ?? undefined}
+      open={view.open}
       canEdit={view.canEdit}
       width={view.width}
     />

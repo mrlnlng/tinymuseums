@@ -122,6 +122,8 @@ const CSS_IMAGES: AssetName[] = [
   'hall/curtain',
   'hall/wallpaper',
   'help-center',
+  'home/door-sign-closed',
+  'home/door-sign-open',
   'home/name-sign',
   'plaque',
   'rope',

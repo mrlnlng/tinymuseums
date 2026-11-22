@@ -2,7 +2,8 @@ import { CHARACTERS, type CharacterChoice } from '../slots/outfit.ts'
 
 export const PROTOCOL_VERSION = 1
 export const ROOM_CAPACITY = 8
-export const MAX_MESSAGE_BYTES = 1024
+// The hello carries the ticket, which grows with what the visitor owns; 1 KB turned collectors away.
+export const MAX_MESSAGE_BYTES = 4096
 
 /** Why the room turned a message down (messages.ts); only its sender hears. */
 export const REFUSALS = ['empty', 'long', 'contact', 'blocked', 'too-soon'] as const
@@ -47,7 +48,12 @@ export function isItem(value: unknown): value is Item {
 export interface Peer extends Motion {
   pid: string
   name: string
+  /** Their own room's slug, so others can tap them and visit; absent for guests without one. */
+  home?: string
 }
+
+const HOME = /^r-[a-z0-9]{8}$/
+export const isHome = (value: unknown): value is string => typeof value === 'string' && HOME.test(value)
 
 export type ClientMessage =
   | { t: 'hello'; v: number; ticket: string }
@@ -160,7 +166,8 @@ function parsePeer(value: unknown): Peer | null {
   const m = record(value)
   if (!m || !isPid(m.pid) || !isName(m.name)) return null
   const motion = parseMotion(m)
-  return motion ? { pid: m.pid, name: m.name, ...motion } : null
+  if (!motion) return null
+  return isHome(m.home) ? { pid: m.pid, name: m.name, home: m.home, ...motion } : { pid: m.pid, name: m.name, ...motion }
 }
 
 /** The client checks the room's messages too, so a bad deploy cannot break the scene. */

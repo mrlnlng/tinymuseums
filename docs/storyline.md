@@ -8,10 +8,18 @@ a direction to come back to.
 > You are a struggling artist who just purchased an exhibit in a museum as a last ditch effort to
 > make your dreams of making it big come true.
 
+## Revision (2026-11-21, the owner)
+
+- You **buy an abandoned room** in the museum, not a rented wall. This is the dusty closet you
+  start in and clean.
+- **Letters drive the story.** Someone sends you letters, and each one moves the story forward.
+  The sender is still open: someone from the past (an artist, maybe a family member) or someone
+  alive now. The letters replace "Mystery hook" below as the spine of the story.
+
 ## Premise
 
-You're an artist down to your last savings. You spend them renting the smallest, dimmest exhibit
-slot in the Tiny Museum, a single wall at the far end of the hall. It's your last try.
+You're an artist down to your last savings. You spend them on an abandoned room in the Tiny
+Museum, dark and dusty, at the far end of the hall. It's your last try.
 
 Opening night, nobody comes. The guards lock up and go home. Then, as the landing page already
 says ("The guards went home.... The paintings woke up."), **the paintings wake up.**
@@ -39,11 +47,70 @@ says ("The guards went home.... The paintings woke up."), **the paintings wake u
 
 Lease renewals can mark milestones but never take anything away; cozy games stay gentle.
 
-## Mystery hook
+## Locked (2026-11-21, the owner)
 
-Someone lived in your storeroom before you. Their letters turn up as you furnish: behind the cubby,
-under the rug, in the window frame. Who were they? Did they make it? Are they now one of the
-paintings? This gives decorating a reason beyond looks, and explains why the paintings care.
+- **Open ended.** No finale. After the main letters, letters keep coming as long as you play
+  (visitor milestones, seasons, a yearly gala letter), carrying sketches, flowers and postcards.
+  The previous owner is never fully revealed.
+- **The player is a story artist only.** The story never mentions uploading; the Studio stays a
+  separate tool for real artists.
+- **Must-see on the main path:** Your Room, the Hall and its real artists, the paintings'
+  minigames, the Pond and the Atelier. Each gets a main-path letter, not a side letter.
+- Flow and mocks: https://claude.ai/artifact/MebPCkPjbWZdpTCyQdeaAo (letter numbering there
+  predates this order).
+
+**Main path (draft order).** Each letter is delivered by Percy when its trigger fires.
+
+| # | Trigger | Sends you to | Gist |
+| --- | --- | --- | --- |
+| 1 | First visit to Your Room | Your Room | Sorry about the mess; start cleaning by the door |
+| 2 | Closet fully cleaned | Your Room | "I never once turned them around" (the dust-sheet canvases) |
+| 3 | Letter 2 read | The Hall | "Every one of those walls was someone like us." Real artists |
+| 4 | First visit to the Hall | Minigames | The paintings will ask you favours. Say yes |
+| 5 | Knock through to Storeroom | The Pond | Room was bigger than their flat; when stuck, see the otter |
+| 6 | First flip of the Open sign (`docs/open-room.md`) | Atelier | The confession: they kept the door shut. Dress up before anyone comes |
+| 7 | First visitor (NPC or a player let in) | (none) | "Nobody ever came for me" |
+| 8 | Knock through to Back room | (none) | The night they gave up |
+| 9 | Knock through to Studio | (none) | "I bought paint yesterday." Enclosed: their first sketch, which starts the ongoing letters |
+
+## The previous owner (2026-11-21)
+
+The room is abandoned because **its last owner failed there**. They had the same dream, ran out of
+money and nerve, and walked away, leaving the dust, the broken furniture and the paintings who
+had believed in them. They're alive. When they hear the room has sold, they start writing to you.
+
+Percy, the post carrier, brings each letter. A letter arrives when you reach a milestone the game
+already tracks (cleaning the closet, a room upgrade, winning over a collection), so the story moves
+at the pace you play.
+
+**Why they write.** Guilt and hope. They can't fix their own story, but they can keep yours from
+going the same way. Early letters are short and practical; later ones are confessions.
+
+**Letter arc (draft)**
+1. *Opening night.* Awkward hello. "I hear someone bought my old room. Sorry about the mess." A
+   practical tip about the closet.
+2. *Closet clean.* The room's history: what it looked like when they first got the keys.
+3. *First upgrade.* The paintings: who was kind to them, who they let down. Bruce hasn't forgiven them.
+4. *First collection won.* What went wrong: they hid their work. Canvases faced the wall, the door
+   stayed shut, and they told themselves they'd open "when it was ready".
+5. *A bigger room.* The night they gave up: the lease review came, the room was empty, and nobody
+   had ever seen a single piece.
+6. *Before the gala.* They admit they never stopped painting; they just stopped showing anyone.
+7. *Gala night.* Payoff TBD: they come to see you, or you hang one of their pieces in your room.
+
+**Their flaw: they hid their work** (chosen 2026-11-21). Too scared to be seen, so nobody ever came.
+It mirrors the game's core loop of hanging your work, sharing your room link and inviting people in.
+
+**The inversion.** Every mistake they confess is one the player is already avoiding, so the letters
+make the player's progress feel like proof. The player succeeding is what lets them forgive themselves.
+
+**How this differs from Stardew Valley** (inspiration, not a copy). In Stardew a dead
+grandfather leaves you the farm and returns to judge you. Here the sender is alive, a stranger,
+and a failure rather than a mentor. They're a peer who needs you as much as you need them, and
+nobody grades you at the end.
+
+Earlier idea, now folded in: their old belongings and notes can still turn up as you clean (under
+the rug, behind the cubby) as small extras alongside the mailed letters.
 
 ## Why the fiction fits the platform
 

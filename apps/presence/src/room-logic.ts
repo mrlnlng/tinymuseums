@@ -28,6 +28,8 @@ export interface Attachment {
   holds: Item[]
   /** Catalog ids from the signed ticket; others see only these pieces and characters. */
   own: string[]
+  /** The visitor's own room, from the ticket. */
+  home?: string
   tokens: number
   refilledAt: number
   saidAt: number
@@ -42,6 +44,8 @@ export function newAttachment(room: string, now: number, ip = ''): Attachment {
     tokens: STATE_BURST, refilledAt: now, saidAt: 0, strikes: 0, gone: false,
   }
 }
+
+const homeOf = (attachment: Attachment) => (attachment.home ? { home: attachment.home } : {})
 
 /** Room places go to admitted visitors only, so unticketed sockets can't fill a room. */
 export function roomFull(attachments: Attachment[], capacity: number): boolean {
@@ -58,7 +62,7 @@ export const present = (attachment: Attachment): boolean => attachment.pid !== n
 
 export function admitted(attachment: Attachment, ticket: Ticket | null): Attachment | null {
   if (!ticket || ticket.room !== attachment.room.replace(/-s\d+$/, '')) return null
-  return { ...attachment, pid: ticket.pid, name: ticket.name, own: ticket.own ?? [] }
+  return { ...attachment, pid: ticket.pid, name: ticket.name, own: ticket.own ?? [], ...(ticket.home ? { home: ticket.home } : {}) }
 }
 
 export function ownedLook(look: Look, own: readonly string[]): Look {
@@ -75,7 +79,7 @@ export function ownedLook(look: Look, own: readonly string[]): Look {
 
 export function peerOf(attachment: Attachment): Peer | null {
   return present(attachment) && attachment.name && attachment.last
-    ? { pid: attachment.pid!, name: attachment.name, ...attachment.last }
+    ? { pid: attachment.pid!, name: attachment.name, ...homeOf(attachment), ...attachment.last }
     : null
 }
 
@@ -145,7 +149,7 @@ export function onMessage(attachment: Attachment, message: ClientMessage | null,
       if (heard.last && message.seq <= heard.last.seq) return { attachment: heard }
       const { t: _t, ...motion } = message
       const safe = { ...motion, look: ownedLook(motion.look, paid.own) }
-      return { attachment: { ...paid, last: safe }, send: { to: 'others', message: { t: 'state', pid, name, ...safe } } }
+      return { attachment: { ...paid, last: safe }, send: { to: 'others', message: { t: 'state', pid, name, ...homeOf(paid), ...safe } } }
     }
     case 'claim': {
       const paid = spend(heard, now)

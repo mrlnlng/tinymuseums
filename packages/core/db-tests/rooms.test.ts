@@ -10,7 +10,7 @@ import {
   roomPageView,
   restartInCloset,
   saveDraft,
-  setSharing,
+  setOpen,
 } from '../src/domain/rooms.ts'
 import { signUp } from '../src/domain/members.ts'
 import { STARTER_PROPS } from '../src/economy/catalog.ts'
@@ -72,7 +72,6 @@ test('a personal room is created once, grants the starter props, and starts arra
   assert.equal(first.kind, 'personal')
   assert.equal(first.ownerMemberId, memberId)
   assert.equal(first.visibility, 'private')
-  assert.equal(first.shareToken, null)
   assert.equal(first.draft.length, 16)
   assert.equal(first.draft.filter((placement) => placement.kind === 'mess').length, 10)
   assert.deepEqual(second.draft, first.draft)
@@ -177,21 +176,18 @@ test('view and edit permissions follow the shared/personal and sharing rules', a
   assert.equal(canEdit(room, { memberId: stranger, isOwnerArtist: false }), false)
   assert.equal(canView(room, { memberId: null, isOwnerArtist: true }), false)
 
-  const shared = await setSharing(room.slug, true)
-  assert.ok(shared)
-  assert.equal(shared.visibility, 'link')
-  assert.ok(shared.shareToken && /^[A-Za-z0-9_-]+$/.test(shared.shareToken))
-  assert.equal(canView(shared, { memberId: stranger, shareToken: shared.shareToken }), true)
-  assert.equal(canEdit(shared, { memberId: stranger, isOwnerArtist: false }), false)
-  assert.equal(canView(shared, { memberId: stranger, shareToken: 'wrong' }), false)
-  assert.equal(canView(shared, { memberId: null }), false)
+  const opened = await setOpen(room.slug, true)
+  assert.ok(opened)
+  assert.equal(opened.visibility, 'open')
+  assert.equal(canView(opened, { memberId: stranger }), true)
+  assert.equal(canView(opened, { memberId: null }), true)
+  assert.equal(canEdit(opened, { memberId: stranger, isOwnerArtist: false }), false)
 
-  const token = shared.shareToken
-  const privateRoom = await setSharing(room.slug, false)
-  assert.ok(privateRoom)
-  assert.equal(privateRoom.visibility, 'private')
-  assert.equal(privateRoom.shareToken, null)
-  assert.equal(canView(privateRoom, { memberId: stranger, shareToken: token }), false)
+  const closed = await setOpen(room.slug, false)
+  assert.ok(closed)
+  assert.equal(closed.visibility, 'private')
+  assert.equal(canView(closed, { memberId: stranger }), false)
+  assert.equal(await setOpen('hall', true), null)
 })
 
 test('saving a draft rejects unowned props and accepts owned ones', async () => {
@@ -262,30 +258,33 @@ test('a save or publish from a stale draft version is a conflict', async () => {
   assert.deepEqual(published?.published, carpet(3))
 })
 
-test('a room page view decides access without handing out the token or owner', async () => {
+test('a room page view decides access by the Open sign without handing out the owner', async () => {
   const owner = await member()
   const stranger = await member()
   const room = await personalRoomFor(owner)
-  const shared = await setSharing(room.slug, true)
-  assert.ok(shared?.shareToken)
+
+  const closed = await roomPageView(room.slug, { memberId: null })
+  assert.deepEqual(closed && { canView: closed.canView, open: closed.open, published: closed.published, ownerName: closed.ownerName }, {
+    canView: false,
+    open: false,
+    published: [],
+    ownerName: null,
+  })
+  assert.ok(await setOpen(room.slug, true))
 
   const mine = await roomPageView(room.slug, { memberId: owner })
   assert.ok(mine)
   assert.equal(mine.canView, true)
   assert.equal(mine.canEdit, true)
   assert.deepEqual(mine.published, room.published)
-  assert.ok(!('shareToken' in mine) && !('ownerMemberId' in mine))
+  assert.equal(mine.open, true)
+  assert.ok(!('ownerMemberId' in mine))
 
-  const visitor = await roomPageView(room.slug, { memberId: stranger, shareToken: shared.shareToken })
+  const visitor = await roomPageView(room.slug, { memberId: stranger })
   assert.equal(visitor?.canView, true)
   assert.equal(visitor?.canEdit, false)
-
-  const blocked = await roomPageView(room.slug, { memberId: null, shareToken: 'wrong' })
-  assert.deepEqual(blocked && { canView: blocked.canView, published: blocked.published, ownerName: blocked.ownerName }, {
-    canView: false,
-    published: [],
-    ownerName: null,
-  })
+  const signedOut = await roomPageView(room.slug, { memberId: null })
+  assert.equal(signedOut?.canView, true)
   assert.equal(await roomPageView('r-missing0', { memberId: owner }), null)
 })
 

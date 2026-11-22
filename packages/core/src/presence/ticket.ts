@@ -1,6 +1,7 @@
 // Web Crypto only, so the Next route (Node) signs and the Cloudflare room verifies with one code path.
 
-import { ITEMS, isCatalogItem } from '../economy/catalog.ts'
+import { isCatalogItem } from '../economy/catalog.ts'
+import { isHome } from './protocol.ts'
 
 export interface Ticket {
   /** Random per tab; never a member id. */
@@ -12,10 +13,13 @@ export interface Ticket {
   exp: number
   /** Catalog ids this member owns; absent on older tickets, which mean none. */
   own?: string[]
+  /** The member's own room slug, shown to others so they can visit. */
+  home?: string
 }
 
 export const TICKET_TTL_MS = 10 * 60 * 1000
-const MAX_OWN = Object.keys(ITEMS).length
+// Fixed, not the catalog size, so a ticket from a newer site still fits an older room server.
+const MAX_OWN = 256
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -59,7 +63,7 @@ function isOwn(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
     value.length <= MAX_OWN &&
-    value.every((item) => typeof item === 'string' && isCatalogItem(item)) &&
+    value.every((item) => typeof item === 'string' && item.length <= 64) &&
     new Set(value).size === value.length
   )
 }
@@ -67,9 +71,11 @@ function isOwn(value: unknown): value is string[] {
 function isTicket(value: unknown): value is Ticket {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const t = value as Record<string, unknown>
-  const keys = Object.keys(t).length
+  const optional = ('own' in t ? 1 : 0) + ('home' in t ? 1 : 0)
   return (
-    (keys === 4 || (keys === 5 && 'own' in t && isOwn(t.own))) &&
+    Object.keys(t).length === 4 + optional &&
+    (!('own' in t) || isOwn(t.own)) &&
+    (!('home' in t) || isHome(t.home)) &&
     typeof t.pid === 'string' && /^[A-Za-z0-9_-]{8,32}$/.test(t.pid) &&
     typeof t.name === 'string' && t.name.length > 0 && t.name.length <= 40 &&
     typeof t.room === 'string' && t.room.length <= 40 &&
@@ -78,7 +84,7 @@ function isTicket(value: unknown): value is Ticket {
 }
 
 export async function verifyTicket(token: string, secret: string, now = Date.now()): Promise<Ticket | null> {
-  if (token.length > 1024) return null
+  if (token.length > 4000) return null
   const [body, signature, extra] = token.split('.')
   if (!body || !signature || extra !== undefined) return null
   const signatureBytes = fromBase64Url(signature)
@@ -93,5 +99,7 @@ export async function verifyTicket(token: string, secret: string, now = Date.now
     return null
   }
   if (!isTicket(ticket) || ticket.exp <= now) return null
-  return { ...ticket, own: ticket.own ?? [] }
+  // Ids this server's catalog does not know yet are dropped, not refused: the site that signed the
+  // ticket may be newer, and its visitor should still join, just without the new piece showing.
+  return { ...ticket, own: (ticket.own ?? []).filter(isCatalogItem) }
 }

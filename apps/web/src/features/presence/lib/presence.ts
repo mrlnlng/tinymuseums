@@ -61,13 +61,13 @@ export interface TicketGrant {
 }
 
 /** Null when presence is off for this site. */
-export type FetchTicket = (room: string, seed: number, key?: string) => Promise<TicketGrant | null>
+export type FetchTicket = (room: string, seed: number) => Promise<TicketGrant | null>
 
-export const fetchTicket: FetchTicket = async (room, seed, key) => {
+export const fetchTicket: FetchTicket = async (room, seed) => {
   const response = await fetch('/api/presence/ticket', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ room, seed, ...(key ? { key } : {}) }),
+    body: JSON.stringify({ room, seed }),
   })
   if (response.status === 404) return null
   if (!response.ok) throw new Error(`ticket ${response.status}`)
@@ -89,8 +89,6 @@ export interface Self {
 export interface PresenceOptions {
   /** Room base: `hall-e<epoch>`, `atelier`, or a personal `r-<slug>`. */
   room: string
-  /** The share key for a private personal room, when the visitor has one. */
-  key?: string
   seed: number
   /** Where we are now; null while the scene is not ready. */
   self(): Self | null
@@ -188,7 +186,7 @@ export function createPresence(options: PresenceOptions): Presence {
     status = 'connecting'
     let failed = false
     try {
-      if (!grant || grant.exp - wallClock() < TICKET_MARGIN_MS) grant = await getTicket(options.room, options.seed, options.key)
+      if (!grant || grant.exp - wallClock() < TICKET_MARGIN_MS) grant = await getTicket(options.room, options.seed)
     } catch {
       grant = null
       failed = true

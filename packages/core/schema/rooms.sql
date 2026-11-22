@@ -6,8 +6,7 @@ create table if not exists rooms (
   theme           text not null,
   kind            text not null check (kind in ('shared', 'personal')),
   owner_member_id uuid references members(id) on delete cascade,
-  visibility      text not null default 'private' check (visibility in ('private', 'link')),
-  share_token     text unique,
+  visibility      text not null default 'private',
   draft           jsonb not null default '[]',
   published       jsonb not null default '[]',
   published_at    timestamptz,
@@ -31,3 +30,10 @@ on conflict (slug) do nothing;
 insert into rooms (slug, theme, kind)
 values ('atelier', 'atelier', 'shared')
 on conflict (slug) do nothing;
+
+-- Share links are gone; a room is let in by the Open sign on its door instead. Rooms shared by link
+-- go back to private.
+alter table rooms drop constraint if exists rooms_visibility_check;
+update rooms set visibility = 'private' where visibility not in ('private', 'open');
+alter table rooms add constraint rooms_visibility_check check (visibility in ('private', 'open'));
+alter table rooms drop column if exists share_token;

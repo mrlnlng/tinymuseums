@@ -16,9 +16,8 @@ export async function GET(
     memberId: session?.member.id ?? null,
     isOwnerArtist: artist ? isHallOwner(artist) : false,
   }
-  const key = new URL(request.url).searchParams.get('key')
   const room = await getRoom(slug)
-  if (!room || !canView(room, { ...actor, shareToken: key })) {
+  if (!room || !canView(room, actor)) {
     return json({ error: 'not_found' }, 404)
   }
 
@@ -31,6 +30,7 @@ export async function GET(
     published: room.published,
     canEdit: edit,
     ...(edit ? { draft: room.draft, draftVersion: room.draftVersion } : {}),
-    ...(owner ? { sharing: { on: room.visibility === 'link', token: room.shareToken } } : {}),
+    open: room.visibility === 'open',
+    ...(owner ? { owner: true } : {}),
   })
 }

@@ -32,7 +32,7 @@ import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import { createPersonalRoom } from '@/features/rooms/personal/room'
 import type { DoorRef } from '@/features/rooms/types'
-import DecorDrawer, { type SharingState } from '@/features/rooms/decorate/DecorDrawer'
+import DecorDrawer from '@/features/rooms/decorate/DecorDrawer'
 import { createDecorController } from '@/features/rooms/decorate/controller'
 import type { WorkKind } from '@/features/rooms/themes/cozy'
 import { CEILING } from '@/features/rooms/themes/room-light'
@@ -71,7 +71,8 @@ interface PersonalRoomProps {
   theme: string
   placements: Placement[]
   ownerName?: string | null
-  shareKey?: string
+  /** The sign on the door says Open. */
+  open: boolean
   canEdit: boolean
   /** The room's length when the page was made; the owner's wallet updates it as they knock through. */
   width: number
@@ -165,7 +166,7 @@ function errorReason(body: unknown): string | null {
   return typeof reason === 'string' ? reason : null
 }
 
-export default function PersonalRoom({ slug, placements, ownerName, shareKey, canEdit, width }: PersonalRoomProps) {
+export default function PersonalRoom({ slug, placements, ownerName, open, canEdit, width }: PersonalRoomProps) {
   const router = useRouter()
   const { play } = useSound()
   const wallet = useWallet()
@@ -185,13 +186,28 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
         slug,
         placements: JSON.parse(placementsKey) as Placement[],
         ownerName,
-        shareKey,
+        open,
+        canEdit,
+        setOpen: async (next) => {
+          try {
+            const response = await fetch(`/api/rooms/${slug}/open`, {
+              method: 'POST',
+              headers: roomHeaders(true),
+              body: JSON.stringify({ open: next }),
+            })
+            return response.ok
+          } catch {
+            return false
+          }
+        },
         decor: controller,
         width: () => widthRef.current,
       }),
-    [slug, placementsKey, ownerName, shareKey, controller],
+    [slug, placementsKey, ownerName, open, canEdit, controller],
   )
 
+  // A visitor steps in through the door under a plaque naming whose room it is.
+  const [arriving, setArriving] = useState(!canEdit && Boolean(ownerName))
   const [isEditing, setIsEditing] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [draft, setDraft] = useState<Placement[]>(placements)
@@ -199,8 +215,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [notice, setNotice] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
-  const [sharing, setSharing] = useState<SharingState | null>(null)
-  const [sharingBusy, setSharingBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   const [carrying, setCarrying] = useState<'new' | 'move' | null>(null)
   const [overTray, setOverTray] = useState(false)
@@ -699,8 +713,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     draftRef.current = next
     setDraft(next)
     setHistory([])
-    const share = record.sharing as { on?: unknown; token?: unknown } | undefined
-    setSharing(share ? { on: share.on === true, token: typeof share.token === 'string' ? share.token : null } : null)
     controller.setPlacements(next)
     controller.setCharacterOpacity(0.3)
     loadedRef.current = true
@@ -783,32 +795,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
     play('harp')
     showToast('Saved! Visitors will see your room like this.')
   }, [clearRetry, controller, leaveEdit, play, saveNow, saveSoon, showToast, slug])
-
-  const changeSharing = useCallback(
-    async (on: boolean) => {
-      setSharingBusy(true)
-      setNotice(null)
-      try {
-        const response = await fetch(`/api/rooms/${slug}/sharing`, {
-          method: 'POST',
-          headers: roomHeaders(true),
-          body: JSON.stringify({ on }),
-        })
-        const body: unknown = await response.json().catch(() => null)
-        if (!response.ok) {
-          setNotice('That sharing setting could not be changed.')
-          return
-        }
-        const record = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
-        setSharing({ on: record.on === true, token: typeof record.token === 'string' ? record.token : null })
-      } catch {
-        setNotice('That sharing setting could not be changed.')
-      } finally {
-        setSharingBusy(false)
-      }
-    },
-    [slug],
-  )
 
   const applyFinish = useCallback(
     (zone: FinishSlot, ref: string) => {
@@ -1300,8 +1286,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
             saveLabel={SAVE_LABELS[saveState]}
             maxPlacements={THING_LIMIT}
             notice={notice}
-            sharing={sharing}
-            sharingBusy={sharingBusy}
             saving={saving}
             canUndo={history.length > 0}
             dropActive={carrying === 'move'}
@@ -1312,7 +1296,6 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
             onFocusPlaced={focusPlaced}
             onUndo={undo}
             onDone={() => void done()}
-            onSharingChange={(on) => void changeSharing(on)}
             onBought={unseeBought}
             onFinish={applyFinish}
             onPreviewFinish={previewFinish}
@@ -1356,6 +1339,12 @@ export default function PersonalRoom({ slug, placements, ownerName, shareKey, ca
         <p className="decor-toast is-error" role="alert">
           {notice}
         </p>
+      ) : null}
+
+      {isReady && arriving ? (
+        <div className="room-arrival" aria-hidden="true" onAnimationEnd={(event) => event.target === event.currentTarget && setArriving(false)}>
+          <span className="room-arrival-plaque">{`${ownerName}'s room`}</span>
+        </div>
       ) : null}
 
       <AnimatePresence>{isReady ? null : <HallSkeleton key="personal-loading" preload={false} />}</AnimatePresence>

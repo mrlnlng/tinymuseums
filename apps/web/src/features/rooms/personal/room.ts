@@ -26,12 +26,21 @@ const DOOR_SIGN = { x: DOOR_X - 0.006, y: DOOR_BASE + 0.627 * GALLERY_DOOR.heigh
 const NAME_SIGN_WIDTH = 0.8
 const NAME_SIGN_HEIGHT = NAME_SIGN_WIDTH * (548 / 719)
 const NAME_SIGN = { x: DOOR_SIGN.x, y: DOOR_SIGN.y - 0.05 - NAME_SIGN_HEIGHT / 2, width: NAME_SIGN_WIDTH }
+/** Open or Closed, hung under the name board; its nail sits at the top of the image. */
+const OPEN_SIGN_WIDTH = 0.56
+const OPEN_SIGN_HEIGHT = OPEN_SIGN_WIDTH * (420 / 600)
+const OPEN_SIGN = { x: DOOR_SIGN.x, y: NAME_SIGN.y - NAME_SIGN_HEIGHT / 2 - 0.02 - OPEN_SIGN_HEIGHT / 2, width: OPEN_SIGN_WIDTH }
 
 export interface PersonalRoomOptions {
   slug: string
   placements: Placement[]
   ownerName?: string | null
-  shareKey?: string
+  /** The sign on the door says Open. */
+  open: boolean
+  /** Only the owner can turn the sign. */
+  canEdit: boolean
+  /** Saves the sign; false when it could not be turned. */
+  setOpen?: (open: boolean) => Promise<boolean>
   decor?: DecorController
   /** The room's current length; it grows when the owner knocks a wall through. */
   width: () => number
@@ -66,7 +75,7 @@ function lightOf(placements: readonly Placement[]): RoomLight {
   }
 }
 
-export function createPersonalRoom({ slug, placements, ownerName, shareKey, decor, width }: PersonalRoomOptions): RoomDef<PersonalArt> {
+export function createPersonalRoom({ slug, placements, ownerName, open, canEdit, setOpen, decor, width }: PersonalRoomOptions): RoomDef<PersonalArt> {
   const doors = { hall: { x: DOOR_X, clearX: DOOR_X + DOOR_CLEAR } }
   return {
     id: 'personal',
@@ -95,6 +104,7 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
         ctx.character.setShade(1 - dark * 0.72, lit.gloom > 0 ? 0.12 + dark * 0.35 : dark * 0.3)
         writeStyle(nameSign, 'filter', signFilter(shadeAt(NAME_SIGN.x, NAME_SIGN.y)))
         writeStyle(doorSign, 'filter', signFilter(shadeAt(DOOR_SIGN.x, DOOR_SIGN.y)))
+        writeStyle(openSign, 'filter', signFilter(shadeAt(OPEN_SIGN.x, OPEN_SIGN.y)))
       }
       backdrop.setFinishes(placements)
       light()
@@ -113,6 +123,35 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
       nameSign.append(nameLine)
       ctx.overlay.append(doorSign)
       if (ownerName) ctx.overlay.append(nameSign)
+
+      const openSign = document.createElement(canEdit ? 'button' : 'div')
+      openSign.className = 'room-open-sign'
+      openSign.innerHTML =
+        '<span class="room-open-sign-card"><span class="room-open-sign-face is-open">Open</span>' +
+        '<span class="room-open-sign-face is-closed">Closed</span></span>'
+      let shownOpen = open
+      function showOpen(): void {
+        openSign.classList.toggle('is-flipped', !shownOpen)
+        openSign.setAttribute('aria-label', shownOpen ? 'Your room is open. Turn the sign to close it.' : 'Your room is closed. Turn the sign to open it.')
+        if (!canEdit) openSign.setAttribute('aria-hidden', 'true')
+      }
+      showOpen()
+      if (canEdit && setOpen) {
+        let turning = false
+        openSign.addEventListener('click', () => {
+          if (turning || decor?.isEditing()) return
+          turning = true
+          shownOpen = !shownOpen
+          showOpen()
+          void setOpen(shownOpen).then((saved) => {
+            turning = false
+            if (saved) return
+            shownOpen = !shownOpen
+            showOpen()
+          })
+        })
+      }
+      ctx.overlay.append(openSign)
 
       function showArrangement(next: Placement[]): void {
         arrangement = next
@@ -144,7 +183,7 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
         },
         cameraBounds: { minX: ROOM_LEFT, maxX: () => width() },
 
-        presence: { key: slug, ticketKey: shareKey },
+        presence: { key: slug },
 
         onShown() {
           if (ctx.arrival.kind === 'opening') {
@@ -175,6 +214,7 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
           const perUnit = frame.viewport.width / (frame.camera.right - frame.camera.left)
           placeLabel(doorSign, DOOR_SIGN, perUnit, frame.camera, frame.viewport, 0.2)
           placeLabel(nameSign, NAME_SIGN, perUnit, frame.camera, frame.viewport, 0.17)
+          placeLabel(openSign, OPEN_SIGN, perUnit, frame.camera, frame.viewport, 0.16)
         },
 
         cameraRise() {
@@ -186,6 +226,7 @@ export function createPersonalRoom({ slug, placements, ownerName, shareKey, deco
           decor?.detach()
           doorSign.remove()
           nameSign.remove()
+          openSign.remove()
           layer.dispose()
           backdrop.dispose()
           hallDoor.dispose()

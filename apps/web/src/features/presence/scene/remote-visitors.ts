@@ -7,6 +7,7 @@ import { clearRigLayer, createRigLayer, disposeRigLayer, loadRig, type Rig } fro
 import { createRigState, rigFacing, stepRigState, type RigState } from '@/features/hall/scene/rig-motion'
 import { isMuted } from '../lib/room-events'
 import type { RemoteVisitor } from '../lib/peers'
+import { createPlayerCard } from './player-card'
 
 export const MAX_SHOWN = 8
 /** Long enough to read: 3 s, plus a little per character, up to 8 s. */
@@ -48,6 +49,8 @@ interface Shown {
   bow: string | null
   motion: RigState
   tag: HTMLDivElement
+  /** Tapping them opens their player card. */
+  hit: HTMLButtonElement
   bubble: HTMLDivElement
   bubbleAt: number
   bubbleWidth: number
@@ -106,6 +109,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
   announcer.setAttribute('aria-live', 'polite')
   host.appendChild(announcer)
 
+  const card = createPlayerCard(host)
   const shown = new Map<string, Shown>()
   const nearest: RemoteVisitor[] = []
   const keep = new Set<string>()
@@ -200,6 +204,8 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
   function forget(entry: Shown): void {
     entry.rig?.dispose()
     entry.tag.remove()
+    entry.hit.remove()
+    if (card.shownFor() === entry.pid) card.hide()
     entry.bubble.remove()
     entry.perch.element.remove()
     entry.helm.element.remove()
@@ -252,10 +258,15 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           tag.className = 'visitor-tag'
           tag.setAttribute('aria-hidden', 'true')
           host.appendChild(tag)
+          const hit = document.createElement('button')
+          hit.type = 'button'
+          hit.className = 'visitor-hit'
+          hit.hidden = true
+          host.appendChild(hit)
           entry = {
             pid: visitor.pid, kind: visitor.look.kind, rig: null,
             costume: visitor.look.costume, bow: visitor.look.bow,
-            motion: createRigState(visitor.facing > 0 ? 'right' : 'left'), tag, bubble: bubbleFor(host), bubbleAt: -Infinity, bubbleWidth: 0,
+            motion: createRigState(visitor.facing > 0 ? 'right' : 'left'), tag, hit, bubble: bubbleFor(host), bubbleAt: -Infinity, bubbleWidth: 0,
             perch: sprite('visitor-perch'), helm: sprite('hall-carried'), cup: sprite('hall-carried'),
           }
           shown.set(visitor.pid, entry)
@@ -274,7 +285,12 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
         const repeat = (names.get(visitor.name) ?? 0) + 1
         names.set(visitor.name, repeat)
         const label = repeat > 1 ? `${visitor.name} ·${repeat}` : visitor.name
-        if (entry.tag.textContent !== label) entry.tag.textContent = label
+        if (entry.tag.textContent !== label) {
+          entry.tag.textContent = label
+          entry.hit.setAttribute('aria-label', `${label}: see their room`)
+        }
+        const home = visitor.home
+        entry.hit.onclick = home ? () => card.toggle(visitor.pid, label, home) : null
 
         const rig = entry.rig
         // Muted visitors still walk about; their messages just don't show.
@@ -295,6 +311,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           const widthPx = (seatPx * image.naturalWidth) / image.naturalHeight
           const onScreen = screenX - widthPx / 2 < viewport.width && screenX + widthPx / 2 > 0
           entry.tag.hidden = !onScreen
+          entry.hit.hidden = true
           if (!onScreen) {
             hideSprites(entry)
             entry.bubble.hidden = true
@@ -329,7 +346,14 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           const onScreen = left < viewport.width && left + canvasWidth > 0
           const behind = Math.abs(visitor.x - selfX) < BEHIND_SELF && Math.abs(visitor.d - (scenery?.depth?.self ?? 0)) < 0.15
           entry.tag.hidden = rig === null || !onScreen || behind
+          entry.hit.hidden = entry.tag.hidden || !visitor.home
+          if (!entry.hit.hidden) {
+            entry.hit.style.width = `${(standPx * 0.62).toFixed(1)}px`
+            entry.hit.style.height = `${standPx.toFixed(1)}px`
+            entry.hit.style.transform = `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, -50%)`
+          }
           if (!rig || !onScreen) {
+            if (card.shownFor() === visitor.pid) card.hide()
             hideSprites(entry)
             entry.bubble.hidden = true
             continue
@@ -360,6 +384,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
         }
 
         entry.tag.style.transform = `translate3d(${screenX.toFixed(1)}px, ${(headY - 6).toFixed(1)}px, 0) translate(-50%, -100%)`
+        card.place(visitor.pid, screenX, headY, viewport.width)
         const showBubble = said !== null && saidAge < bubbleMs(said.text)
         entry.bubble.hidden = !showBubble
         if (showBubble && said) {
@@ -398,6 +423,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
       disposed = true
       own?.bubble.remove()
       for (const entry of shown.values()) forget(entry)
+      card.dispose()
       announcer.remove()
       if (layer) {
         disposeRigLayer(layer)

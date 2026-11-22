@@ -90,7 +90,7 @@ export interface RoomContents {
   npc?: { info(): NpcRoomInfo; shade?(x: number): string | null }
   /** Illustrated edges of the room; the whole camera window stays within these bounds. */
   cameraBounds?: { minX: number; maxX(): number }
-  presence: { key: string; ticketKey?: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
+  presence: { key: string; pose?: () => Pose; scenery?: () => VisitorScenery | null }
   /** Extra gate on top of the stage's own (fonts, character rig, minimum loading time). */
   isReady?(now: number): boolean
   /** An opaque activity covers this scene; keep presence alive without drawing the hidden world. */

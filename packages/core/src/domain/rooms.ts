@@ -6,12 +6,12 @@ import { parsePlacements, validatePlacements, type Placement, type PlacementOwne
 import { FULL_ROOM_WIDTH, roomSizeFor, sizedTheme } from '../rooms/sizes.ts'
 import { THEMES, type ThemeId } from '../rooms/themes.ts'
 import { CLOSET_MESSES, cleanItemId } from '../rooms/work.ts'
-import { newToken } from './auth.ts'
 import { nameOf } from './members.ts'
 import { sealEpoch } from './epoch.ts'
 
 export type RoomKind = 'shared' | 'personal'
-export type RoomVisibility = 'private' | 'link'
+/** 'open' is the sign on the door: anyone may come in, whether or not the owner is there. */
+export type RoomVisibility = 'private' | 'open'
 
 export interface RoomRow {
   slug: string
@@ -19,7 +19,6 @@ export interface RoomRow {
   kind: RoomKind
   ownerMemberId: string | null
   visibility: RoomVisibility
-  shareToken: string | null
   draft: Placement[]
   draftVersion: number
   published: Placement[]
@@ -42,7 +41,6 @@ interface RoomDbRow {
   kind: RoomKind
   ownerMemberId: string | null
   visibility: RoomVisibility
-  shareToken: string | null
   draft: unknown
   draftVersion: number
   published: unknown
@@ -50,8 +48,7 @@ interface RoomDbRow {
 }
 
 const ROOM_COLUMNS = `slug, theme, kind,
-  owner_member_id as "ownerMemberId", visibility,
-  share_token as "shareToken", draft, draft_version as "draftVersion", published,
+  owner_member_id as "ownerMemberId", visibility, draft, draft_version as "draftVersion", published,
   published_at as "publishedAt"`
 
 const SLUG_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -63,7 +60,6 @@ function toRoom(row: RoomDbRow): RoomRow {
     kind: row.kind,
     ownerMemberId: row.ownerMemberId,
     visibility: row.visibility,
-    shareToken: row.shareToken,
     draft: parsePlacements(row.draft) ?? [],
     draftVersion: row.draftVersion,
     published: parsePlacements(row.published) ?? [],
@@ -177,17 +173,9 @@ export async function personalRoomFor(memberId: string): Promise<RoomRow> {
   })
 }
 
-export function canView(
-  room: RoomRow,
-  access: RoomAccess & { shareToken?: string | null },
-): boolean {
-  if (room.kind === 'shared') return true
-  if (access.memberId && room.ownerMemberId === access.memberId) return true
-  return (
-    room.visibility === 'link' &&
-    room.shareToken !== null &&
-    access.shareToken === room.shareToken
-  )
+export function canView(room: RoomRow, access: RoomAccess): boolean {
+  if (room.kind === 'shared' || room.visibility === 'open') return true
+  return Boolean(access.memberId && room.ownerMemberId === access.memberId)
 }
 
 export function canEdit(room: RoomRow, access: RoomAccess): boolean {
@@ -279,18 +267,24 @@ export async function publish(slug: string, expectedVersion?: number): Promise<R
   return toRoom(row)
 }
 
-export async function setSharing(slug: string, on: boolean): Promise<RoomRow | null> {
-  const room = await getRoom(slug)
-  if (!room) return null
-  const token = on ? (room.visibility === 'link' && room.shareToken ? room.shareToken : newToken(18)) : null
+export async function setOpen(slug: string, open: boolean): Promise<RoomRow | null> {
   const row = await queryOne<RoomDbRow>(
     `update rooms
-        set visibility = $2, share_token = $3, updated_at = now()
-      where slug = $1
+        set visibility = $2, updated_at = now()
+      where slug = $1 and kind = 'personal'
       returning ${ROOM_COLUMNS}`,
-    [slug, on ? 'link' : 'private', token],
+    [slug, open ? 'open' : 'private'],
   )
   return row ? toRoom(row) : null
+}
+
+/** The member's own room slug, without creating one. */
+export async function homeSlugOf(memberId: string): Promise<string | null> {
+  const row = await queryOne<{ slug: string }>(
+    `select slug from rooms where kind = 'personal' and owner_member_id = $1`,
+    [memberId],
+  )
+  return row?.slug ?? null
 }
 
 export interface RoomPageView {
@@ -300,17 +294,19 @@ export interface RoomPageView {
   canEdit: boolean
   published: Placement[]
   ownerName: string | null
+  /** The sign on the door says Open. */
+  open: boolean
   /** The room's length; a personal room grows from the closet as it is knocked through. */
   width: number
 }
 
 /**
- * What a room page shows, with access decided in SQL: the share token and owner id never leave
- * the database, so they cannot end up in a page's payload.
+ * What a room page shows, with access decided in SQL: the owner id never leaves the database, so
+ * it cannot end up in a page's payload.
  */
 export async function roomPageView(
   slug: string,
-  access: RoomAccess & { shareToken?: string | null },
+  access: RoomAccess,
 ): Promise<RoomPageView | null> {
   const row = await queryOne<{
     slug: string
@@ -318,6 +314,7 @@ export async function roomPageView(
     published: unknown
     canView: boolean
     canEdit: boolean
+    open: boolean
     display_name: string | null
     name_seed: number | null
     sizes: string[] | null
@@ -325,8 +322,9 @@ export async function roomPageView(
     `select r.slug, r.theme, r.published,
             (r.kind = 'shared'
               or ($2::uuid is not null and r.owner_member_id = $2::uuid)
-              or (r.visibility = 'link' and r.share_token is not null and r.share_token = $3)) as "canView",
-            ((r.kind = 'shared' and $4::boolean)
+              or r.visibility = 'open') as "canView",
+            r.visibility = 'open' as open,
+            ((r.kind = 'shared' and $3::boolean)
               or (r.kind = 'personal' and $2::uuid is not null and r.owner_member_id = $2::uuid)) as "canEdit",
             m.display_name, m.name_seed,
             (select array_agg(w.item_id) from wallet_items w
@@ -334,7 +332,7 @@ export async function roomPageView(
        from rooms r
        left join members m on m.id = r.owner_member_id
       where r.slug = $1`,
-    [slug, access.memberId ?? null, access.shareToken ?? null, access.isOwnerArtist === true],
+    [slug, access.memberId ?? null, access.isOwnerArtist === true],
   )
   if (!row) return null
   return {
@@ -344,6 +342,7 @@ export async function roomPageView(
     canEdit: row.canEdit,
     published: row.canView ? parsePlacements(row.published) ?? [] : [],
     ownerName: row.canView && (row.display_name !== null || row.name_seed !== null) ? nameOf(row).name : null,
+    open: row.open,
     width: row.theme === 'cozy' ? roomSizeFor(row.sizes ?? []).width : FULL_ROOM_WIDTH,
   }
 }

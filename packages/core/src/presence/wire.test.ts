@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseClientMessage, parseRoom, roomName, validRoomBase } from './protocol.ts'
+import { PROTOCOL_VERSION, parseClientMessage, parseRoom, parseServerMessage, roomName, validRoomBase } from './protocol.ts'
+import { ITEMS } from '../economy/catalog.ts'
 import { signTicket, verifyTicket, type Ticket } from './ticket.ts'
 
 const SECRET = 'test-secret'
@@ -22,8 +23,24 @@ test('owned catalog ids ride in the ticket, and an old ticket has none', async (
   const owned = { ...ticket, own: ['bow:kiki', 'character:otter'] }
   assert.deepEqual(await verifyTicket(await signTicket(owned, SECRET), SECRET), owned)
   assert.deepEqual((await verifyTicket(await signTicket(ticket, SECRET), SECRET))?.own, [])
-  const unknown = await signTicket({ ...ticket, own: ['bow:not-real'] } as unknown as Ticket, SECRET)
-  assert.equal(await verifyTicket(unknown, SECRET), null)
+  // A newer site may own items this room server has never heard of: the visitor still joins.
+  const unknown = await signTicket({ ...ticket, own: ['bow:kiki', 'bow:not-real'] } as unknown as Ticket, SECRET)
+  assert.deepEqual((await verifyTicket(unknown, SECRET))?.own, ['bow:kiki'])
+})
+
+test("a visitor's home room rides in the ticket and reaches the others", async () => {
+  const home = { ...ticket, home: 'r-abc12345' }
+  assert.equal((await verifyTicket(await signTicket(home, SECRET), SECRET))?.home, 'r-abc12345')
+  const both = { ...home, own: ['bow:kiki'] }
+  assert.deepEqual(await verifyTicket(await signTicket(both, SECRET), SECRET), both)
+  assert.equal(await verifyTicket(await signTicket({ ...ticket, home: 'hall' }, SECRET), SECRET), null)
+
+  const look = { kind: 'bunny', costume: null, bow: null }
+  const state = { t: 'state', pid: 'pid-12345678', name: 'Velvet Easel', x: 1, vx: 0, facing: 1, look, sit: false, helm: false, cup: false, seq: 1 }
+  const heard = parseServerMessage(JSON.stringify({ ...state, home: 'r-abc12345' }))
+  assert.equal(heard?.t === 'state' && heard.home, 'r-abc12345')
+  const bad = parseServerMessage(JSON.stringify({ ...state, home: '../admin' }))
+  assert.ok(bad?.t === 'state' && !('home' in bad))
 })
 
 test('an expired ticket does not verify', async () => {
@@ -109,4 +126,14 @@ test('depth into a room is carried when sent, and left out when not', () => {
   assert.equal(parseClientMessage(JSON.stringify({ ...state, d: 1.5 })), null)
   assert.equal(parseClientMessage(JSON.stringify({ ...state, d: -0.1 })), null)
   assert.equal(parseClientMessage(JSON.stringify({ ...state, d: '0.5' })), null)
+})
+
+test('a collector with many owned items still fits in a hello', async () => {
+  // What the site used to send: everything but props and cleaning, rooms and wallpaper included.
+  const own = Object.keys(ITEMS).filter((id) => ITEMS[id].kind !== 'prop' && ITEMS[id].kind !== 'clean')
+  const token = await signTicket({ ...ticket, own }, SECRET)
+  const hello = JSON.stringify({ t: 'hello', v: PROTOCOL_VERSION, ticket: token })
+  assert.ok(hello.length > 1024, 'this test should cover the size that used to be refused')
+  assert.deepEqual(parseClientMessage(hello), { t: 'hello', v: PROTOCOL_VERSION, ticket: token })
+  assert.deepEqual((await verifyTicket(token, SECRET))?.own, own)
 })

@@ -27,8 +27,6 @@ const STANDING: Pose = { sit: false, helm: false, cup: false }
 interface Options {
   /** `hall-e<epoch>`, `atelier`, or a personal `r-<slug>`. */
   room: string
-  /** The share key for a private personal room, when the visitor has one. */
-  key?: string
   /** The character host: other visitors draw behind the local one in it. */
   host: HTMLElement
   character: Character
@@ -52,7 +50,7 @@ export interface Room {
 }
 
 /** Shares this page's room with other visitors: call update once a frame after the character's. */
-export function joinRoom({ room, key, host, character, traversal, pose = () => STANDING, scenery = () => null }: Options): Room {
+export function joinRoom({ room, host, character, traversal, pose = () => STANDING, scenery = () => null }: Options): Room {
   const store = defaultStore()
   const prefs = store.getSlot(presenceSlot)
   if (prefs.snapshot().seed === null) prefs.update((current) => ({ ...current, seed: randomSeed() }))
@@ -63,7 +61,6 @@ export function joinRoom({ room, key, host, character, traversal, pose = () => S
   let remoteVisitors: ReturnType<typeof createRemoteVisitors> | null = null
   const presence = createPresence({
     room,
-    key,
     seed,
     self: () => ({ x: traversal.x, vx: traversal.walkVelocity, facing, look: character.look, ...pose() }),
     walkAlone: () => prefs.snapshot().walkAlone.v,

@@ -1499,6 +1499,24 @@
         "src": "home-old-paint@2x.23b3b3a3ba.webp"
       }
     },
+    "home/door-sign-closed": {
+      "w": 600,
+      "h": 420,
+      "x2": {
+        "w": 600,
+        "h": 420,
+        "src": "home-door-sign-closed.f8c93fcbf0.webp"
+      }
+    },
+    "home/door-sign-open": {
+      "w": 600,
+      "h": 420,
+      "x2": {
+        "w": 600,
+        "h": 420,
+        "src": "home-door-sign-open.638354e326.webp"
+      }
+    },
     "home/name-sign": {
       "w": 719,
       "h": 548,

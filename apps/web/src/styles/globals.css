@@ -4677,6 +4677,98 @@ form > .account-switch {
   will-change: transform;
 }
 
+.visitor-hit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.visitor-hit:focus-visible { outline: 3px solid #fff3d6; outline-offset: -3px; border-radius: 40%; }
+
+/* A player's card: a window onto their room, its hearts, and a door that's lit when it's Open. */
+.player-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 26px 10px 10px;
+  border-radius: 18px;
+  background: #fbf4e6;
+  box-shadow: 0 3px 8px rgb(58 29 18 / 30%);
+  pointer-events: auto;
+  will-change: transform;
+  animation: player-card-pop 0.22s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.player-card::after {
+  content: '';
+  position: absolute;
+  left: calc(50% + var(--tail, 0px));
+  bottom: -9px;
+  border: 10px solid transparent;
+  border-bottom: 0;
+  border-top-color: #fbf4e6;
+  transform: translateX(-50%);
+}
+.player-card-window {
+  width: 50px;
+  height: 58px;
+  border: 3px solid #b5552f;
+  border-radius: 25px 25px 4px 4px;
+  background: #f3e3c7 center / 140% auto;
+  box-sizing: border-box;
+}
+.player-card.is-closed .player-card-window { filter: brightness(0.55) sepia(0.4); background-color: #6b4225; }
+.player-card-text { display: flex; flex-direction: column; gap: 4px; max-width: 9em; }
+.player-card-name {
+  color: #4a2b1f;
+  font-family: var(--font-button);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.player-card-hearts { display: flex; gap: 1px; color: #ead6c4; font-size: 13px; line-height: 1; }
+.player-card-hearts .is-full { color: #e0457a; }
+.player-card-door {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 3.5px solid #fbeee0;
+  border-radius: 50%;
+  background: #c22252;
+  box-shadow: 0 2px 5px rgb(58 29 18 / 30%);
+  cursor: pointer;
+}
+.player-card-door svg { display: block; width: 100%; height: 100%; }
+.player-card-door .door-frame { fill: #fbeee0; }
+.player-card-door .door-leaf { fill: #ffd27a; }
+.player-card-door .door-knob { fill: #c22252; }
+.player-card-door:disabled { background: #b8a497; cursor: default; }
+.player-card-door:disabled .door-frame,
+.player-card-door:disabled .door-leaf { fill: #8a6a58; }
+.player-card-door:disabled .door-knob { fill: #fbeee0; }
+.player-card:not(.is-open):not(.is-closed) .player-card-door { opacity: 0.6; }
+.player-card.is-open .player-card-door { animation: player-card-glow 1.6s ease-in-out infinite; }
+.player-card[hidden] { display: none; }
+@keyframes player-card-pop { from { opacity: 0; scale: 0.85; } }
+@keyframes player-card-glow {
+  50% { box-shadow: 0 0 0 5px rgb(255 217 138 / 55%), 0 2px 5px rgb(58 29 18 / 30%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-card, .player-card.is-open .player-card-door { animation: none; }
+}
+
 .visitor-bubble {
   position: absolute;
   top: 0;
@@ -5381,6 +5473,56 @@ form > .account-switch {
   will-change: transform, opacity;
 }
 
+/* Open on one face, Closed on the other; turning it spins the board on its nail. */
+.room-open-sign {
+  position: absolute;
+  top: 0;
+  left: 0;
+  aspect-ratio: 600 / 420;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  perspective: 6em;
+  pointer-events: none;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+}
+button.room-open-sign { pointer-events: auto; cursor: pointer; }
+button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset: 2px; border-radius: 12px; }
+.room-open-sign-card {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 10%;
+  transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.room-open-sign.is-flipped .room-open-sign-card { transform: rotateY(180deg); }
+.room-open-sign-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The painted panel's middle sits two thirds of the way down, under the ropes. */
+  padding-top: 1.55em;
+  background: var(--asset-home-door-sign-open) center / 100% 100% no-repeat;
+  color: #c22252;
+  font-family: var(--font-title);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  backface-visibility: hidden;
+}
+.room-open-sign-face.is-closed {
+  background-image: var(--asset-home-door-sign-closed);
+  color: #f6e2b8;
+  transform: rotateY(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-open-sign-card { transition: none; }
+}
+
 /* Decorate button and first-visit hint. */
 .decor-enter-wrap {
   position: absolute;
@@ -5555,42 +5697,6 @@ form > .account-switch {
   padding: 7px 16px;
   font-size: 14px;
   white-space: nowrap;
-}
-
-.decor-share {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: #fff3dc;
-  font-size: 12.5px;
-  color: var(--ink);
-}
-
-.decor-share-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.decor-share-toggle input { accent-color: var(--script); width: 16px; height: 16px; }
-.decor-share-row { display: flex; gap: 6px; }
-
-.decor-share-url {
-  flex: 1;
-  min-width: 0;
-  padding: 5px 8px;
-  border: 2px solid var(--plaque);
-  border-radius: 8px;
-  background: #fffaf0;
-  color: var(--ink-soft);
-  font: 11px ui-monospace, monospace;
-}
-
-.decor-copy {
-  padding: 4px 12px;
-  border: 0;
-  border-radius: 99px;
-  background: var(--pink);
-  color: var(--ink);
-  font-family: var(--font-button);
-  cursor: pointer;
 }
 
 .decor-notice {
@@ -7515,4 +7621,44 @@ form > .account-switch {
 @media (prefers-reduced-motion: reduce) {
   .closet-view, .closet-stage, .closet-pop, .closet-price .keep-stamp-price, .closet-stage.is-loading::before { animation: none; }
   .closet-bubble { transition: none; }
+}
+
+/* A visitor's arrival: the dark opens in a circle on them, under a plaque naming the room. */
+.room-arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 68%, transparent var(--iris), rgb(42 20 16 / 92%) calc(var(--iris) + 1px));
+  animation: room-arrival-iris 2.6s cubic-bezier(0.5, 0, 0.3, 1) forwards;
+}
+@property --iris { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.room-arrival-plaque {
+  position: absolute;
+  top: calc(56px + env(safe-area-inset-top));
+  left: 50%;
+  padding: 10px 26px 12px;
+  border-radius: 6px;
+  background: #e9b673;
+  box-shadow: inset 0 -4px 0 #c98c4f, 0 3px 8px rgb(58 29 18 / 35%);
+  color: #4a2b1f;
+  font-family: var(--font-title);
+  font-size: 22px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: room-arrival-plaque 2.6s ease forwards;
+}
+@keyframes room-arrival-iris {
+  0% { --iris: 0px; }
+  30% { --iris: 110px; }
+  65% { --iris: 150px; opacity: 1; }
+  100% { --iris: 150vmax; opacity: 0; }
+}
+@keyframes room-arrival-plaque {
+  0% { opacity: 0; translate: 0 -10px; }
+  15%, 75% { opacity: 1; translate: 0 0; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-arrival { animation-duration: 1.4s; }
 }

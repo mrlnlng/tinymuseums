@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { canView, env, exportWallet, getRoom, hitForVisitor, memberName } from '@tiny/core'
+import { canView, env, exportWallet, getRoom, hitForVisitor, homeSlugOf, memberName } from '@tiny/core'
 import { ITEMS, isCatalogItem } from '@tiny/core/economy'
 import { TICKET_TTL_MS, nameFromSeed, signTicket, validRoomBase, validSeed } from '@tiny/core/presence'
 import { clientIp } from '@/shared/lib/client-ip'
@@ -30,31 +30,30 @@ export async function POST(request: Request) {
 
   const body = await readMemberBody(request, MAX_BODY_BYTES)
   if (!body.ok) return body.response
-  const { room, seed, key } = (body.body ?? {}) as { room?: unknown; seed?: unknown; key?: unknown }
+  const { room, seed } = (body.body ?? {}) as { room?: unknown; seed?: unknown }
   if (!validRoomBase(room) || !validSeed(seed)) return json({ error: 'invalid' }, 400)
 
   const session = await currentMember()
   if (room.startsWith('r-')) {
-    const shareKey = typeof key === 'string' && key.length <= 128 ? key : null
     const found = await getRoom(room)
-    if (!found || !canView(found, { memberId: session?.member.id ?? null, shareToken: shareKey })) {
+    if (!found || !canView(found, { memberId: session?.member.id ?? null })) {
       return json({ error: 'forbidden' }, 403)
     }
   }
-  const [member, wallet] = session
-    ? await Promise.all([memberName(session.member.id, seed), exportWallet(session.member.id)])
-    : [null, null]
+  const [member, wallet, home] = session
+    ? await Promise.all([memberName(session.member.id, seed), exportWallet(session.member.id), homeSlugOf(session.member.id)])
+    : [null, null, null]
   const name = member?.name ?? nameFromSeed(seed)
   const own = wallet
     ? wallet.items
         .map((item) => item.item_id)
-        // Only what others can see worn; a room server built before props would refuse them.
-        .filter((id) => isCatalogItem(id) && ITEMS[id].kind !== 'prop' && ITEMS[id].kind !== 'clean')
+        // Only what others can see worn: clothes and characters, never rooms, props or wallpaper.
+        .filter((id) => isCatalogItem(id) && (ITEMS[id].kind === 'piece' || ITEMS[id].kind === 'character'))
     : []
   const exp = Date.now() + TICKET_TTL_MS
   // A ticket without `own` still passes a room server deployed before ownership existed.
   const ticket = await signTicket(
-    { pid: randomBytes(12).toString('base64url'), name, room, exp, ...(own.length > 0 ? { own } : {}) },
+    { pid: randomBytes(12).toString('base64url'), name, room, exp, ...(own.length > 0 ? { own } : {}), ...(home ? { home } : {}) },
     env.presenceSecret,
   )
   return json({ ticket, exp, url: presenceUrl(request) })

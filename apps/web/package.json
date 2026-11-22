@@ -5,6 +5,7 @@
   "scripts": {
     "assets:models": "node tooling/compose-atelier.mjs && node tooling/prepare-models.mjs",
     "assets:pond-path": "node tooling/bake-pond-path.mjs",
+    "assets:shopkeeper": "node tooling/bake-shopkeeper.mjs",
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",

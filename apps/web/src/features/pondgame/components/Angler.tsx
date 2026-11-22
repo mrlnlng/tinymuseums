@@ -81,6 +81,19 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
     const bend = { armFront: swingRef.current }
     motion.bend = bend
     const pose: RigAttachmentPose = { x: 0, y: 0, width: 0, rotation: 0 }
+    // Sizes are read on resize only: reading them in the draw loop forced a layout every frame.
+    // The world is only ever translated, never scaled, so its client size is its drawn size.
+    const size = { worldW: 0, worldH: 0, canvasW: 0, canvasH: 0 }
+    const measure = () => {
+      size.worldW = world.clientWidth
+      size.worldH = world.clientHeight
+      size.canvasW = canvas.clientWidth
+      size.canvasH = canvas.clientHeight
+    }
+    measure()
+    const resized = new ResizeObserver(measure)
+    resized.observe(world)
+    resized.observe(canvas)
 
     void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then(async (loaded) => {
       if (disposed) { loaded.dispose(); return }
@@ -104,7 +117,7 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
         // Resizing changes placement, not the rig's lifetime or WebGL context.
         const box = boxRef.current
         const height = box.height * rig.spriteScale
-        const worldAspect = world.clientWidth / Math.max(1, world.clientHeight)
+        const worldAspect = size.worldW / Math.max(1, size.worldH)
         const width = height * rig.aspect / worldAspect
         const frame = { left: box.left + box.width / 2 - width / 2, top: box.top + box.height - height * rig.feet, width, height }
         const key = `${frame.left},${frame.top},${frame.width},${frame.height}`
@@ -113,10 +126,8 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
           onPawRef.current(undefined)
           setFrame(frame)
         }
-        const px = canvas.clientHeight
-        const c = canvas.getBoundingClientRect()
-        const w = world.getBoundingClientRect()
-        const placed = w.width > 0 && w.height > 0 && Math.abs(c.height - frame.height * w.height) < 1 && Math.abs(c.width - frame.width * w.width) < 1
+        const px = size.canvasH
+        const placed = size.worldW > 0 && size.worldH > 0 && Math.abs(size.canvasH - frame.height * size.worldH) < 1 && Math.abs(size.canvasW - frame.width * size.worldW) < 1
         if (px > 0 && placed) {
           bend.armFront = reducedRef.current ? swingRef.current : bend.armFront + (swingRef.current - bend.armFront) * (1 - Math.exp(-dt * 24))
           rig.render(motion, reducedRef.current ? 0 : dt, px, window.devicePixelRatio)
@@ -129,11 +140,11 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
                 over.width = canvas.width
                 over.height = canvas.height
               }
-              const density = canvas.width / Math.max(1, c.width)
+              const density = canvas.width / Math.max(1, size.canvasW)
               ink.clearRect(0, 0, over.width, over.height)
               ink.save()
               ink.beginPath()
-              ink.arc(pose.x * density, pose.y * density, PAW_REACH * c.height * density, 0, Math.PI * 2)
+              ink.arc(pose.x * density, pose.y * density, PAW_REACH * size.canvasH * density, 0, Math.PI * 2)
               ink.clip()
               ink.drawImage(canvas, 0, 0)
               ink.restore()
@@ -144,7 +155,8 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
               reported = now
               reportedX = pose.x
               reportedY = pose.y
-              onPawRef.current({ x: (c.left + pose.x - w.left) / w.width, y: (c.top + pose.y - w.top) / w.height })
+              // The canvas fills its host, which sits at frame's fractions of the world.
+              onPawRef.current({ x: frame.left + pose.x / size.worldW, y: frame.top + pose.y / size.worldH })
             }
           }
         }
@@ -162,6 +174,7 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
       disposed = true
       cancelAnimationFrame(raf)
       window.clearTimeout(timer)
+      resized.disconnect()
       rig?.dispose()
       canvas.remove()
     }

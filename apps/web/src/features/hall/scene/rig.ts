@@ -114,10 +114,10 @@ export interface Rig {
   /** Dresses this rig in pieces that are not part of the shared wardrobe. */
   wear(pieces: readonly RigPiece[]): Promise<void>
   /**
-   * Repaints this rig's own body layers pixel by pixel, for a character such as an NPC that must
-   * not look like a visitor. Rigs drawn into a shared layer share textures and are left alone.
+   * Swaps this rig's own body textures for pre-painted ones, matched by texture name, for a
+   * character such as an NPC that must not look like a visitor. Rigs in a shared layer are left alone.
    */
-  repaint(pixel: (rgba: Uint8ClampedArray, at: number) => void): void
+  paintWith(images: Readonly<Record<string, string>>): Promise<void>
   /** `at` is the top-left corner in CSS pixels, for a rig drawn into a layer. */
   render(state: RigState, dt: number, height: number, pixelRatio: number, at?: { left: number; top: number }): void
   projectAttachment(anchor: RigAttachment, out: RigAttachmentPose): boolean
@@ -534,32 +534,25 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
         }
       })
     },
-    repaint(pixel) {
+    async paintWith(images) {
       if (layer) return
+      const meshes: THREE.Mesh[] = []
       model.traverse((node) => {
         if (!(node instanceof THREE.Mesh) || node.userData.layer !== 'character') return
+        const name = (node.material as THREE.MeshBasicMaterial).map?.name
+        if (name && images[name]) meshes.push(node)
+      })
+      const loader = new THREE.TextureLoader()
+      const maps = await Promise.all(meshes.map((node) => loader.loadAsync(images[(node.material as THREE.MeshBasicMaterial).map!.name])))
+      meshes.forEach((node, index) => {
         // The material is shared with every clone of this model; repaint a copy of it.
         const material = (node.material as THREE.MeshBasicMaterial).clone()
-        node.material = material
-        own.materials.add(material)
-        const source = material.map?.image as CanvasImageSource & { width: number; height: number } | undefined
-        if (!material.map || !source) return
-        const canvas = document.createElement('canvas')
-        canvas.width = source.width
-        canvas.height = source.height
-        const paint = canvas.getContext('2d', { willReadFrequently: true })
-        if (!paint) return
-        paint.drawImage(source, 0, 0)
-        const image = paint.getImageData(0, 0, canvas.width, canvas.height)
-        for (let at = 0; at < image.data.length; at += 4) {
-          if (image.data[at + 3] > 0) pixel(image.data, at)
-        }
-        paint.putImageData(image, 0, 0)
-        const map = paintedMap(new THREE.CanvasTexture(canvas))
-        map.flipY = material.map.flipY
+        const map = paintedMap(maps[index])
+        map.flipY = material.map!.flipY
         own.textures.add(map)
+        own.materials.add(material)
         material.map = map
-        material.needsUpdate = true
+        node.material = material
       })
     },
     render(state, dt, nextHeight, pixelRatio, at) {

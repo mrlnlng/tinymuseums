@@ -1,6 +1,7 @@
 import { loadRig, type Rig, type RigPiece } from '@/features/hall/scene/rig'
 import { createRigState, stepRigState } from '@/features/hall/scene/rig-motion'
-import { assetUrl } from '@/shared/lib/assets'
+import manifest from '@/generated/asset-manifest.json'
+import { assetUrl, builtUrl } from '@/shared/lib/assets'
 
 export const SHOPKEEPER_NAME = 'Marlow'
 
@@ -11,37 +12,11 @@ const OUTFIT: readonly RigPiece[] = [
   { bone: 'head', image: assetUrl('pond/fishing-hat', { density: 3 }), x: 218, y: 250, width: 1133, height: 743, drawOrder: 12, hides: ['otter_star'] },
 ]
 
-/** Marlow's coat, as a hue in degrees and multipliers on the otter's own saturation and lightness. */
-const COATS = {
-  silver: { hue: 32, saturation: 0.32, lightness: 1.1 },
-  ginger: { hue: 20, saturation: 1.45, lightness: 1.08 },
-  cocoa: { hue: 16, saturation: 0.8, lightness: 0.72 },
-} as const
-const COAT = COATS.silver
-
-/** Shifts the brown fur and leaves the outline, eyes, cheeks and mouth as painted. */
-function recolourFur(px: Uint8ClampedArray, at: number): void {
-  const r = px[at] / 255, g = px[at + 1] / 255, b = px[at + 2] / 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  const l = (max + min) / 2
-  if (max === min || l < 0.3 || l > 0.9) return
-  const d = max - min
-  const s = d / (1 - Math.abs(2 * l - 1))
-  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
-  h = (h * 60 + 360) % 360
-  // Fur and belly sit between 12° and 34°; the pink cheeks are redder and stay put.
-  if (h < 12 || h > 34 || s < 0.15) return
-  const nl = Math.min(0.95, l * COAT.lightness)
-  const ns = Math.min(1, s * COAT.saturation)
-  const c = (1 - Math.abs(2 * nl - 1)) * ns
-  const hp = COAT.hue / 60
-  const x = c * (1 - Math.abs((hp % 2) - 1))
-  const [r1, g1, b1] = hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : [0, c, x]
-  const m = nl - c / 2
-  px[at] = Math.round((r1 + m) * 255)
-  px[at + 1] = Math.round((g1 + m) * 255)
-  px[at + 2] = Math.round((b1 + m) * 255)
-}
+// Marlow's silver coat is baked into the otter's textures by tooling/bake-shopkeeper.mjs, and
+// only used with the model it was baked from: a re-exported otter needs a fresh bake.
+const COAT = manifest.shopkeeper.model === manifest.models.otterRig.src
+  ? Object.fromEntries(Object.entries(manifest.shopkeeper.maps).map(([name, file]) => [name, builtUrl(file)]))
+  : null
 
 const GREETINGS = [
   'Evening! Worms are on the house.',
@@ -85,7 +60,9 @@ export function createShopkeeper(host: HTMLElement) {
   void loadRig(canvas, 'otter').then(async (loaded) => {
     if (disposed) { loaded.dispose(); return }
     loaded.setCostume(null)
-    loaded.repaint(recolourFur)
+    if (COAT) await loaded.paintWith(COAT)
+    else console.warn('[pond] the shopkeeper coat was baked from an older otter; rerun tooling/bake-shopkeeper.mjs')
+    if (disposed) { loaded.dispose(); return }
     await loaded.wear(OUTFIT)
     if (disposed) { loaded.dispose(); return }
     rig = loaded

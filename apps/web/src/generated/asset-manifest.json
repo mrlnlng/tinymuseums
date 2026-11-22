@@ -2572,5 +2572,20 @@
     "src": "atelier-door.dbe7c2dc1d.webp",
     "width": 1112,
     "height": 1590
+  },
+  "shopkeeper": {
+    "model": "otter-rig-dressed.f4564747ed.glb",
+    "coat": "silver",
+    "maps": {
+      "otter_arm_L": "pond-keeper-otter-arm-L.ec48d5bf4f.webp",
+      "otter_arm_R": "pond-keeper-otter-arm-R.3b536c41c1.webp",
+      "otter_ear_L": "pond-keeper-otter-ear-L.3c8e8ea7ed.webp",
+      "otter_ear_R": "pond-keeper-otter-ear-R.fa01febbac.webp",
+      "otter_eye_L": "pond-keeper-otter-eye-L.699c19e808.webp",
+      "otter_eye_R": "pond-keeper-otter-eye-R.5cc5fde911.webp",
+      "otter_head": "pond-keeper-otter-head.1bf3dd0ed9.webp",
+      "otter_star": "pond-keeper-otter-star.63203a87b2.webp",
+      "otter_torso": "pond-keeper-otter-torso.50f1c13bb1.webp"
+    }
   }
 }

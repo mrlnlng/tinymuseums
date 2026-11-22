@@ -490,6 +490,8 @@ export function createPondRoom({
           across += x
           into += d
         }
+        // A sideways flick-hop walks along the bank like a held arrow key, so flicks chain into the flip here too.
+        if (across === 0 && into === 0) across = traversal.hopHeading
         let moved: boolean
         if (across !== 0 || into !== 0) {
           arrival = null

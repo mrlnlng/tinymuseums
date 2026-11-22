@@ -280,6 +280,11 @@ export class Traversal {
     return true
   }
 
+  /** Which way flick-hops are walking the bunny now (-1, 0 or 1), for rooms that walk it themselves. */
+  get hopHeading(): number {
+    return this.hopDirection
+  }
+
   /** Queues a jump; false when the character cannot jump now (held, locked or in the air). */
   jump(): boolean {
     if (this.locked || this.heldAt !== null || this.height > 0) return false

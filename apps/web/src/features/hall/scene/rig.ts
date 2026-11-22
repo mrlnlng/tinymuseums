@@ -508,6 +508,8 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
     releaseRenderer()
   }
 
+  await renderer.compileAsync(scene, camera).catch(() => {})
+
   return {
     kind,
     aspect: frame.width / frameHeight,

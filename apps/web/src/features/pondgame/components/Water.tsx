@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { assetUrl } from '@/shared/lib/assets'
+import { avifKnown } from '@/shared/lib/avif'
 import Angler from './Angler'
 import layout from '../../../../public/assets/pond/layout.json'
 import {
@@ -354,8 +355,8 @@ export default function Water({
 
   return (
     <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
-      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: 3 })} alt="" style={LEFT_STYLE} draggable={false} />}
-      <img className="pond-scene" src={assetUrl('pond/scene', { density: 3 })} alt="" draggable={false} />
+      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: 3, avif: avifKnown() })} alt="" style={LEFT_STYLE} draggable={false} />}
+      <img className="pond-scene" src={assetUrl('pond/scene', { density: 3, avif: avifKnown() })} alt="" draggable={false} />
       <img className="pond-bridge" src={assetUrl('pond/bridge', { density: 3 })} alt="" style={box(layout.bridge)} draggable={false} />
       <img className="pond-sign" src={assetUrl('pond/pond-sign', { density: 3 })} alt="" style={narrow ? SIGN_STYLE_NARROW : SIGN_STYLE} draggable={false} />
       <div className="pond-score" style={narrow ? SCORE_STYLE_NARROW : SCORE_STYLE}>

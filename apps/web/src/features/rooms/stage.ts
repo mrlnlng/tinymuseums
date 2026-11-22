@@ -21,6 +21,7 @@ import { linkedDoor } from './links'
 import { createNearby, type Nearby } from './nearby'
 import { createMinimap, MAP_PLACES } from './minimap'
 import { createPerfMeter } from './perf'
+import { warmUp } from './warm'
 import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
@@ -269,9 +270,10 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       isQuiet: () => isQuiet(entry),
     }
 
+    let contents: RoomContents
     try {
       entry.ctx = ctx
-      entry.contents = entry.room.build(ctx, art)
+      contents = entry.room.build(ctx, art)
     } catch (error) {
       if (isCurrent(entry)) {
         entry.handlers.onError(String(error))
@@ -279,7 +281,14 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
         current = null
       }
       closeEntry(entry)
+      return
     }
+    await warmUp(stage.renderer, scene, stage.rig.camera)
+    if (!isCurrent(entry)) {
+      contents.dispose()
+      return
+    }
+    entry.contents = contents
   }
 
   function enter<Art>(room: RoomDef<Art>, arrival: Arrival, handlers: StageHandlers): StageRoom {

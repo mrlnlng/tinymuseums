@@ -9,6 +9,12 @@ const AVIF_PROBE =
   'AAEAAAAzbWRhdBIACgQYAAYVMgkcgKaRAAIhHkgSAAoHOAAGEBDQaTILHIAppppEAACwE3I='
 
 let probe: Promise<boolean> | null = null
+let known = false
+
+/** True once the probe has passed; for code that runs after it and cannot wait. */
+export function avifKnown(): boolean {
+  return known
+}
 
 // One decode test decides the extension for every sprite, so nothing pays a
 // failed request to find out the browser cannot read AVIF.
@@ -20,7 +26,7 @@ export function supportsAvif(): Promise<boolean> {
         return
       }
       const img = new Image()
-      img.onload = () => resolve(img.naturalWidth > 0)
+      img.onload = () => resolve((known = img.naturalWidth > 0))
       img.onerror = () => resolve(false)
       img.src = AVIF_PROBE
     })

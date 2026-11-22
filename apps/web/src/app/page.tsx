@@ -13,9 +13,9 @@ export const dynamic = 'force-dynamic'
 
 const [BRAND_OWNER, ...BRAND_REST] = BRAND.split(' ')
 
-function Decor({ name, className }: { name: keyof typeof manifest.atelier; className: string }) {
+function Decor({ name, className, fetchPriority }: { name: keyof typeof manifest.atelier; className: string; fetchPriority?: 'high' }) {
   const { src, width, height } = manifest.atelier[name]
-  return <img className={className} src={builtUrl(src)} width={width} height={height} alt="" />
+  return <img className={className} src={builtUrl(src)} width={width} height={height} alt="" fetchPriority={fetchPriority} />
 }
 
 export default function LandingPage() {
@@ -29,8 +29,9 @@ export default function LandingPage() {
         {/* The phone layout's stage: side drapes and a chandelier in place of the string lights. */}
         <div className="landing-stage">
           <Decor name="curtainSwag" className="landing-swag" />
-          <Decor name="curtainDrape" className="landing-drape is-left" />
-          <Decor name="curtainDrape" className="landing-drape is-right" />
+          {/* The drape is the largest thing on a phone's first screen. */}
+          <Decor name="curtainDrape" className="landing-drape is-left" fetchPriority="high" />
+          <Decor name="curtainDrape" className="landing-drape is-right" fetchPriority="high" />
           <AssetImage name="landing/chandelier" className="landing-chandelier" />
         </div>
 
@@ -62,12 +63,13 @@ export default function LandingPage() {
           <AssetImage name="landing/book" className="landing-book" />
         </div>
         <div className="landing-prop is-cat">
-          <AssetImage name="landing/otter" className="landing-cat" />
+          <AssetImage name="landing/otter" className="landing-cat" fetchPriority="low" />
         </div>
         <div className="landing-walker">
-          <AssetImage name="landing/otter-walk" className="landing-walker-cat" />
-          <AssetImage name="landing/peek-bunny" className="landing-peeker" />
-          <AssetImage name="landing/peek-cat" className="landing-peeker" />
+          {/* These walk or peek in later, so they wait behind what shows first. */}
+          <AssetImage name="landing/otter-walk" className="landing-walker-cat" fetchPriority="low" />
+          <AssetImage name="landing/peek-bunny" className="landing-peeker" fetchPriority="low" />
+          <AssetImage name="landing/peek-cat" className="landing-peeker" fetchPriority="low" />
         </div>
       </div>
 

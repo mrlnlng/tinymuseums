@@ -529,12 +529,14 @@
       "x2": {
         "w": 1997,
         "h": 1349,
-        "src": "pond-scene@2x.34f89fae1d.webp"
+        "src": "pond-scene@2x.34f89fae1d.webp",
+        "avif": "pond-scene@2x.5c565aaf27.avif"
       },
       "x3": {
         "w": 2995,
         "h": 2023,
-        "src": "pond-scene@3x.c56b95f73e.webp"
+        "src": "pond-scene@3x.c56b95f73e.webp",
+        "avif": "pond-scene@3x.90269177e1.avif"
       }
     },
     "pond/splash": {
@@ -634,12 +636,14 @@
       "x2": {
         "w": 1212,
         "h": 1349,
-        "src": "pond-scene-left@2x.5af353b81e.webp"
+        "src": "pond-scene-left@2x.5af353b81e.webp",
+        "avif": "pond-scene-left@2x.2e70467803.avif"
       },
       "x3": {
         "w": 1817,
         "h": 2023,
-        "src": "pond-scene-left@3x.6fc5e6c88c.webp"
+        "src": "pond-scene-left@3x.6fc5e6c88c.webp",
+        "avif": "pond-scene-left@3x.4f4e398833.avif"
       }
     },
     "pond/bridge": {

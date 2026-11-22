@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import { assetUrl } from '@/shared/lib/assets'
+import { supportsAvif } from '@/shared/lib/avif'
+import { yieldToMain } from '@/shared/lib/yield'
 import { POND_LANDMARKS } from './landmarks'
 import layout from '../../../../public/assets/pond/layout.json'
 
@@ -33,8 +35,9 @@ export const EDGE_BANDS = 5
 export const EDGE_OVERLAP = 0.85
 
 function loadTexture(name: 'pond/forest-door-sign' | 'pond/scene' | 'pond/scene-left' | 'pond/bridge' | 'pond/stone-path' | 'pond/lily' | 'pond/sparkles' | 'pond/cattail', renderer?: THREE.WebGLRenderer): Promise<THREE.Texture> {
-  return new THREE.TextureLoader()
-    .loadAsync(assetUrl(name, { density: 3 }))
+  return supportsAvif()
+    .then((avif) => new THREE.TextureLoader().loadAsync(assetUrl(name, { density: 3, avif })))
+    .then(decoded)
     .then((texture) => {
       texture.colorSpace = THREE.SRGBColorSpace
       texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 8
@@ -43,6 +46,12 @@ function loadTexture(name: 'pond/forest-door-sign' | 'pond/scene' | 'pond/scene-
       texture.needsUpdate = true
       return texture
     })
+}
+
+/** Decodes off the main thread now, instead of inside the first draw or upload. */
+async function decoded(texture: THREE.Texture): Promise<THREE.Texture> {
+  await (texture.image as HTMLImageElement).decode?.().catch(() => {})
+  return texture
 }
 
 function imageOf(texture: THREE.Texture): HTMLImageElement | ImageBitmap | null {
@@ -183,7 +192,7 @@ const TUFT = [150, 190, 72]
  * Keep only the stones, warmed and dabbed with moss, set into the lawn by their own shadow
  * and a faint trodden trail, so the painted grass shows between them.
  */
-function pathTexture(texture: THREE.Texture): THREE.Texture {
+async function pathTexture(texture: THREE.Texture): Promise<THREE.Texture> {
   const image = imageOf(texture)
   if (!image) return texture
   const { width, height } = sizeOf(image)
@@ -204,7 +213,9 @@ function pathTexture(texture: THREE.Texture): THREE.Texture {
   const tuft = tuftInk.createImageData(width, height)
   const worn = trailInk.createImageData(width, height)
   const data = pixels.data
+  const slice = width * 4 * Math.ceil(height / 24)
   for (let i = 0; i < data.length; i += 4) {
+    if (i > 0 && i % slice === 0) await yieldToMain()
     const alpha = data[i + 3]
     if (alpha === 0) continue
     const r = data[i]
@@ -228,6 +239,7 @@ function pathTexture(texture: THREE.Texture): THREE.Texture {
   stoneInk.putImageData(stone, 0, 0)
   tuftInk.putImageData(tuft, 0, 0)
   trailInk.putImageData(worn, 0, 0)
+  await yieldToMain()
 
   // Brush dabs keep the stones from reading as flat vector shapes.
   stoneInk.globalCompositeOperation = 'source-atop'
@@ -254,8 +266,10 @@ function pathTexture(texture: THREE.Texture): THREE.Texture {
     paint.fillRect(0, 0, width, height)
     return copy
   }
+  await yieldToMain()
   ink.globalAlpha = 0.2
   ink.drawImage(softened(softened(tinted(trail, '#c9c27a'), 24), 12), 0, 0)
+  await yieldToMain()
   ink.globalAlpha = 0.55
   ink.drawImage(softened(tinted(stones, '#2f5a22'), 10), 0, 14 * unit)
   ink.globalAlpha = 1
@@ -282,7 +296,7 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
     loadTexture('pond/forest-door-sign', renderer),
     loadTexture('pond/cattail', renderer),
     ...POND_LANDMARKS.map(async (landmark) => {
-      const texture = await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image))
+      const texture = await decoded(await new THREE.TextureLoader().loadAsync(assetUrl(landmark.image)))
       texture.colorSpace = THREE.SRGBColorSpace
       texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4
       return texture
@@ -297,17 +311,22 @@ export async function loadPondArt(renderer?: THREE.WebGLRenderer): Promise<PondA
   const textures = results.map((result) => (result as PromiseFulfilledResult<THREE.Texture>).value)
   const [scene, lily, sparkles, left, bridge, path, gateSign, cattail] = textures
   const grass = colorAt(scene, 0.995, FALLBACK_GRASS)
+  const stones = await pathTexture(path)
+  await yieldToMain()
+  const leftEdge = edgeTexture(scene, 'left', grass, left)
+  await yieldToMain()
+  const rightEdge = edgeTexture(scene, 'right', grass)
   return {
     scene,
     left,
     bridge,
-    path: pathTexture(path),
+    path: stones,
     lily,
     sparkles,
     cattail,
     gateSign,
     landmarks: Object.fromEntries(POND_LANDMARKS.map((landmark, index) => [landmark.kind, textures[index + 8]])),
-    edges: { left: edgeTexture(scene, 'left', grass, left), right: edgeTexture(scene, 'right', grass) },
+    edges: { left: leftEdge, right: rightEdge },
     sky: colorAt(scene, 0.005, FALLBACK_SKY),
     grass,
   }

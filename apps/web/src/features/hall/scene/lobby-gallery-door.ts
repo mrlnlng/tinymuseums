@@ -35,7 +35,9 @@ export function createLobbyGalleryDoor(scene: THREE.Scene, host: HTMLElement, on
     sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean) {
       cue.disabled = !enabled
       const perUnit = viewport.width / (camera.right - camera.left)
-      cue.hidden = !placeLabel(cue, { x: GALLERY_DOOR.lobbyX, y: sign.centerY, width: sign.width * 0.76 }, perUnit, camera, viewport, 0.12)
+      // Written only on change, so the cue does not force a style recalc every frame.
+      const hidden = !placeLabel(cue, { x: GALLERY_DOOR.lobbyX, y: sign.centerY, width: sign.width * 0.76 }, perUnit, camera, viewport, 0.12)
+      if (cue.hidden !== hidden) cue.hidden = hidden
     },
     dispose() { cue.remove(); door.dispose(); disposeBoards(scene, group) },
   }

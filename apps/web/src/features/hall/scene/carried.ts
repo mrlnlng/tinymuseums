@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { Character, Pose } from './character'
 import { CONFIG } from './config'
-import type { Viewport } from './overlay'
+import { writeHidden, type Viewport } from './overlay'
 import type { CharacterKind, RigAttachment } from './rig'
 
 export type CarriedState = 'away' | 'to-bunny' | 'held' | 'back'
@@ -38,7 +38,7 @@ export function createCarried(
   sprite.alt = ''
   sprite.setAttribute('aria-hidden', 'true')
   sprite.src = image.src
-  sprite.hidden = true
+  writeHidden(sprite, true)
   host.appendChild(sprite)
 
   let state: CarriedState = 'away'
@@ -88,14 +88,14 @@ export function createCarried(
 
     conceal(hidden) {
       concealed = hidden
-      sprite.hidden = state === 'away' || (state === 'held' && concealed)
+      writeHidden(sprite, state === 'away' || (state === 'held' && concealed))
     },
 
     take() {
       if (state !== 'away') return
       state = 'to-bunny'
       elapsed = 0
-      sprite.hidden = false
+      writeHidden(sprite, false)
     },
 
     giveBack() {
@@ -109,12 +109,11 @@ export function createCarried(
 
       character.attach(attachment, onBunny)
       if (state === 'held') {
-        sprite.hidden = concealed
+        writeHidden(sprite, concealed)
         place(onBunny)
         return false
       }
-      sprite.hidden = false
-
+      writeHidden(sprite, false)
       const width = home(world)
       world.project(camera)
       atHome.x = (world.x * 0.5 + 0.5) * viewport.width
@@ -132,7 +131,7 @@ export function createCarried(
       place(between(onBunny, atHome, progress, viewport))
       if (progress < 1) return false
       state = 'away'
-      sprite.hidden = true
+      writeHidden(sprite, true)
       return true
     },
 

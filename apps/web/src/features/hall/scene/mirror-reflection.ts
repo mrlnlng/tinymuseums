@@ -76,7 +76,7 @@ export function createLiveReflection(host: HTMLElement, character: Character): L
       if (disposed) return
       follow()
       if (!glass || !rig || !canvas || character.drawnHeight <= 0) {
-        frame.hidden = true
+        if (!frame.hidden) frame.hidden = true
         return
       }
       const canvasHeight = character.drawnHeight * DEPTH_SCALE * rig.spriteScale
@@ -88,11 +88,12 @@ export function createLiveReflection(host: HTMLElement, character: Character): L
       const left = pose.x - width / 2
       const top = feet - canvasHeight * rig.feet
       const middle = feet - character.drawnHeight * DEPTH_SCALE / 2
+      // Written only on change: rewriting hidden every frame forced a style recalc each frame.
       if (left > glass.right || left + width < glass.left) {
-        frame.hidden = true
+        if (!frame.hidden) frame.hidden = true
         return
       }
-      frame.hidden = false
+      if (frame.hidden) frame.hidden = false
       frame.style.transform = `translate3d(${glass.left.toFixed(1)}px, ${glass.top.toFixed(1)}px, 0)`
       frame.style.width = `${(glass.right - glass.left).toFixed(1)}px`
       frame.style.height = `${(glass.bottom - glass.top).toFixed(1)}px`

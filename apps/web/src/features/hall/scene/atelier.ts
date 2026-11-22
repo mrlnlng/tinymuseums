@@ -14,6 +14,9 @@ import { CARDIGANS, COSTUMES, HIBISCUS } from './wardrobe'
 import { MIRROR_KINDS } from './mirror'
 import { pieceUrl } from './piece-art'
 
+// Reused each frame for placing the room's buttons, instead of a new vector per button per frame.
+const projected = new THREE.Vector3()
+
 const { atelier } = CONFIG
 const { mock } = atelier
 type AtelierImage = keyof typeof manifest.atelier
@@ -721,9 +724,11 @@ export function createAtelierRoom(
       for (const { node, mark, font } of controls) {
         const visible = placeLabel(node, mark, perUnit, camera, viewport, font)
         if (node instanceof HTMLButtonElement) {
-          node.disabled = !enabled
-          const at = new THREE.Vector3(mark.x, mark.y, 0).project(camera)
-          node.hidden = !visible || at.x < -0.95 || at.x > 0.95
+          // Written only on change: rewriting these every frame forced a style recalc each frame.
+          if (node.disabled !== !enabled) node.disabled = !enabled
+          const at = projected.set(mark.x, mark.y, 0).project(camera)
+          const hidden = !visible || at.x < -0.95 || at.x > 0.95
+          if (node.hidden !== hidden) node.hidden = hidden
         }
       }
     },
@@ -740,7 +745,12 @@ export function createAtelierRoom(
           mesh.visible = piece.shown > 0.01
         }
       }
-      for (const room of built.values()) for (const glint of room.glints) glint.node.hidden = !glint.shown()
+      for (const room of built.values()) {
+        for (const glint of room.glints) {
+          const hidden = !glint.shown()
+          if (glint.node.hidden !== hidden) glint.node.hidden = hidden
+        }
+      }
     },
 
     flyHome(things, from) {

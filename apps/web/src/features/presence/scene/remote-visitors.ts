@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Attachment } from '@/features/hall/scene/carried'
 import type { Pose } from '@/features/hall/scene/character'
 import { CONFIG } from '@/features/hall/scene/config'
-import type { Viewport } from '@/features/hall/scene/overlay'
+import { writeHidden, type Viewport } from '@/features/hall/scene/overlay'
 import { clearRigLayer, createRigLayer, disposeRigLayer, loadRig, type Rig } from '@/features/hall/scene/rig'
 import { createRigState, rigFacing, stepRigState, type RigState } from '@/features/hall/scene/rig-motion'
 import { isMuted } from '../lib/room-events'
@@ -85,7 +85,7 @@ function bubbleFor(host: HTMLElement): HTMLDivElement {
   const bubble = document.createElement('div')
   bubble.className = 'visitor-bubble'
   bubble.setAttribute('aria-hidden', 'true')
-  bubble.hidden = true
+  writeHidden(bubble, true)
   host.appendChild(bubble)
   return bubble
 }
@@ -123,7 +123,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     element.className = className
     element.alt = ''
     element.setAttribute('aria-hidden', 'true')
-    element.hidden = true
+    writeHidden(element, true)
     ensureLayer().domElement.after(element)
     return { element, transform: '', size: '' }
   }
@@ -138,7 +138,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
       target.transform = transform
       target.element.style.transform = transform
     }
-    target.element.hidden = false
+    writeHidden(target.element, false)
   }
 
   /** The same placement as a carried prop on the local visitor (carried.ts). */
@@ -173,9 +173,9 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
   }
 
   function hideSprites(entry: Shown): void {
-    entry.perch.element.hidden = true
-    entry.helm.element.hidden = true
-    entry.cup.element.hidden = true
+    writeHidden(entry.perch.element, true)
+    writeHidden(entry.helm.element, true)
+    writeHidden(entry.cup.element, true)
   }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   let size = { width: 0, height: 0, ratio: 0 }
@@ -235,7 +235,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
       keep.clear()
       for (const visitor of nearest) keep.add(visitor.pid)
       for (const entry of shown.values()) if (!keep.has(entry.pid)) forget(entry)
-      if (layer) layer.domElement.hidden = nearest.length === 0
+      if (layer) writeHidden(layer.domElement, nearest.length === 0)
       if (nearest.length === 0) return
 
       const renderer = ensureLayer()
@@ -261,7 +261,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           const hit = document.createElement('button')
           hit.type = 'button'
           hit.className = 'visitor-hit'
-          hit.hidden = true
+          writeHidden(hit, true)
           host.appendChild(hit)
           entry = {
             pid: visitor.pid, kind: visitor.look.kind, rig: null,
@@ -310,15 +310,15 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           const seatPx = (seat.height / frustumHeight) * viewport.height
           const widthPx = (seatPx * image.naturalWidth) / image.naturalHeight
           const onScreen = screenX - widthPx / 2 < viewport.width && screenX + widthPx / 2 > 0
-          entry.tag.hidden = !onScreen
-          entry.hit.hidden = true
+          writeHidden(entry.tag, !onScreen)
+          writeHidden(entry.hit, true)
           if (!onScreen) {
             hideSprites(entry)
-            entry.bubble.hidden = true
+            writeHidden(entry.bubble, true)
             continue
           }
           show(entry.perch, image.src, `${seatPx.toFixed(1)}px`, `translate3d(${screenX.toFixed(1)}px, ${screenY.toFixed(1)}px, 0) translate(-50%, -50%)`, 'height')
-          entry.helm.element.hidden = true
+          writeHidden(entry.helm.element, true)
           if (visitor.cup && scenery?.cup) {
             const { sit } = scenery.cup.attachment
             const scale = seatPx / image.naturalHeight
@@ -329,11 +329,11 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
             pose.flip = sit.flip
             showProp(entry.cup, scenery.cup, pose)
           } else {
-            entry.cup.element.hidden = true
+            writeHidden(entry.cup.element, true)
           }
           headY = screenY - seatPx / 2
         } else {
-          entry.perch.element.hidden = true
+          writeHidden(entry.perch.element, true)
           const place = scenery?.depth?.place(visitor.d) ?? FLAT
           const standPx = heightPx * place.scale
           const centerY = CONFIG.character.centerY + (place.scale - 1) * (CONFIG.character.height / 2) + place.lift
@@ -345,8 +345,8 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           const left = screenX - canvasWidth / 2
           const onScreen = left < viewport.width && left + canvasWidth > 0
           const behind = Math.abs(visitor.x - selfX) < BEHIND_SELF && Math.abs(visitor.d - (scenery?.depth?.self ?? 0)) < 0.15
-          entry.tag.hidden = rig === null || !onScreen || behind
-          entry.hit.hidden = entry.tag.hidden || !visitor.home
+          writeHidden(entry.tag, rig === null || !onScreen || behind)
+          writeHidden(entry.hit, entry.tag.hidden || !visitor.home)
           if (!entry.hit.hidden) {
             entry.hit.style.width = `${(standPx * 0.62).toFixed(1)}px`
             entry.hit.style.height = `${standPx.toFixed(1)}px`
@@ -355,7 +355,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           if (!rig || !onScreen) {
             if (card.shownFor() === visitor.pid) card.hide()
             hideSprites(entry)
-            entry.bubble.hidden = true
+            writeHidden(entry.bubble, true)
             continue
           }
 
@@ -371,7 +371,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           ] as const) {
             const anchor = prop?.attachment.rig?.[visitor.look.kind]
             if (!has || !prop || !anchor || !rig.projectAttachment(anchor, pose)) {
-              target.element.hidden = true
+              writeHidden(target.element, true)
               continue
             }
             pose.x += left
@@ -386,7 +386,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
         entry.tag.style.transform = `translate3d(${screenX.toFixed(1)}px, ${(headY - 6).toFixed(1)}px, 0) translate(-50%, -100%)`
         card.place(visitor.pid, screenX, headY, viewport.width)
         const showBubble = said !== null && saidAge < bubbleMs(said.text)
-        entry.bubble.hidden = !showBubble
+        writeHidden(entry.bubble, !showBubble)
         if (showBubble && said) {
           if (entry.bubbleAt !== said.at) {
             entry.bubbleAt = said.at
@@ -407,7 +407,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     showOwnMessage(text) {
       own?.bubble.remove()
       const bubble = bubbleFor(host)
-      bubble.hidden = false
+      writeHidden(bubble, false)
       bubble.textContent = text
       bubble.style.animationDuration = `${bubbleMs(text)}ms`
       bubble.classList.add('visitor-bubble--pop')

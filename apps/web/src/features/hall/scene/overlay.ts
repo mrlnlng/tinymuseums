@@ -20,6 +20,11 @@ type StyledProperty = 'width' | 'fontSize' | 'transform' | 'opacity' | 'filter'
 
 const written = new WeakMap<HTMLElement, Partial<Record<StyledProperty, string>>>()
 
+/** Sets `hidden` only when it changes: rewriting it every frame forces a style recalc each frame. */
+export function writeHidden(node: HTMLElement, hidden: boolean): void {
+  if (node.hidden !== hidden) node.hidden = hidden
+}
+
 export function writeStyle(node: HTMLElement, property: StyledProperty, value: string): void {
   let last = written.get(node)
   if (!last) {

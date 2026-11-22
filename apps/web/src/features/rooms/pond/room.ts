@@ -770,8 +770,11 @@ export function createPondRoom({
             writeStyle(button, 'width', `${width.toFixed(1)}px`)
             writeStyle(button, 'transform', `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -100%)`)
             button.style.visibility = visible ? 'visible' : 'hidden'
-            button.setAttribute('aria-disabled', String(frame.quiet))
-            button.tabIndex = fullyVisible && !frame.quiet ? 0 : -1
+            // Attributes are written only on change: rewriting them every frame forced a style recalc each frame.
+            const quiet = String(frame.quiet)
+            if (button.getAttribute('aria-disabled') !== quiet) button.setAttribute('aria-disabled', quiet)
+            const tab = fullyVisible && !frame.quiet ? 0 : -1
+            if (button.tabIndex !== tab) button.tabIndex = tab
           })
           // A brief ring in the grass where a tap sent the visitor.
           if (markAt && (markAt.age += frame.dt) < 0.7 && walker.walking) {
@@ -782,17 +785,18 @@ export function createPondRoom({
             writeStyle(mark, 'width', `${(0.55 * scale * perUnit).toFixed(1)}px`)
             writeStyle(mark, 'transform', `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -50%)`)
             mark.style.setProperty('--age', (markAt.age / 0.7).toFixed(3))
-            mark.hidden = false
+            if (mark.hidden) mark.hidden = false
           } else {
             markAt = null
-            mark.hidden = true
+            if (!mark.hidden) mark.hidden = true
           }
           for (const { button, spot, index } of ripples) {
             const free = activeSpot !== index && spotFree(index)
             button.classList.toggle('is-taken', !free)
-            button.disabled = !free
+            if (button.disabled !== !free) button.disabled = !free
             const visible = placeLabel(button, { x: spot.waterX, y: spot.waterY, width: 1.15 }, perUnit, frame.camera, frame.viewport, 0.1)
-            button.tabIndex = visible && !frame.quiet ? 0 : -1
+            const tab = visible && !frame.quiet ? 0 : -1
+            if (button.tabIndex !== tab) button.tabIndex = tab
             button.classList.toggle('is-near', !near && current?.kind === 'spot' && current.index === index)
           }
         },

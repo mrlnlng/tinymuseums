@@ -66,6 +66,11 @@ export default function MuseumStage({ children }: { children: ReactNode }) {
   )
 }
 
+/** The running stage, or null before it starts or outside MuseumStage. */
+export function useStage(): Stage | null {
+  return useContext(StageContext)?.stage ?? null
+}
+
 interface RoomOptions<Art> {
   room: RoomDef<Art>
   arrival: Arrival

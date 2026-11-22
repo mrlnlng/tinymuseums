@@ -7,6 +7,7 @@ import { buy, useWallet } from '@/features/economy'
 import Stamp from '@/features/economy/components/Stamp'
 import { stampLabel } from '@/features/economy/lib/stamp'
 import { useSlot } from '@/shared/lib/slots'
+import { useStage } from '@/features/rooms/MuseumStage'
 import { CHARACTER_NAMES, keepName } from '../scene/atelier'
 import { keepStamps, type KeepStamp } from '../scene/keep-stamps'
 import { pieceUrl } from '../scene/piece-art'
@@ -45,29 +46,51 @@ export default function AtelierKeeps() {
   const [purseShake, setPurseShake] = useState(0)
   const [hint, setHint] = useState(false)
   const follow = useRef<HTMLDivElement>(null)
+  const stage = useStage()
   const any = stamps.length > 0
 
-  // The stamps stand beside the visitor, on whichever side has room.
+  // The stamps stand beside the visitor, on whichever side has room. Layout is read only on
+  // resize: measuring every frame forced a layout each time (2.6 s in a phone trace).
   useEffect(() => {
-    if (!any) return
+    const node = follow.current
+    const host = document.querySelector<HTMLElement>('.hall-character')
+    if (!any || !stage || !node || !host) return
+    let origin = { x: 0, y: 0, width: 0 }
+    let nodeWidth = 0
+    const measure = () => {
+      const parent = node.offsetParent as HTMLElement | null
+      if (!parent) return
+      const from = parent.getBoundingClientRect()
+      const to = host.getBoundingClientRect()
+      origin = { x: to.left - from.left, y: to.top - from.top, width: from.width }
+      nodeWidth = node.offsetWidth
+    }
+    measure()
+    const resized = new ResizeObserver(measure)
+    resized.observe(node)
+    resized.observe(host)
     let frame = 0
+    let shown = ''
     const step = () => {
       frame = requestAnimationFrame(step)
-      const node = follow.current
-      const parent = node?.offsetParent as HTMLElement | null
-      const figure = document.querySelector<HTMLElement>('.hall-bunny-rig:not([hidden]), .hall-bunny:not([hidden])')
-      if (!node || !parent || !figure) return
-      const at = figure.getBoundingClientRect()
-      const origin = parent.getBoundingClientRect()
-      const right = at.right - origin.left + 4
-      const flip = right + node.offsetWidth > origin.width - 8
-      const x = flip ? at.left - origin.left - node.offsetWidth - 4 : right
-      const y = Math.max(8, at.top - origin.top + at.height * 0.15)
-      node.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`
+      const at = stage.character?.drawnBox
+      if (!at?.height) return
+      const right = origin.x + at.left + at.width + 4
+      const flip = right + nodeWidth > origin.width - 8
+      const x = flip ? origin.x + at.left - nodeWidth - 4 : right
+      const y = Math.max(8, origin.y + at.top + at.height * 0.15)
+      const transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`
+      if (transform !== shown) {
+        shown = transform
+        node.style.transform = transform
+      }
     }
     step()
-    return () => cancelAnimationFrame(frame)
-  }, [any])
+    return () => {
+      cancelAnimationFrame(frame)
+      resized.disconnect()
+    }
+  }, [any, stage])
 
   useEffect(() => {
     if (!any) return

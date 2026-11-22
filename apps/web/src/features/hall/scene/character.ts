@@ -43,6 +43,8 @@ export interface Character {
    * on the floor without a jump, and its somersault turn in degrees. A mirror copies this.
    */
   readonly drawnPose: { x: number; feet: number; ground: number; rotation: number }
+  /** The box it was drawn in at its last update, in its host's CSS pixels; height 0 before the first. */
+  readonly drawnBox: Readonly<{ left: number; top: number; width: number; height: number }>
   /** Settles once every requested look has loaded (true) or fallen back (false). */
   readonly ready: Promise<boolean>
   /** Resolves once the look shows (true), or the rig for it failed (false). */
@@ -200,6 +202,9 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
   let bouncedAt = -Infinity
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   let bodyRotation = 0
+  // Lets overlays follow the character without measuring the DOM, which forces a layout each frame.
+  const drawnBox = { left: 0, top: 0, width: 0, height: 0 }
+  let shownData = ''
 
   // Carried hats and cups follow the same body-centred turn as the rig canvas.
   function turnAttachment(out: Pose): Pose {
@@ -237,6 +242,9 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
     },
     get drawnPose() {
       return { x: screenX, feet: screenY + drawnHeight / 2, ground: groundFeet, rotation: bodyRotation }
+    },
+    get drawnBox() {
+      return drawnBox
     },
     get canSit() {
       return look.kind === 'bunny' && look.costume === null && look.bow === null
@@ -386,6 +394,10 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         sprite.style.transform = transform
       }
       scale = heightPx / currentImage.naturalHeight
+      drawnBox.height = heightPx
+      drawnBox.width = currentImage.naturalHeight ? heightPx * currentImage.naturalWidth / currentImage.naturalHeight : 0
+      drawnBox.left = screenX - drawnBox.width / 2
+      drawnBox.top = screenY - heightPx / 2
 
       if (usingRig && rig) {
         try {
@@ -409,6 +421,10 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             rigTransform = nextTransform
             canvas.style.transform = nextTransform
           }
+          drawnBox.left = rigLeft
+          drawnBox.top = rigTop
+          drawnBox.width = canvasHeight * rig.aspect
+          drawnBox.height = canvasHeight
           rig.render(motion, dt, canvasHeight, window.devicePixelRatio)
           if (motion.air > 0) {
             // Where the feet would stand, without the jump's height.
@@ -434,11 +450,16 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             }
             if (floorShadow.hidden) floorShadow.hidden = false
           }
-          canvas.dataset.facing = rigFacing(motion)
-          canvas.dataset.state = moving ? 'walk' : 'idle'
-          canvas.dataset.kind = rig.kind
-          canvas.dataset.costume = look.costume ?? ''
-          canvas.dataset.bow = look.bow ?? ''
+          const facingNow = rigFacing(motion)
+          const data = `${facingNow}|${moving}|${rig.kind}|${look.costume}|${look.bow}`
+          if (data !== shownData) {
+            shownData = data
+            canvas.dataset.facing = facingNow
+            canvas.dataset.state = moving ? 'walk' : 'idle'
+            canvas.dataset.kind = rig.kind
+            canvas.dataset.costume = look.costume ?? ''
+            canvas.dataset.bow = look.bow ?? ''
+          }
         } catch (error) {
           console.warn('[hall] rig render failed; using sprite fallback', error)
           loseRig()

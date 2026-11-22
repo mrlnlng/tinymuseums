@@ -61,6 +61,8 @@ export interface StageRoom {
 
 export interface Stage {
   enter<Art>(room: RoomDef<Art>, arrival: Arrival, handlers: StageHandlers): StageRoom
+  /** The visitor's character once the stage has started, for overlays that follow it. */
+  readonly character: Character | null
   dispose(): void
 }
 
@@ -643,6 +645,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
 
   return {
     enter,
+    get character() {
+      return runtime?.character ?? null
+    },
     dispose() {
       isDisposed = true
       const entry = current

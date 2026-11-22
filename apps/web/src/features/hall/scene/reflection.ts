@@ -1,8 +1,13 @@
+import type * as THREE from 'three'
 import type { Look } from './character'
 import { createRigState } from './rig-motion'
 
 const cache = new Map<string, Promise<HTMLCanvasElement>>()
 let queue: Promise<unknown> = Promise.resolve()
+/** Released after this long unused; until then every snapshot reuses its context and loaded models. */
+const LAYER_IDLE_MS = 60_000
+let layer: THREE.WebGLRenderer | null = null
+let idleTimer: ReturnType<typeof setTimeout> | undefined
 
 /** The character standing still in the look, trimmed to its outline. One at a time, so only one extra WebGL context is ever open. */
 export function snapshotLook(look: Look, height = 360): Promise<HTMLCanvasElement> {
@@ -16,13 +21,21 @@ export function snapshotLook(look: Look, height = 360): Promise<HTMLCanvasElemen
   return shot
 }
 
+// One shared layer keeps each character's model loaded between snapshots. A canvas per snapshot
+// fetched, parsed and uploaded the whole model again every time (about 7 s in a phone trace).
 async function render(look: Look, height: number): Promise<HTMLCanvasElement> {
-  const { loadRig } = await import('./rig')
-  const gl = document.createElement('canvas')
-  const rig = await loadRig(gl, look.kind)
+  const { loadRig, createRigLayer, clearRigLayer, disposeRigLayer } = await import('./rig')
+  clearTimeout(idleTimer)
+  layer ??= createRigLayer()
+  const shared = layer
+  const rig = await loadRig(null, look.kind, shared)
   try {
     rig.setCostume(look.costume, look.bow)
-    rig.render(createRigState(), 0, height, 2)
+    shared.setPixelRatio(2)
+    shared.setSize(Math.ceil(height * rig.aspect), height, false)
+    clearRigLayer(shared)
+    rig.render(createRigState(), 0, height, 2, { left: 0, top: 0 })
+    const gl = shared.domElement
     const full = document.createElement('canvas')
     full.width = gl.width
     full.height = gl.height
@@ -31,6 +44,11 @@ async function render(look: Look, height: number): Promise<HTMLCanvasElement> {
     return trim(full, paint)
   } finally {
     rig.dispose()
+    idleTimer = setTimeout(() => {
+      if (layer !== shared) return
+      layer = null
+      disposeRigLayer(shared)
+    }, LAYER_IDLE_MS)
   }
 }
 

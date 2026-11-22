@@ -99,6 +99,9 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     if (!layer) {
       layer = createRigLayer()
       layer.domElement.className = 'visitor-layer'
+      // three.js sets an inline display: block, which overrides `hidden` and left the last
+      // frame (a visitor who just left) frozen on screen.
+      layer.domElement.style.display = ''
       layer.domElement.setAttribute('aria-hidden', 'true')
       host.prepend(layer.domElement)
     }

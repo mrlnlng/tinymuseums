@@ -44,6 +44,9 @@ export class Room extends DurableObject<Env> {
       const ticket = message?.t === 'hello' && message.v === PROTOCOL_VERSION ? await verifyTicket(message.ticket, this.env.PRESENCE_SECRET) : null
       const admittedAs = admitted(attachment, ticket)
       if (!admittedAs) {
+        // Only the reason and size, never the ticket: Workers Logs then say why a visitor was turned away.
+        const why = !message ? 'unreadable' : message.t !== 'hello' ? 'not-hello' : message.v !== PROTOCOL_VERSION ? 'version' : !ticket ? 'bad-ticket' : 'wrong-room'
+        console.warn('[presence] denied', { room: attachment.room, why, bytes: typeof data === 'string' ? data.length : data.byteLength })
         sendTo(socket, { t: 'denied' })
         this.close(socket, attachment, 1008, 'denied')
         return

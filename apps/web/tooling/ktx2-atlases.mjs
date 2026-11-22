@@ -9,7 +9,11 @@
    keeps KTX2 only if every sprite is as faithful to the lossless original as the
    AVIF that ships today (within the optimiser's 0.001 slack).
 
-   Run from the repo root: node apps/web/tooling/ktx2-atlases.mjs */
+   Run from the repo root: node apps/web/tooling/ktx2-atlases.mjs
+
+   Tried on gamma 2026-11-21 and removed: texture upload time did not drop (the
+   pond's textures, not these sheets, were the cost) and a phone's first visit
+   grew by ~1.9 MB. Rerun only if a trace shows these sheets' uploads mattering. */
 
 import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'

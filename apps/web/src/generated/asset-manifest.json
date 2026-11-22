@@ -1622,8 +1622,7 @@
               291,
               460
             ]
-          },
-          "ktx2": "atlas-entrance-avif-q70@2x.dd743e2ccb.ktx2"
+          }
         },
         {
           "w": 1336,
@@ -1737,8 +1736,7 @@
               196,
               195
             ]
-          },
-          "ktx2": "atlas-entrance-avif-q62@3x.49e155cac2.ktx2"
+          }
         },
         {
           "w": 472,
@@ -1752,8 +1750,7 @@
               436,
               690
             ]
-          },
-          "ktx2": "atlas-entrance-avif-q70@3x.400c790846.ktx2"
+          }
         },
         {
           "w": 1464,
@@ -1887,8 +1884,7 @@
               380,
               263
             ]
-          },
-          "ktx2": "atlas-scenery-avif-q62@2x.5c4b29d20b.ktx2"
+          }
         },
         {
           "w": 756,
@@ -1990,8 +1986,7 @@
               380,
               263
             ]
-          },
-          "ktx2": "atlas-scenery-avif-q62@3x.ec19a464c3.ktx2"
+          }
         },
         {
           "w": 756,
@@ -2213,9 +2208,7 @@
       ]
     }
   },
-  "ktx2": {
-    "transcoder": "basis-0.169.0/"
-  },
+  "ktx2": null,
   "models": {
     "bunnyRig": {
       "src": "bunny-rig-v2-dressed.94b9d5d071.glb"

@@ -492,7 +492,9 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         },
 
         presence: {
-          key: `hall-e${options.initialSlice.epochId}`,
+          // One hall room for everyone: epochs reseal on every publish, which split visitors who loaded
+          // before and after. "e0" keeps the name the deployed room server already accepts.
+          key: 'hall-e0',
           pose: () => ({ sit: sitting?.seated ?? false, helm: helm?.worn ?? false, cup: matcha?.held ?? false }),
           scenery: () =>
             scenery && {

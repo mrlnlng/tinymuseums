@@ -23,10 +23,13 @@ export class Room extends DurableObject<Env> {
     const ip = request.headers.get('CF-Connecting-IP') ?? ''
     const [client, server] = Object.values(new WebSocketPair())
     const everyone = this.inRoom().map(attachmentOf)
-    if (roomFull(everyone, ROOM_CAPACITY) || tooManyWaiting(everyone, ip)) {
+    const full = roomFull(everyone, ROOM_CAPACITY)
+    if (full || tooManyWaiting(everyone, ip)) {
       server.accept()
-      sendTo(server, { t: 'full' })
-      server.close(1013, 'full')
+      // Only a truly full room sends 'full', which moves the client to the next instance; a busy
+      // address (shared wifi) just retries this one instead of splitting off alone.
+      if (full) sendTo(server, { t: 'full' })
+      server.close(1013, full ? 'full' : 'busy')
       return new Response(null, { status: 101, webSocket: client })
     }
     this.ctx.acceptWebSocket(server)

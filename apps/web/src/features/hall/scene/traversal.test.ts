@@ -111,3 +111,51 @@ test('depth-room movement can build the same chain using its own walking speed',
   for (let i = 0; i < 3; i++) assert.equal(jump(traversal, false, 2).flip, 0)
   assert.ok(jump(traversal, false, 2).flip > 350)
 })
+
+test('tapping or dragging to walk is as fast as walking with the keys', () => {
+  // Measured mid-walk: the leash first brings a far bunny within reach, and it eases into its stop.
+  const cruise = (traversal: Traversal, tick: (seconds: number) => void) => {
+    tick(0.2)
+    const from = traversal.x
+    tick(0.4)
+    return Math.abs(traversal.x - from) / 0.4
+  }
+  const keys = fixture(1)
+  const byKeys = cruise(keys.traversal, keys.tick)
+  const tapped = fixture(0)
+  tapped.traversal.cameraX = 40
+  const byTap = cruise(tapped.traversal, tapped.tick)
+  assert.ok(Math.abs(byKeys - CONFIG.move.walkSpeed) < 0.05, `keys walk at ${byKeys}`)
+  assert.ok(Math.abs(byTap - byKeys) < 0.05, `taps walk at ${byTap}, keys at ${byKeys}`)
+})
+
+test('four sideways flick-hops in a row walk the bunny and flip on the fourth, then it stops', () => {
+  const { traversal, tick } = fixture(0)
+  const startX = traversal.x
+  let flip = 0
+  for (let hop = 0; hop < 4; hop++) {
+    assert.ok(traversal.hop(1), `hop ${hop + 1} should be allowed`)
+    let launched = false
+    for (let frame = 0; frame < 240; frame++) {
+      traversal.update(DT, -1000, 1000)
+      if (traversal.takeJump()) launched = true
+      if (hop === 3) flip = Math.max(flip, Math.abs(traversal.jumpPose.flip ?? 0))
+      if (launched && !traversal.isAirborne) break
+    }
+    tick(0.15)
+  }
+  assert.ok(flip > 300, `the fourth hop flips (turned ${flip.toFixed(0)}°)`)
+  assert.ok(traversal.x - startX > 2, 'the hops carried the bunny along')
+  tick(1.5)
+  const resting = traversal.x
+  tick(0.5)
+  assert.ok(Math.abs(traversal.x - resting) < 0.01, 'with no more flicks the bunny stops, like a released key')
+})
+
+test('a straight-up flick hops in place', () => {
+  const { traversal, tick } = fixture(0)
+  const startX = traversal.x
+  assert.ok(traversal.hop(0))
+  tick(1)
+  assert.ok(Math.abs(traversal.x - startX) < 0.01)
+})

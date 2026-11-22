@@ -500,7 +500,7 @@ export function createPondRoom({
         } else if (walker.walking) {
           // A drag during a walk lets the view go where the visitor drags it.
           if (Math.abs(traversal.cameraX - cameraWas) > 0.02) following = false
-          moved = walker.step(dt, CONFIG.move.maxSpeed * traversal.jumpSpeedMultiplier)
+          moved = walker.step(dt, CONFIG.move.walkSpeed * traversal.jumpSpeedMultiplier)
           if (!walker.walking) finishWalk()
         } else {
           following = false

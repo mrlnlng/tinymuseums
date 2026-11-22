@@ -89,7 +89,8 @@ export const CONFIG = {
     maxScrollSpeed: 7.0,
     damping: 7.0,
     wheelFactor: 0.4,
-    keyWalkSpeed: 3.4,
+    // One walking speed whether the visitor uses keys, taps or drags; maxSpeed only paces the walk cycle.
+    walkSpeed: 3.4,
     keyAccel: 40,
     // The share of the view kept clear ahead of a bunny walked with the keys.
     lookAhead: 0.3,

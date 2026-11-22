@@ -45,6 +45,9 @@ export class Traversal {
   private chainDirection = 0
   private groundedFor = 0
   private flipJump = false
+  // A sideways flick walks the bunny like a held arrow key, until a jump-chain window passes without one.
+  private hopDirection = 0
+  private hopGrounded = 0
   private flipDirection = 0
   private readonly pose: JumpPose = { squash: 0, rise: 0, lift: 0, airborne: false }
 
@@ -146,6 +149,7 @@ export class Traversal {
     if (suspended) {
       this.clearJumpChain()
       this.keys.clear()
+      this.hopDirection = 0
       this.dragging = false
       this.velocity = 0
       this.stride = 0
@@ -208,6 +212,7 @@ export class Traversal {
     this.jumped = false
     this.flipJump = false
     this.flipDirection = 0
+    this.hopDirection = 0
     this.groundedFor = 0
     this.clearJumpChain()
   }
@@ -226,6 +231,11 @@ export class Traversal {
   }
 
   update(dt: number, min: number, max: number, externalVelocity?: number): void {
+    if (this.hopDirection !== 0) {
+      if (this.height === 0 && this.crouchedFor < 0) this.hopGrounded += dt
+      else this.hopGrounded = 0
+      if (this.hopGrounded > CONFIG.jump.combo.windowSeconds || this.locked || this.heldAt !== null) this.hopDirection = 0
+    }
     const input = this.keyInput()
     if (!this.locked && this.heldAt === null && (input !== 0 || (this.steering && this.stride !== 0))) {
       this.steer(dt, input, min, max)
@@ -251,9 +261,23 @@ export class Traversal {
       !this.dragging &&
       !this.walking &&
       this.keys.size === 0 &&
+      this.hopDirection === 0 &&
       this.height === 0 &&
       Math.abs(this.velocity) < 0.01
     this.idleSeconds = resting ? this.idleSeconds + dt : 0
+  }
+
+  /**
+   * A jump from a flick: `direction` -1 or 1 also walks that way, as holding an arrow key with
+   * Space does, so chained flicks build the same flip. 0 hops in place.
+   */
+  hop(direction: number): boolean {
+    if (!this.jump()) return false
+    if (direction !== 0) {
+      this.hopDirection = Math.sign(direction)
+      this.hopGrounded = 0
+    }
+    return true
   }
 
   /** Queues a jump; false when the character cannot jump now (held, locked or in the air). */
@@ -356,17 +380,17 @@ export class Traversal {
   private keyInput(): number {
     const left = this.keys.has('arrowleft') || this.keys.has('a')
     const right = this.keys.has('arrowright') || this.keys.has('d')
-    return (right ? 1 : 0) - (left ? 1 : 0)
+    return (right ? 1 : 0) - (left ? 1 : 0) || this.hopDirection
   }
 
   private steer(dt: number, input: number, min: number, max: number): void {
-    const { keyWalkSpeed, keyAccel, lookAhead } = CONFIG.move
+    const { walkSpeed, keyAccel, lookAhead } = CONFIG.move
     this.steering = true
     this.following = false
     this.walking = false
     this.velocity = 0
 
-    const change = input * keyWalkSpeed * this.jumpSpeedMultiplier - this.stride
+    const change = input * walkSpeed * this.jumpSpeedMultiplier - this.stride
     const most = keyAccel * dt
     this.stride += clamp(change, -most, most)
     this.x += this.stride * dt
@@ -423,7 +447,7 @@ export class Traversal {
     }
     if (!this.walking) return
 
-    const speed = Math.min(CONFIG.move.maxSpeed * this.jumpSpeedMultiplier, distance / arriveSeconds)
+    const speed = Math.min(CONFIG.move.walkSpeed * this.jumpSpeedMultiplier, distance / arriveSeconds)
     const step = Math.sign(gap) * speed * dt
     this.x = Math.abs(step) >= distance ? target : this.x + step
   }

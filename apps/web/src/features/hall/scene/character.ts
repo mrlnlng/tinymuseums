@@ -56,8 +56,8 @@ export interface Character {
   /** A little hop, as other visitors see when this one says something. */
   bounce(): void
   perch(perch: Perch | null): void
-  /** Whether a point in viewport pixels is on the middle of the character, as last drawn. */
-  isUnder(x: number, y: number): boolean
+  /** Whether a point in viewport pixels is on the middle of the character, as last drawn; `reach` widens it. */
+  isUnder(x: number, y: number, reach?: number): boolean
   attach(attachment: Attachment, out: Pose): Pose
   update(
     dt: number,
@@ -282,9 +282,9 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       perched = perch
     },
 
-    isUnder(x, y) {
+    isUnder(x, y, reach = 1) {
       // The middle of the body only, so the edges of doors and stands behind stay tappable.
-      return Math.abs(x - screenX) <= drawnHeight * 0.28 && Math.abs(y - screenY) <= drawnHeight * 0.45
+      return Math.abs(x - screenX) <= drawnHeight * 0.28 * reach && Math.abs(y - screenY) <= drawnHeight * 0.45 * reach
     },
 
     bounce() {

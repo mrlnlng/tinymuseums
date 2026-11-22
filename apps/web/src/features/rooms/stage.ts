@@ -23,6 +23,7 @@ import { createNearby, type Nearby } from './nearby'
 import { createMinimap, MAP_PLACES } from './minimap'
 import { createPerfMeter } from './perf'
 import { warmUp } from './warm'
+import { FLICK, flickDirection, isUpwardFlick } from './flick'
 import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
@@ -402,6 +403,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     let pressY = 0
     let pressedAt = 0
     let isTap = false
+    let pressOnCharacter = false
 
     function aim(event: MouseEvent): void {
       const rect = renderer.domElement.getBoundingClientRect()
@@ -415,11 +417,20 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       pressX = event.clientX
       pressY = event.clientY
       pressedAt = performance.now()
+      const rect = renderer.domElement.getBoundingClientRect()
+      pressOnCharacter = character.isUnder(event.clientX - rect.left, event.clientY - rect.top, FLICK.reach)
       aim(event)
       for (const part of partsOf(current)) part.pointerDown?.(raycaster)
     }
 
     function handlePointerUp(event: PointerEvent): void {
+      // Flicking up from the character jumps; leaning the flick sideways hops that way, so four in a row flip, as with the keys.
+      const dx = event.clientX - pressX
+      if (pressOnCharacter && !isQuiet() && isUpwardFlick(dx, event.clientY - pressY, performance.now() - pressedAt)) {
+        isTap = false
+        traversal.hop(flickDirection(dx))
+        return
+      }
       const moved = Math.hypot(event.clientX - pressX, event.clientY - pressY)
       const slop = event.pointerType === 'touch' ? TAP_SLOP_PX.touch : TAP_SLOP_PX.mouse
       isTap = !(moved > slop || performance.now() - pressedAt > TAP_TIMEOUT_MS || isQuiet())

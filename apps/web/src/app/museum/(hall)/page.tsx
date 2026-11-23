@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic'
 const FIRST_SLICE = 4
 
 export default async function MuseumPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
-  // Coming down from the atelier, the visitor steps off the stairs instead of in at the door.
-  const arrival = (await searchParams).from === 'atelier' ? 'stairs' : 'door'
+  // Coming through one of the hall's doors, the visitor steps out of it instead of in at the front.
+  const arrival = (await searchParams).from ?? null
   return (
     <>
       <MediaPreconnect />
@@ -24,7 +24,7 @@ export default async function MuseumPage({ searchParams }: { searchParams: Promi
   )
 }
 
-async function Hall({ arrival }: { arrival: 'door' | 'stairs' }) {
+async function Hall({ arrival }: { arrival: string | null }) {
   const slice = await firstSlice(FIRST_SLICE)
 
   return (
@@ -43,7 +43,7 @@ async function Hall({ arrival }: { arrival: 'door' | 'stairs' }) {
           ))}
         </ul>
         <p>
-          <Link href="/studio">Artists: claim a wall</Link>
+          <Link href="/studio">Studio</Link>
         </p>
       </nav>
     </>

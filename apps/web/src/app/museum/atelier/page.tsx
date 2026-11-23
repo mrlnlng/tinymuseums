@@ -5,7 +5,8 @@ import Atelier from '@/features/hall/components/Atelier'
 export const metadata: Metadata = { title: 'The Costume Atelier' }
 export const dynamic = 'force-dynamic'
 
-export default async function AtelierPage() {
+export default async function AtelierPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  const { from } = await searchParams
   // A frame with nothing published, or a database that cannot be reached, shows its placeholder.
   let spots: Record<string, SpotPainting> = {}
   try {
@@ -13,5 +14,5 @@ export default async function AtelierPage() {
   } catch (error) {
     console.error('atelier spots', error)
   }
-  return <Atelier spots={spots} />
+  return <Atelier spots={spots} from={from ?? null} />
 }

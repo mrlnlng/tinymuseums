@@ -7,6 +7,8 @@ import layout from '../../../../public/assets/pond/layout.json'
 
 /** The daytime garden, its aligned overlays, and crisp woodland extensions. */
 export interface PondArt {
+  /** Pictures for doors placed from the studio; the forest gate is one of the landmarks. */
+  doorArt?: Partial<Record<string, HTMLImageElement>>
   scene: THREE.Texture
   /** The painted garden that continues the scene to its left. */
   left: THREE.Texture

@@ -32,12 +32,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export const loadGalleryDoor = () => loadImage(manifest.galleryDoor.src)
 export const loadGalleryPillar = () => loadImage(manifest.atelier.column.src)
 
-export function createGalleryDoor(parent: THREE.Scene | THREE.Group, image: HTMLImageElement, x: number, base: number = GALLERY_DOOR.lobbyBase) {
+export function createGalleryDoor(parent: THREE.Scene | THREE.Group, image: HTMLImageElement, x: number, base: number = GALLERY_DOOR.lobbyBase, scale = 1) {
   const texture = new THREE.Texture(image)
   texture.needsUpdate = true
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
-  const height = GALLERY_DOOR.height
+  const height = GALLERY_DOOR.height * scale
   const width = height * image.naturalWidth / image.naturalHeight
   const mesh = plane(width, height, texture, x, base + height / 2, 0.2)
   parent.add(mesh)

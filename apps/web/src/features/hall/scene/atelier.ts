@@ -95,7 +95,7 @@ export interface AtelierActions {
   onWardrobe(): void
   /** The visitor tapped the mirror's glass. */
   onMirror(): void
-  onLeave(): void
+  onLeave(door: string): void
 }
 
 export interface AtelierRoom {
@@ -104,7 +104,8 @@ export interface AtelierRoom {
   /** Builds one room's displays; the returned function takes them down again. */
   buildRoom(key: string): () => void
   setActions(actions: AtelierActions): void
-  hitTestDoor(raycaster: THREE.Raycaster): boolean
+  /** The door under the pointer, if any. */
+  hitTestDoor(raycaster: THREE.Raycaster): string | null
   hitTestItem(raycaster: THREE.Raycaster): ClothingItem | null
   /** Whether the mirror's glass is under the pointer. */
   hitTestMirror(raycaster: THREE.Raycaster): boolean
@@ -163,11 +164,19 @@ interface BuiltRoom {
 
 type Own = (spot: Spot, node: HTMLElement, font: number) => Control
 
+export interface AtelierDoor {
+  id: string
+  x: number
+  label: string
+  scale: number
+  image: HTMLImageElement
+}
+
 export function createAtelierRoom(
   scene: THREE.Scene,
   art: AtelierArt,
   host: HTMLElement,
-  image: HTMLImageElement,
+  doors: readonly AtelierDoor[],
   spots: Readonly<Record<string, SpotPainting>> = {},
 ): AtelierRoom {
   const shell = new THREE.Group()
@@ -212,7 +221,7 @@ export function createAtelierRoom(
   carpetFill.position.set((wall.left + wall.right) / 2, mock.floorWorld - carpetHeight - carpetDepth / 2 + 0.01, 0.14)
   shell.add(carpetFill)
 
-  const door = createGalleryDoor(shell, image, GALLERY_DOOR.atelierX)
+  const doorMeshes = doors.map((door) => ({ door, mesh: createGalleryDoor(shell, door.image, door.x, GALLERY_DOOR.lobbyBase, door.scale) }))
 
   const { curtains } = atelier
   const curtainWidth = units(curtains.width)
@@ -272,27 +281,25 @@ export function createAtelierRoom(
 
   let actions: AtelierActions | null = null
   // The door itself is the way out; this unseen button over it lets keyboards and screen readers leave too.
-  const exit = document.createElement('button')
-  exit.type = 'button'
-  exit.className = 'atelier-item atelier-exit'
-  exit.setAttribute('aria-label', 'To the hall')
-  exit.style.aspectRatio = String(image.naturalWidth / image.naturalHeight)
-  exit.addEventListener('click', () => actions?.onLeave())
-  place(exit, {
-    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
-    y: mock.floorY - (GALLERY_DOOR.height / 2) * mock.unit,
-    width: GALLERY_DOOR.height * image.naturalWidth / image.naturalHeight * mock.unit,
-  }, 0.12)
-  // The door's fairy lights breathe so it reads as the way out from across the room, and brighten close by.
-  const doorGlow = document.createElement('div')
-  doorGlow.className = 'atelier-door-glow'
-  doorGlow.setAttribute('aria-hidden', 'true')
-  doorGlow.style.aspectRatio = String(image.naturalWidth / image.naturalHeight)
-  place(doorGlow, {
-    x: mock.originX + GALLERY_DOOR.atelierX * mock.unit,
-    y: mock.floorY - (GALLERY_DOOR.height / 2) * mock.unit,
-    width: GALLERY_DOOR.height * image.naturalWidth / image.naturalHeight * mock.unit * 1.15,
-  }, 0.12)
+  const doorGlows = doors.map(({ id, x, label, scale, image }) => {
+    const aspect = image.naturalWidth / image.naturalHeight
+    const height = GALLERY_DOOR.height * scale
+    const at = { x: mock.originX + x * mock.unit, y: mock.floorY - (height / 2) * mock.unit }
+    const exit = document.createElement('button')
+    exit.type = 'button'
+    exit.className = 'atelier-item atelier-exit'
+    exit.setAttribute('aria-label', label)
+    exit.style.aspectRatio = String(aspect)
+    exit.addEventListener('click', () => actions?.onLeave(id))
+    place(exit, { ...at, width: height * aspect * mock.unit }, 0.12)
+    // The door's fairy lights breathe so it reads as the way out from across the room, and brighten close by.
+    const glow = document.createElement('div')
+    glow.className = 'atelier-door-glow'
+    glow.setAttribute('aria-hidden', 'true')
+    glow.style.aspectRatio = String(aspect)
+    place(glow, { ...at, width: height * aspect * mock.unit * 1.15 }, 0.12)
+    return { x, glow }
+  })
   let lastCamera: THREE.OrthographicCamera | null = null
   let lastViewport: Viewport | null = null
 
@@ -647,7 +654,7 @@ export function createAtelierRoom(
     },
 
     hitTestDoor(raycaster) {
-      return door.hitTest(raycaster)
+      return doorMeshes.find(({ mesh }) => mesh.hitTest(raycaster))?.door.id ?? null
     },
 
     hitTestItem(raycaster) {
@@ -734,7 +741,7 @@ export function createAtelierRoom(
     },
 
     update(dt, visitorX) {
-      doorGlow.classList.toggle('is-near', Math.abs(visitorX - GALLERY_DOOR.atelierX) < 1.4)
+      for (const { x, glow } of doorGlows) glow.classList.toggle('is-near', Math.abs(visitorX - x) < 1.4)
       // Taking or returning a piece fades it off or onto its stand.
       const fade = reducedMotion ? 1 : Math.min(1, dt / 0.25)
       const pieces = allPieces()
@@ -793,10 +800,10 @@ export function createAtelierRoom(
     },
 
     dispose() {
-      doorGlow.remove()
+      for (const { glow } of doorGlows) glow.remove()
       for (const teardown of [...teardowns.values()]) teardown()
       scene.remove(shell)
-      door.dispose()
+      for (const { mesh } of doorMeshes) mesh.dispose()
       shell.traverse((node) => {
         if (!(node instanceof THREE.Mesh)) return
         node.geometry.dispose()

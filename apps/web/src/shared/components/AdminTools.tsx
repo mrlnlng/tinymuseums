@@ -101,6 +101,9 @@ export default function AdminTools() {
       <p className="settings-admin-heading">
         Admin mode <span className="settings-state">gamma</span>
       </p>
+      <a className="settings-row settings-admin-unlock" href="/studio">
+        Open the studio
+      </a>
       <button
         type="button"
         className="settings-row settings-admin-unlock"

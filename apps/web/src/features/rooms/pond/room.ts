@@ -18,6 +18,7 @@ import { createShopkeeper } from './shopkeeper'
 import { createPondAmbience } from './ambience'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
+import { doorDefs, doorsOf } from '../doors'
 
 /**
  * The garden is one painting, drawn 8 world units tall so a visitor (1.36 units) stands
@@ -123,7 +124,7 @@ const RIPPLE_SVG = `<svg viewBox="0 0 120 44" aria-hidden="true">
 </svg>`
 
 
-type Target = { kind: 'spot'; index: number } | { kind: 'exit' }
+type Target = { kind: 'spot'; index: number } | { kind: 'exit'; door: string }
 
 
 interface PlaneOptions {
@@ -196,9 +197,7 @@ export function createPondRoom({
     className: 'pond',
     clearColor: '#38592c',
     minLoadingMs: 900,
-    doors: {
-      hall: { x: EXIT_X, clearX: ARRIVE_X, label: 'To the museum' },
-    },
+    doors: { ...doorDefs('pond'), hall: { x: EXIT_X, clearX: ARRIVE_X, label: 'To the museum' } },
 
     // Visitors only ever wear characters and clothes they own, as in the hall.
     initialLook() {
@@ -207,6 +206,20 @@ export function createPondRoom({
 
     build(ctx, art) {
       const group = new THREE.Group()
+      // Doors placed from the studio stand on the bank like the gate, drawn from their own pictures.
+      const defs = doorDefs('pond')
+      const doorTextures: THREE.Texture[] = []
+      const placedDoors: PondLandmark[] = doorsOf('pond').flatMap((door) => {
+        const image = art.doorArt?.[door.style]
+        if (door.id === 'hall' || !image) return []
+        return [{
+          kind: 'exit' as const, x: door.x, depth: 0, width: 1.6 * door.scale, baseY: 0,
+          aspect: image.naturalWidth / image.naturalHeight,
+          title: door.label, description: 'A door', image: 'pond/forest-door' as const,
+          door: { id: door.id, image },
+        }]
+      })
+      const allLandmarks = [...POND_LANDMARKS, ...placedDoors]
       const add = ({ width, height, material, x, y, z }: PlaneOptions): THREE.Mesh => {
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material)
         mesh.position.set(x, y, z)
@@ -319,13 +332,18 @@ export function createPondRoom({
           z: -0.3,
         })
       }
-      const landmarkMaterials = new Map<string, THREE.MeshBasicMaterial>()
-      for (const landmark of POND_LANDMARKS) {
+      const landmarkMaterials = new Map<PondLandmark, THREE.MeshBasicMaterial>()
+      for (const landmark of allLandmarks) {
         const { width, height, bottom } = placement(landmark)
-        const material = new THREE.MeshBasicMaterial({
-          map: art.landmarks[landmark.kind], transparent: true, depthWrite: false, alphaTest: 0.01,
-        })
-        landmarkMaterials.set(landmark.kind, material)
+        let map = art.landmarks[landmark.kind]
+        if (landmark.door) {
+          map = new THREE.Texture(landmark.door.image)
+          map.colorSpace = THREE.SRGBColorSpace
+          map.needsUpdate = true
+          doorTextures.push(map)
+        }
+        const material = new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, alphaTest: 0.01 })
+        landmarkMaterials.set(landmark, material)
         add({ width, height, material, x: landmark.x, y: bottom + height / 2, z: -0.2 })
       }
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -348,7 +366,7 @@ export function createPondRoom({
       const white = new THREE.Color('#ffffff')
       const lamplight = new THREE.Color('#ffe2b0')
 
-      const landmarks = POND_LANDMARKS.map((landmark) => {
+      const landmarks = allLandmarks.map((landmark) => {
         const button = document.createElement('button')
         button.type = 'button'
         button.className = `pond-landmark is-${landmark.kind}`
@@ -362,13 +380,14 @@ export function createPondRoom({
         button.append(hitArea)
         button.addEventListener('click', () => {
           if (ctx.isQuiet() || activeSpot !== null || pendingSpot !== null) return
-          if (landmark.kind === 'exit') leave()
+          if (landmark.kind === 'exit') leave(landmark.door?.id ?? 'hall')
           else approach(landmark)
         })
         ctx.overlay.append(button)
         return { button, landmark }
       })
 
+      const byDepth = [...landmarks].sort((a, b) => a.landmark.depth - b.landmark.depth)
       const shop = landmarks.find(({ landmark }) => landmark.kind === 'fishmonger')!
       const shopkeeper = createShopkeeper(shop.button)
 
@@ -469,9 +488,13 @@ export function createPondRoom({
         walkTo(standX, STAND_DEPTH, () => openPanel(landmark), landmark, via)
       }
 
-      function leave(): void {
-        if (walker.depth > BANK_DEPTH || Math.abs(walker.x - EXIT_X) > 2.5) walkTo(ARRIVE_X, 0, () => ctx.leave('hall'))
-        else if (!busy()) ctx.leave('hall')
+      /** Walks to a door on the bank and through it; the gate is left from just inside it. */
+      function leave(door: string): void {
+        const at = door === 'hall' ? EXIT_X : defs[door]?.x
+        if (at === undefined) return
+        const stand = door === 'hall' ? ARRIVE_X : at
+        if (walker.depth > BANK_DEPTH || Math.abs(walker.x - at) > 2.5) walkTo(stand, 0, () => ctx.leave(door))
+        else if (!busy()) ctx.leave(door)
       }
 
       /** Move the visitor for this frame: along a tapped route, with the keys, or after the camera's pull. */
@@ -520,7 +543,7 @@ export function createPondRoom({
       function goTo(target: Target): void {
         if (busy() || pendingSpot !== null) return
         if (target.kind === 'exit') {
-          leave()
+          leave(target.door)
           return
         }
         const index = target.index
@@ -538,7 +561,9 @@ export function createPondRoom({
       function nearest(): Target | null {
         if (walker.depth > BANK_DEPTH) return null
         const x = walker.x
-        if (Math.abs(x - EXIT_X) < EXIT_REACH) return { kind: 'exit' }
+        if (Math.abs(x - EXIT_X) < EXIT_REACH) return { kind: 'exit', door: 'hall' }
+        const door = placedDoors.find((landmark) => Math.abs(x - landmark.x) < EXIT_REACH)?.door
+        if (door) return { kind: 'exit', door: door.id }
         let best: Target | null = null
         let bestGap = SPOT_REACH
         POND_SPOTS.forEach((spot, index) => {
@@ -666,7 +691,13 @@ export function createPondRoom({
         },
 
         onShown() {
-          if (ctx.arrival.kind === 'opening') {
+          const through = ctx.arrival.kind === 'door' ? defs[ctx.arrival.door] : undefined
+          if (through && ctx.arrival.kind === 'door' && ctx.arrival.door !== 'hall') {
+            ctx.traversal.reset(through.clearX)
+            walker.place(through.clearX, 0)
+            return true
+          }
+          if (ctx.arrival.kind === 'opening' || ctx.arrival.door === 'hall') {
             ctx.traversal.reset(ARRIVE_X)
             walker.place(ARRIVE_X, 0)
             return true
@@ -682,7 +713,8 @@ export function createPondRoom({
           // Let the stage distinguish a tap from a pan, including gestures starting on props.
           // DOM counterparts remain native buttons for keyboard and assistive technology.
           const at = raycaster.ray.intersectPlane(bankPlane, pointer)
-          const object = at ? landmarks.find(({ landmark }) => {
+          // Whatever stands nearer the front wins: a door on the bank over the props set back behind it.
+          const object = at ? byDepth.find(({ landmark }) => {
             const { width, height, bottom } = placement(landmark)
             const inProp = Math.abs(at.x - landmark.x) <= width / 2
               && at.y >= bottom && at.y <= bottom + height
@@ -745,7 +777,7 @@ export function createPondRoom({
 
           const perUnit = frame.viewport.width / (frame.camera.right - frame.camera.left)
           landmarks.forEach(({ button, landmark }) => {
-            const material = landmarkMaterials.get(landmark.kind)
+            const material = landmarkMaterials.get(landmark)
             if (!frame.quiet && (button.classList.contains('is-hovered') || button.matches(':focus-visible'))) material?.color.set('#ffe4ba')
             else if (landmark === near) material?.color.copy(white).lerp(lamplight, warmth)
             else material?.color.set('#ffffff')
@@ -813,6 +845,7 @@ export function createPondRoom({
           window.removeEventListener('blur', letGo)
           mark.remove()
           for (const texture of pathTextures) texture.dispose()
+          for (const texture of doorTextures) texture.dispose()
           ambience.dispose()
           if (control.release === releaseSpot) control.release = () => {}
           if (control.setBountyReady === setBountyReady) control.setBountyReady = () => {}

@@ -4,6 +4,7 @@ import { loadAssets, type Assets } from '@/features/hall/scene/assets'
 import { loadGalleryDoor, loadGalleryPillar } from '@/features/hall/scene/gallery-door'
 import { disposeCozyArt, loadCozyArt, type CozyArt } from './themes/cozy'
 import { disposePondArt, loadPondArt, type PondArt } from './pond/art'
+import { loadRoomDoorArt, type DoorArt } from './door-art'
 import type { RoomId } from './types'
 
 /**
@@ -19,6 +20,7 @@ export interface RoomArt<Art> {
 export interface HallArt {
   assets: Assets
   door: HTMLImageElement
+  doorArt: DoorArt
   pillar: HTMLImageElement
   renderer: THREE.WebGLRenderer
 }
@@ -26,6 +28,7 @@ export interface HallArt {
 export interface AtelierArtwork {
   art: AtelierArt
   door: HTMLImageElement
+  doorArt: DoorArt
 }
 
 export interface PersonalArt {
@@ -43,8 +46,8 @@ export interface ArtByRoom {
 export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
   hall: {
     async load(renderer) {
-      const [assets, door, pillar] = await Promise.all([loadAssets(renderer), loadGalleryDoor(), loadGalleryPillar()])
-      return { assets, door, pillar, renderer }
+      const [assets, door, pillar, doorArt] = await Promise.all([loadAssets(renderer), loadGalleryDoor(), loadGalleryPillar(), loadRoomDoorArt('hall')])
+      return { assets, door, doorArt, pillar, renderer }
     },
     unload({ assets }) {
       for (const texture of Object.values(assets.textures)) texture.dispose()
@@ -54,8 +57,8 @@ export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
   },
   atelier: {
     async load() {
-      const [art, door] = await Promise.all([loadAtelierArt(), loadGalleryDoor()])
-      return { art, door }
+      const [art, door, doorArt] = await Promise.all([loadAtelierArt(), loadGalleryDoor(), loadRoomDoorArt('atelier')])
+      return { art, door, doorArt }
     },
     unload({ art }) {
       disposeAtelierArt(art)
@@ -72,7 +75,8 @@ export const ROOM_ART: { [K in RoomId]: RoomArt<ArtByRoom[K]> } = {
   },
   pond: {
     async load(renderer) {
-      return loadPondArt(renderer)
+      const [art, doorArt] = await Promise.all([loadPondArt(renderer), loadRoomDoorArt('pond')])
+      return { ...art, doorArt }
     },
     unload(art) {
       disposePondArt(art)

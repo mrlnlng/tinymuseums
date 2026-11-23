@@ -16,6 +16,8 @@ export interface GalleryPiece {
   status: string | null
   error: string | null
   imageUrl: string | null
+  /** The picture's width over its height, when it has been processed. */
+  aspect: number | null
   framed: boolean
 }
 
@@ -32,6 +34,37 @@ interface GalleryRow {
   framed: boolean
 }
 
+/** Any paintings by id, whoever painted them: what a room holds may come from before the studio had one owner. */
+export async function piecesById(ids: readonly string[]): Promise<GalleryPiece[]> {
+  if (ids.length === 0) return []
+  const rows = await query<GalleryRow>(
+    `select p.id, p.title, p.description, p.order_index, p.shop_url, p.wallpaper_url,
+            a.status, a.error, a.derivatives, (p.flattened_key is not null) as framed
+       from pieces p
+       left join assets a on a.id = p.asset_id
+      where p.id = any($1::uuid[])`,
+    [ids],
+  )
+  return rows.map(toPiece)
+}
+
+function toPiece(row: GalleryRow): GalleryPiece {
+  const small = pickDerivative(row.derivatives ?? [], 0)
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    orderIndex: row.order_index,
+    shopUrl: row.shop_url,
+    wallpaperUrl: row.wallpaper_url,
+    status: row.status,
+    error: row.error,
+    imageUrl: small ? getStorage().urlFor(small.key) : null,
+    aspect: small && small.height > 0 ? small.width / small.height : null,
+    framed: row.framed,
+  }
+}
+
 export async function getGallery(
   artistId: string,
 ): Promise<{ arranged: GalleryPiece[]; storage: GalleryPiece[] }> {
@@ -45,22 +78,6 @@ export async function getGallery(
       order by p.order_index, p.created_at`,
     [artistId],
   )
-
-  const toPiece = (row: GalleryRow): GalleryPiece => {
-    const small = pickDerivative(row.derivatives ?? [], 0)
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      orderIndex: row.order_index,
-      shopUrl: row.shop_url,
-      wallpaperUrl: row.wallpaper_url,
-      status: row.status,
-      error: row.error,
-      imageUrl: small ? getStorage().urlFor(small.key) : null,
-      framed: row.framed,
-    }
-  }
 
   const arranged: GalleryPiece[] = []
   const storage: GalleryPiece[] = []

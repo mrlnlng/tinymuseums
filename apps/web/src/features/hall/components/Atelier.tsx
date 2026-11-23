@@ -11,6 +11,7 @@ import AtelierLoading from '@/features/hall/components/AtelierLoading'
 import ClosetView from '@/features/hall/components/ClosetView'
 import MirrorView from '@/features/hall/components/MirrorView'
 import { createAtelierRoomDef, type AtelierHooks } from '@/features/rooms/atelier/room'
+import { doorsOf } from '@/features/rooms/doors'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { DoorRef } from '@/features/rooms/types'
@@ -19,7 +20,9 @@ import { allowedCharacter, owns, useWallet } from '@/features/economy'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import { useSlot } from '@/shared/lib/slots'
 
-export default function Atelier({ spots }: { spots: Record<string, SpotPainting> }) {
+export default function Atelier({ spots, from }: { spots: Record<string, SpotPainting>; from: string | null }) {
+  // In through the door the visitor came by; without one, the first door in the fashion area.
+  const [arrivalDoor] = useState(() => doorsOf('atelier').find((door) => door.id === from)?.id ?? doorsOf('atelier')[0]?.id)
   const [mirrorOpen, setMirrorOpen] = useState(false)
   const [becoming, setBecoming] = useState<CharacterKind | null>(null)
   const [closetOpen, setClosetOpen] = useState(false)
@@ -67,7 +70,7 @@ export default function Atelier({ spots }: { spots: Record<string, SpotPainting>
 
   const { isReady, error } = useRoom({
     room: atelierRoom,
-    arrival: { kind: 'door', door: 'gallery' },
+    arrival: arrivalDoor ? { kind: 'door', door: arrivalDoor } : { kind: 'opening' },
     onExit: leave,
   })
 

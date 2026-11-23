@@ -1,5 +1,6 @@
 import { ATELIER_ROOMS } from '../hall/scene/atelier-layout.ts'
 import { CONFIG } from '../hall/scene/config.ts'
+import { doorDefs } from './doors.ts'
 import { linkedDoor } from './links.ts'
 import type { DoorDef, JoinedRoom, MapTint, RoomId } from './types.ts'
 
@@ -38,8 +39,6 @@ interface PlaceInfo {
 }
 
 const atelierX = (px: number) => (px - CONFIG.atelier.mock.originX) / CONFIG.atelier.mock.unit
-/** The fashion area's door, as `GALLERY_DOOR` places it; that module loads three.js, so it is repeated here. */
-const ATELIER_DOOR = { x: -3.1, clear: 0.85 }
 
 export const MAP_PLACES: Partial<Record<RoomId, PlaceInfo>> = {
   hall: {
@@ -52,7 +51,7 @@ export const MAP_PLACES: Partial<Record<RoomId, PlaceInfo>> = {
         { key: 'entrance', label: 'The entrance', tint: 'entrance', startX: CONFIG.lobby.minX, endX: CONFIG.lobby.length },
         { key: 'beyond', tint: 'gallery', startX: CONFIG.lobby.length, endX: CONFIG.lobby.length + CONFIG.galleryRoom.maxWidth, unknown: true },
       ],
-      doors: { atelier: { x: CONFIG.lobby.minX, clearX: CONFIG.lobby.minX + ATELIER_DOOR.clear } },
+      doors: doorDefs('hall'),
     }),
   },
   atelier: {
@@ -68,7 +67,7 @@ export const MAP_PLACES: Partial<Record<RoomId, PlaceInfo>> = {
         startX: atelierX(startX),
         endX: atelierX(endX),
       })),
-      doors: { gallery: { x: ATELIER_DOOR.x, clearX: ATELIER_DOOR.x + ATELIER_DOOR.clear } },
+      doors: doorDefs('atelier'),
     }),
   },
 }

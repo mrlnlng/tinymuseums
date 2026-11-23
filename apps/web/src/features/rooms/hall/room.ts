@@ -15,7 +15,7 @@ import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestbo
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
 import { GALLERY_DOOR } from '@/features/hall/scene/gallery-door'
 import { createLobby } from '@/features/hall/scene/lobby'
-import { createLobbyGalleryDoor } from '@/features/hall/scene/lobby-gallery-door'
+import { createHallDoors, createLobbyPillar } from '@/features/hall/scene/lobby-gallery-door'
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
@@ -35,6 +35,7 @@ import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import type { HallArt } from '../art'
+import { doorDefs, doorsOf } from '../doors'
 import type { Interaction, JoinedContents, JoinedRoom, RoomDef } from '../types'
 
 
@@ -88,15 +89,13 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
     id: 'hall',
     gatesItself: true,
     clearColor: CONFIG.wall.color,
-    doors: {
-      atelier: { x: GALLERY_DOOR.lobbyX, clearX: GALLERY_DOOR.lobbyX + GALLERY_DOOR.clear, label: 'To the fashion area' },
-    },
+    doors: doorDefs('hall'),
 
     initialLook() {
       return ownedLook(lookOf(defaultStore().getSlot(outfit).snapshot()), getWalletSnapshot())
     },
 
-    build(ctx, { assets, door, pillar, renderer }) {
+    build(ctx, { assets, door, doorArt, pillar, renderer }) {
       const callbacks = () => options.callbacks()
       const scene = ctx.scene
       const overlayHost = ctx.overlay
@@ -123,11 +122,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       const stopWallet = subscribeWallet(follower.sync)
       const placards = new Placards(overlayHost)
 
-      function enterAtelier(): void {
+      function enterDoor(id: string): void {
         if (ctx.isQuiet() || traversal.isIntro) return
         track('stairs')
         ctx.sound.play('click')
-        ctx.leave('atelier')
+        ctx.leave(id)
       }
 
       const entrance = CONFIG.lobby.startX
@@ -174,12 +173,8 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       function entranceRoom(): JoinedContents {
         const lobby = createLobby(scene, assets)
         const signs = new LobbySigns(overlayHost, lobby.marks)
-        const galleryDoor = createLobbyGalleryDoor(scene, overlayHost, enterAtelier, door, pillar, assets)
+        const lobbyPillar = createLobbyPillar(scene, pillar)
         function tap(raycaster: THREE.Raycaster): boolean {
-          if (galleryDoor.hitTest(raycaster) && !lobby.hitTestDoor(raycaster)) {
-            enterAtelier()
-            return true
-          }
           if (lobby.hitTestDoor(raycaster)) {
             track('leave')
             ctx.sound.play('click')
@@ -199,12 +194,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           hitTest: (raycaster, phase) => tapWith(phase, () => tap(raycaster)),
           update(frame) {
             signs.sync(frame.camera, frame.viewport)
-            galleryDoor.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
             lobby.update(frame.dt, traversal.cameraX)
           },
           dispose() {
             signs.clear()
-            galleryDoor.dispose()
+            lobbyPillar.dispose()
             lobby.dispose()
           },
         }
@@ -334,7 +328,33 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         }
       }
 
+      /** A part of the hall with the doors standing in it, which are tried before anything else there. */
       function buildRoom(room: HallRoomSpan): JoinedContents {
+        const inside = doorsOf('hall')
+          .filter(({ x }) => x >= room.startX && x < room.endX)
+          .map(({ id, x, label, scale, style }) => ({ id, x, label, scale, image: doorArt[style] ?? door }))
+        const contents = buildRoomContents(room)
+        if (inside.length === 0) return contents
+        const doors = createHallDoors(scene, overlayHost, enterDoor, inside, assets)
+        return {
+          ...contents,
+          hitTest(raycaster, phase) {
+            const through = doors.hitTest(raycaster)
+            if (through) return tapWith(phase, () => { enterDoor(through); return true })
+            return contents.hitTest(raycaster, phase)
+          },
+          update(frame) {
+            doors.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
+            contents.update(frame)
+          },
+          dispose() {
+            doors.dispose()
+            contents.dispose()
+          },
+        }
+      }
+
+      function buildRoomContents(room: HallRoomSpan): JoinedContents {
         switch (room.kind) {
           case 'entrance':
             return entranceRoom()

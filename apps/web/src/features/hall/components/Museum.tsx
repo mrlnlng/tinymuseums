@@ -13,6 +13,7 @@ import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
 import type { MinigameId } from '@/features/minigames/registry'
 import { createHallRoom, type HallCallbacks, type OpenPiece } from '@/features/rooms/hall/room'
+import { doorsOf } from '@/features/rooms/doors'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { HallRoomData } from '@/features/rooms/decorate/HallArranger'
@@ -42,7 +43,8 @@ const HallArranger = dynamic(loadHallArranger, { ssr: false })
 
 interface MuseumProps {
   initialSlice: HallSliceDto
-  arrival: 'door' | 'stairs'
+  /** The hall door the visitor came through, or null for the front door. */
+  arrival: string | null
 }
 
 /** Gamma's hall is 100 paintings long, repeating the real ones, to try out a long hall. */
@@ -64,6 +66,7 @@ function stretchedForTesting(slice: HallSliceDto): HallSliceDto {
 }
 
 export default function Museum({ initialSlice, arrival }: MuseumProps) {
+  const throughDoor = arrival === null ? undefined : doorsOf('hall').find((door) => door.id === arrival)
   const guestBoardNotesRef = useRef<HTMLDivElement>(null)
 
   const [openPiece, setOpenPiece] = useState<OpenPiece | null>(null)
@@ -133,7 +136,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
 
   const { isReady, error } = useRoom({
     room: hallRoom,
-    arrival: arrival === 'stairs' ? { kind: 'door', door: 'atelier' } : { kind: 'opening' },
+    arrival: throughDoor ? { kind: 'door', door: throughDoor.id } : { kind: 'opening' },
     isSuspended: () => isSuspended,
     onExit: (to: DoorRef) => router.push(hrefFor(to)),
   })
@@ -284,7 +287,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
             exit={{ '--curtain-open': 1 }}
             transition={{ duration: 1.15, ease: [0.65, 0, 0.35, 1] }}
           >
-            {arrival === 'stairs' ? <AtelierLoading leaving /> : <HallSkeleton preload={false} />}
+            {throughDoor?.to === 'atelier' ? <AtelierLoading leaving /> : <HallSkeleton preload={false} />}
           </motion.div>
         )}
       </AnimatePresence>

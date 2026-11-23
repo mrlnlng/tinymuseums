@@ -1,12 +1,12 @@
 import { UploadRejected, hit, queryOne, registerUpload } from '@tiny/core'
-import { currentArtist } from '@/shared/lib/session'
+import { currentArtist, isHallOwner } from '@/shared/lib/session'
 import { isHttpUrl } from '@/shared/lib/validate'
 
 const UPLOADS_PER_ARTIST = { limit: 60, windowSeconds: 60 * 60 }
 
 export async function POST(request: Request) {
   const artist = await currentArtist()
-  if (!artist) return Response.json({ error: 'Sign in first' }, { status: 401 })
+  if (!artist || !isHallOwner(artist)) return Response.json({ error: 'Sign in first' }, { status: 401 })
 
   const limited = await hit(`piece:artist:${artist.id}`, UPLOADS_PER_ARTIST)
   if (!limited.allowed) {

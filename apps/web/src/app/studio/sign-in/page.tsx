@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import Message from '@/shared/components/Message'
 import { signInAction } from '@/features/studio/actions'
 
@@ -33,10 +32,6 @@ export default async function SignIn({
           Sign in
         </button>
       </form>
-
-      <p className="small muted">
-        No wall yet? <Link href="/studio/register">Claim one</Link>.
-      </p>
     </>
   )
 }

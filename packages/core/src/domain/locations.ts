@@ -4,7 +4,7 @@ import { MAX_STANDS } from './gallery.ts'
 import { pickDerivative } from '../media/derivatives.ts'
 import { getStorage } from '../media/storage.ts'
 import { orderedPaintings, type Placement } from '../rooms/placements.ts'
-import { LOCATIONS, locationById, spotPlacementId } from '../rooms/spots.ts'
+import { LOCATIONS, locationById, spotPlacementId, type LocationSpec } from '../rooms/spots.ts'
 import type { Derivative } from '../types.ts'
 import { getRoom, publish, saveDraft, type RoomRow } from './rooms.ts'
 
@@ -13,6 +13,7 @@ import { getRoom, publish, saveDraft, type RoomRow } from './rooms.ts'
 
 export type PlaceTarget =
   | { location: string; spot: string }
+  /** In a row: after that painting, at the end with null, or first with `start`. */
   | { location: string; after: string | null }
 
 const OWNER = { isOwnerArtist: true }
@@ -66,6 +67,11 @@ async function startingRow(room: RoomRow): Promise<Placement[]> {
   return rowPlacements(rows.map((row) => row.id).filter((id) => !framed.has(id)))
 }
 
+/** Frames taken out of the museum keep their old placements; they would only push the room over its limit. */
+function inUse(location: LocationSpec, placements: Placement[]): Placement[] {
+  return location.kind === 'spots' ? placements.filter((placement) => location.spots.some((spot) => spot.id === placement.zone)) : placements
+}
+
 function without(placements: Placement[], pieceId: string, rowLocation: boolean): Placement[] {
   const kept = placements.filter((placement) => !(placement.kind === 'painting' && placement.ref === pieceId))
   return rowLocation ? rowPlacements(orderedPaintings(kept)) : kept
@@ -88,15 +94,19 @@ export async function placePainting(pieceId: string, target: PlaceTarget | null)
     const room = await getRoom(location.id)
     if (!room) continue
     const before = location.kind === 'row' ? await startingRow(room) : workingCopy(room)
+    // Only the room it leaves and the room it goes to change; the others are left exactly as they are.
+    const holds = before.some((placement) => placement.kind === 'painting' && placement.ref === pieceId)
+    if (!holds && target?.location !== location.id) continue
     let next = without(before, pieceId, location.kind === 'row')
+    next = inUse(location, next)
     if (target && location.id === target.location) {
       if ('spot' in target) {
         next = next.filter((placement) => placement.zone !== target.spot)
         next.push({ id: spotPlacementId(target.spot), kind: 'painting', ref: pieceId, zone: target.spot, x: 0 })
       } else {
         const order = orderedPaintings(next)
-        const at = target.after === null ? order.length : order.indexOf(target.after) + 1
-        order.splice(at <= 0 && target.after !== null ? order.length : at, 0, pieceId)
+        const at = target.after === null ? order.length : target.after === 'start' ? 0 : order.indexOf(target.after) + 1
+        order.splice(at <= 0 && target.after !== null && target.after !== 'start' ? order.length : at, 0, pieceId)
         next = rowPlacements(order)
       }
     }
@@ -130,8 +140,9 @@ export async function publishLocation(location: string): Promise<boolean> {
 /** Throws the draft away, back to what is live. */
 export async function discardLocation(location: string): Promise<PlaceResult> {
   const room = await getRoom(location)
-  if (!room) return { ok: false, reason: 'not_found' }
-  const saved = await saveDraft(location, room.published, OWNER)
+  const spec = locationById(location)
+  if (!room || !spec) return { ok: false, reason: 'not_found' }
+  const saved = await saveDraft(location, inUse(spec, room.published), OWNER)
   return saved.ok ? { ok: true } : { ok: false, reason: saved.reason }
 }
 
@@ -206,7 +217,9 @@ export async function locationStates(): Promise<LocationState[]> {
       row: location.kind === 'row' ? orderedPaintings(working) : [],
       // Nothing published yet means visitors see the starting row itself.
       liveRow: location.kind === 'row' ? (live.length > 0 ? orderedPaintings(live) : orderedPaintings(working)) : [],
-      unpublished: room ? hasUnpublished(room) : false,
+      unpublished: !room ? false : location.kind === 'spots'
+        ? JSON.stringify(inUse(location, workingCopy(room))) !== JSON.stringify(inUse(location, room.published))
+        : hasUnpublished(room),
     })
   }
   return states

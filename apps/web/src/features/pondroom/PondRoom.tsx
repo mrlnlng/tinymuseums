@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { createPondRoom, type PondCallbacks, type PondControl } from '@/features/rooms/pond/room'
+import { doorsOf } from '@/features/rooms/doors'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { DoorRef } from '@/features/rooms/types'
@@ -22,6 +23,8 @@ const PondGame = dynamic(() => import('@/features/pondgame/components/PondGame')
 export interface PondRoomProps {
   /** Later phases can take over the pond's overlays without changing the room. */
   callbacks?: Partial<PondCallbacks>
+  /** The pond door the visitor came through; without one, in at the forest gate. */
+  from?: string | null
 }
 
 function PondFishing({ onClose, spot, unavailable }: { onClose(): void; spot: number; unavailable: boolean }) {
@@ -46,7 +49,7 @@ function PondFishing({ onClose, spot, unavailable }: { onClose(): void; spot: nu
   )
 }
 
-export default function PondRoom({ callbacks: overrides }: PondRoomProps = {}) {
+export default function PondRoom({ callbacks: overrides, from = null }: PondRoomProps = {}) {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
@@ -98,7 +101,7 @@ export default function PondRoom({ callbacks: overrides }: PondRoomProps = {}) {
 
   const { isReady, error } = useRoom({
     room,
-    arrival: { kind: 'opening' },
+    arrival: from && from !== 'hall' && doorsOf('pond').some((door) => door.id === from) ? { kind: 'door', door: from } : { kind: 'opening' },
     isSuspended: () => fishingSpot !== null || panel !== null,
     onExit: (to: DoorRef) => routerRef.current.push(hrefFor(to)),
   })

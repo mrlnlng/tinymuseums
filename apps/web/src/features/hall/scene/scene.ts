@@ -3,6 +3,8 @@ import type { HallPieceDto, HallSliceDto } from '@tiny/core'
 import { disposeDisplayTexture, loadDisplayTexture, prefersAvif, type Assets } from './assets'
 import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
+import { doorWidth } from '@tiny/core/rooms'
+import { doorsOf } from '@/features/rooms/doors'
 import { computeLayout, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
@@ -35,6 +37,11 @@ function markFirstPainting(): void {
   if (performance.getEntriesByName(FIRST_PAINTING_MARK).length === 0) performance.mark(FIRST_PAINTING_MARK)
 }
 
+/** The hall's doors past the entrance, which its paintings make room for. */
+function hallDoorSpans() {
+  return doorsOf('hall').map((door) => ({ x: door.x, width: doorWidth(door) }))
+}
+
 function wallSize(piece: HallPieceDto): { width: number; height: number } {
   const scale = CONFIG.piece.scale
   return { width: piece.canvas.w * scale, height: piece.canvas.h * scale }
@@ -61,7 +68,7 @@ export interface PieceHit {
 }
 
 export class HallScene {
-  layout: HallLayout = computeLayout([])
+  layout: HallLayout = computeLayout([], false, hallDoorSpans())
   epochId = 0
   nextIndex: number | null = 0
   totalSlots = 0
@@ -109,7 +116,7 @@ export class HallScene {
       widths.push(wallSize(this.slots.get(i)!.piece).width)
     }
     const isComplete = this.nextIndex === null && widths.length === this.totalSlots
-    this.layout = computeLayout(widths, isComplete)
+    this.layout = computeLayout(widths, isComplete, hallDoorSpans())
     this.galleriesChanged = true
 
     for (const mount of this.mounted.values()) {

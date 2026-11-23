@@ -18,6 +18,8 @@ export interface PondLandmark {
   path?: PondPath
   /** Where the visitor stands beside the prop to use it, clear of the sprite. */
   standX?: number
+  /** For a door placed from the studio: its id, and the picture it is drawn from. */
+  door?: { id: string; image: HTMLImageElement }
   title: string
   description: string
   /** Built through the asset manifest, so it is served from the CDN with the rest of the art. */

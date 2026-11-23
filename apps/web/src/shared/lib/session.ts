@@ -9,9 +9,10 @@ export async function currentArtist(): Promise<AuthedArtist | null> {
   return artistForSession(store.get(SESSION_COOKIE)?.value)
 }
 
+/** The studio is the hall owner's admin page; any other artist session is sent to sign in. */
 export async function requireArtist(): Promise<AuthedArtist> {
   const artist = await currentArtist()
-  if (!artist) redirect('/studio/sign-in')
+  if (!artist || !isHallOwner(artist)) redirect('/studio/sign-in')
   return artist
 }
 
@@ -20,11 +21,7 @@ export function isHallOwner(artist: AuthedArtist): boolean {
   return owner !== '' && artist.email.toLowerCase() === owner
 }
 
-export async function requireHallOwner(): Promise<AuthedArtist> {
-  const artist = await requireArtist()
-  if (!isHallOwner(artist)) redirect('/studio')
-  return artist
-}
+export const requireHallOwner = requireArtist
 
 export async function setSessionCookie(token: string, expiresAt: Date): Promise<void> {
   const store = await cookies()

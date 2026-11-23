@@ -7,7 +7,6 @@ import { getMailer, newWorkNotice } from './infra/mail.ts'
 import { SKETCH_VERSION, renderSketch } from './media/sketch.ts'
 import { frameAvifKey, pieceFrameKey, pieceSketchKey, getStorage, type Storage } from './media/storage.ts'
 import { confirmedFollowers } from './domain/audience.ts'
-import { MAX_STANDS } from './domain/gallery.ts'
 import type { Derivative } from './types.ts'
 
 export async function handleDerivatives(assetId: string): Promise<void> {
@@ -57,9 +56,8 @@ export async function handleRenderDisplay(artistId: string): Promise<void> {
        from pieces p
        join assets a on a.id = p.asset_id
       where p.artist_id = $1
-        and p.order_index between 1 and $2
         and a.status = 'ready'`,
-    [artistId, MAX_STANDS],
+    [artistId],
   )
   if (rows.length === 0) return
 
@@ -174,9 +172,8 @@ export async function repairUnframed(): Promise<number> {
     `select distinct p.artist_id
        from pieces p
        join assets a on a.id = p.asset_id
-      where p.order_index between 1 and $1
-        and (p.flattened_key is null or p.flattened_version <> $2
-             or p.sketch_key is null or p.sketch_version <> $3)
+      where (p.flattened_key is null or p.flattened_version <> $1
+             or p.sketch_key is null or p.sketch_version <> $2)
         and a.status = 'ready'
         -- enqueue does not deduplicate: skip artists already queued, and give a failing render a day's rest.
         and not exists (
@@ -184,7 +181,7 @@ export async function repairUnframed(): Promise<number> {
            where j.kind = 'render_display' and j.payload->>'artistId' = p.artist_id::text
              and (j.status in ('pending', 'running')
                   or (j.status = 'failed' and j.run_after > now() - interval '1 day')))`,
-    [MAX_STANDS, FRAME_VERSION, SKETCH_VERSION],
+    [FRAME_VERSION, SKETCH_VERSION],
   )
   for (const row of rows) await enqueue('render_display', { artistId: row.artist_id })
   return rows.length

@@ -53,3 +53,17 @@ test('keys of earlier rooms stay the same as more paintings arrive', () => {
   )
   assert.equal(later[sealed.length].key, early[early.length - 1].key)
 })
+
+test('paintings, the cafe and the gift shop step round the doors in the hall', () => {
+  const doors = [{ x: 12, width: 1.96 }, { x: 40, width: 2.6 }]
+  const layout = computeLayout(paintings(25), true, doors)
+  const half = 2.63 / 2
+  for (const x of layout.centerX) {
+    for (const door of doors) assert.ok(Math.abs(x - door.x) >= half + door.width / 2, `painting at ${x} overlaps the door at ${door.x}`)
+  }
+  for (const x of layout.pedestalX) for (const door of doors) assert.ok(Math.abs(x - door.x) > door.width / 2)
+  // Without doors the same hall is shorter: the doors made room for themselves.
+  assert.ok(layout.totalLength > computeLayout(paintings(25), true).totalLength)
+  // A door far past the paintings known so far still has floor under it.
+  assert.ok(computeLayout(paintings(3), false, [{ x: 90, width: 2 }]).totalLength > 91)
+})

@@ -123,7 +123,7 @@ async function CurrentlyShowing() {
         <p>Nothing is hanging yet.</p>
       )}
       <p>
-        <Link href="/studio/sign-in">Artists: sign in</Link>
+        <Link href="/studio/sign-in">Studio</Link>
       </p>
     </nav>
   )

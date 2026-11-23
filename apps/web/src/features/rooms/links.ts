@@ -1,32 +1,30 @@
-import type { DoorRef } from './types'
-
-const LINKS: readonly (readonly [DoorRef, DoorRef])[] = [
-  [{ room: 'hall', door: 'atelier' }, { room: 'atelier', door: 'gallery' }],
-]
+import { doorTarget } from '@tiny/core/rooms'
+import { museumDoors } from './doors.ts'
+import type { DoorRef } from './types.ts'
 
 /** Doors that leave the room system for a page of their own. */
 const EXITS: readonly (readonly [DoorRef, DoorRef])[] = [
   [{ room: 'personal', door: 'hall' }, { room: 'hall', door: 'entrance' }],
-  [{ room: 'pond', door: 'hall' }, { room: 'hall', door: 'entrance' }],
 ]
 
 const isDoor = (door: DoorRef, room: DoorRef['room'], name: string) => door.room === room && door.door === name
 
+/** Where a door leads: the door paired with it, or `entrance` for the room's own way in. */
 export function linkedDoor(from: DoorRef): DoorRef | null {
-  for (const [a, b] of LINKS) {
-    if (isDoor(from, a.room, a.door)) return b
-    if (isDoor(from, b.room, b.door)) return a
-  }
   for (const [exit, to] of EXITS) {
     if (isDoor(from, exit.room, exit.door)) return to
   }
-  return null
+  const to = doorTarget(museumDoors(), from.room, from.door)
+  return to ? { room: to.room, door: to.door ?? 'entrance' } : null
+}
+
+const ROOM_PATH: Partial<Record<DoorRef['room'], string>> = {
+  hall: '/museum',
+  atelier: '/museum/atelier',
+  pond: '/museum/pond',
 }
 
 export function hrefFor(to: DoorRef): string {
-  if (isDoor(to, 'hall', 'atelier')) return '/museum?from=atelier'
-  if (isDoor(to, 'atelier', 'gallery')) return '/museum/atelier'
-  if (isDoor(to, 'hall', 'entrance')) return '/museum'
-  if (isDoor(to, 'pond', 'hall')) return '/museum'
-  return '/museum'
+  const path = ROOM_PATH[to.room] ?? '/museum'
+  return to.door === 'entrance' || !ROOM_PATH[to.room] ? path : `${path}?from=${encodeURIComponent(to.door)}`
 }

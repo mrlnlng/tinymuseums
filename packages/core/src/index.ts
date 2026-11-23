@@ -41,6 +41,7 @@ export {
   deletePiece,
   getGallery,
   hangPiece,
+  piecesById,
   movePiece,
   unhangPiece,
 } from './domain/gallery.ts'
@@ -221,6 +222,7 @@ export * from './rooms/placements.ts'
 export * from './rooms/spots.ts'
 export * from './rooms/sizes.ts'
 export * from './rooms/work.ts'
+export * from './rooms/doors.ts'
 export {
   canEdit,
   canView,
@@ -255,5 +257,6 @@ export {
   type SpotPainting,
   type SpotState,
 } from './domain/locations.ts'
+export { discardDoors, doorsState, publishDoors, publishedDoors, saveDoorsDraft, type DoorsState } from './domain/doors.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'

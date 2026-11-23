@@ -6,27 +6,27 @@ import { redirect } from 'next/navigation'
 import {
   createSession,
   deletePiece,
+  discardDoors,
+  doorsState,
+  publishDoors,
+  saveDoorsDraft,
+  type MuseumDoor,
   destroySession,
-  env,
   discardLocation,
   locationStates,
   nudgeInRow,
   placePainting,
   publishLocation,
   ensureQrToken,
-  hashPassword,
+  env,
   hideGuestNote,
   setBugReportResolved,
-  hangPiece,
   hitForVisitor,
-  movePiece,
   publishArtist,
   query,
   queryOne,
   republishArtist,
   revokeQrToken,
-  unhangPiece,
-  uniqueSlug,
   unpublishArtist,
   verifyPassword,
 } from '@tiny/core'
@@ -39,48 +39,15 @@ import {
   setSessionCookie,
   SESSION_COOKIE,
 } from '@/shared/lib/session'
-import { isEmail, isHttpUrl } from '@/shared/lib/validate'
+import { isHttpUrl } from '@/shared/lib/validate'
 
 function back(path: string, message: string, kind: 'ok' | 'bad' = 'ok'): never {
-  redirect(`${path}?m=${encodeURIComponent(message)}&k=${kind}`)
+  redirect(`${path}${path.includes('?') ? '&' : '?'}m=${encodeURIComponent(message)}&k=${kind}`)
 }
 
 async function isThrottled(scope: string, limit: number, windowSeconds: number): Promise<boolean> {
   const result = await hitForVisitor(scope, clientIp(await headers()), { limit, windowSeconds })
   return !result.allowed
-}
-
-export async function registerAction(formData: FormData): Promise<void> {
-  const name = String(formData.get('name') ?? '').trim()
-  const email = String(formData.get('email') ?? '').trim().toLowerCase()
-  const password = String(formData.get('password') ?? '')
-
-  if (name.length < 2) back('/studio/register', 'Tell us what to call you', 'bad')
-  if (!isEmail(email)) back('/studio/register', 'That email does not look right', 'bad')
-  if (password.length < 8) back('/studio/register', 'Use at least 8 characters', 'bad')
-  // The owner account is made by hand, so nobody can claim admin by signing up with its email first.
-  const owner = env.hallOwnerEmail.trim().toLowerCase()
-  if (owner !== '' && email === owner) back('/studio/register', 'That email already has a wall', 'bad')
-  if (await isThrottled('register', 5, 60 * 60)) {
-    back('/studio/register', 'Too many attempts. Try again later.', 'bad')
-  }
-
-  const taken = await queryOne(`select 1 from artists where email = $1`, [email])
-  if (taken) back('/studio/register', 'That email already has a wall', 'bad')
-
-  const slug = await uniqueSlug(name)
-  const artist = await queryOne<{ id: string }>(
-    `insert into artists (slug, display_name, email, password_hash)
-     values ($1, $2, $3, $4) returning id`,
-    [slug, name, email, await hashPassword(password)],
-  )
-  if (!artist) back('/studio/register', 'Could not create your wall', 'bad')
-
-  await query(`insert into displays (artist_id) values ($1) on conflict do nothing`, [artist.id])
-
-  const session = await createSession(artist.id)
-  await setSessionCookie(session.token, session.expiresAt)
-  redirect('/studio')
 }
 
 export async function signInAction(formData: FormData): Promise<void> {
@@ -102,6 +69,8 @@ export async function signInAction(formData: FormData): Promise<void> {
   if (!artist || !(await verifyPassword(password, artist.password_hash))) {
     back('/studio/sign-in', 'That email and password do not match', 'bad')
   }
+  const owner = env.hallOwnerEmail.trim().toLowerCase()
+  if (owner === '' || email !== owner) back('/studio/sign-in', 'The studio is for the museum owner only', 'bad')
   const session = await createSession(artist.id)
   await setSessionCookie(session.token, session.expiresAt)
   redirect('/studio')
@@ -119,16 +88,17 @@ export async function updatePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   const id = String(formData.get('id') ?? '')
   const title = String(formData.get('title') ?? '').trim()
-  if (!title) back('/studio/gallery', 'Give the work a title', 'bad')
+  const here = `/studio/paintings?id=${encodeURIComponent(id)}`
+  if (!title) back(here, 'Give the work a title', 'bad')
 
   const shopUrl = String(formData.get('shopUrl') ?? '').trim() || null
   if (shopUrl && !isHttpUrl(shopUrl)) {
-    back('/studio/gallery', 'The shop link must start with http:// or https://', 'bad')
+    back(here, 'The shop link must start with http:// or https://', 'bad')
   }
 
   const wallpaperUrl = String(formData.get('wallpaperUrl') ?? '').trim() || null
   if (wallpaperUrl && !isHttpUrl(wallpaperUrl)) {
-    back('/studio/gallery', 'The wallpaper link must start with http:// or https://', 'bad')
+    back(here, 'The wallpaper link must start with http:// or https://', 'bad')
   }
 
   await query(
@@ -145,37 +115,19 @@ export async function updatePieceAction(formData: FormData): Promise<void> {
     ],
   )
 
-  revalidatePath('/studio/gallery')
-  back('/studio/gallery', 'Saved')
+  revalidatePath('/studio', 'layout')
+  back(here, 'Saved')
 }
 
 export async function deletePieceAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   await deletePiece(artist.id, String(formData.get('id') ?? ''))
-  revalidatePath('/studio/gallery')
-  back('/studio/gallery', 'Removed')
+  revalidatePath('/studio', 'layout')
+  back('/studio/paintings', 'Removed')
 }
 
-export async function movePieceAction(formData: FormData): Promise<void> {
-  const artist = await requireArtist()
-  const direction = formData.get('direction') === 'down' ? 'down' : 'up'
-  await movePiece(artist.id, String(formData.get('id') ?? ''), direction)
-  revalidatePath('/studio/gallery')
-}
 
-export async function unhangAction(formData: FormData): Promise<void> {
-  const artist = await requireArtist()
-  await unhangPiece(artist.id, String(formData.get('id') ?? ''))
-  revalidatePath('/studio/gallery')
-}
 
-export async function hangAction(formData: FormData): Promise<{ error?: string }> {
-  const artist = await requireArtist()
-  const hung = await hangPiece(artist.id, String(formData.get('id') ?? ''))
-  revalidatePath('/studio/gallery')
-  if (!hung) return { error: 'The floor is full — unhang something first' }
-  return {}
-}
 
 export async function publishAction(): Promise<void> {
   const artist = await requireArtist()
@@ -208,14 +160,14 @@ export async function createCodeAction(formData: FormData): Promise<{ error?: st
   if (existing) return { error: 'You already have a code for that placement' }
 
   await ensureQrToken(artist.id, placement)
-  revalidatePath('/studio/gallery')
+  revalidatePath('/studio', 'layout')
   return {}
 }
 
 export async function deleteCodeAction(formData: FormData): Promise<void> {
   const artist = await requireArtist()
   await revokeQrToken(artist.id, String(formData.get('token') ?? ''))
-  revalidatePath('/studio/gallery')
+  revalidatePath('/studio', 'layout')
 }
 
 export async function deleteGuestNoteAction(formData: FormData): Promise<void> {
@@ -252,7 +204,7 @@ export async function placePaintingAction(formData: FormData): Promise<void> {
   await requireHallOwner()
   const id = String(formData.get('id') ?? '')
   const target = String(formData.get('target') ?? '')
-  const path = returnTo(formData, '/studio/gallery')
+  const path = returnTo(formData, '/studio/paintings')
   const [location, spot] = target.split('|')
   const states = await locationStates()
   const state = states.find((s) => s.id === location)
@@ -262,8 +214,7 @@ export async function placePaintingAction(formData: FormData): Promise<void> {
     target === 'none' ? null : state!.kind === 'row' ? { location, after: spot === 'end' ? null : spot } : { location, spot },
   )
   if (!result.ok) back(path, PLACE_ERRORS[result.reason] ?? `Could not place it (${result.reason})`, 'bad')
-  revalidatePath('/studio/gallery')
-  revalidatePath('/studio/locations')
+  revalidatePath('/studio', 'layout')
   back(path, target === 'none' ? 'Taken down in the draft. Publish its location to make it live.' : `Placed in ${state!.label} as a draft. Publish it to make it live.`)
 }
 
@@ -271,26 +222,62 @@ export async function nudgeInRowAction(formData: FormData): Promise<void> {
   await requireHallOwner()
   const location = String(formData.get('location') ?? '')
   const result = await nudgeInRow(location, String(formData.get('id') ?? ''), formData.get('by') === 'up' ? -1 : 1)
-  if (!result.ok) back('/studio/locations', `Could not move it (${result.reason})`, 'bad')
-  revalidatePath('/studio/locations')
-  redirect(`/studio/locations#${location}`)
+  if (!result.ok) back('/studio/hang', `Could not move it (${result.reason})`, 'bad')
+  revalidatePath('/studio', 'layout')
+  redirect(`/studio/hang?room=${location}`)
 }
 
 export async function publishLocationAction(formData: FormData): Promise<void> {
   await requireHallOwner()
   const location = String(formData.get('location') ?? '')
   const label = (await locationStates()).find((s) => s.id === location)?.label ?? location
-  if (!(await publishLocation(location))) back('/studio/locations', `Could not publish ${label}`, 'bad')
-  revalidatePath('/studio/locations')
+  if (!(await publishLocation(location))) back('/studio/hang', `Could not publish ${label}`, 'bad')
+  revalidatePath('/studio', 'layout')
   revalidatePath('/museum', 'layout')
-  back('/studio/locations', `${label} is live`)
+  back(`/studio/hang?room=${location}`, `${label} is live`)
 }
 
 export async function discardLocationAction(formData: FormData): Promise<void> {
   await requireHallOwner()
   const location = String(formData.get('location') ?? '')
   const result = await discardLocation(location)
-  if (!result.ok) back('/studio/locations', `Could not discard (${result.reason})`, 'bad')
-  revalidatePath('/studio/locations')
-  back('/studio/locations', 'Back to what is live')
+  if (!result.ok) back('/studio/hang', `Could not discard (${result.reason})`, 'bad')
+  revalidatePath('/studio', 'layout')
+  back(`/studio/hang?room=${location}`, 'Back to what is live')
+}
+
+// Doors: the editor changes its own copy with the rules in rooms/doors.ts and saves the whole set
+// as a draft; the server checks it again before keeping it.
+export async function saveDoorsAction(doors: MuseumDoor[]): Promise<{ ok: boolean }> {
+  await requireHallOwner()
+  const ok = await saveDoorsDraft(doors)
+  revalidatePath('/studio/doors')
+  revalidatePath('/studio')
+  return { ok }
+}
+
+export async function publishDoorsAction(): Promise<void> {
+  await requireHallOwner()
+  await publishDoors()
+  revalidatePath('/museum', 'layout')
+  back('/studio/doors', 'The doors are live')
+}
+
+export async function discardDoorsAction(): Promise<void> {
+  await requireHallOwner()
+  await discardDoors()
+  revalidatePath('/studio/doors')
+  back('/studio/doors', 'Back to the doors that are live')
+}
+
+/** Puts every waiting change live: each location's paintings and the doors. */
+export async function publishAllAction(): Promise<void> {
+  await requireHallOwner()
+  for (const state of await locationStates()) {
+    if (state.unpublished && !(await publishLocation(state.id))) back('/studio', `Could not publish ${state.label}`, 'bad')
+  }
+  if ((await doorsState()).unpublished) await publishDoors()
+  revalidatePath('/museum', 'layout')
+  revalidatePath('/studio', 'layout')
+  back('/studio', 'Everything is live')
 }

@@ -15,6 +15,7 @@ import type { AtelierArtwork } from '../art'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import type { JoinedRoom, RoomDef } from '../types'
+import { doorDefs, doorsOf } from '../doors'
 
 /** How the page reaches into the room: it hears when the mirror is tapped, and asks the room to change character. */
 export interface AtelierHooks {
@@ -61,12 +62,11 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
     className: 'atelier',
     clearColor: '#3a0707',
     minLoadingMs: 2800,
-    doors: {
-      gallery: { x: GALLERY_DOOR.atelierX, clearX: GALLERY_DOOR.atelierX + GALLERY_DOOR.clear, label: 'To the hall' },
-    },
+    doors: doorDefs('atelier'),
 
-    build(ctx, { art, door }) {
-      const room = createAtelierRoom(ctx.scene, art, ctx.overlay, door, spots)
+    build(ctx, { art, door, doorArt }) {
+      const doors = doorsOf('atelier').map(({ id, x, label, scale, style }) => ({ id, x, label, scale, image: doorArt[style] ?? door }))
+      const room = createAtelierRoom(ctx.scene, art, ctx.overlay, doors, spots)
       const outfitSlot = defaultStore().getSlot(outfit)
       let wardrobe: Wardrobe | null = null
       const follower = followOutfit(
@@ -95,7 +95,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
 
       // Walking out, anything unkept leaves the visitor and flies home before the room goes.
       let leaving = false
-      function leaveByDoor(): void {
+      function leaveByDoor(through: string): void {
         if (leaving) return
         leaving = true
         track('stairs')
@@ -112,7 +112,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
             bow: restamp(o.bow, kept.bow),
           }))
         }
-        window.setTimeout(() => ctx.leave('gallery'), flight)
+        window.setTimeout(() => ctx.leave(through), flight)
       }
       let disposed = false
       const stopWallet = subscribeWallet(() => {
@@ -143,7 +143,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
         onMirror: () => { if (!ctx.isQuiet()) openMirror() },
         onWardrobe: () => { if (!ctx.isQuiet()) hooks.onCloset() },
-        onLeave: () => { if (!ctx.isQuiet()) leaveByDoor() },
+        onLeave: (through) => { if (!ctx.isQuiet()) leaveByDoor(through) },
       })
 
       return {
@@ -170,9 +170,8 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
           if (item) return { activate: () => closet.tapItem(item) }
           if (room.hitTestMirror(raycaster)) return { activate: openMirror }
           if (room.hitTestWardrobe(raycaster)) return { activate: () => hooks.onCloset() }
-          if (room.hitTestDoor(raycaster)) {
-            return { activate: leaveByDoor }
-          }
+          const through = room.hitTestDoor(raycaster)
+          if (through) return { activate: () => leaveByDoor(through) }
           return null
         },
 

@@ -67,15 +67,35 @@ export function comingSoonWidth(): number {
   return CONFIG.comingSoon.canvas.w * CONFIG.piece.scale
 }
 
-export function computeLayout(paintings: number[], isComplete = false): HallLayout {
+/** A door standing in the hall: its centre and width. Paintings and rooms step round it. */
+export interface DoorSpan {
+  x: number
+  width: number
+}
+
+/** Space kept on either side of a door, so a frame never touches it. */
+const DOOR_CLEARANCE = 0.45
+
+export function computeLayout(paintings: number[], isComplete = false, doors: readonly DoorSpan[] = []): HallLayout {
   const widths = isComplete ? [...paintings, comingSoonWidth()] : paintings
+  const blocked = doors
+    .map(({ x, width }) => ({ start: x - width / 2 - DOOR_CLEARANCE, end: x + width / 2 + DOOR_CLEARANCE }))
+    .sort((a, b) => a.start - b.start)
+  /** The first place at or after `start` where something `width` wide clears every door. */
+  function clear(start: number, width: number): number {
+    for (const door of blocked) {
+      if (start < door.end && start + width > door.start) start = door.end
+    }
+    return start
+  }
   const centerX: number[] = []
   const pedestalX: number[] = []
   let cafeX: number | null = null
   let guestBoardX: number | null = null
   const spans: Span[] = [{ kind: 'entrance', startX: CONFIG.lobby.minX, endX: CONFIG.lobby.length }]
 
-  function placeCafe(start: number): number {
+  function placeCafe(from: number): number {
+    const start = clear(from, CONFIG.cafe.lead + CONFIG.cafe.trail + CONFIG.guestBoard.lead + CONFIG.guestBoard.trail)
     cafeX = start + CONFIG.cafe.lead
     const afterCafe = cafeX + CONFIG.cafe.trail
     guestBoardX = afterCafe + CONFIG.guestBoard.lead
@@ -87,6 +107,7 @@ export function computeLayout(paintings: number[], isComplete = false): HallLayo
   let cursor = CONFIG.lobby.length
   const after = cafeAfterIndex(widths, isComplete)
   widths.forEach((w, i) => {
+    cursor = clear(cursor, w)
     centerX.push(cursor + w / 2)
     spans.push({ kind: 'gallery', startX: cursor, endX: cursor + w })
     cursor += w
@@ -95,13 +116,15 @@ export function computeLayout(paintings: number[], isComplete = false): HallLayo
     if (after === i) {
       cursor = placeCafe(cursor)
     } else {
-      if (hasPedestal(i)) pedestalX.push(cursor + CONFIG.piece.gap / 2)
+      const pedestal = cursor + CONFIG.piece.gap / 2
+      if (hasPedestal(i) && clear(pedestal, 0) === pedestal) pedestalX.push(pedestal)
       cursor += CONFIG.piece.gap
     }
   })
 
   if (isComplete && after === widths.length - 1) cursor = placeCafe(cursor)
 
+  if (isComplete) cursor = clear(cursor, CONFIG.giftShop.length * 2)
   const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
 
   const comingSoonX = isComplete ? centerX.pop()! : null
@@ -109,10 +132,12 @@ export function computeLayout(paintings: number[], isComplete = false): HallLayo
     spans.push({ kind: 'giftShop', startX: giftShopX - CONFIG.giftShop.length, endX: giftShopX + CONFIG.giftShop.length })
   }
 
+  // A door past the last painting known so far still needs floor to stand on.
+  const pastDoors = blocked.length > 0 ? blocked[blocked.length - 1].end : -Infinity
   return {
     centerX,
     pedestalX,
-    totalLength: giftShopX ?? cursor + CONFIG.piece.gap,
+    totalLength: giftShopX ?? Math.max(cursor + CONFIG.piece.gap, pastDoors),
     known: paintings.length,
     giftShopX,
     cafeX,

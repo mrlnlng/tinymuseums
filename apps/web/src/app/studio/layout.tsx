@@ -1,46 +1,33 @@
 import Link from 'next/link'
-import { BRAND, countOpenBugReports } from '@tiny/core'
+import { BRAND, countOpenBugReports, doorsState, locationStates } from '@tiny/core'
+import StudioNav from '@/features/studio/components/StudioNav'
 import { currentArtist, isHallOwner } from '@/shared/lib/session'
-import { signOutAction } from '@/features/studio/actions'
+import '../../styles/studio.css'
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
-  const artist = await currentArtist()
-  const openBugs = artist && isHallOwner(artist) ? await countOpenBugReports() : 0
+  const signedIn = await currentArtist()
+  const owner = signedIn && isHallOwner(signedIn)
 
+  if (!owner) {
+    return (
+      <>
+        <header className="topbar">
+          <Link className="brand" href="/">{BRAND}</Link>
+          <nav><Link href="/studio/sign-in">Sign in</Link></nav>
+        </header>
+        <main className="page">{children}</main>
+      </>
+    )
+  }
+
+  const [openBugs, states, doors] = await Promise.all([countOpenBugReports(), locationStates(), doorsState()])
   return (
-    <>
-      <header className="topbar">
-        <Link className="brand" href="/">
-          {BRAND}
-        </Link>
-        {artist ? (
-          <nav>
-            <Link href="/studio">Wall</Link>
-            <Link href="/studio/gallery">Gallery</Link>
-            <Link href="/studio/analytics">Visitors</Link>
-            {isHallOwner(artist) ? (
-              <>
-                <Link href="/studio/locations">Locations</Link>
-                <Link href="/studio/guestboard">Guest board</Link>
-                <Link href="/studio/visits">Visits</Link>
-                <Link href="/studio/performance">Performance</Link>
-                <Link href="/studio/bugs">Bug reports{openBugs > 0 ? ` (${openBugs})` : ''}</Link>
-              </>
-            ) : null}
-            <form action={signOutAction}>
-              <button type="submit" className="nav-button">
-                Sign out
-              </button>
-            </form>
-          </nav>
-        ) : (
-          <nav>
-            <Link href="/studio/sign-in">Sign in</Link>
-            <Link href="/studio/register">Claim a wall</Link>
-          </nav>
-        )}
-      </header>
-      <main className="page">{children}</main>
-    </>
+    <div className="st-shell">
+      <StudioNav
+        waiting={{ hang: states.filter((state) => state.unpublished).length, doors: doors.unpublished ? 1 : 0 }}
+        openBugs={openBugs}
+      />
+      <main className="st-main">{children}</main>
+    </div>
   )
 }

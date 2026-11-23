@@ -55,9 +55,9 @@
     "semantic_hash": ""
   },
   "apps/web/package.json": {
-    "mtime": 1795328027.4203188,
-    "seen": 1795329163.6369474,
-    "ast_hash": "ea6da5520f08bb0946992f9f89bc02ce",
+    "mtime": 1795335250.30712,
+    "seen": 1795335417.541211,
+    "ast_hash": "6308a4aa9b9cdc80031e4d6cdf893004",
     "semantic_hash": ""
   },
   "apps/web/public/assets/costumes/kiki/fit.json": {
@@ -194,16 +194,16 @@
     "semantic_hash": "2b7855d14999aac37303323772eea1a6"
   },
   "apps/web/src/app/api/studio/pieces/route.ts": {
-    "mtime": 1792547330.6071723,
-    "seen": 1793430503.330282,
-    "ast_hash": "cea2480c234e345ca34acf2fd417f8fe",
-    "semantic_hash": "cea2480c234e345ca34acf2fd417f8fe"
+    "mtime": 1795394335.8293064,
+    "seen": 1795394940.1272678,
+    "ast_hash": "638040ba6c96bfdb15b54b934fe0affc",
+    "semantic_hash": ""
   },
   "apps/web/src/app/api/studio/uploads/presign/route.ts": {
-    "mtime": 1792469412.6374056,
-    "seen": 1793430503.3303204,
-    "ast_hash": "0132ac0600b48ec621f483d124985dab",
-    "semantic_hash": "0132ac0600b48ec621f483d124985dab"
+    "mtime": 1795394335.8192623,
+    "seen": 1795394940.127269,
+    "ast_hash": "12fcd1473dc8de1df1224c163f20a4f8",
+    "semantic_hash": ""
   },
   "apps/web/src/app/api/uploads/local/route.ts": {
     "mtime": 1789275508.1231544,
@@ -254,15 +254,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/atelier/page.tsx": {
-    "mtime": 1794039052.2560446,
-    "seen": 1794039642.5972867,
-    "ast_hash": "261222a3fa43364e9389b657312303ef",
+    "mtime": 1795394266.9746418,
+    "seen": 1795394940.1272855,
+    "ast_hash": "25930d30e102cc97d9023d1a02fda6f2",
     "semantic_hash": ""
   },
   "apps/web/src/app/page.tsx": {
-    "mtime": 1795324325.4372878,
-    "seen": 1795326111.9484482,
-    "ast_hash": "3de44bbd6c636426586360744a620edd",
+    "mtime": 1795392419.3446703,
+    "seen": 1795392526.1728294,
+    "ast_hash": "c9ed61069780961f1d57a7f688862fd1",
     "semantic_hash": ""
   },
   "apps/web/src/app/q/[token]/route.ts": {
@@ -284,9 +284,9 @@
     "semantic_hash": "df318fc22c933c4199601d1230c254b1"
   },
   "apps/web/src/app/studio/gallery/page.tsx": {
-    "mtime": 1794039149.8852026,
-    "seen": 1794039642.5972943,
-    "ast_hash": "d368b77a62e2271f591a099cfac35999",
+    "mtime": 1795394497.8428307,
+    "seen": 1795394940.1272955,
+    "ast_hash": "6c9e6a3e02e5bb1dd5c34e60673c91f2",
     "semantic_hash": ""
   },
   "apps/web/src/app/studio/guestboard/page.tsx": {
@@ -296,16 +296,16 @@
     "semantic_hash": "13b57bf0dc4f620bdfa7001ecc0c633e"
   },
   "apps/web/src/app/studio/layout.tsx": {
-    "mtime": 1794039149.8847327,
-    "seen": 1794039642.5972962,
-    "ast_hash": "abcd46f10d7503ae4a624c71a036b63c",
+    "mtime": 1795394409.4793959,
+    "seen": 1795394940.127298,
+    "ast_hash": "11a6994af85aea2f6cbc9dab315ca985",
     "semantic_hash": ""
   },
   "apps/web/src/app/studio/page.tsx": {
-    "mtime": 1790449334.544146,
-    "seen": 1793430503.330967,
-    "ast_hash": "f462227db9d49e1a01abcdceb034c4dd",
-    "semantic_hash": "f462227db9d49e1a01abcdceb034c4dd"
+    "mtime": 1795395253.8031268,
+    "seen": 1795395832.134578,
+    "ast_hash": "2d16056e574c414600ac3253f0ccfbcc",
+    "semantic_hash": ""
   },
   "apps/web/src/app/studio/performance/page.tsx": {
     "mtime": 1790401459.0824032,
@@ -313,17 +313,11 @@
     "ast_hash": "612ba979360d51fda490a9f50d8621cd",
     "semantic_hash": "612ba979360d51fda490a9f50d8621cd"
   },
-  "apps/web/src/app/studio/register/page.tsx": {
-    "mtime": 1788155447.7841628,
-    "seen": 1793430503.3310359,
-    "ast_hash": "fad4dd415d05e2681708f87a66890564",
-    "semantic_hash": "fad4dd415d05e2681708f87a66890564"
-  },
   "apps/web/src/app/studio/sign-in/page.tsx": {
-    "mtime": 1789277601.692917,
-    "seen": 1793430503.3310707,
-    "ast_hash": "9dbbd33255f7eaabb93cc84c4c9acb02",
-    "semantic_hash": "9dbbd33255f7eaabb93cc84c4c9acb02"
+    "mtime": 1795392419.34543,
+    "seen": 1795392526.1728406,
+    "ast_hash": "1c50e46e035f009b06f5e4a36585f381",
+    "semantic_hash": ""
   },
   "apps/web/src/app/studio/visits/page.tsx": {
     "mtime": 1790644442.0038733,
@@ -458,9 +452,9 @@
     "semantic_hash": "ff5dc92a38f2264e422078a9515c94d1"
   },
   "apps/web/src/features/hall/components/Atelier.tsx": {
-    "mtime": 1795151420.9177408,
-    "seen": 1795151624.9916759,
-    "ast_hash": "76f5f87b24c09b8148655044229b403c",
+    "mtime": 1795394266.9745157,
+    "seen": 1795394940.1273348,
+    "ast_hash": "2acbb5915652c12faceb2136f88e3424",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/AtelierLoading.tsx": {
@@ -488,9 +482,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/Museum.tsx": {
-    "mtime": 1795314345.3605714,
-    "seen": 1795314685.6014364,
-    "ast_hash": "fbb7299fb1c4d4a9280903ae564e447b",
+    "mtime": 1795394257.7182372,
+    "seen": 1795394940.1273415,
+    "ast_hash": "fb87b8d2c96197cc154eaca2b929107d",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/RigPreview.tsx": {
@@ -530,9 +524,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/atelier.ts": {
-    "mtime": 1795152769.2254632,
-    "seen": 1795152896.410526,
-    "ast_hash": "45bb467b201fe27f8e0624b9215a74ae",
+    "mtime": 1795396980.2226355,
+    "seen": 1795397652.5658572,
+    "ast_hash": "23fd6daa9fdc73e9b3b3738a5a77a217",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/backdrop.ts": {
@@ -560,15 +554,15 @@
     "semantic_hash": "c8891a8620e610efea51eb50f88426ba"
   },
   "apps/web/src/features/hall/scene/carried.ts": {
-    "mtime": 1793343068.808957,
-    "seen": 1793430503.3325326,
-    "ast_hash": "35e5af95f5237a6d007a02d267122664",
-    "semantic_hash": "35e5af95f5237a6d007a02d267122664"
+    "mtime": 1795333839.694807,
+    "seen": 1795334001.682485,
+    "ast_hash": "f6ac6153062b8e2b238ce757e7c40239",
+    "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/character.ts": {
-    "mtime": 1795327774.8489459,
-    "seen": 1795329163.63709,
-    "ast_hash": "969130968f22646db1fcacb87841bcde",
+    "mtime": 1795375144.5701017,
+    "seen": 1795375576.434906,
+    "ast_hash": "a03c925c4f99279e974a73ec76f51dea",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/coin.ts": {
@@ -584,9 +578,9 @@
     "semantic_hash": "13dbb3027d2f0f32e92028932e868e79"
   },
   "apps/web/src/features/hall/scene/config.ts": {
-    "mtime": 1795152769.225555,
-    "seen": 1795152896.410536,
-    "ast_hash": "a6b0753246e33673575a4c0a6a109359",
+    "mtime": 1795373553.4707778,
+    "seen": 1795375576.43491,
+    "ast_hash": "0cd9f1f0dd2e8281709ad419068d2d0b",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/costume-visibility.test.ts": {
@@ -602,9 +596,9 @@
     "semantic_hash": "3a49e020129b12ba293f4d456be13305"
   },
   "apps/web/src/features/hall/scene/gallery-door.ts": {
-    "mtime": 1794469108.6755588,
-    "seen": 1794469521.920115,
-    "ast_hash": "247d131045fa8f5a0bb1198e4e809f42",
+    "mtime": 1795396952.3997612,
+    "seen": 1795397652.5658715,
+    "ast_hash": "f637c48ee3a47487670296eee1841173",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/giftshop.ts": {
@@ -632,16 +626,16 @@
     "semantic_hash": "9b99e32f068cdacc9768294ee8f3234c"
   },
   "apps/web/src/features/hall/scene/layout.ts": {
-    "mtime": 1794025240.9839516,
-    "seen": 1794025613.1504004,
-    "ast_hash": "347ae1187420f0849a140f5c7648692e",
+    "mtime": 1795396929.0934763,
+    "seen": 1795397652.565881,
+    "ast_hash": "969891ef27f155d4435a27561a8e861c",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby-gallery-door.ts": {
-    "mtime": 1793427233.5600824,
-    "seen": 1793430503.3329806,
-    "ast_hash": "a8fec7284a4b6956913915c7dc68fc2f",
-    "semantic_hash": "a8fec7284a4b6956913915c7dc68fc2f"
+    "mtime": 1795396952.4015293,
+    "seen": 1795397652.565882,
+    "ast_hash": "e0424ddefd98fa80f5fe891492142b34",
+    "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby.ts": {
     "mtime": 1794429199.092515,
@@ -656,9 +650,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/overlay.ts": {
-    "mtime": 1794969140.1904125,
-    "seen": 1794969323.0345168,
-    "ast_hash": "18362ae6aa70be85d798245a0450d654",
+    "mtime": 1795333839.693745,
+    "seen": 1795334001.682506,
+    "ast_hash": "40bd80074dc75335b39ad6f40565ae9a",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/pedestal.ts": {
@@ -686,9 +680,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/rig.ts": {
-    "mtime": 1795321272.8571577,
-    "seen": 1795326111.9485457,
-    "ast_hash": "255e08d40f4c8236414348aa497e98e4",
+    "mtime": 1795335208.3618577,
+    "seen": 1795335417.5413647,
+    "ast_hash": "c3cec0bb5f6745491c1b8c491133c56b",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/room-passage.test.ts": {
@@ -704,9 +698,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/scene.ts": {
-    "mtime": 1795314345.3612642,
-    "seen": 1795314685.6014802,
-    "ast_hash": "d537148a8ab016f4edb489ed97302e55",
+    "mtime": 1795396937.1987362,
+    "seen": 1795397652.5658984,
+    "ast_hash": "18ddbb8f5b97579bd211c779585ba23c",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/sitting.ts": {
@@ -716,9 +710,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/traversal.ts": {
-    "mtime": 1794199447.2827172,
-    "seen": 1794199837.8378804,
-    "ast_hash": "916d0c71788480903ae10d1e82f96174",
+    "mtime": 1795378307.3324504,
+    "seen": 1795378494.8492725,
+    "ast_hash": "380d3d8a14f970ed46730b38f5d918a8",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/wardrobe.test.ts": {
@@ -842,16 +836,10 @@
     "semantic_hash": "0ff317258096450cc70cc3fd06f5e65a"
   },
   "apps/web/src/features/studio/actions.ts": {
-    "mtime": 1794984469.6008635,
-    "seen": 1794984709.2082353,
-    "ast_hash": "1d987b27f3a4eaec8f6be83f3dc018f5",
+    "mtime": 1795394618.3944364,
+    "seen": 1795394940.1274886,
+    "ast_hash": "e74401f4221b24bc67be061f8f22f14e",
     "semantic_hash": ""
-  },
-  "apps/web/src/features/studio/components/ArrangeControls.tsx": {
-    "mtime": 1789275508.2041566,
-    "seen": 1793430503.3341951,
-    "ast_hash": "20222e78cb15f88eae1131f99b6db7cb",
-    "semantic_hash": "20222e78cb15f88eae1131f99b6db7cb"
   },
   "apps/web/src/features/studio/components/CodesSection.tsx": {
     "mtime": 1789275508.2051566,
@@ -859,16 +847,10 @@
     "ast_hash": "e0a5497a572465d6d6e95fd86f365a8f",
     "semantic_hash": "e0a5497a572465d6d6e95fd86f365a8f"
   },
-  "apps/web/src/features/studio/components/UploadWork.tsx": {
-    "mtime": 1792547330.6154583,
-    "seen": 1793430503.3342643,
-    "ast_hash": "796873e0bfdac77202e9e5f54c3f82f8",
-    "semantic_hash": "796873e0bfdac77202e9e5f54c3f82f8"
-  },
   "apps/web/src/generated/asset-manifest.json": {
-    "mtime": 1795328873.319735,
-    "seen": 1795329163.637236,
-    "ast_hash": "19ba30487f6a0c1522750c0e1bd906df",
+    "mtime": 1795335196.3866134,
+    "seen": 1795335417.541473,
+    "ast_hash": "71769e11d4eee673dbdccb7cc2463a6c",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AssetImage.tsx": {
@@ -956,10 +938,10 @@
     "semantic_hash": ""
   },
   "apps/web/src/shared/lib/session.ts": {
-    "mtime": 1790384733.2962372,
-    "seen": 1793430503.3347328,
-    "ast_hash": "bb0f751ecb30e3ad4d585780f14610c0",
-    "semantic_hash": "bb0f751ecb30e3ad4d585780f14610c0"
+    "mtime": 1795392419.3456519,
+    "seen": 1795392526.173096,
+    "ast_hash": "caa5c6bd703843bae902c80d7ccdcb93",
+    "semantic_hash": ""
   },
   "apps/web/src/shared/lib/slots/helpers.ts": {
     "mtime": 1793338234.5461528,
@@ -1184,10 +1166,10 @@
     "semantic_hash": ""
   },
   "packages/core/src/domain/gallery.ts": {
-    "mtime": 1792547325.5135531,
-    "seen": 1793430503.3357866,
-    "ast_hash": "5479c71fcc8fcb129647cfd13cd6aeae",
-    "semantic_hash": "5479c71fcc8fcb129647cfd13cd6aeae"
+    "mtime": 1795395236.5248501,
+    "seen": 1795395832.1348727,
+    "ast_hash": "25824fe4e952c6e29ecf3d5a12384ac6",
+    "semantic_hash": ""
   },
   "packages/core/src/domain/guestboard.ts": {
     "mtime": 1793983236.011329,
@@ -1262,15 +1244,15 @@
     "semantic_hash": "5590b97bc268795b3a8e47931447aef6"
   },
   "packages/core/src/handlers.ts": {
-    "mtime": 1794984507.6016552,
-    "seen": 1794984709.2083344,
-    "ast_hash": "16e5f4df73af2991696bdb3d38614c2e",
+    "mtime": 1795395373.7670746,
+    "seen": 1795395832.134893,
+    "ast_hash": "ef19190df7a54f075ccbb64a1b801fe1",
     "semantic_hash": ""
   },
   "packages/core/src/index.ts": {
-    "mtime": 1795315117.1112275,
-    "seen": 1795326111.9487677,
-    "ast_hash": "2aa8f61ca0c207ad84911e944b748ed5",
+    "mtime": 1795395253.8025937,
+    "seen": 1795395832.134894,
+    "ast_hash": "51f2dad99b1e5cc0775131bb9771a974",
     "semantic_hash": ""
   },
   "packages/core/src/infra/db.ts": {
@@ -2552,9 +2534,9 @@
     "semantic_hash": ""
   },
   "apps/presence/src/room.ts": {
-    "mtime": 1795314345.3601758,
-    "seen": 1795314685.6013067,
-    "ast_hash": "1cd099c4c3d9005c14c0dd68516c6c7f",
+    "mtime": 1795373553.4707778,
+    "seen": 1795375576.4347785,
+    "ast_hash": "312c8e2fd647c6cf61cb7982c0997d8f",
     "semantic_hash": ""
   },
   "apps/presence/tsconfig.json": {
@@ -2654,9 +2636,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/scene/remote-visitors.ts": {
-    "mtime": 1795314345.3619084,
-    "seen": 1795314685.6015441,
-    "ast_hash": "598c1657afb9b2480744812b0a7ecb65",
+    "mtime": 1795374552.2688127,
+    "seen": 1795375576.4349837,
+    "ast_hash": "62eed12152fc1c14d121fde108465d6b",
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/components/WalkAlone.tsx": {
@@ -3038,9 +3020,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/layout.tsx": {
-    "mtime": 1795322423.753844,
-    "seen": 1795326111.9484427,
-    "ast_hash": "a81804f676fb6d73d8666eaf4e2c4be5",
+    "mtime": 1795394257.7102141,
+    "seen": 1795394940.1272871,
+    "ast_hash": "a64062ecc4da34084bf4d3be86b338e0",
     "semantic_hash": ""
   },
   "apps/web/src/features/economy/components/CoinToast.tsx": {
@@ -3122,9 +3104,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/AtelierKeeps.tsx": {
-    "mtime": 1795148398.3947763,
-    "seen": 1795148657.1209996,
-    "ast_hash": "aeecb4aca6765c75163d69daa565e96f",
+    "mtime": 1795330959.6448789,
+    "seen": 1795331312.9340427,
+    "ast_hash": "391830b4bf82b29e70ede13d52250177",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/ownership.test.ts": {
@@ -3134,21 +3116,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/atelier/room.ts": {
-    "mtime": 1795151352.871276,
-    "seen": 1795151624.991798,
-    "ast_hash": "7c9372164dad0a548d915576da3d5f5c",
+    "mtime": 1795396980.2226973,
+    "seen": 1795397652.565984,
+    "ast_hash": "a8351d32809138d0e8b303054ffa0c10",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/links.ts": {
-    "mtime": 1794099476.338567,
-    "seen": 1794099949.8428042,
-    "ast_hash": "8864368a7e1aa4adf9dc7ecd3ed35dae",
+    "mtime": 1795394103.4879649,
+    "seen": 1795394940.127456,
+    "ast_hash": "8f2c25aa4019ba3492ce18ca46bbe702",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/stage.ts": {
-    "mtime": 1795321272.857438,
-    "seen": 1795326111.948645,
-    "ast_hash": "cf23087c5a0393259e9e8f431bc68387",
+    "mtime": 1795375418.672444,
+    "seen": 1795375576.4350119,
+    "ast_hash": "6c91fac32c3f7820e1c1e2c20b459851",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/types.ts": {
@@ -3164,15 +3146,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/hall/room.ts": {
-    "mtime": 1795314345.3622499,
-    "seen": 1795314685.6015577,
-    "ast_hash": "dba773fad9a93a1075443b9b0cbc3310",
+    "mtime": 1795396965.7956004,
+    "seen": 1795397652.5659986,
+    "ast_hash": "6006e2099c54bec4de1fa1e26ff14276",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/MuseumStage.tsx": {
-    "mtime": 1794022805.4655404,
-    "seen": 1794022993.2267635,
-    "ast_hash": "c270c132a4ceaa9ef12e24f41f1ca4c6",
+    "mtime": 1795330919.3310237,
+    "seen": 1795331312.934159,
+    "ast_hash": "6d3c771b47df8dad990933dc0a557121",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/floor.test.ts": {
@@ -3326,9 +3308,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/rooms/index.ts": {
-    "mtime": 1794981318.0444274,
-    "seen": 1794982084.643847,
-    "ast_hash": "f4cd057912cc2ac7caac483de15cc922",
+    "mtime": 1795393963.7541149,
+    "seen": 1795394940.127605,
+    "ast_hash": "7bd952ffdf80c5291d9da7d17f2fde16",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/decorate/DecorDrawer.tsx": {
@@ -3368,9 +3350,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/(hall)/page.tsx": {
-    "mtime": 1793345881.8865001,
-    "seen": 1793983680.3551862,
-    "ast_hash": "53b83aec20dc9f5dcfb961a6f24336cf",
+    "mtime": 1795394257.7179418,
+    "seen": 1795394940.127284,
+    "ast_hash": "d267cdb733a0ad1d9114ed2bae007029",
     "semantic_hash": ""
   },
   "packages/core/src/economy/pond.test.ts": {
@@ -3416,9 +3398,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/art.ts": {
-    "mtime": 1794965037.6400704,
-    "seen": 1794965892.0455887,
-    "ast_hash": "6895f59d228c4541c46b4e21e1cb4bb6",
+    "mtime": 1795394212.5299945,
+    "seen": 1795394940.1274438,
+    "ast_hash": "c546f1b501270efda52ba900b8ebb597",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/perf.ts": {
@@ -3428,9 +3410,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/layout.test.ts": {
-    "mtime": 1794025247.2858214,
-    "seen": 1794025613.1503997,
-    "ast_hash": "24bc766834f985292308a23e9278caa3",
+    "mtime": 1795396929.0948865,
+    "seen": 1795397652.56588,
+    "ast_hash": "2a1c0de94130640b4448540d196ae05d",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/nearby.test.ts": {
@@ -3548,9 +3530,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/studio/locations/page.tsx": {
-    "mtime": 1794039523.1525161,
-    "seen": 1794039642.5972972,
-    "ast_hash": "772787278e4f550ed54c5dcb913cb9f4",
+    "mtime": 1795394497.8448305,
+    "seen": 1795394940.127299,
+    "ast_hash": "4f881ec87cee99972c0222fd8f34ced5",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/atelier-spots.test.ts": {
@@ -3566,9 +3548,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/domain/locations.ts": {
-    "mtime": 1794039555.2861726,
-    "seen": 1794039642.5974984,
-    "ast_hash": "c9c3f33a9d4cb0f6fed1dcbd33840780",
+    "mtime": 1795395636.7789147,
+    "seen": 1795395832.1348739,
+    "ast_hash": "e442670c5612852286c1acd336639e31",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/spots.test.ts": {
@@ -3596,9 +3578,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/minimap.ts": {
-    "mtime": 1795327721.8603992,
-    "seen": 1795329163.6371984,
-    "ast_hash": "fee9bb7b12a59954661317b0bb8aaaa8",
+    "mtime": 1795394109.5827038,
+    "seen": 1795394940.1274576,
+    "ast_hash": "9bf5addf111ec599ac08e61f004083da",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/minimap.test.ts": {
@@ -3950,9 +3932,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/pond/page.tsx": {
-    "mtime": 1794200689.7819843,
-    "seen": 1794201256.7215652,
-    "ast_hash": "523c0cf81fa3dcbb150676d1b54343d9",
+    "mtime": 1795394266.9749446,
+    "seen": 1795394940.1272895,
+    "ast_hash": "1fcff444f8dfd409ddc80ba7f537cb60",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondLoading.tsx": {
@@ -3968,21 +3950,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondRoom.tsx": {
-    "mtime": 1794202916.4957902,
-    "seen": 1794203892.1615949,
-    "ast_hash": "85d095c77e40e940bea7be1a935e1bb2",
+    "mtime": 1795394266.9748862,
+    "seen": 1795394940.1274197,
+    "ast_hash": "9bbfd28c46ff3d44f680c3044ea59325",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
-    "mtime": 1795328694.265543,
-    "seen": 1795329163.6372044,
-    "ast_hash": "6ffb6fd1f7877870e38e756b861c050e",
+    "mtime": 1795394212.5299034,
+    "seen": 1795394940.1274626,
+    "ast_hash": "88c705e4e2231ca7fb68cae2e0cc0725",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/room.ts": {
-    "mtime": 1795074895.9384813,
-    "seen": 1795146031.369782,
-    "ast_hash": "370cd54617c3897b072309bfaa42ce87",
+    "mtime": 1795397513.0762613,
+    "seen": 1795397652.5660133,
+    "ast_hash": "5d27e689df4979ae425ee6c3cca8158b",
     "semantic_hash": ""
   },
   "packages/core/db-tests/pond.test.ts": {
@@ -4214,9 +4196,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/landmarks.ts": {
-    "mtime": 1795065675.5088975,
-    "seen": 1795067065.6978505,
-    "ast_hash": "6a28b6135c61a43f9ae5da98166837a6",
+    "mtime": 1795394212.5297952,
+    "seen": 1795394940.127466,
+    "ast_hash": "3850df4dac03d9acabd6b5e1d857ed72",
     "semantic_hash": ""
   },
   "docs/pond-asset-art-direction.md": {
@@ -4274,9 +4256,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/shopkeeper.ts": {
-    "mtime": 1794363738.9358568,
-    "seen": 1794363995.5655355,
-    "ast_hash": "c4bc550029d14fc75840f8c613ec290f",
+    "mtime": 1795335230.419123,
+    "seen": 1795335417.5414479,
+    "ast_hash": "d26aea5201356b96f388f9527fb72e82",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/fishing-apron.png": {
@@ -4388,9 +4370,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Angler.tsx": {
-    "mtime": 1794381783.8326602,
-    "seen": 1794383074.981008,
-    "ast_hash": "599ccf02a0e58db86c99e4add5ef502c",
+    "mtime": 1795334717.729377,
+    "seen": 1795334986.7795937,
+    "ast_hash": "70ccfb2458f18bf0e9e9970294f5831a",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/depth.test.ts": {
@@ -4436,9 +4418,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/traversal.test.ts": {
-    "mtime": 1794199753.2236722,
-    "seen": 1794199837.8378797,
-    "ast_hash": "35c8edaffdaba65bb1909af29c3b08c6",
+    "mtime": 1795375418.6747108,
+    "seen": 1795375576.4349334,
+    "ast_hash": "4f2604d7672895a9b99d283c75bc8b7d",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/identity.ts": {
@@ -4934,9 +4916,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/AdminTools.tsx": {
-    "mtime": 1794982384.9082248,
-    "seen": 1794982647.3016417,
-    "ast_hash": "120f40d88a0b5f18f40ad54ffbe54ca6",
+    "mtime": 1795392419.345591,
+    "seen": 1795392526.1730747,
+    "ast_hash": "6b698bf1b02410c69737125a37bb14e3",
     "semantic_hash": ""
   },
   "apps/web/src/shared/lib/admin-mode.ts": {
@@ -5384,9 +5366,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/reflection.ts": {
-    "mtime": 1795147561.531076,
-    "seen": 1795148657.1210449,
-    "ast_hash": "d391b68999aaf7d11ded30061de42529",
+    "mtime": 1795330936.8835182,
+    "seen": 1795331312.9340901,
+    "ast_hash": "01d9901c48fbb40be18d434792608859",
     "semantic_hash": ""
   },
   "docs/plans/atelier-mirror.md": {
@@ -5396,15 +5378,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/mirror-reflection.ts": {
-    "mtime": 1795150046.3451455,
-    "seen": 1795150398.7507725,
-    "ast_hash": "e90a3a9b2dba210800e012e18a3de371",
+    "mtime": 1795333602.885046,
+    "seen": 1795334001.6825037,
+    "ast_hash": "75236d31f046f4fa181faf62aed1ec77",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/ClosetView.tsx": {
-    "mtime": 1795152167.9511409,
-    "seen": 1795152457.2708833,
-    "ast_hash": "a49af3ce99c7d84809db1a663440fd76",
+    "mtime": 1795332168.086936,
+    "seen": 1795332624.3587646,
+    "ast_hash": "fbf0a79a00b91b13855be4211effafa3",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/dialog-keys.ts": {
@@ -6877,12 +6859,6 @@
     "ast_hash": "4d124f5da3c56ca01f21d14ab6e5ac18",
     "semantic_hash": ""
   },
-  "apps/web/public/immutable/basis-0.169.0/basis_transcoder.js": {
-    "mtime": 1795328873.3187351,
-    "seen": 1795329163.6369565,
-    "ast_hash": "3acfda59c08cbb3875d1a4a5de3efa5a",
-    "semantic_hash": ""
-  },
   "apps/web/src/features/rooms/pond/stone-path-bake.ts": {
     "mtime": 1795327949.9310567,
     "seen": 1795329163.6372104,
@@ -6896,9 +6872,9 @@
     "semantic_hash": ""
   },
   "apps/web/tooling/ktx2-atlases.mjs": {
-    "mtime": 1795328884.3330371,
-    "seen": 1795329163.6372766,
-    "ast_hash": "ef66a089a07ee780fa1e686404cf95e6",
+    "mtime": 1795329903.1941516,
+    "seen": 1795331312.9342525,
+    "ast_hash": "0691ce3ea98f7f052dc0f8da6818364a",
     "semantic_hash": ""
   },
   "apps/web/public/immutable/pond-stone-path-baked@2x.197ce32c7f.webp": {
@@ -6911,6 +6887,168 @@
     "mtime": 1795328193.94518,
     "seen": 1795329163.6378727,
     "ast_hash": "0b3c1733dabd6d3bd6813219270c993e",
+    "semantic_hash": ""
+  },
+  "apps/web/tooling/bake-shopkeeper.mjs": {
+    "mtime": 1795335195.41865,
+    "seen": 1795335417.541506,
+    "ast_hash": "6c8234516e866de7d5eae5fa31a934bf",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-arm-L.ec48d5bf4f.webp": {
+    "mtime": 1795335195.7125945,
+    "seen": 1795335417.542051,
+    "ast_hash": "4d98cbd4de2336ab7c78fa5338a0ba6a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-arm-R.3b536c41c1.webp": {
+    "mtime": 1795335195.7425954,
+    "seen": 1795335417.5420518,
+    "ast_hash": "8ab15e07d43c508d5841fd8088a31457",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-ear-L.3c8e8ea7ed.webp": {
+    "mtime": 1795335195.7716398,
+    "seen": 1795335417.5420525,
+    "ast_hash": "7da36c138debf583eb5ae6642d60d414",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-ear-R.fa01febbac.webp": {
+    "mtime": 1795335195.7925968,
+    "seen": 1795335417.5420532,
+    "ast_hash": "d1d19ee6a06ae54859f32251cb0f9136",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-eye-L.699c19e808.webp": {
+    "mtime": 1795335195.805597,
+    "seen": 1795335417.542054,
+    "ast_hash": "534dd088b492cb90cd769ea48b5ee631",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-eye-R.5cc5fde911.webp": {
+    "mtime": 1795335195.8195975,
+    "seen": 1795335417.5420544,
+    "ast_hash": "1e0256782f025be1a86b107a96931b09",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-head.1bf3dd0ed9.webp": {
+    "mtime": 1795335196.158607,
+    "seen": 1795335417.5420551,
+    "ast_hash": "90a340590c5a5e49f1cd4cfa42a8ce03",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-star.63203a87b2.webp": {
+    "mtime": 1795335196.3276117,
+    "seen": 1795335417.5420556,
+    "ast_hash": "c7d0dab28397c0242da4f5c9dce4ff3e",
+    "semantic_hash": ""
+  },
+  "apps/web/public/immutable/pond-keeper-otter-torso.50f1c13bb1.webp": {
+    "mtime": 1795335196.3856134,
+    "seen": 1795335417.542056,
+    "ast_hash": "91135449e3482780bdb7b0bcbb67b714",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/flick.test.ts": {
+    "mtime": 1795375418.6723301,
+    "seen": 1795375576.4349937,
+    "ast_hash": "9d6917d30df0dea8a2b30deee8ae2250",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/flick.ts": {
+    "mtime": 1795375418.6722138,
+    "seen": 1795375576.4349947,
+    "ast_hash": "4191925f4843a9d1960afec3af782c95",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/studio/doors/page.tsx": {
+    "mtime": 1795397003.2089307,
+    "seen": 1795397652.5657582,
+    "ast_hash": "bfa9375438a20180404e7d6c7c331ba6",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/studio/hang/page.tsx": {
+    "mtime": 1795395291.0743701,
+    "seen": 1795395832.134575,
+    "ast_hash": "698b99e7a44357f5c655a8d791ae45bf",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/studio/paintings/page.tsx": {
+    "mtime": 1795394560.1315477,
+    "seen": 1795394940.1273003,
+    "ast_hash": "761180aa27f9789e0e3a11dd3d66d009",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/MuseumDoors.tsx": {
+    "mtime": 1795394257.7092142,
+    "seen": 1795394940.127441,
+    "ast_hash": "b179f207a0518206a8aa2066398f5b54",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/door-art.ts": {
+    "mtime": 1795394096.08967,
+    "seen": 1795394940.127451,
+    "ast_hash": "ac685afff8e8798071e27abd80bd627c",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/doors.ts": {
+    "mtime": 1795394096.0895996,
+    "seen": 1795394940.1274517,
+    "ast_hash": "0ae06fcc8fc24781e0b5d6a6153edc43",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/studio/components/DoorEditor.tsx": {
+    "mtime": 1795397268.3001354,
+    "seen": 1795397652.5660434,
+    "ast_hash": "dc0dc38cd95c7f7bbfd42c476648ed0d",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/studio/components/Frame.tsx": {
+    "mtime": 1795394421.9727402,
+    "seen": 1795394940.1274905,
+    "ast_hash": "c1f77f786759033b27175d114a843ba5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/studio/components/HangBoard.tsx": {
+    "mtime": 1795394486.0905068,
+    "seen": 1795394940.1274912,
+    "ast_hash": "cf6bb5cf938c6d166a70703c9ea74b4f",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/studio/components/PaintingEditor.tsx": {
+    "mtime": 1795394539.9999926,
+    "seen": 1795394940.127492,
+    "ast_hash": "caea06a0ff18711f87836cc0d901535e",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/studio/components/StudioNav.tsx": {
+    "mtime": 1795394412.5867596,
+    "seen": 1795394940.1274934,
+    "ast_hash": "129b514c8f97bef451cb5ae6e0bc33ff",
+    "semantic_hash": ""
+  },
+  "packages/core/schema/doors.sql": {
+    "mtime": 1795393952.8538146,
+    "seen": 1795394940.1275475,
+    "ast_hash": "03c54c29e6e2459e006279f2c9ac9a18",
+    "semantic_hash": ""
+  },
+  "packages/core/src/domain/doors.ts": {
+    "mtime": 1795393952.8548145,
+    "seen": 1795394940.1275623,
+    "ast_hash": "e05b88e5b075a91db6c65ea523853205",
+    "semantic_hash": ""
+  },
+  "packages/core/src/rooms/doors.test.ts": {
+    "mtime": 1795397656.085444,
+    "seen": 1795408858.3488154,
+    "ast_hash": "9c9f12041b3d27238efe03d625f864d5",
+    "semantic_hash": ""
+  },
+  "packages/core/src/rooms/doors.ts": {
+    "mtime": 1795396911.1030152,
+    "seen": 1795397652.5661972,
+    "ast_hash": "5cf04a0046b0e979e83212b7d9e7e29c",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

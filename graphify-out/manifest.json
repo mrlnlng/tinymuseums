@@ -596,9 +596,9 @@
     "semantic_hash": "3a49e020129b12ba293f4d456be13305"
   },
   "apps/web/src/features/hall/scene/gallery-door.ts": {
-    "mtime": 1795415606.8858488,
-    "seen": 1795415779.0615478,
-    "ast_hash": "c2837ed089ff999401d43e64f077f00e",
+    "mtime": 1795420980.4696236,
+    "seen": 1795421252.115886,
+    "ast_hash": "84f803d4d0e9bd32759013f87235ae63",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/giftshop.ts": {
@@ -632,9 +632,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby-gallery-door.ts": {
-    "mtime": 1795417727.0174987,
-    "seen": 1795418039.722444,
-    "ast_hash": "3fd9f11dbe70eed42e5474f1fd9fa655",
+    "mtime": 1795420980.4697008,
+    "seen": 1795421252.1158972,
+    "ast_hash": "1e21bca1409ad3ed46ccbcc02da11b96",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby.ts": {
@@ -3146,9 +3146,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/hall/room.ts": {
-    "mtime": 1795417740.8271952,
-    "seen": 1795418039.7225425,
-    "ast_hash": "a5e6c32cae71e61a870860d6af90ea95",
+    "mtime": 1795421061.124166,
+    "seen": 1795421252.116012,
+    "ast_hash": "1480148ffead1c4ca48feb17208b25fa",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/MuseumStage.tsx": {
@@ -6998,9 +6998,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/studio/components/DoorEditor.tsx": {
-    "mtime": 1795417817.846857,
-    "seen": 1795418039.722583,
-    "ast_hash": "d4d7dae5ad3770b02f4e25d5cf7c8575",
+    "mtime": 1795421061.1242788,
+    "seen": 1795421252.1160574,
+    "ast_hash": "ac8aacd64b68db4fb99517747b738d9e",
     "semantic_hash": ""
   },
   "apps/web/src/features/studio/components/Frame.tsx": {
@@ -7058,9 +7058,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/door-guide.ts": {
-    "mtime": 1795417727.0111947,
-    "seen": 1795418039.7224343,
-    "ast_hash": "b519cc52ff8e6515fd46e4aecb66c701",
+    "mtime": 1795421102.007737,
+    "seen": 1795421252.1158845,
+    "ast_hash": "271a306c308de0ba3d4e0c9b9314d3d5",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

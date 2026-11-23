@@ -3876,6 +3876,18 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
   pointer-events: auto;
 }
 .door-guide[hidden] { display: none; }
+/* A soft shadow under the feet, centred on the anchor, the same look as the wandering NPCs'. */
+.door-guide::before {
+  content: '';
+  position: absolute;
+  left: var(--feet-x, 50%);
+  top: calc(208 / 224 * 100%);
+  width: 60%;
+  height: 11%;
+  translate: -50% -50%;
+  background: radial-gradient(closest-side, rgb(60 30 20 / 0.26), rgb(60 30 20 / 0.14) 60%, rgb(60 30 20 / 0));
+  pointer-events: none;
+}
 .door-guide:disabled { cursor: default; }
 .door-guide-sprite {
   position: absolute;

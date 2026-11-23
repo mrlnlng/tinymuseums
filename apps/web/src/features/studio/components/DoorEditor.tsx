@@ -43,7 +43,7 @@ const REASONS: Record<string, string> = {
 
 const roomLabel = (room: DoorRoom) => doorRoom(room)!.label
 /** Where a door's guide stands, as the hall places them: just past the door's right-hand post. */
-const guideX = (door: MuseumDoor) => door.x + doorWidth(door) / 2 + 0.3
+const guideX = (door: MuseumDoor) => door.x + doorWidth(door) / 2 + 0.22
 /** What a newly chosen guide says until the owner writes their own lines. */
 const firstLines = (door: MuseumDoor) => [`Hello there! This door leads to ${roomLabel(door.to).replace(/^The /, 'the ')}.`, 'Would you like me to show you the way?']
 /** One line per paragraph: a blank line, or a new line, starts the next thing they say. */

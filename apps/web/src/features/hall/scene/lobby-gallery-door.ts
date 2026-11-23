@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Assets } from './assets'
 import { disposeBoards, plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
-import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
+import { createGalleryDoor, GALLERY_DOOR, INSET_DOOR_Z } from './gallery-door'
 import { placeLabel, type Viewport } from './overlay'
 
 export interface HallDoor {
@@ -16,6 +16,8 @@ export interface HallDoor {
   image: HTMLImageElement
   /** Kept by a guide: it does not open by itself. */
   locked: boolean
+  /** Set into the wall under a painting, rather than standing out on the floor. */
+  inset: boolean
 }
 
 /** How far the sign hangs above a door's top, as it does over the entrance's door. */
@@ -26,7 +28,7 @@ export function createHallDoors(scene: THREE.Scene, host: HTMLElement, onEnter: 
   const group = new THREE.Group()
   const { sign } = CONFIG.lobby
   const built = doors.map((door) => {
-    const mesh = createGalleryDoor(scene, door.image, door.x, GALLERY_DOOR.lobbyBase, door.scale)
+    const mesh = createGalleryDoor(scene, door.image, door.x, GALLERY_DOOR.lobbyBase, door.scale, door.inset ? INSET_DOOR_Z : undefined)
     const height = GALLERY_DOOR.height * door.scale
     // A door without a sign keeps its button, unseen until focused, over the door itself.
     const signY = door.label ? GALLERY_DOOR.lobbyBase + height + SIGN_ABOVE : GALLERY_DOOR.lobbyBase + height / 2

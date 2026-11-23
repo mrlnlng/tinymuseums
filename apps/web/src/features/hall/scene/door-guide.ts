@@ -1,15 +1,15 @@
 import * as THREE from 'three'
 import { castMember, FRAME, IDLE, idleCel, WORLD_PER_PX } from '@/features/npcs/cast'
 import { assetEntry, assetUrl, type AssetName } from '@/shared/lib/assets'
-import { CONFIG } from './config'
 import type { Viewport } from './overlay'
 
 export interface HallGuide {
   /** The door they keep. */
   door: string
   npc: string
-  /** Where they stand on the floor. */
+  /** Where they stand: along the hall, and the height of their feet, level with their door's foot. */
   x: number
+  floorY: number
 }
 
 /** How near the visitor comes before a guide shows they have something to say. */
@@ -18,7 +18,6 @@ const PROJECTED = new THREE.Vector3()
 
 /** Characters standing beside their doors; tapping one starts a conversation. */
 export function createDoorGuides(host: HTMLElement, guides: readonly HallGuide[], onTalk: (door: string) => void) {
-  const floorY = CONFIG.character.centerY - CONFIG.character.height / 2
   const shown = guides.map((guide) => {
     const character = castMember(guide.npc)
     const idleAsset = `npcs/${guide.npc}-idle` as AssetName
@@ -50,7 +49,7 @@ export function createDoorGuides(host: HTMLElement, guides: readonly HallGuide[]
       const cel = reduced ? 0 : idleCel(performance.now() - startedAt)
       for (const { guide, character, button, sprite, hint, count } of shown) {
         if (button.disabled !== !enabled) button.disabled = !enabled
-        PROJECTED.set(guide.x, floorY, 0).project(camera)
+        PROJECTED.set(guide.x, guide.floorY, 0).project(camera)
         const screenX = (PROJECTED.x * 0.5 + 0.5) * viewport.width
         const screenY = (-PROJECTED.y * 0.5 + 0.5) * viewport.height
         const offscreen = screenX + width < 0 || screenX - width > viewport.width
@@ -63,6 +62,7 @@ export function createDoorGuides(host: HTMLElement, guides: readonly HallGuide[]
         button.style.height = `${height.toFixed(1)}px`
         button.style.transform = `translate3d(${(screenX - anchorX).toFixed(1)}px, ${(screenY - FRAME.anchorY * scale).toFixed(1)}px, 0)`
         sprite.style.transformOrigin = `${anchorX.toFixed(1)}px 0`
+        button.style.setProperty('--feet-x', `${anchorX.toFixed(1)}px`)
         sprite.style.transform = `scaleX(${facing})`
         sprite.style.backgroundSize = `${(width * count).toFixed(1)}px ${height.toFixed(1)}px`
         sprite.style.backgroundPositionX = `${(-(cel % count) * width).toFixed(1)}px`

@@ -88,6 +88,9 @@ function takenStands(items: Item[]): Set<number> {
   return stands
 }
 
+/** Where a guide beside a door set into the wall stands: just in front of the wall's foot. */
+const GUIDE_AT_WALL = -0.08
+
 /** A hall room's name on the map. */
 function mapLabel(room: HallRoomSpan): string {
   if (room.kind === 'gallery') return `Gallery ${room.key.slice('gallery-'.length)}`
@@ -342,14 +345,20 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       function buildRoom(room: HallRoomSpan): JoinedContents {
         const standing = doorsOf('hall').filter(({ x }) => x >= room.startX && x < room.endX)
         const inside = standing
-          .map((d) => ({ id: d.id, x: d.x, label: d.label, name: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door, locked: d.guide !== null }))
+          .map((d) => ({ id: d.id, x: d.x, label: d.label, name: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door, locked: d.guide !== null, inset: d.under }))
         const contents = buildRoomContents(room)
         if (inside.length === 0) return contents
         const doors = createHallDoors(scene, overlayHost, enterDoor, inside, assets)
-        // A guide stands just past their door's right-hand post.
+        // A guide stands just past their door's right-hand post, feet level with the door's: at the
+        // wall for a door set into it, out on the floor for one standing there.
         const guides = createDoorGuides(
           overlayHost,
-          standing.flatMap((d) => (d.guide ? [{ door: d.id, npc: d.guide.npc, x: d.x + doorWidth(d) / 2 + 0.3 }] : [])),
+          standing.flatMap((d) => (d.guide ? [{
+            door: d.id,
+            npc: d.guide.npc,
+            x: d.x + doorWidth(d) / 2 + 0.22,
+            floorY: d.under ? GUIDE_AT_WALL : GALLERY_DOOR.lobbyBase,
+          }] : [])),
           (id) => {
             const kept = doorsOf('hall').find((d) => d.id === id)
             if (!kept?.guide || ctx.isQuiet() || traversal.isIntro) return

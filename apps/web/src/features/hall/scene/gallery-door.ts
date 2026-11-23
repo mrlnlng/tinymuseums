@@ -33,14 +33,17 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export const loadGalleryDoor = () => loadImage(manifest.galleryDoor.src)
 export const loadGalleryPillar = () => loadImage(manifest.atelier.column.src)
 
-export function createGalleryDoor(parent: THREE.Scene | THREE.Group, image: HTMLImageElement, x: number, base: number = GALLERY_DOOR.lobbyBase, scale = 1) {
+/** A door set into the wall: in front of the wall and baseboard, behind the floor, which hides its foot. */
+export const INSET_DOOR_Z = -0.42
+
+export function createGalleryDoor(parent: THREE.Scene | THREE.Group, image: HTMLImageElement, x: number, base: number = GALLERY_DOOR.lobbyBase, scale = 1, z = 0.2) {
   const texture = new THREE.Texture(image)
   texture.needsUpdate = true
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
   const height = GALLERY_DOOR.height * scale
   const width = height * image.naturalWidth / image.naturalHeight
-  const mesh = plane(width, height, texture, x, base + height / 2, 0.2)
+  const mesh = plane(width, height, texture, x, base + height / 2, z)
   parent.add(mesh)
   return {
     hitTest: (raycaster: THREE.Raycaster) => pickPainted(raycaster, [mesh]) !== null,

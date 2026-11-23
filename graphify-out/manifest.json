@@ -3224,9 +3224,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/domain/rooms.ts": {
-    "mtime": 1795314345.3789198,
-    "seen": 1795314685.6016726,
-    "ast_hash": "261b43c82baa3b1fe171da153547590e",
+    "mtime": 1795419463.4775393,
+    "seen": 1795419657.75525,
+    "ast_hash": "239dc18b4a7c4591ae5157e02eca3f65",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/placements.test.ts": {
@@ -3548,9 +3548,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/domain/locations.ts": {
-    "mtime": 1795395636.7789147,
-    "seen": 1795395832.1348739,
-    "ast_hash": "e442670c5612852286c1acd336639e31",
+    "mtime": 1795419463.477654,
+    "seen": 1795419657.7552447,
+    "ast_hash": "5ed3839720c6467a1f9652479da99052",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/spots.test.ts": {

@@ -6,7 +6,7 @@ import { getStorage } from '../media/storage.ts'
 import { orderedPaintings, type Placement } from '../rooms/placements.ts'
 import { LOCATIONS, locationById, spotPlacementId, type LocationSpec } from '../rooms/spots.ts'
 import type { Derivative } from '../types.ts'
-import { getRoom, publish, saveDraft, type RoomRow } from './rooms.ts'
+import { getRoom, hangablePaintings, publish, saveDraft, type RoomRow } from './rooms.ts'
 
 // The owner places paintings from the studio. Each location is a shared room row: placing edits
 // its draft, and the location goes live when it is published.
@@ -67,6 +67,16 @@ async function startingRow(room: RoomRow): Promise<Placement[]> {
   return rowPlacements(rows.map((row) => row.id).filter((id) => !framed.has(id)))
 }
 
+/**
+ * Paintings a room can no longer hold (another artist's, or one not yet framed) would make every
+ * save of it fail, so a room the studio re-saves lets them go.
+ */
+function hangableOnly(placements: Placement[], hangable: Set<string>, rowLocation: boolean): Placement[] {
+  const kept = placements.filter((placement) => placement.kind !== 'painting' || hangable.has(placement.ref))
+  if (kept.length === placements.length) return placements
+  return rowLocation ? rowPlacements(orderedPaintings(kept)) : kept
+}
+
 /** Frames taken out of the museum keep their old placements; they would only push the room over its limit. */
 function inUse(location: LocationSpec, placements: Placement[]): Placement[] {
   return location.kind === 'spots' ? placements.filter((placement) => location.spots.some((spot) => spot.id === placement.zone)) : placements
@@ -90,6 +100,7 @@ export async function placePainting(pieceId: string, target: PlaceTarget | null)
     return { ok: false, reason: 'unknown_spot' }
   }
 
+  const hangable = await hangablePaintings()
   for (const location of LOCATIONS) {
     const room = await getRoom(location.id)
     if (!room) continue
@@ -97,7 +108,7 @@ export async function placePainting(pieceId: string, target: PlaceTarget | null)
     // Only the room it leaves and the room it goes to change; the others are left exactly as they are.
     const holds = before.some((placement) => placement.kind === 'painting' && placement.ref === pieceId)
     if (!holds && target?.location !== location.id) continue
-    let next = without(before, pieceId, location.kind === 'row')
+    let next = hangableOnly(without(before, pieceId, location.kind === 'row'), hangable, location.kind === 'row')
     next = inUse(location, next)
     if (target && location.id === target.location) {
       if ('spot' in target) {
@@ -121,7 +132,7 @@ export async function placePainting(pieceId: string, target: PlaceTarget | null)
 export async function nudgeInRow(location: string, pieceId: string, by: -1 | 1): Promise<PlaceResult> {
   const room = await getRoom(location)
   if (!room) return { ok: false, reason: 'not_found' }
-  const order = orderedPaintings(await startingRow(room))
+  const order = orderedPaintings(hangableOnly(await startingRow(room), await hangablePaintings(), true))
   const from = order.indexOf(pieceId)
   const to = from + by
   if (from < 0 || to < 0 || to >= order.length) return { ok: true }

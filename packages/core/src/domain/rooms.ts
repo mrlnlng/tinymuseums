@@ -183,6 +183,19 @@ export function canEdit(room: RoomRow, access: RoomAccess): boolean {
   return access.memberId !== null && access.memberId !== undefined && room.ownerMemberId === access.memberId
 }
 
+/** The paintings a museum room may hold: the hall owner's, once framed. */
+export async function hangablePaintings(): Promise<Set<string>> {
+  const paintings = await query<{ id: string }>(
+    `select p.id
+       from pieces p
+       join artists a on a.id = p.artist_id
+      where p.flattened_key is not null
+        ${env.hallOwnerEmail ? 'and a.email = $1' : ''}`,
+    env.hallOwnerEmail ? [env.hallOwnerEmail] : [],
+  )
+  return new Set(paintings.map((row) => row.id))
+}
+
 async function ownershipFor(room: RoomRow): Promise<PlacementOwnership & { width: number; cleaned(placementId: string): boolean }> {
   const owned = new Set<string>()
   if (room.kind === 'personal' && room.ownerMemberId) {
@@ -193,16 +206,7 @@ async function ownershipFor(room: RoomRow): Promise<PlacementOwnership & { width
     for (const row of rows) owned.add(row.item_id)
   }
 
-  const paintings = await query<{ id: string }>(
-    `select p.id
-       from pieces p
-       join artists a on a.id = p.artist_id
-      where p.flattened_key is not null
-        ${env.hallOwnerEmail ? 'and a.email = $1' : ''}`,
-    env.hallOwnerEmail ? [env.hallOwnerEmail] : [],
-  )
-
-  const pieces = new Set(paintings.map((row) => row.id))
+  const pieces = await hangablePaintings()
   return {
     ownsProp: (propId) => owned.has(`prop:${propId}`),
     hasPainting: (pieceId) => pieces.has(pieceId),

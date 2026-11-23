@@ -210,3 +210,5 @@
 }
 .st-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.35; cursor: pointer; }
 .st-check input { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--script); flex: none; }
+.st-guide { position: absolute; bottom: 0; translate: -50% 0; background-repeat: no-repeat; background-position: 0 0; pointer-events: none; }
+.st-field textarea { width: 100%; font: inherit; padding: 10px 12px; border: 2px solid #e5ccb4; border-radius: 12px; background: #fff; resize: vertical; }

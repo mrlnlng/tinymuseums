@@ -14,6 +14,8 @@ export interface HallDoor {
   name: string
   scale: number
   image: HTMLImageElement
+  /** Kept by a guide: it does not open by itself. */
+  locked: boolean
 }
 
 /** How far the sign hangs above a door's top, as it does over the entrance's door. */
@@ -34,7 +36,13 @@ export function createHallDoors(scene: THREE.Scene, host: HTMLElement, onEnter: 
     cue.type = 'button'
     cue.textContent = door.label || door.name
     cue.setAttribute('aria-label', `Go through the door: ${door.name}`)
-    cue.addEventListener('click', () => onEnter(door.id))
+    if (door.locked) {
+      // Its guide is the way through, so the sign is only a sign.
+      cue.tabIndex = -1
+      cue.setAttribute('aria-hidden', 'true')
+    } else {
+      cue.addEventListener('click', () => onEnter(door.id))
+    }
     host.append(cue)
     return { door, mesh, cue, signY }
   })
@@ -43,12 +51,12 @@ export function createHallDoors(scene: THREE.Scene, host: HTMLElement, onEnter: 
   return {
     /** The door under the pointer, if any. */
     hitTest(raycaster: THREE.Raycaster): string | null {
-      return built.find(({ mesh }) => mesh.hitTest(raycaster))?.door.id ?? null
+      return built.find(({ door, mesh }) => !door.locked && mesh.hitTest(raycaster))?.door.id ?? null
     },
     sync(camera: THREE.OrthographicCamera, viewport: Viewport, enabled: boolean) {
       const perUnit = viewport.width / (camera.right - camera.left)
       for (const { door, cue, signY } of built) {
-        if (cue.disabled !== !enabled) cue.disabled = !enabled
+        if (cue.disabled !== (!enabled || door.locked)) cue.disabled = !enabled || door.locked
         // Written only on change, so the cue does not force a style recalc every frame.
         const hidden = !placeLabel(cue, { x: door.x, y: signY, width: sign.width * 0.76 }, perUnit, camera, viewport, 0.12)
         if (cue.hidden !== hidden) cue.hidden = hidden

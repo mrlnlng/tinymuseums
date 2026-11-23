@@ -12,7 +12,8 @@ import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import SwipeHint, { claimSwipeHint } from '@/features/hall/components/SwipeHint'
 import type { PreparedGame } from '@/features/sketchguess/components/SketchGuess'
 import type { MinigameId } from '@/features/minigames/registry'
-import { createHallRoom, type HallCallbacks, type OpenPiece } from '@/features/rooms/hall/room'
+import { createHallRoom, type GuideTalk as Talk, type HallCallbacks, type OpenPiece } from '@/features/rooms/hall/room'
+import GuideTalk from '@/features/hall/components/GuideTalk'
 import { doorsOf } from '@/features/rooms/doors'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
@@ -64,6 +65,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   const guestBoardNotesRef = useRef<HTMLDivElement>(null)
 
   const [openPiece, setOpenPiece] = useState<OpenPiece | null>(null)
+  const [guideTalk, setGuideTalk] = useState<Talk | null>(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isCoinOpen, setIsCoinOpen] = useState(false)
   const [isGuestBoardOpen, setIsGuestBoardOpen] = useState(false)
@@ -100,6 +102,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
 
   const isSuspended =
     openPiece !== null ||
+    guideTalk !== null ||
     isHelpOpen ||
     isCoinOpen ||
     isGuestBoardOpen ||
@@ -108,6 +111,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
 
   const hallCallbacks = (): HallCallbacks => ({
     onOpenPiece: setOpenPiece,
+    onTalkToGuide: setGuideTalk,
     onLeave: () => router.push('/'),
     onOpenHelp: () => setIsHelpOpen(true),
     onFindCoin: () => setIsCoinOpen(true),
@@ -245,6 +249,8 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
           <ColorRecall key="color-recall" onClose={() => setOpenGame('desktop')} />
         ) : null}
       </AnimatePresence>
+
+      {guideTalk ? <GuideTalk talk={guideTalk} onClose={() => setGuideTalk(null)} /> : null}
 
       <AnimatePresence>
         {isHelpOpen ? <HelpGuide key="help" onClose={() => setIsHelpOpen(false)} /> : null}

@@ -35,7 +35,8 @@ import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import type { HallArt } from '../art'
-import { doorName } from '@tiny/core/rooms'
+import { doorName, doorWidth, type DoorGuide, type DoorRoom } from '@tiny/core/rooms'
+import { createDoorGuides } from '@/features/hall/scene/door-guide'
 import { doorDefs, doorsOf } from '../doors'
 import type { Interaction, JoinedContents, JoinedRoom, RoomDef } from '../types'
 
@@ -54,8 +55,16 @@ export interface OpenPiece {
   pieceId: string
 }
 
+/** A conversation with the guide keeping a door; `go` takes the visitor through it. */
+export interface GuideTalk {
+  guide: DoorGuide
+  to: DoorRoom
+  go(): void
+}
+
 export interface HallCallbacks {
   onOpenPiece(piece: OpenPiece): void
+  onTalkToGuide(talk: GuideTalk): void
   onLeave(): void
   onOpenHelp(): void
   onFindCoin(): void
@@ -331,12 +340,23 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
 
       /** A part of the hall with the doors standing in it, which are tried before anything else there. */
       function buildRoom(room: HallRoomSpan): JoinedContents {
-        const inside = doorsOf('hall')
-          .filter(({ x }) => x >= room.startX && x < room.endX)
-          .map((d) => ({ id: d.id, x: d.x, label: d.label, name: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door }))
+        const standing = doorsOf('hall').filter(({ x }) => x >= room.startX && x < room.endX)
+        const inside = standing
+          .map((d) => ({ id: d.id, x: d.x, label: d.label, name: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door, locked: d.guide !== null }))
         const contents = buildRoomContents(room)
         if (inside.length === 0) return contents
         const doors = createHallDoors(scene, overlayHost, enterDoor, inside, assets)
+        // A guide stands just past their door's right-hand post.
+        const guides = createDoorGuides(
+          overlayHost,
+          standing.flatMap((d) => (d.guide ? [{ door: d.id, npc: d.guide.npc, x: d.x + doorWidth(d) / 2 + 0.3 }] : [])),
+          (id) => {
+            const kept = doorsOf('hall').find((d) => d.id === id)
+            if (!kept?.guide || ctx.isQuiet() || traversal.isIntro) return
+            ctx.sound.play('click')
+            callbacks().onTalkToGuide({ guide: kept.guide, to: kept.to, go: () => enterDoor(id) })
+          },
+        )
         return {
           ...contents,
           hitTest(raycaster, phase) {
@@ -346,9 +366,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           },
           update(frame) {
             doors.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
+            guides.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro, traversal.x)
             contents.update(frame)
           },
           dispose() {
+            guides.dispose()
             doors.dispose()
             contents.dispose()
           },

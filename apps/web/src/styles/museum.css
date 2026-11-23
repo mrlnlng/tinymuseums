@@ -3864,3 +3864,102 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
 .pond-fishing.is-touch .pond-reel-meter { padding: 8px 12px 9px; }
 
 .pond-fishing.is-touch .pond-reel-track { height: 26px; }
+/* A door's guide (features/hall/scene/door-guide): a museum character who stands by a door and talks. */
+.door-guide {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.door-guide[hidden] { display: none; }
+.door-guide:disabled { cursor: default; }
+.door-guide-sprite {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position-y: 0;
+}
+.door-guide-hint {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  translate: -50% -100%;
+  padding: 2px 8px 5px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ink);
+  background: rgb(255 250 240 / 0.94);
+  border: 1.5px solid rgb(109 64 46 / 0.42);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgb(109 64 46 / 0.16);
+}
+.door-guide-hint[hidden] { display: none; }
+.door-guide:focus-visible { outline: 2px solid #f7a8c4; outline-offset: 2px; border-radius: 12px; }
+
+/* Talking with a guide: one line at a time, in a speech card along the bottom of the screen. */
+.guide-talk {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+}
+.guide-talk-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(30 10 18 / 0.28);
+  cursor: pointer;
+}
+.guide-talk-card {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  width: min(100%, 520px);
+  padding: 16px 18px;
+  border: 2px solid #5b3a25;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7ea 100%);
+  box-shadow: 0 14px 40px rgb(20 8 14 / 0.45);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+.guide-talk-face {
+  flex: none;
+  width: 128px;
+  margin: -18px -10px -16px -14px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+.guide-talk-words { flex: 1; min-width: 0; }
+.guide-talk-who { margin: 0; font-size: 12px; color: #8b6351; }
+.guide-talk-who strong { margin-right: 6px; font-size: 15px; color: var(--ink); }
+.guide-talk-line { margin: 6px 0 12px; font-size: 16px; line-height: 1.45; min-height: 2.9em; }
+.guide-talk-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.guide-talk-button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pink);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.guide-talk-button.is-quiet { background: transparent; box-shadow: inset 0 0 0 2px #e5ccb4; font-weight: 600; }
+.guide-talk-button:focus-visible { outline: 2px solid var(--script); outline-offset: 2px; }
+@media (max-width: 420px) {
+  .guide-talk-face { width: 64px; }
+  .guide-talk-line { font-size: 15px; }
+}

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import {
-  addPassage, DOOR_HEIGHT, DOOR_ROOMS, DOOR_STYLES, doorName, doorRoom, doorWidth, editDoor, isFixedDoor, MAX_DOOR_SCALE, MIN_DOOR_SCALE, removeDoor,
+  addPassage, DOOR_HEIGHT, DOOR_ROOMS, DOOR_STYLES, doorName, doorRoom, doorWidth, editDoor, isFixedDoor, MAX_DOOR_SCALE, MAX_GUIDE_LINE, MAX_GUIDE_LINES, MIN_DOOR_SCALE, removeDoor,
   type DoorRoom, type DoorStyle, type MuseumDoor,
 } from '@tiny/core/rooms'
 import { CONFIG } from '@/features/hall/scene/config'
+import { CAST, castMember, FRAME, WORLD_PER_PX } from '@/features/npcs/cast'
+import { assetUrl, type AssetName } from '@/shared/lib/assets'
 import { computeLayout, hallDoorSpan } from '@/features/hall/scene/layout'
 import { doorArtUrl } from '@/features/rooms/door-art'
 import { discardDoorsAction, publishDoorsAction, saveDoorsAction } from '@/features/studio/actions'
@@ -35,11 +37,17 @@ const REASONS: Record<string, string> = {
   too_close: 'Doors need a little space between them. Try a spot further along, or make one smaller.',
   no_room: 'There is no free place on that wall for another door.',
   too_many: 'That is as many doors as the museum can hold.',
-  bad_door: 'That is not quite right: a door has to stay on its wall, and its sign can be at most 40 letters.',
+  bad_door: `That is not quite right: a door has to stay on its wall, its sign can be at most 40 letters, and a guide says 1 to ${MAX_GUIDE_LINES} things of up to ${MAX_GUIDE_LINE} letters each.`,
   fixed_door: "The pond's forest gate is part of the scenery and stays where it is.",
 }
 
 const roomLabel = (room: DoorRoom) => doorRoom(room)!.label
+/** Where a door's guide stands, as the hall places them: just past the door's right-hand post. */
+const guideX = (door: MuseumDoor) => door.x + doorWidth(door) / 2 + 0.3
+/** What a newly chosen guide says until the owner writes their own lines. */
+const firstLines = (door: MuseumDoor) => [`Hello there! This door leads to ${roomLabel(door.to).replace(/^The /, 'the ')}.`, 'Would you like me to show you the way?']
+/** One line per paragraph: a blank line, or a new line, starts the next thing they say. */
+const linesOf = (text: string) => text.split(/\n+/).map((line) => line.trim()).filter(Boolean)
 
 export default function DoorEditor({ initial, published, startRoom, paintings }: {
   initial: MuseumDoor[]
@@ -294,6 +302,20 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                 <img src={doorArtUrl(d.style)} alt="" draggable={false} style={{ height: DOOR_HEIGHT * d.scale * ppu }} />
               </button>
             ))}
+            {here.filter((d) => d.guide).map((d) => (
+              <span
+                key={`${d.id}-guide`}
+                className="st-guide"
+                aria-hidden="true"
+                style={{
+                  left: left(guideX(d)),
+                  width: FRAME.width * WORLD_PER_PX * ppu,
+                  height: FRAME.height * WORLD_PER_PX * ppu,
+                  backgroundImage: `url("${assetUrl(castMember(d.guide!.npc).asset as AssetName)}")`,
+                  backgroundSize: `${FRAME.count * 100}% 100%`,
+                }}
+              />
+            ))}
           </div>
         </div>
         <div className="st-wall-floor" />
@@ -305,6 +327,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
             <>
               <h2>{doorName(door)}</h2>
               <p className="st-small st-muted" style={{ marginTop: 0 }}>
+                {door.guide ? `Kept by ${castMember(door.guide.npc).name}: visitors go through by talking to them. ` : ''}
                 {fixed
                   ? "The pond's forest gate is painted into the hedge, so it stays where it is. It leads back to the hall's front door."
                   : partner
@@ -338,6 +361,38 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                       <input id="door-scale" type="range" min={MIN_DOOR_SCALE} max={MAX_DOOR_SCALE} step={0.05} {...slider(door, 'scale')} />
                       <span className="st-hint"><span>Smaller</span><span>{Math.round(shown.scale * 100)}%{was && was.scale !== door.scale ? ` · was ${Math.round(was.scale * 100)}%` : ''}</span><span>Bigger</span></span>
                     </div>
+                    {room === 'hall' ? (
+                      <div className="st-field">
+                        <label htmlFor="door-guide">Guide</label>
+                        <select
+                          id="door-guide"
+                          value={door.guide?.npc ?? ''}
+                          onChange={(event) => apply(editDoor(doors, door.id, {
+                            guide: event.target.value ? { npc: event.target.value, lines: door.guide?.lines ?? firstLines(door) } : null,
+                          }))}
+                        >
+                          <option value="">No guide: the door opens by itself</option>
+                          {CAST.map((c) => <option key={c.id} value={c.id}>{c.name}, {c.role.toLowerCase()}</option>)}
+                        </select>
+                        <span className="st-small st-muted">A guide stands beside the door. The door stays shut; visitors talk to them to go through.</span>
+                      </div>
+                    ) : null}
+                    {room === 'hall' && door.guide ? (
+                      <div className="st-field">
+                        <label htmlFor="door-lines">What they say</label>
+                        <textarea
+                          id="door-lines"
+                          key={`${door.id}-${door.guide.npc}-lines`}
+                          rows={4}
+                          defaultValue={door.guide.lines.join('\n')}
+                          onBlur={(event) => {
+                            const lines = linesOf(event.target.value)
+                            if (JSON.stringify(lines) !== JSON.stringify(door.guide!.lines)) apply(editDoor(doors, door.id, { guide: { npc: door.guide!.npc, lines } }))
+                          }}
+                        />
+                        <span className="st-small st-muted">One line each, shown one at a time. After the last, they offer “Take me to {roomLabel(door.to).replace(/^The /, 'the ')}”.</span>
+                      </div>
+                    ) : null}
                     {room === 'hall' ? (
                       <label className="st-check">
                         <input type="checkbox" checked={door.under} onChange={(event) => apply(editDoor(doors, door.id, { under: event.target.checked }))} />

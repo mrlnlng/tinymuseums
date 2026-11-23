@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { CONFIG } from '@/features/hall/scene/config'
 import type { Viewport } from '@/features/hall/scene/overlay'
 import type { RoomId } from '@/features/rooms/types'
+import { museumDoors } from '@/features/rooms/doors'
 import { assetEntry, assetUrl, type AssetName } from '@/shared/lib/assets'
 import {
   FRAME,
@@ -48,6 +49,11 @@ const MIN_FLOOR_WIDTH = 2
 const MEET_DISTANCE = 1
 const FADE_MS = 250
 const PROJECTED = new THREE.Vector3()
+
+/** The characters standing beside a door as its guide. */
+function guides(): Set<string> {
+  return new Set(museumDoors().flatMap((door) => (door.guide ? [door.guide.npc] : [])))
+}
 const FLAT = { lift: 0, scale: 1 }
 
 interface NpcView {
@@ -268,9 +274,10 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
   }
 
   function pickWanderer(nowMs: number): string | undefined {
+    const guiding = guides()
     return WANDERER_IDS.find(
       (candidate) =>
-        !wanderers.some((view) => view.wanderer.id === candidate) && !departedRecently(candidate, nowMs),
+        !guiding.has(candidate) && !wanderers.some((view) => view.wanderer.id === candidate) && !departedRecently(candidate, nowMs),
     )
   }
 
@@ -489,7 +496,9 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       writeStyle(container, containerStyles, 'z-index', ground ? 'auto' : '-1')
 
       const states = residentRoom === null ? [] : residentsAt(Date.now(), { room: residentRoom, info })
-      const shownResidents = states.filter((state) => state.room === residentRoom && state.x !== null)
+      // A character keeping a door stands there all day, so they are not also seen about the museum.
+      const guiding = guides()
+      const shownResidents = states.filter((state) => state.room === residentRoom && state.x !== null && !guiding.has(state.id))
       const presentResidents = new Set(shownResidents.map((state) => state.id))
       for (const [id, view] of residents) {
         if (presentResidents.has(id)) continue

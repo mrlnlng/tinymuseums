@@ -482,9 +482,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/Museum.tsx": {
-    "mtime": 1795413667.3585954,
-    "seen": 1795415779.0615253,
-    "ast_hash": "9c4ebc41887ac8372dd88a4bf093bb26",
+    "mtime": 1795417772.0028121,
+    "seen": 1795418039.7224078,
+    "ast_hash": "529cf76152c804e3f72ad684cf5b93b4",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/RigPreview.tsx": {
@@ -626,15 +626,15 @@
     "semantic_hash": "9b99e32f068cdacc9768294ee8f3234c"
   },
   "apps/web/src/features/hall/scene/layout.ts": {
-    "mtime": 1795415606.885762,
-    "seen": 1795415779.0615556,
-    "ast_hash": "e666887827088530b8cf9ad8b2023571",
+    "mtime": 1795416674.8222122,
+    "seen": 1795418039.7224433,
+    "ast_hash": "efc95e295c05c21e58844b026e3057ac",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby-gallery-door.ts": {
-    "mtime": 1795415580.0352988,
-    "seen": 1795415779.0615566,
-    "ast_hash": "eff3012da32a5a5a7719fdb0b5d4142a",
+    "mtime": 1795417727.0174987,
+    "seen": 1795418039.722444,
+    "ast_hash": "3fd9f11dbe70eed42e5474f1fd9fa655",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/lobby.ts": {
@@ -3146,9 +3146,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/hall/room.ts": {
-    "mtime": 1795415590.2675147,
-    "seen": 1795415779.0616503,
-    "ast_hash": "a958e2f535b8497d4043f90cce549073",
+    "mtime": 1795417740.8271952,
+    "seen": 1795418039.7225425,
+    "ast_hash": "a5e6c32cae71e61a870860d6af90ea95",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/MuseumStage.tsx": {
@@ -3410,9 +3410,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/layout.test.ts": {
-    "mtime": 1795415674.6055934,
-    "seen": 1795415779.061555,
-    "ast_hash": "fb83da3c769e94aec8a06d962628b857",
+    "mtime": 1795416674.8243253,
+    "seen": 1795418039.7224422,
+    "ast_hash": "40bf8e6aef1822165c927b898392a551",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/nearby.test.ts": {
@@ -5204,9 +5204,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/npcs/npc-layer.ts": {
-    "mtime": 1795314345.3614721,
-    "seen": 1795314685.6014957,
-    "ast_hash": "14f2768d7097135a7e55351c99dff880",
+    "mtime": 1795417704.3824358,
+    "seen": 1795418039.7224736,
+    "ast_hash": "6d6d68a1aa7d5847388a6b0c8b8bf3d3",
     "semantic_hash": ""
   },
   "apps/web/public/assets/npcs/idle-sprites.json": {
@@ -6998,9 +6998,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/studio/components/DoorEditor.tsx": {
-    "mtime": 1795415621.5166812,
-    "seen": 1795415779.0616884,
-    "ast_hash": "fcec660887b03d00df5cf25465380905",
+    "mtime": 1795417817.846857,
+    "seen": 1795418039.722583,
+    "ast_hash": "d4d7dae5ad3770b02f4e25d5cf7c8575",
     "semantic_hash": ""
   },
   "apps/web/src/features/studio/components/Frame.tsx": {
@@ -7040,15 +7040,27 @@
     "semantic_hash": ""
   },
   "packages/core/src/rooms/doors.test.ts": {
-    "mtime": 1795415670.4447641,
-    "seen": 1795415779.061819,
-    "ast_hash": "b022c60a02e9c25404f539996d56c954",
+    "mtime": 1795417679.6108673,
+    "seen": 1795418039.7227118,
+    "ast_hash": "f7f4531e13795e843a74b033a130b8f8",
     "semantic_hash": ""
   },
   "packages/core/src/rooms/doors.ts": {
-    "mtime": 1795415544.7992072,
-    "seen": 1795415779.0618203,
-    "ast_hash": "eafbc43e4a6c72064ff3f6f3ad560817",
+    "mtime": 1795417679.6089249,
+    "seen": 1795418039.7227128,
+    "ast_hash": "5dc8b4a94170df5605482440b00e7311",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/hall/components/GuideTalk.tsx": {
+    "mtime": 1795417772.002711,
+    "seen": 1795418039.7224035,
+    "ast_hash": "fc0ac7786e20228c33146c4e7bfb14cd",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/hall/scene/door-guide.ts": {
+    "mtime": 1795417727.0111947,
+    "seen": 1795418039.7224343,
+    "ast_hash": "b519cc52ff8e6515fd46e4aecb66c701",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

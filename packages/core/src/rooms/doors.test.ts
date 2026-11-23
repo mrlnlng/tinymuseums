@@ -64,3 +64,17 @@ test("the pond's gate is part of its scenery and stays put", () => {
   assert.equal(editDoor(DEFAULT_DOORS, 'hall', { label: 'Home' }).ok, true)
   assert.deepEqual(removeDoor(DEFAULT_DOORS, 'hall'), [...DEFAULT_DOORS])
 })
+
+test('a hall door can have a guide, who needs something to say', () => {
+  const lines = ['Oh, hello!', 'This little door leads to the pond.']
+  const kept = editDoor(DEFAULT_DOORS, 'atelier', { guide: { npc: 'moss', lines } })
+  assert.ok(kept.ok)
+  assert.deepEqual(kept.doors.find((d) => d.id === 'atelier')!.guide, { npc: 'moss', lines })
+  assert.equal(editDoor(DEFAULT_DOORS, 'atelier', { guide: { npc: 'moss', lines: [] } }).ok, false)
+  assert.equal(editDoor(DEFAULT_DOORS, 'atelier', { guide: { npc: 'Moss!', lines } }).ok, false)
+  assert.equal(editDoor(DEFAULT_DOORS, 'gallery', { guide: { npc: 'moss', lines } }).ok, false)
+  // Doors saved before guides existed have none.
+  const old = DEFAULT_DOORS.map(({ guide: _guide, ...rest }) => rest)
+  const read = checkDoors(old)
+  assert.ok(read.ok && read.doors.every((d) => d.guide === null))
+})

@@ -21,7 +21,19 @@ export interface MuseumDoor {
   toDoor: string | null
   /** A hall door standing under a painting, which hangs higher to make room, instead of between paintings. */
   under: boolean
+  /** A hall door kept by a guide: it does not open by itself; talking to the guide takes the visitor through. */
+  guide: DoorGuide | null
 }
+
+export interface DoorGuide {
+  /** The museum character who stands beside the door (an id from the cast). */
+  npc: string
+  /** What they say, one speech bubble each, before offering to take the visitor through. */
+  lines: string[]
+}
+
+export const MAX_GUIDE_LINES = 6
+export const MAX_GUIDE_LINE = 240
 
 export interface DoorRoomSpec {
   id: DoorRoom
@@ -46,9 +58,9 @@ export const DOOR_STYLES: readonly { id: DoorStyle; label: string }[] = [
 
 /** The doors as the museum was built, before anything was moved in the studio. */
 export const DEFAULT_DOORS: readonly MuseumDoor[] = [
-  { id: 'atelier', room: 'hall', x: -3.6, label: 'Costume Atelier', style: 'gallery', scale: 1, to: 'atelier', toDoor: 'gallery', under: false },
-  { id: 'gallery', room: 'atelier', x: -3.1, label: 'To the hall', style: 'gallery', scale: 1, to: 'hall', toDoor: 'atelier', under: false },
-  { id: 'hall', room: 'pond', x: -5.6, label: 'To the museum', style: 'forest', scale: 1, to: 'hall', toDoor: null, under: false },
+  { id: 'atelier', room: 'hall', x: -3.6, label: 'Costume Atelier', style: 'gallery', scale: 1, to: 'atelier', toDoor: 'gallery', under: false, guide: null },
+  { id: 'gallery', room: 'atelier', x: -3.1, label: 'To the hall', style: 'gallery', scale: 1, to: 'hall', toDoor: 'atelier', under: false, guide: null },
+  { id: 'hall', room: 'pond', x: -5.6, label: 'To the museum', style: 'forest', scale: 1, to: 'hall', toDoor: null, under: false, guide: null },
 ]
 
 export const MIN_DOOR_SCALE = 0.3
@@ -99,9 +111,22 @@ function doorOf(value: unknown): MuseumDoor | null {
   if (typeof label !== 'string' || label.length > MAX_LABEL) return null
   if (!isStyle(style)) return null
   if (toDoor !== null && (typeof toDoor !== 'string' || !ID.test(toDoor))) return null
-  // Only a hall door can stand under a painting; doors saved before this stand between them.
+  // Only a hall door can stand under a painting or have a guide; doors saved before these have neither.
   const under = spec.id === 'hall' && (value as Record<string, unknown>).under === true
-  return { id, room: spec.id, x, label: label.trim(), style, scale, to: to as DoorRoom, toDoor, under }
+  const rawGuide = (value as Record<string, unknown>).guide ?? null
+  const guide = rawGuide === null ? null : guideOf(rawGuide)
+  if (rawGuide !== null && (!guide || spec.id !== 'hall')) return null
+  return { id, room: spec.id, x, label: label.trim(), style, scale, to: to as DoorRoom, toDoor, under, guide }
+}
+
+function guideOf(value: unknown): DoorGuide | null {
+  if (typeof value !== 'object' || value === null) return null
+  const { npc, lines } = value as Record<string, unknown>
+  if (typeof npc !== 'string' || !/^[a-z]{1,24}$/.test(npc)) return null
+  if (!Array.isArray(lines) || lines.length === 0 || lines.length > MAX_GUIDE_LINES) return null
+  const kept = lines.map((line) => (typeof line === 'string' ? line.trim() : ''))
+  if (kept.some((line) => line.length === 0 || line.length > MAX_GUIDE_LINE)) return null
+  return { npc, lines: kept }
 }
 
 export type DoorsCheck = { ok: true; doors: MuseumDoor[] } | { ok: false; reason: string }
@@ -169,6 +194,11 @@ export function freeSpot(
 
 const ROOM_LABEL = (room: DoorRoom) => doorRoom(room)!.label.replace(/^The /, 'the ')
 
+/** A guide's offer to take the visitor through their door. */
+export function guideOffer(door: Pick<MuseumDoor, 'to'>): string {
+  return `Take me to ${ROOM_LABEL(door.to)}`
+}
+
 /** What a door is called: its sign, or where it goes when it has none. */
 export function doorName(door: Pick<MuseumDoor, 'label' | 'to'>): string {
   return door.label || `To ${ROOM_LABEL(door.to)}`
@@ -187,8 +217,8 @@ export function addPassage(doors: readonly MuseumDoor[], room: DoorRoom, to: Doo
   const backId = freshId([...doors, { id } as MuseumDoor], `${to}-${room}`)
   return checkDoors([
     ...doors,
-    { id, room, x: here, label: `To ${ROOM_LABEL(to)}`, style, scale: 1, to, toDoor: backId, under: false },
-    { id: backId, room: to, x: there, label: `To ${ROOM_LABEL(room)}`, style: backStyle, scale: 1, to: room, toDoor: id, under: false },
+    { id, room, x: here, label: `To ${ROOM_LABEL(to)}`, style, scale: 1, to, toDoor: backId, under: false, guide: null },
+    { id: backId, room: to, x: there, label: `To ${ROOM_LABEL(room)}`, style: backStyle, scale: 1, to: room, toDoor: id, under: false, guide: null },
   ])
 }
 
@@ -203,7 +233,7 @@ export function removeDoor(doors: readonly MuseumDoor[], id: string): MuseumDoor
 export function editDoor(
   doors: readonly MuseumDoor[],
   id: string,
-  change: Partial<Pick<MuseumDoor, 'x' | 'label' | 'style' | 'scale' | 'under'>>,
+  change: Partial<Pick<MuseumDoor, 'x' | 'label' | 'style' | 'scale' | 'under' | 'guide'>>,
 ): DoorsCheck {
   if (!doors.some((door) => door.id === id)) return { ok: false, reason: 'unknown_door' }
   return checkDoors(doors.map((door) => (door.id === id ? { ...door, ...change } : door)))

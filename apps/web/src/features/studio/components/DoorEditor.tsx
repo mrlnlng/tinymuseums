@@ -341,7 +341,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                     {room === 'hall' ? (
                       <label className="st-check">
                         <input type="checkbox" checked={door.under} onChange={(event) => apply(editDoor(doors, door.id, { under: event.target.checked }))} />
-                        Under a painting: the painting above it hangs higher, instead of stepping aside
+                        Under a painting: the painting above it stays, raised only if the door would touch its frame. Set it beside the plaque.
                       </label>
                     ) : null}
                     <div className="st-field">

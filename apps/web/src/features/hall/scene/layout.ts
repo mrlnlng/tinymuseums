@@ -89,8 +89,8 @@ export function hallDoorSpan(door: Pick<MuseumDoor, 'x' | 'style' | 'scale' | 'u
 
 /** Space kept on either side of a door, so a frame never touches it. */
 const DOOR_CLEARANCE = 0.45
-/** Wall kept between a door's top and the painting above it, for the painting's plaque. */
-const UNDER_ROOM = 0.62
+/** Wall kept between a door's top and the frame above it; the plaque stays where it hangs, so set the door beside it. */
+const UNDER_ROOM = 0.08
 
 export function computeLayout(paintings: number[], isComplete = false, doors: readonly DoorSpan[] = []): HallLayout {
   const widths = isComplete ? [...paintings, comingSoonWidth()] : paintings

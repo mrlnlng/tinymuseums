@@ -73,7 +73,7 @@ test('a door under a painting moves nothing along and lifts only the painting ab
   const third = plain.centerX[2]
   const under = computeLayout(paintings(6), true, [{ x: third, width: 0.6, top: 0.6 }])
   assert.deepEqual(under.centerX, plain.centerX)
-  assert.ok(under.lift[2] > 0.5)
+  assert.ok(under.lift[2] > 0.1)
   assert.deepEqual(under.lift.filter((_, i) => i !== 2), [0, 0, 0, 0, 0])
   assert.deepEqual(plain.lift, [0, 0, 0, 0, 0, 0])
 })

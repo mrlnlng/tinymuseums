@@ -15,6 +15,7 @@ import type { AtelierArtwork } from '../art'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import type { JoinedRoom, RoomDef } from '../types'
+import { doorName } from '@tiny/core/rooms'
 import { doorDefs, doorsOf } from '../doors'
 
 /** How the page reaches into the room: it hears when the mirror is tapped, and asks the room to change character. */
@@ -65,7 +66,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
     doors: doorDefs('atelier'),
 
     build(ctx, { art, door, doorArt }) {
-      const doors = doorsOf('atelier').map(({ id, x, label, scale, style }) => ({ id, x, label, scale, image: doorArt[style] ?? door }))
+      const doors = doorsOf('atelier').map((d) => ({ id: d.id, x: d.x, label: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door }))
       const room = createAtelierRoom(ctx.scene, art, ctx.overlay, doors, spots)
       const outfitSlot = defaultStore().getSlot(outfit)
       let wardrobe: Wardrobe | null = null

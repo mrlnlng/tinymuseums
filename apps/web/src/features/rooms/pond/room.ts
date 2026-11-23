@@ -18,6 +18,7 @@ import { createShopkeeper } from './shopkeeper'
 import { createPondAmbience } from './ambience'
 import { EDGE_BAND, EDGE_BANDS, EDGE_OVERLAP, type PondArt } from './art'
 import type { RoomDef } from '../types'
+import { doorName } from '@tiny/core/rooms'
 import { doorDefs, doorsOf } from '../doors'
 
 /**
@@ -215,7 +216,7 @@ export function createPondRoom({
         return [{
           kind: 'exit' as const, x: door.x, depth: 0, width: 1.6 * door.scale, baseY: 0,
           aspect: image.naturalWidth / image.naturalHeight,
-          title: door.label, description: 'A door', image: 'pond/forest-door' as const,
+          title: doorName(door), description: 'A door', image: 'pond/forest-door' as const,
           door: { id: door.id, image },
         }]
       })

@@ -1,4 +1,4 @@
-import { DEFAULT_DOORS, doorRoom, type DoorRoom, type MuseumDoor } from '@tiny/core/rooms'
+import { DEFAULT_DOORS, doorName, doorRoom, type DoorRoom, type MuseumDoor } from '@tiny/core/rooms'
 import type { DoorDef } from './types.ts'
 
 // The doors the owner published from the studio. The museum layout sets them once per page load,
@@ -26,6 +26,6 @@ export function doorDefs(room: DoorRoom): Record<string, DoorDef> {
   const spec = doorRoom(room)!
   return Object.fromEntries(doorsOf(room).map((door) => {
     const clearX = door.x + CLEAR <= spec.maxX + CLEAR / 2 ? door.x + CLEAR : door.x - CLEAR
-    return [door.id, { x: door.x, clearX, label: door.label }]
+    return [door.id, { x: door.x, clearX, label: doorName(door) }]
   }))
 }

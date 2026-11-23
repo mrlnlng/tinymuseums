@@ -3,12 +3,13 @@ import manifest from '@/generated/asset-manifest.json'
 import { builtUrl } from '@/shared/lib/assets'
 import { plane } from './board'
 import { pickPainted } from './hit'
+import { HALL_DOOR_FOOT } from './layout'
 
 export const GALLERY_DOOR = {
   lobbyX: -3.6,
   atelierX: -3.1,
   height: 2.8,
-  lobbyBase: -0.26,
+  lobbyBase: HALL_DOOR_FOOT,
   clear: 0.85,
 } as const
 

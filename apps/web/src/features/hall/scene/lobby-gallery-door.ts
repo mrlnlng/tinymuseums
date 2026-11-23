@@ -8,7 +8,10 @@ import { placeLabel, type Viewport } from './overlay'
 export interface HallDoor {
   id: string
   x: number
+  /** The sign over it; empty for none. */
   label: string
+  /** What it is called, sign or not. */
+  name: string
   scale: number
   image: HTMLImageElement
 }
@@ -22,13 +25,15 @@ export function createHallDoors(scene: THREE.Scene, host: HTMLElement, onEnter: 
   const { sign } = CONFIG.lobby
   const built = doors.map((door) => {
     const mesh = createGalleryDoor(scene, door.image, door.x, GALLERY_DOOR.lobbyBase, door.scale)
-    const signY = GALLERY_DOOR.lobbyBase + GALLERY_DOOR.height * door.scale + SIGN_ABOVE
-    group.add(stretchedBoard(assets.textures.plaque, assets.aspect.plaque, door.x, signY, sign.z, sign.width, sign.height))
+    const height = GALLERY_DOOR.height * door.scale
+    // A door without a sign keeps its button, unseen until focused, over the door itself.
+    const signY = door.label ? GALLERY_DOOR.lobbyBase + height + SIGN_ABOVE : GALLERY_DOOR.lobbyBase + height / 2
+    if (door.label) group.add(stretchedBoard(assets.textures.plaque, assets.aspect.plaque, door.x, signY, sign.z, sign.width, sign.height))
     const cue = document.createElement('button')
-    cue.className = 'lobby-sign gallery-door-cue'
+    cue.className = door.label ? 'lobby-sign gallery-door-cue' : 'lobby-sign gallery-door-cue is-unsigned'
     cue.type = 'button'
-    cue.textContent = door.label
-    cue.setAttribute('aria-label', `Go through the door: ${door.label}`)
+    cue.textContent = door.label || door.name
+    cue.setAttribute('aria-label', `Go through the door: ${door.name}`)
     cue.addEventListener('click', () => onEnter(door.id))
     host.append(cue)
     return { door, mesh, cue, signY }

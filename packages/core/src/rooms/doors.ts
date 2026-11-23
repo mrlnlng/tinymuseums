@@ -11,7 +11,7 @@ export interface MuseumDoor {
   room: DoorRoom
   /** World x of the door's centre on its room's floor. */
   x: number
-  /** The sign over the door, and its name on the map. */
+  /** The sign over the door, and its name on the map; empty for a door with no sign. */
   label: string
   style: DoorStyle
   /** How big it stands, against the doors as the museum was built (1). */
@@ -19,6 +19,8 @@ export interface MuseumDoor {
   to: DoorRoom
   /** The paired door in `to`, or null to arrive at that room's entrance. */
   toDoor: string | null
+  /** A hall door standing under a painting, which hangs higher to make room, instead of between paintings. */
+  under: boolean
 }
 
 export interface DoorRoomSpec {
@@ -44,12 +46,12 @@ export const DOOR_STYLES: readonly { id: DoorStyle; label: string }[] = [
 
 /** The doors as the museum was built, before anything was moved in the studio. */
 export const DEFAULT_DOORS: readonly MuseumDoor[] = [
-  { id: 'atelier', room: 'hall', x: -3.6, label: 'Costume Atelier', style: 'gallery', scale: 1, to: 'atelier', toDoor: 'gallery' },
-  { id: 'gallery', room: 'atelier', x: -3.1, label: 'To the hall', style: 'gallery', scale: 1, to: 'hall', toDoor: 'atelier' },
-  { id: 'hall', room: 'pond', x: -5.6, label: 'To the museum', style: 'forest', scale: 1, to: 'hall', toDoor: null },
+  { id: 'atelier', room: 'hall', x: -3.6, label: 'Costume Atelier', style: 'gallery', scale: 1, to: 'atelier', toDoor: 'gallery', under: false },
+  { id: 'gallery', room: 'atelier', x: -3.1, label: 'To the hall', style: 'gallery', scale: 1, to: 'hall', toDoor: 'atelier', under: false },
+  { id: 'hall', room: 'pond', x: -5.6, label: 'To the museum', style: 'forest', scale: 1, to: 'hall', toDoor: null, under: false },
 ]
 
-export const MIN_DOOR_SCALE = 0.6
+export const MIN_DOOR_SCALE = 0.3
 export const MAX_DOOR_SCALE = 1.6
 /** A door's height at size 1, in world units, and each style's picture's width over its height. */
 export const DOOR_HEIGHT = 2.8
@@ -94,10 +96,12 @@ function doorOf(value: unknown): MuseumDoor | null {
   const spec = typeof room === 'string' ? doorRoom(room) : null
   if (!spec || typeof to !== 'string' || !doorRoom(to) || to === room) return null
   if (typeof x !== 'number' || !Number.isFinite(x) || x < spec.minX - 1e-6 || x > spec.maxX + 1e-6) return null
-  if (typeof label !== 'string' || label.trim().length === 0 || label.length > MAX_LABEL) return null
+  if (typeof label !== 'string' || label.length > MAX_LABEL) return null
   if (!isStyle(style)) return null
   if (toDoor !== null && (typeof toDoor !== 'string' || !ID.test(toDoor))) return null
-  return { id, room: spec.id, x, label: label.trim(), style, scale, to: to as DoorRoom, toDoor }
+  // Only a hall door can stand under a painting; doors saved before this stand between them.
+  const under = spec.id === 'hall' && (value as Record<string, unknown>).under === true
+  return { id, room: spec.id, x, label: label.trim(), style, scale, to: to as DoorRoom, toDoor, under }
 }
 
 export type DoorsCheck = { ok: true; doors: MuseumDoor[] } | { ok: false; reason: string }
@@ -165,6 +169,11 @@ export function freeSpot(
 
 const ROOM_LABEL = (room: DoorRoom) => doorRoom(room)!.label.replace(/^The /, 'the ')
 
+/** What a door is called: its sign, or where it goes when it has none. */
+export function doorName(door: Pick<MuseumDoor, 'label' | 'to'>): string {
+  return door.label || `To ${ROOM_LABEL(door.to)}`
+}
+
 /** Adds a door in `room` to `to`, with its way back in `to`. */
 export function addPassage(doors: readonly MuseumDoor[], room: DoorRoom, to: DoorRoom, x: number): DoorsCheck {
   if (room === to) return { ok: false, reason: 'same_room' }
@@ -178,8 +187,8 @@ export function addPassage(doors: readonly MuseumDoor[], room: DoorRoom, to: Doo
   const backId = freshId([...doors, { id } as MuseumDoor], `${to}-${room}`)
   return checkDoors([
     ...doors,
-    { id, room, x: here, label: `To ${ROOM_LABEL(to)}`, style, scale: 1, to, toDoor: backId },
-    { id: backId, room: to, x: there, label: `To ${ROOM_LABEL(room)}`, style: backStyle, scale: 1, to: room, toDoor: id },
+    { id, room, x: here, label: `To ${ROOM_LABEL(to)}`, style, scale: 1, to, toDoor: backId, under: false },
+    { id: backId, room: to, x: there, label: `To ${ROOM_LABEL(room)}`, style: backStyle, scale: 1, to: room, toDoor: id, under: false },
   ])
 }
 
@@ -194,7 +203,7 @@ export function removeDoor(doors: readonly MuseumDoor[], id: string): MuseumDoor
 export function editDoor(
   doors: readonly MuseumDoor[],
   id: string,
-  change: Partial<Pick<MuseumDoor, 'x' | 'label' | 'style' | 'scale'>>,
+  change: Partial<Pick<MuseumDoor, 'x' | 'label' | 'style' | 'scale' | 'under'>>,
 ): DoorsCheck {
   if (!doors.some((door) => door.id === id)) return { ok: false, reason: 'unknown_door' }
   return checkDoors(doors.map((door) => (door.id === id ? { ...door, ...change } : door)))

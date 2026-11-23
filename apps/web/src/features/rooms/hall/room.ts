@@ -35,6 +35,7 @@ import type { Room } from '@/features/presence/lib/join-room'
 import { defaultStore } from '@/shared/lib/slots'
 import { reachLandmark, reachPainting, track } from '@/shared/lib/visit'
 import type { HallArt } from '../art'
+import { doorName } from '@tiny/core/rooms'
 import { doorDefs, doorsOf } from '../doors'
 import type { Interaction, JoinedContents, JoinedRoom, RoomDef } from '../types'
 
@@ -332,7 +333,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       function buildRoom(room: HallRoomSpan): JoinedContents {
         const inside = doorsOf('hall')
           .filter(({ x }) => x >= room.startX && x < room.endX)
-          .map(({ id, x, label, scale, style }) => ({ id, x, label, scale, image: doorArt[style] ?? door }))
+          .map((d) => ({ id: d.id, x: d.x, label: d.label, name: doorName(d), scale: d.scale, image: doorArt[d.style] ?? door }))
         const contents = buildRoomContents(room)
         if (inside.length === 0) return contents
         const doors = createHallDoors(scene, overlayHost, enterDoor, inside, assets)

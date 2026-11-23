@@ -67,3 +67,13 @@ test('paintings, the cafe and the gift shop step round the doors in the hall', (
   // A door far past the paintings known so far still has floor under it.
   assert.ok(computeLayout(paintings(3), false, [{ x: 90, width: 2 }]).totalLength > 91)
 })
+
+test('a door under a painting moves nothing along and lifts only the painting above it', () => {
+  const plain = computeLayout(paintings(6), true)
+  const third = plain.centerX[2]
+  const under = computeLayout(paintings(6), true, [{ x: third, width: 0.6, top: 0.6 }])
+  assert.deepEqual(under.centerX, plain.centerX)
+  assert.ok(under.lift[2] > 0.5)
+  assert.deepEqual(under.lift.filter((_, i) => i !== 2), [0, 0, 0, 0, 0])
+  assert.deepEqual(plain.lift, [0, 0, 0, 0, 0, 0])
+})

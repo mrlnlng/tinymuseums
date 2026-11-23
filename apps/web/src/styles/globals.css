@@ -2066,6 +2066,9 @@ form > .account-switch {
   border-radius: 12px;
 }
 
+/* A door with no sign: its button stays for the keyboard, seen only while focused. */
+.gallery-door-cue.is-unsigned:not(:focus-visible) { color: transparent; text-shadow: none; }
+
 .gallery-door-cue[hidden], .atelier-exit[hidden], .atelier-item[hidden], .atelier-swatch[hidden] { display: none; }
 
 /* Other visitors (features/presence) */

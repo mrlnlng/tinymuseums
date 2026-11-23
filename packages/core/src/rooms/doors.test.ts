@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addPassage, checkDoors, DEFAULT_DOORS, doorTarget, editDoor, removeDoor } from './doors.ts'
+import { addPassage, checkDoors, DEFAULT_DOORS, doorName, doorTarget, editDoor, removeDoor } from './doors.ts'
 
 test('the museum as built is a valid set of doors', () => {
   assert.equal(checkDoors(DEFAULT_DOORS).ok, true)
@@ -28,7 +28,19 @@ test('doors cannot stand on top of each other, leave their room, or lose their p
   assert.ok(two.ok)
   assert.equal(editDoor(two.doors, 'atelier', { x: two.doors.find((d) => d.room === 'hall' && d.to === 'pond')!.x + 0.5 }).ok, false)
   assert.equal(checkDoors(DEFAULT_DOORS.filter((d) => d.id !== 'gallery')).ok, false)
-  assert.equal(editDoor(DEFAULT_DOORS, 'atelier', { label: '' }).ok, false)
+  assert.equal(editDoor(DEFAULT_DOORS, 'atelier', { label: 'x'.repeat(41) }).ok, false)
+})
+
+test('a door can have no sign, and only a hall door can stand under a painting', () => {
+  const bare = editDoor(DEFAULT_DOORS, 'atelier', { label: '', scale: 0.3, under: true })
+  assert.ok(bare.ok)
+  const door = bare.doors.find((d) => d.id === 'atelier')!
+  assert.equal(door.label, '')
+  assert.equal(doorName(door), 'To the fashion area')
+  assert.equal(door.under, true)
+  const inAtelier = editDoor(DEFAULT_DOORS, 'gallery', { under: true })
+  assert.ok(inAtelier.ok && inAtelier.doors.find((d) => d.id === 'gallery')!.under === false)
+  assert.equal(editDoor(DEFAULT_DOORS, 'atelier', { scale: 0.2 }).ok, false)
 })
 
 test('a door can be made bigger or smaller, and a bigger door needs more room', () => {

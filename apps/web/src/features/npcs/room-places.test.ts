@@ -53,6 +53,7 @@ test('an end near a door is skipped, and a floor with no doors keeps both ends',
 test('the hall lists every gallery painting, its desks, boards, seat and both doors once', () => {
   const layout: HallLayout = {
     centerX: [6, 9, 14],
+    lift: [0, 0, 0],
     pedestalX: [7.5],
     totalLength: 20,
     known: 3,

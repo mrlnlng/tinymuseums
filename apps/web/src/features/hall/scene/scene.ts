@@ -3,9 +3,8 @@ import type { HallPieceDto, HallSliceDto } from '@tiny/core'
 import { disposeDisplayTexture, loadDisplayTexture, prefersAvif, type Assets } from './assets'
 import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
 import { CONFIG } from './config'
-import { doorWidth } from '@tiny/core/rooms'
 import { doorsOf } from '@/features/rooms/doors'
-import { computeLayout, type HallLayout } from './layout'
+import { computeLayout, hallDoorSpan, type HallLayout } from './layout'
 import { createPedestal, type Pedestal, type PedestalVoice } from './pedestal'
 import { pickPainted } from './hit'
 import { placeholderTexture } from './placeholder'
@@ -39,7 +38,7 @@ function markFirstPainting(): void {
 
 /** The hall's doors past the entrance, which its paintings make room for. */
 function hallDoorSpans() {
-  return doorsOf('hall').map((door) => ({ x: door.x, width: doorWidth(door) }))
+  return doorsOf('hall').map(hallDoorSpan)
 }
 
 function wallSize(piece: HallPieceDto): { width: number; height: number } {
@@ -122,6 +121,10 @@ export class HallScene {
     for (const mount of this.mounted.values()) {
       const x = this.layout.centerX[mount.index]
       if (x !== undefined) mount.group.position.x = x
+      const lift = this.layout.lift[mount.index] ?? 0
+      mount.plaqueY += lift - mount.group.position.y
+      mount.titleY += lift - mount.group.position.y
+      mount.group.position.y = lift
     }
     for (const [i, pedestal] of this.pedestals) {
       const x = this.layout.pedestalX[i]
@@ -298,7 +301,8 @@ export class HallScene {
 
     const piece = slot.piece
     const group = new THREE.Group()
-    group.position.set(centerX, 0, 0)
+    const lift = this.layout.lift[slot.index] ?? 0
+    group.position.set(centerX, lift, 0)
 
     const bottom = CONFIG.displayBottomY
     const { width, height } = wallSize(piece)
@@ -349,8 +353,8 @@ export class HallScene {
       centerX,
       width,
       height,
-      plaqueY,
-      titleY: bottom + height + CONFIG.displayTitleGap,
+      plaqueY: plaqueY + lift,
+      titleY: lift + bottom + height + CONFIG.displayTitleGap,
       showsPlaceholder: !slot.texture,
     })
     this.mountedList = [...this.mounted.values()]

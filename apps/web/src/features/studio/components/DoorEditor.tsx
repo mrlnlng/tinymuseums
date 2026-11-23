@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import {
-  addPassage, DOOR_HEIGHT, DOOR_ROOMS, DOOR_STYLES, doorRoom, doorWidth, editDoor, isFixedDoor, MAX_DOOR_SCALE, MIN_DOOR_SCALE, removeDoor,
+  addPassage, DOOR_HEIGHT, DOOR_ROOMS, DOOR_STYLES, doorName, doorRoom, doorWidth, editDoor, isFixedDoor, MAX_DOOR_SCALE, MIN_DOOR_SCALE, removeDoor,
   type DoorRoom, type DoorStyle, type MuseumDoor,
 } from '@tiny/core/rooms'
 import { CONFIG } from '@/features/hall/scene/config'
-import { computeLayout } from '@/features/hall/scene/layout'
+import { computeLayout, hallDoorSpan } from '@/features/hall/scene/layout'
 import { doorArtUrl } from '@/features/rooms/door-art'
 import { discardDoorsAction, publishDoorsAction, saveDoorsAction } from '@/features/studio/actions'
 
@@ -35,7 +35,7 @@ const REASONS: Record<string, string> = {
   too_close: 'Doors need a little space between them. Try a spot further along, or make one smaller.',
   no_room: 'There is no free place on that wall for another door.',
   too_many: 'That is as many doors as the museum can hold.',
-  bad_door: 'That is not quite right: a door needs a sign and has to stay on its wall.',
+  bad_door: 'That is not quite right: a door has to stay on its wall, and its sign can be at most 40 letters.',
   fixed_door: "The pond's forest gate is part of the scenery and stays where it is.",
 }
 
@@ -98,7 +98,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
   const hall = computeLayout(
     paintings.map((painting) => painting.w * CONFIG.piece.scale),
     true,
-    doors.filter((door) => door.room === 'hall').map(placed).map((door) => ({ x: door.x, width: doorWidth(door) })),
+    doors.filter((door) => door.room === 'hall').map(placed).map(hallDoorSpan),
   )
   const range = room === 'hall'
     ? { min: spec.minX, max: Math.max(hall.totalLength, ...here.map((door) => door.x + doorWidth(door))) + 2 }
@@ -212,7 +212,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
       <div className="st-top">
         <div>
           <h1>Doors</h1>
-          <p>Drag a door anywhere along the wall; paintings move aside to make room. Every door you add gets a way back.</p>
+          <p>Drag a door anywhere along the wall; paintings move aside to make room, or hang higher above a small door. Every door you add gets a way back.</p>
         </div>
         <div className="st-actions">
           <form action={discardDoorsAction}><button className="st-btn quiet" type="submit" disabled={!changed || saving}>Discard changes</button></form>
@@ -260,7 +260,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                     <span
                       key={i}
                       className="st-wall-painting"
-                      style={{ left: left(x), width: painting.w * CONFIG.piece.scale * ppu, height: painting.h * CONFIG.piece.scale * ppu, bottom: PAINTING_FOOT * ppu }}
+                      style={{ left: left(x), width: painting.w * CONFIG.piece.scale * ppu, height: painting.h * CONFIG.piece.scale * ppu, bottom: (PAINTING_FOOT + hall.lift[i]) * ppu }}
                       title={painting.title}
                     >
                       <img src={painting.imageUrl} alt="" draggable={false} />
@@ -288,9 +288,9 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                 onKeyDown={nudge(d)}
                 onClick={() => pick(d.id)}
                 aria-pressed={d.id === selected}
-                aria-label={`${d.label}, to ${roomLabel(d.to)}${isFixedDoor(d) ? '' : '. Arrow keys move it.'}`}
+                aria-label={`${doorName(d)}, to ${roomLabel(d.to)}${isFixedDoor(d) ? '' : '. Arrow keys move it.'}`}
               >
-                <span className="st-sign">{d.label}</span>
+                {d.label ? <span className="st-sign">{d.label}</span> : null}
                 <img src={doorArtUrl(d.style)} alt="" draggable={false} style={{ height: DOOR_HEIGHT * d.scale * ppu }} />
               </button>
             ))}
@@ -303,12 +303,12 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
         <section className="st-card">
           {door && shown ? (
             <>
-              <h2>{door.label}</h2>
+              <h2>{doorName(door)}</h2>
               <p className="st-small st-muted" style={{ marginTop: 0 }}>
                 {fixed
                   ? "The pond's forest gate is painted into the hedge, so it stays where it is. It leads back to the hall's front door."
                   : partner
-                    ? `Opens into ${roomLabel(door.to).replace(/^The /, 'the ')}, coming out at “${partner.label}”.`
+                    ? `Opens into ${roomLabel(door.to).replace(/^The /, 'the ')}, coming out at “${doorName(partner)}”.`
                     : `Opens into ${roomLabel(door.to).replace(/^The /, 'the ')} at its front door.`}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -321,7 +321,9 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                     maxLength={40}
                     onBlur={(event) => { if (event.target.value.trim() !== door.label) apply(editDoor(doors, door.id, { label: event.target.value })) }}
                     onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }}
+                    placeholder="No sign"
                   />
+                  <span className="st-small st-muted">Leave it empty for a door with no sign.</span>
                 </div>
                 {fixed ? null : (
                   <>
@@ -336,6 +338,12 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                       <input id="door-scale" type="range" min={MIN_DOOR_SCALE} max={MAX_DOOR_SCALE} step={0.05} {...slider(door, 'scale')} />
                       <span className="st-hint"><span>Smaller</span><span>{Math.round(shown.scale * 100)}%{was && was.scale !== door.scale ? ` · was ${Math.round(was.scale * 100)}%` : ''}</span><span>Bigger</span></span>
                     </div>
+                    {room === 'hall' ? (
+                      <label className="st-check">
+                        <input type="checkbox" checked={door.under} onChange={(event) => apply(editDoor(doors, door.id, { under: event.target.checked }))} />
+                        Under a painting: the painting above it hangs higher, instead of stepping aside
+                      </label>
+                    ) : null}
                     <div className="st-field">
                       <label htmlFor="door-x">Where on the wall</label>
                       <input id="door-x" type="range" min={spec.minX} max={Math.min(range.max, spec.maxX)} step={0.05} {...slider(door, 'x')} />
@@ -380,7 +388,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                   const status = !before ? 'new' : JSON.stringify(before) !== JSON.stringify(d) ? 'changed' : 'live'
                   return (
                     <tr key={d.id} className={d.id === selected ? 'is-selected' : undefined}>
-                      <td><button type="button" onClick={() => pick(d.id)}><img src={doorArtUrl(d.style)} alt="" />{d.label}</button></td>
+                      <td><button type="button" onClick={() => pick(d.id)}><img src={doorArtUrl(d.style)} alt="" />{doorName(d)}</button></td>
                       <td>{roomLabel(d.room)}</td>
                       <td>{roomLabel(d.to)}</td>
                       <td>{Math.round(d.scale * 100)}%</td>
@@ -389,7 +397,7 @@ export default function DoorEditor({ initial, published, startRoom, paintings }:
                   )
                 })}
                 {published.filter((p) => !doors.some((d) => d.id === p.id)).map((p) => (
-                  <tr key={p.id}><td><img src={doorArtUrl(p.style)} alt="" style={{ opacity: 0.4 }} /><s>{p.label}</s></td><td>{roomLabel(p.room)}</td><td>{roomLabel(p.to)}</td><td>{Math.round(p.scale * 100)}%</td><td><span className="st-tag warn">removed</span></td></tr>
+                  <tr key={p.id}><td><img src={doorArtUrl(p.style)} alt="" style={{ opacity: 0.4 }} /><s>{doorName(p)}</s></td><td>{roomLabel(p.room)}</td><td>{roomLabel(p.to)}</td><td>{Math.round(p.scale * 100)}%</td><td><span className="st-tag warn">removed</span></td></tr>
                 ))}
               </tbody>
             </table>

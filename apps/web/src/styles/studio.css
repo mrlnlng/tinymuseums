@@ -166,7 +166,7 @@
 /* The doors editor: one room's wall, doors standing on it at their places. */
 .st-doorscroll { overflow-x: auto; overflow-y: hidden; padding: 8px 90px 0; margin-top: 8px; }
 .st-doorwall { position: relative; touch-action: pan-x; }
-.st-wall-painting { position: absolute; translate: -50% 0; padding: 4%; background: url('/assets/frame.png') center / 100% 100% no-repeat; opacity: .7; pointer-events: none; }
+.st-wall-painting { position: absolute; translate: -50% 0; padding: 6px; background: url('/assets/frame.png') center / 100% 100% no-repeat; opacity: .7; pointer-events: none; }
 .st-wall-painting img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .st-door { position: absolute; bottom: 0; translate: -50% 0; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; cursor: grab; color: var(--ink); font: inherit; }
 .st-door img { display: block; pointer-events: none; user-select: none; }

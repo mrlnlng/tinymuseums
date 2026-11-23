@@ -47,19 +47,13 @@ interface MuseumProps {
   arrival: string | null
 }
 
-/** Gamma's hall is 100 paintings long, repeating the real ones, to try out a long hall. */
-const GAMMA_PAINTINGS = 100
-
-/**
- * Repeats the hall's paintings: on gamma always (100, or `?paintings=N`), in development only
- * with `?paintings=N`, and never in production.
- */
+/** Repeats the hall's paintings with `?paintings=N` on gamma and in development, never in production. */
 function stretchedForTesting(slice: HallSliceDto): HallSliceDto {
   const gamma = process.env.NEXT_PUBLIC_TEST_SWITCHES === 'on'
   const switchesOn = process.env.NODE_ENV !== 'production' || gamma
   if (!switchesOn || typeof window === 'undefined' || slice.slots.length === 0) return slice
   const asked = new URLSearchParams(window.location.search).get('paintings')
-  const count = asked === null ? (gamma ? GAMMA_PAINTINGS : 0) : Number(asked)
+  const count = asked === null ? 0 : Number(asked)
   if (!Number.isInteger(count) || count <= slice.slots.length || count > 1000) return slice
   const slots = Array.from({ length: count }, (_, index) => ({ ...slice.slots[index % slice.slots.length], index }))
   return { ...slice, slots, nextIndex: null, totalSlots: count }

@@ -115,7 +115,7 @@ export default function CrowdPreview() {
   }, [])
 
   return (
-    <main style={{ padding: 16, fontFamily: 'monospace', background: '#f6ead2', minHeight: '100vh' }}>
+    <main style={{ padding: 16, fontFamily: 'var(--font-mono)', background: '#f6ead2', minHeight: '100vh' }}>
       <p>
         {stats
           ? `${stats.mode} · ${stats.loaded}/${stats.n} rigs${stats.failed ? ` · ${stats.failed} failed` : ''} · ${stats.fps} fps · frame ${stats.frameMs} ms · rigs ${stats.renderMs} ms`

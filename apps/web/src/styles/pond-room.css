@@ -62,14 +62,14 @@
 .pond-room-hud-button-icon { font-size: 15px; line-height: 1; }
 
 .pond-room-hud-pearls-count {
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1;
 }
 
 .pond-room-hud-pearls-label {
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 8.5px;
   letter-spacing: 0.08em;
   line-height: 1;
@@ -93,7 +93,7 @@
 
 .pond-room-ticker-item {
   color: #e9e2cf;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 11px;
   letter-spacing: 0.02em;
   line-height: 1;

@@ -62,7 +62,7 @@ export default function PresencePreview() {
 
   const at = (x: number) => `${(x / WIDTH) * 100}%`
   return (
-    <main style={{ padding: 16, fontFamily: 'monospace', background: '#f6ead2', minHeight: '100vh' }}>
+    <main style={{ padding: 16, fontFamily: 'var(--font-mono)', background: '#f6ead2', minHeight: '100vh' }}>
       <p data-testid="me">{name ?? '…'} · {room}-s{view.instance} · {view.status} · x {view.x.toFixed(2)}</p>
       <div style={{ position: 'relative', height: 120, margin: '24px 0', borderBottom: '2px solid #7a4b3a' }}>
         <div style={{ position: 'absolute', left: at(view.x), bottom: 0, transform: 'translateX(-50%)', textAlign: 'center' }}>

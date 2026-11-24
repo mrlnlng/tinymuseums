@@ -282,7 +282,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.2;
 }
@@ -408,7 +408,7 @@
 
 .pond-wager-step:disabled { opacity: 0.4; cursor: default; }
 
-.pond-wager-stake-value { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-family: var(--font-button); font-size: 11px; }
+.pond-wager-stake-value { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-family: var(--font-body); font-size: 11px; }
 
 .pond-wager-stake-value strong { font-size: 17px; line-height: 1; }
 
@@ -422,7 +422,7 @@
   border-radius: 999px;
   font-family: var(--font-button);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -435,7 +435,7 @@
 .pond-action-label {
   font-family: var(--font-button);
   font-size: clamp(17px, 4.4vw, 22px);
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 1;
 }
@@ -561,7 +561,7 @@
   justify-content: space-between;
   gap: 8px;
   color: var(--ink-soft);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 9px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -578,9 +578,9 @@
   border: 2px solid #c22252;
   border-radius: 5px;
   color: #c22252;
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.12em;
   transform: rotate(-8deg);
   animation: pond-stamp 0.55s cubic-bezier(0.2, 1.6, 0.3, 1) 0.55s both;
@@ -650,7 +650,7 @@
   border-radius: 999px;
   background: #efe6d2;
   color: #6d5a3f;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -687,7 +687,7 @@
   border-radius: 999px;
   background: #f0e4ca;
   color: #6d5a3f;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -703,7 +703,7 @@
   border-radius: 999px;
   background: #f6eedb;
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
 }
 
@@ -724,7 +724,7 @@
 .pond-reveal-extra {
   margin: 5px 0 0;
   color: #7c4f16;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 11px;
   line-height: 1.3;
 }
@@ -741,7 +741,7 @@
   border-radius: 14px;
   background: radial-gradient(circle at 50% 20%, #fff6c9, #ffd15c 55%, #e0a02f);
   color: #5b3908;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   box-shadow: 0 6px 18px rgb(180 120 10 / 30%), 0 0 22px rgb(255 210 78 / 45%);
   animation: pond-wager-pop 0.62s cubic-bezier(0.2, 1.4, 0.35, 1) both;
 }
@@ -776,7 +776,7 @@
   border-radius: 13px;
   background: linear-gradient(to bottom, #f4ffe3, #d3efb6);
   color: #315a22;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   box-shadow: 0 5px 16px rgb(60 100 30 / 24%);
   animation: pond-chain-pop 0.55s cubic-bezier(0.2, 1.4, 0.35, 1) both;
 }
@@ -807,7 +807,7 @@
   border-radius: 999px;
   font-family: var(--font-button);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.1;
   cursor: pointer;
 }
@@ -821,7 +821,7 @@
   padding-top: 5px;
   border-top: 1px dashed #d8c9a6;
   color: #4f7f4b;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10.5px;
   line-height: 1.3;
 }
@@ -909,7 +909,7 @@
 .pond-room-loading-note {
   margin: 0;
   color: #d6e2bd;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: clamp(12px, calc(var(--screen-width, 390px) * 0.036), 16px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1003,7 +1003,7 @@
 
 .pond-pearls-count {
   min-width: 2ch;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1;
 }
@@ -1025,7 +1025,7 @@
   background: var(--pond-cream);
   box-shadow: var(--pond-plate-shadow);
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
   line-height: 1;
   white-space: nowrap;
@@ -1071,7 +1071,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 13px;
   cursor: pointer;
 }
@@ -1123,7 +1123,7 @@
 
 .pond-panel-title {
   color: #fff3df;
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-size: 15px;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 0 rgb(0 0 0 / 30%);
@@ -1177,7 +1177,7 @@
 
 .pond-bait-glyph { font-size: 28px; line-height: 1; }
 
-.pond-bait-name { font-family: var(--font-button); font-size: 10.5px; line-height: 1; }
+.pond-bait-name { font-family: var(--font-body); font-size: 10.5px; line-height: 1; }
 
 .pond-bait-badge {
   position: absolute;
@@ -1194,7 +1194,7 @@
   background: var(--ink);
   box-shadow: 0 1px 0 rgb(0 0 0 / 25%);
   color: #fff;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 11px;
   line-height: 1;
 }
@@ -1350,7 +1350,7 @@
 .pond-room-panel-subtitle {
   margin: 0 0 3px;
   color: var(--ink-soft);
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-size: 9.5px;
   letter-spacing: 0.09em;
   line-height: 1.2;
@@ -1559,7 +1559,7 @@
 .pond-room-board-reset {
   margin-left: auto;
   color: var(--ink-soft);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10.5px;
   white-space: nowrap;
 }
@@ -1597,7 +1597,7 @@
   background: #f0e2d0;
   box-shadow: inset 0 -2px 0 rgb(109 64 46 / 18%);
   color: #7d4d35;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -1613,7 +1613,7 @@
 .pond-room-board-name {
   overflow: hidden;
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -1645,7 +1645,7 @@
 
 .pond-room-board-value {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
   line-height: 1.2;
   text-align: right;
@@ -1670,7 +1670,7 @@
 
 .pond-room-board-you-label {
   color: var(--script);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1680,7 +1680,7 @@
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -1688,7 +1688,7 @@
 }
 
 .pond-room-board-you-value {
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -1787,7 +1787,7 @@
 .pond-room-bait-meta {
   margin: 3px 0 0;
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   line-height: 1.3;
 }
@@ -1806,7 +1806,7 @@
   border-radius: 12px;
   background: #fff9ef;
   color: #7a4a34;
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-size: 16px;
 }
 
@@ -1820,7 +1820,7 @@
 
 .pond-room-exchange-balance strong {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
 }
 
 .pond-room-stepper {
@@ -1866,7 +1866,7 @@
   justify-content: center;
   gap: 4px;
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1903,7 +1903,7 @@
   border-radius: 999px;
   background: #fffaf0;
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   line-height: 1.2;
   text-transform: capitalize;
@@ -1936,7 +1936,7 @@
 
 .pond-room-odds-copy strong {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
 }
 
 .pond-room-tier-grid {
@@ -1965,7 +1965,7 @@
 
 .pond-room-tier-value {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 15px;
 }
 
@@ -2007,13 +2007,13 @@
 
 .pond-room-variant-name {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12px;
 }
 
 .pond-room-variant-odds {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -2050,7 +2050,7 @@
   justify-content: space-between;
   gap: 4px;
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2085,7 +2085,7 @@
 .pond-room-bounty-text {
   margin: 0;
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 12.5px;
   line-height: 1.3;
 }
@@ -2099,7 +2099,7 @@
   border-radius: 999px;
   background: #fff1c9;
   color: #7a5418;
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 10.5px;
   white-space: nowrap;
 }
@@ -2113,7 +2113,7 @@
 
 .pond-room-bounty-progress { color: var(--ink-soft); font-size: 10px; }
 
-.pond-room-bounty-done { color: #4f8a63; font-family: var(--font-button); font-size: 10.5px; }
+.pond-room-bounty-done { color: #4f8a63; font-family: var(--font-body); font-size: 10.5px; }
 
 .pond-room-bounty-pending { color: var(--ink-soft); font-size: 10.5px; }
 
@@ -2131,7 +2131,7 @@
 
 .pond-room-dex-count {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 13px;
 }
 
@@ -2149,7 +2149,7 @@
 .pond-room-dex-col {
   padding-bottom: 2px;
   color: #8a5a42;
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-size: 8.5px;
   letter-spacing: 0.02em;
   line-height: 1.1;
@@ -2168,7 +2168,7 @@
 
 .pond-room-dex-species-name {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 9.5px;
   line-height: 1.05;
   overflow-wrap: anywhere;
@@ -2219,7 +2219,7 @@
 
 .pond-room-dex-cell-count {
   color: var(--ink);
-  font-family: var(--font-button);
+  font-family: var(--font-body);
   font-size: 8px;
 }
 
@@ -2426,7 +2426,7 @@
   color: var(--ink);
 }
 
-.pond-room-pearls-count { min-width: 2ch; font-family: var(--font-button); font-size: 15px; line-height: 1; }
+.pond-room-pearls-count { min-width: 2ch; font-family: var(--font-body); font-size: 15px; line-height: 1; }
 
 .pond-room-ripple {
   position: absolute;
@@ -2489,7 +2489,7 @@
   animation: pond-room-toast-in 0.26s cubic-bezier(0.2, 1, 0.4, 1) both;
 }
 
-.pond-room-toast strong { font-family: var(--font-button); font-weight: 400; }
+.pond-room-toast strong { font-family: var(--font-body); font-weight: 400; }
 
 .pond-room-toast img { flex: none; width: 22px; height: 16px; object-fit: contain; }
 
@@ -2524,7 +2524,7 @@
 
 .pond-landmark.has-reward::after { position: absolute; top: 20%; right: 12%; display: grid; place-items: center; width: 23px; height: 23px; border: 2px solid #80562c; border-radius: 50%; background: #ffdc75; color: #674536; font: 16px var(--font-body); content: '!'; }
 
-.pond-room-panel-card { --font-button: var(--font-body); font-family: var(--font-body); }
+.pond-room-panel-card { font-family: var(--font-body); }
 
 .pond-room-panel-subtitle { font-size: 10px; letter-spacing: .1em; }
 
@@ -2538,7 +2538,7 @@
 
 .pond-room-panel-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5ccb4; }
 
-.pond-room-panel-footer .pond-room-button { min-height: 44px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.pond-room-panel-footer .pond-room-button { min-height: 44px; font-size: 12px; }
 
 .pond-room-signin { min-height: 44px; padding: 8px 2px; border: 0; background: none; color: #a52b50; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font: 12px var(--font-body); }
 
@@ -2546,13 +2546,13 @@
 
 .pond-notice-tabs { display: flex; gap: 8px; padding-top: 14px; }
 
-.pond-notice-tabs > button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px; border: 1.5px solid #d9b99c; border-radius: 8px; background: #f9f0df; color: #79503a; font: 13px var(--font-body); cursor: pointer; }
+.pond-notice-tabs > button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px; border: 1.5px solid #d9b99c; border-radius: 8px; background: #f9f0df; color: #79503a; font: 13px var(--font-button); cursor: pointer; }
 
 .pond-notice-tabs > button[aria-selected="true"] { border-color: #a94e68; background: #ffe3eb; color: #78253f; box-shadow: inset 0 -2px 0 #d4869d; }
 
 .pond-notice-tabs > button:focus-visible { outline: 3px solid #662f14; outline-offset: 2px; }
 
-.pond-room-tab { min-height: 42px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.pond-room-tab { min-height: 42px; font-size: 12px; }
 
 .pond-room-note, .pond-room-notice, .pond-room-empty { font-size: 13px; line-height: 1.5; }
 
@@ -2560,7 +2560,7 @@
 
 .pond-room-bait-meta, .pond-room-fineprint { font-size: 11px; line-height: 1.5; }
 
-.pond-room-bait-buy { min-height: 44px; font-size: 12px; text-transform: none; }
+.pond-room-bait-buy { min-height: 44px; font-size: 12px; }
 
 .pond-room-period { min-height: 36px; font-size: 12px; }
 
@@ -2572,21 +2572,21 @@
 
 .pond-room-bounty-reset { font-size: 11px; }
 
-.pond-room-bounty-claim { min-height: 44px; font-size: 12px; text-transform: none; }
+.pond-room-bounty-claim { min-height: 44px; font-size: 12px; }
 
 .pond-room-pearls:disabled { opacity: 1; }
 
 .pond-room-pearls:focus-visible { outline: 3px solid #fff3c4; outline-offset: 3px; }
 
-.pond-bank-return { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 12px; border: 2px solid #8b5641; border-radius: 999px; background: #fff3d9; box-shadow: 0 2px 0 #67453640; color: var(--ink); font: 13px var(--font-body); cursor: pointer; }
+.pond-bank-return { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 12px; border: 2px solid #8b5641; border-radius: 999px; background: #fff3d9; box-shadow: 0 2px 0 #67453640; color: var(--ink); font: 13px var(--font-button); cursor: pointer; }
 
 .pond-bank-return:hover { background: #ffe4ba; }
 
 .pond-bank-return:focus-visible { outline: 3px solid #fff3c4; outline-offset: 3px; }
 
-.pond-fishing .pond-bait-name { font-family: var(--font-body); font-size: 12px; }
+.pond-fishing .pond-bait-name { font-size: 12px; }
 
-.pond-fishing .pond-panel-title { font-family: var(--font-body); font-size: 13px; }
+.pond-fishing .pond-panel-title { font-size: 13px; }
 
 .pond-fishing .pond-icon-button { width: 44px; height: 44px; }
 
@@ -2651,7 +2651,7 @@
   content: '';
 }
 
-.pond-shopkeeper-bubble strong { color: #3f7d78; font-size: 11px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.pond-shopkeeper-bubble strong { color: #3f7d78; font-family: var(--font-ui); font-size: 15px; font-weight: 400; line-height: 1.15; }
 
 @media (prefers-reduced-motion: reduce) { .pond-shopkeeper-bubble { transition: none; } }
 
@@ -2713,9 +2713,9 @@
 
 .pond-room-panel .pond-room-panel-title {
   color: var(--pond-carved);
-  font-family: var(--font-sniglet), var(--font-body);
+  font-family: var(--font-title);
   font-size: clamp(26px, 6vw, 32px);
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.1;
   text-shadow: 0 2px 0 rgb(255 214 150 / 85%), 0 -1px 0 rgb(63 32 14 / 45%);
 }
@@ -2747,7 +2747,7 @@
   border-radius: 12px;
   background: #f6e6c8;
   color: var(--pond-ink);
-  font-family: var(--font-body);
+  font-family: var(--font-button);
   font-size: 13px;
 }
 
@@ -2761,9 +2761,7 @@
   background: var(--pond-teal);
   box-shadow: 0 3px 0 rgb(80 41 29 / 45%);
   color: #fff8ea;
-  font-family: var(--font-body);
-  letter-spacing: 0;
-  text-transform: none;
+  font-family: var(--font-button);
 }
 
 .pond-room-panel .pond-room-button:hover:not(:disabled) { background: #5aa29e; }
@@ -2813,7 +2811,7 @@
 
 .pond-room-panel .pond-room-bait { border: 2px solid #d8bd9b; border-radius: 14px; background: #fffdf7; box-shadow: 0 3px 0 rgb(139 86 65 / 14%); }
 
-.pond-room-panel .pond-room-bait-name { color: var(--pond-carved); font-family: var(--font-sniglet), var(--font-body); font-size: 17px; font-weight: 800; }
+.pond-room-panel .pond-room-bait-name { color: var(--pond-carved); font-family: var(--font-title); font-size: 17px; font-weight: 400; }
 
 .pond-room-panel .pond-room-bait-emoji { border: 2px solid #e2c9a6; background: #fbefd8; }
 
@@ -2823,7 +2821,7 @@
 
 .pond-room-panel .pond-merchant-welcome { display: grid; gap: 3px; border: 2px solid #d8bd9b; border-radius: 14px 14px 14px 4px; background: #fffdf7; color: var(--pond-ink); }
 
-.pond-room-panel .pond-merchant-welcome strong { color: var(--pond-teal-deep); font-size: 11px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.pond-room-panel .pond-merchant-welcome strong { color: var(--pond-teal-deep); font-family: var(--font-ui); font-size: 16px; font-weight: 400; line-height: 1.15; }
 
 .pond-room-panel .pond-room-dex-cell { border-color: #d8bd9b; }
 
@@ -2853,8 +2851,8 @@
 .pond-room-panel .pond-room-board-row:first-child { background: #fff3d6; }
 
 .pond-room-panel .pond-room-odds-title,
-.pond-room-panel .pond-room-odds-heading,
-.pond-room-panel .pond-room-exchange-head { color: var(--pond-carved); font-family: var(--font-sniglet), var(--font-body); font-weight: 800; }
+.pond-room-panel .pond-room-odds-heading { color: var(--pond-carved); font-family: var(--font-title); font-weight: 400; }
+.pond-room-panel .pond-room-exchange-head { color: var(--pond-carved); font-family: var(--font-ui); font-weight: 400; }
 
 .pond-room-panel .pond-room-odds-bait { border-color: #c9a27b; background: #f6e6c8; color: var(--pond-ink); font-family: var(--font-body); }
 
@@ -2972,7 +2970,7 @@
   animation: pond-hint-in 0.18s ease-out both;
 }
 
-.pond-reel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; font: 13px/1.2 var(--font-button); }
+.pond-reel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; font: 13px/1.2 var(--font-body); }
 
 .pond-reel-count { color: #2f6f9c; font-variant-numeric: tabular-nums; }
 
@@ -3022,7 +3020,7 @@
   background: #ffe082;
   box-shadow: 0 3px 0 rgb(43 26 15 / 22%);
   color: var(--ink);
-  font: 15px/1.2 var(--font-button);
+  font: 15px/1.2 var(--font-body);
   white-space: nowrap;
   pointer-events: none;
   transform: translate(-50%, -100%);
@@ -3055,7 +3053,7 @@
 
 .pond-score > img { display: block; width: 100%; height: auto; }
 
-.pond-score-count { position: absolute; top: 31%; left: 52%; transform: translate(-50%, -50%) rotate(5.9deg); color: #6b3a22; font: 400 34cqw/1 var(--font-script); }
+.pond-score-count { position: absolute; top: 31%; left: 52%; transform: translate(-50%, -50%) rotate(5.9deg); color: #6b3a22; font: 400 34cqw/1 var(--font-ui); }
 
 .pond-bucket { position: absolute; z-index: 3; display: block; width: auto; transform: translateX(-50%); transform-origin: 50% 100%; filter: drop-shadow(0 3px 0 rgb(40 70 20 / 28%)); pointer-events: none; user-select: none; }
 

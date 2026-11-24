@@ -668,10 +668,10 @@
     "semantic_hash": "7f816d09dfb3159ccab9278c2b6a3d70"
   },
   "apps/web/src/features/hall/scene/quality.ts": {
-    "mtime": 1792464216.281919,
-    "seen": 1793430503.3331926,
-    "ast_hash": "1980407bc3d46b4cb32e396d429c102e",
-    "semantic_hash": "1980407bc3d46b4cb32e396d429c102e"
+    "mtime": 1795487045.134336,
+    "seen": 1795487190.4088063,
+    "ast_hash": "ecfeb99bcda2470a644e33bce9f1b7b4",
+    "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/rig-motion.ts": {
     "mtime": 1794199447.2827172,
@@ -698,9 +698,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/scene.ts": {
-    "mtime": 1795415606.885931,
-    "seen": 1795415779.0615692,
-    "ast_hash": "9e7a49bd74eefb53e2d117ef19565e00",
+    "mtime": 1795487045.1351304,
+    "seen": 1795487190.408816,
+    "ast_hash": "4fc5a76a610cfba439e527a3a27d8d44",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/sitting.ts": {
@@ -2630,9 +2630,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/lib/join-room.ts": {
-    "mtime": 1795314345.3617284,
-    "seen": 1795314685.601536,
-    "ast_hash": "63dfd8d0388f75f2c839f992409f20de",
+    "mtime": 1795487045.1352375,
+    "seen": 1795487190.4088767,
+    "ast_hash": "e845969939ba7932d30349553d79e28e",
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/scene/remote-visitors.ts": {
@@ -3128,15 +3128,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/stage.ts": {
-    "mtime": 1795375418.672444,
-    "seen": 1795375576.4350119,
-    "ast_hash": "6c91fac32c3f7820e1c1e2c20b459851",
+    "mtime": 1795487045.1355126,
+    "seen": 1795487190.4089296,
+    "ast_hash": "cc44719c2b7dd222880b76ebe65289f8",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/types.ts": {
-    "mtime": 1795314345.3625627,
-    "seen": 1795314685.6015775,
-    "ast_hash": "2b8becbbdd8df9576de8d4effb0fc2d0",
+    "mtime": 1795487045.1355884,
+    "seen": 1795487190.4089334,
+    "ast_hash": "5b49e51b94aad3443662a07d66e35550",
     "semantic_hash": ""
   },
   "docs/rooms.md": {
@@ -3146,9 +3146,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/hall/room.ts": {
-    "mtime": 1795421061.124166,
-    "seen": 1795421252.116012,
-    "ast_hash": "1480148ffead1c4ca48feb17208b25fa",
+    "mtime": 1795487045.1352375,
+    "seen": 1795487190.408909,
+    "ast_hash": "95fb5eaf56ed44f00cc2de4d857c6b94",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/MuseumStage.tsx": {
@@ -7061,6 +7061,36 @@
     "mtime": 1795421102.007737,
     "seen": 1795421252.1158845,
     "ast_hash": "271a306c308de0ba3d4e0c9b9314d3d5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/hall/scene/quality.test.ts": {
+    "mtime": 1795486686.767444,
+    "seen": 1795487190.4088047,
+    "ast_hash": "beb7c3141e339ad6bbdcd185cba6b972",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/frame-clock.test.ts": {
+    "mtime": 1795486812.7130451,
+    "seen": 1795487190.4089053,
+    "ast_hash": "566717f479d5ce38d40d6a3770dcfdc5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/frame-clock.ts": {
+    "mtime": 1795486699.3909397,
+    "seen": 1795487190.4089062,
+    "ast_hash": "08aa34edf82c1fb5c481415235cebf2e",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/hall/opening.test.ts": {
+    "mtime": 1795486772.27155,
+    "seen": 1795487190.408907,
+    "ast_hash": "4d8669cc138c1978981f334618f47af7",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/hall/opening.ts": {
+    "mtime": 1795486772.2695498,
+    "seen": 1795487190.4089081,
+    "ast_hash": "2519c633f208a73e7855e2dea76ec8ca",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

@@ -58,6 +58,7 @@ export class Traversal {
       const target = e.target instanceof Element ? e.target : null
       if (target?.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('[aria-modal="true"]')) return
       this.idleSeconds = 0
+      this.introducing = false
       if (e.repeat) return
       const key = e.key.toLowerCase()
       if (JUMP_KEYS.has(key)) {
@@ -83,6 +84,7 @@ export class Traversal {
 
     element.addEventListener('pointerdown', (e) => {
       this.idleSeconds = 0
+      this.introducing = false
       if (this.locked) return
       this.following = false
       this.steering = false
@@ -118,6 +120,7 @@ export class Traversal {
     element.addEventListener(
       'wheel',
       (e) => {
+        this.introducing = false
         if (this.locked) return
         e.preventDefault()
         this.following = false

@@ -17,7 +17,7 @@ const EXPECTED = {
   'wallpaper.png': [2186, 1096],
   'baseboard.png': [1026, 38],
   'purple_curtains.png': [1903, 275],
-  'christmas_tree.png': [416, 577],
+  'christmas_tree.png': [641, 879],
 }
 const file = (name) => resolve(drop, name)
 

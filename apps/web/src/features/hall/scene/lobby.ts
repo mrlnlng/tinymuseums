@@ -21,7 +21,7 @@ export interface Lobby {
 const POST_BOX = { width: 240, height: 233 }
 const POST_PANEL = { x: 120, y: 88, width: 190 }
 
-const TREE_TOPPER = [0.502, 0.066] as const
+const TREE_TOPPER = [0.49, 0.063] as const
 
 const POST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="233" viewBox="0 0 240 233">
   <g fill="#c06a12" stroke="#5d3218" stroke-width="6" stroke-linejoin="round">
@@ -153,7 +153,8 @@ export function createLobby(scene: THREE.Scene, assets: Assets): Lobby {
       tree.z,
     ),
   )
-  shadows.push(groundShadow(treeWidth * 0.5, tree.x, Math.min(-0.02, tree.centerY - tree.height / 2 + 0.03)))
+  // The skirt lies on the floor, so its shadow spreads under the whole rug, not just the trunk.
+  shadows.push(groundShadow(treeWidth * 1.05, tree.x, tree.centerY - tree.height / 2 + tree.height * 0.06))
 
   group.add(
     stretchedBoard(

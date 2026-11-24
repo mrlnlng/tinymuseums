@@ -117,7 +117,7 @@ export const CONFIG = {
     sign: { x: 0.165, centerY: 3.007, width: 1.977, height: 0.427, z: 0.2 },
     post: { x: 6.1, top: 0.904, foot: -0.266, width: 1.2, z: 0.5 },
     booth: { x: 4.39, centerY: 1.56, height: 3.467, z: 0.4 },
-    tree: { x: 2.02, centerY: 1.2, height: 2.7, z: 0.3 },
+    tree: { x: 2.02, centerY: 0.93, height: 3.1, z: 0.3 },
     treeLights: {
       topperGlow: 0.45,
       topperMinOpacity: 0.22,

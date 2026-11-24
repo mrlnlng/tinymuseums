@@ -866,17 +866,17 @@
       }
     },
     "hall/christmas-tree": {
-      "w": 416,
-      "h": 577,
+      "w": 641,
+      "h": 879,
       "x2": {
-        "w": 416,
-        "h": 577,
-        "src": "hall-christmas-tree@2x.f19bbb6d7e.webp"
+        "w": 641,
+        "h": 879,
+        "src": "hall-christmas-tree@2x.3614106830.webp"
       },
       "x3": {
-        "w": 416,
-        "h": 577,
-        "src": "hall-christmas-tree@3x.f19bbb6d7e.webp"
+        "w": 641,
+        "h": 879,
+        "src": "hall-christmas-tree@3x.3614106830.webp"
       }
     },
     "landing/book": {

@@ -823,6 +823,16 @@
         "src": "pond-forest-door-sign@2x.0af2e84fca.webp"
       }
     },
+    "hall/garland": {
+      "w": 2400,
+      "h": 444,
+      "x2": {
+        "w": 2400,
+        "h": 444,
+        "src": "hall-garland.fea26efbc2.webp",
+        "avif": "hall-garland.fe19ef92a5.avif"
+      }
+    },
     "hall/wallpaper": {
       "w": 1093,
       "h": 551,
@@ -857,12 +867,12 @@
       "x2": {
         "w": 1903,
         "h": 238,
-        "src": "hall-curtain@2x.6611dc78d9.webp"
+        "src": "hall-curtain@2x.a2daa8f2a2.webp"
       },
       "x3": {
         "w": 1903,
         "h": 238,
-        "src": "hall-curtain@3x.6611dc78d9.webp"
+        "src": "hall-curtain@3x.a2daa8f2a2.webp"
       }
     },
     "hall/christmas-tree": {

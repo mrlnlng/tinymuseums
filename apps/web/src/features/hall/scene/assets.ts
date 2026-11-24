@@ -34,6 +34,7 @@ const ENTRANCE_FILES = {
   wallpaper: 'hall/wallpaper.png',
   baseboard: 'hall/baseboard.png',
   curtain: 'hall/curtain.png',
+  garland: 'hall/garland.png',
   christmasTree: 'hall/christmas-tree.png',
   door: 'door.png',
   helpCenter: 'help-center.png',

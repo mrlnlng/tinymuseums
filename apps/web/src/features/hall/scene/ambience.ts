@@ -8,16 +8,6 @@ export interface HallAmbience {
   dispose(): void
 }
 
-/** Painted bulbs on the valance tile, as (u, v) fractions from its left and top edges. */
-const BULBS: readonly [number, number][] = [
-  [0.0403, 0.351], [0.0837, 0.445], [0.1285, 0.505], [0.1754, 0.524],
-  [0.2222, 0.513], [0.2686, 0.456], [0.3104, 0.338], [0.3491, 0.171],
-  [0.3849, 0.323], [0.4263, 0.428], [0.4698, 0.495], [0.515, 0.517],
-  [0.5638, 0.5], [0.6071, 0.439], [0.6537, 0.318], [0.6919, 0.351],
-  [0.7353, 0.445], [0.7801, 0.505], [0.8269, 0.524], [0.8737, 0.513],
-  [0.9201, 0.456], [0.962, 0.338],
-]
-
 const TAU = Math.PI * 2
 
 function mulberry(seed: number): () => number {
@@ -30,13 +20,6 @@ function mulberry(seed: number): () => number {
   }
 }
 
-/** Stable per-bulb variation, so entering or leaving tiles never changes a bulb's twinkle. */
-function hashed(tile: number, bulb: number, salt: number): number {
-  let value = Math.imul(tile, 73856093) ^ Math.imul(bulb, 19349663) ^ Math.imul(salt, 83492791)
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b)
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b)
-  return ((value ^ (value >>> 16)) >>> 0) / 4294967296
-}
 
 function finish(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas)
@@ -133,8 +116,6 @@ export function createHallAmbience(scene: THREE.Scene, backdrop: Backdrop, still
   glows.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, settings.bulbs.halo.z), Infinity)
   scene.add(glows)
 
-  const haloColor = new THREE.Color(settings.bulbs.halo.color)
-  const poolColor = new THREE.Color(settings.bulbs.pool.color)
   const dustColor = new THREE.Color(settings.dust.color)
   const dummy = new THREE.Object3D()
   const tint = new THREE.Color()
@@ -205,33 +186,6 @@ export function createHallAmbience(scene: THREE.Scene, backdrop: Backdrop, still
       const top = camera.position.y + camera.top
       const t = still ? 0 : now / 1000
       used = 0
-
-      const curtain = backdrop.curtain()
-      if (curtain.tile > 0 && curtain.height > 0) {
-        const bulbDiameter = settings.bulbs.diameter * curtain.height
-        const haloDiameter = settings.bulbs.halo.diameter * bulbDiameter
-        const poolDiameter = settings.bulbs.pool.diameter * curtain.height
-        const margin = Math.max(curtain.tile, haloDiameter)
-        const first = Math.floor((left - margin - curtain.originX) / curtain.tile) - 1
-        const last = Math.floor((right + margin - curtain.originX) / curtain.tile) + 1
-        for (let tile = first; tile <= last; tile++) {
-          for (let bulb = 0; bulb < BULBS.length; bulb++) {
-            const [u, v] = BULBS[bulb]
-            const x = curtain.originX + (tile + u) * curtain.tile
-            if (x < left - margin || x > right + margin) continue
-            const y = curtain.top - v * curtain.height
-            if (y < bottom - poolDiameter / 2 || y > top + haloDiameter / 2) continue
-
-            const speed = settings.bulbs.twinkle.minSpeed
-              + hashed(tile, bulb, 1) * (settings.bulbs.twinkle.maxSpeed - settings.bulbs.twinkle.minSpeed)
-            const phase = hashed(tile, bulb, 2) * TAU
-            const pulse = still ? 1 : 0.9 + 0.1 * Math.sin(t * speed + phase)
-
-            place(x, y, settings.bulbs.halo.z, haloDiameter, haloDiameter, haloColor, settings.bulbs.halo.base * pulse)
-            place(x, y, settings.bulbs.pool.z, poolDiameter, poolDiameter, poolColor, settings.bulbs.pool.base * pulse)
-          }
-        }
-      }
 
       const step = still ? 0 : Math.min(dt, 0.05)
       const margin = settings.dust.margin

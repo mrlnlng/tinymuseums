@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { Assets } from './assets'
 import { CONFIG } from './config'
+import { garlandRibbon } from './garland'
 
 export interface Backdrop {
   /** Keeps the wall, floor and dressings under the camera, however long the room is. */
@@ -140,6 +141,30 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
   floorShade.position.z = FLOOR_SHADE_Z
   scene.add(floorShade)
 
+  const garlandShape = { ...CONFIG.garland, aspect: assets.aspect.garland }
+  const garlandGeometry = new THREE.BufferGeometry()
+  const garland = new THREE.Mesh(
+    garlandGeometry,
+    new THREE.MeshBasicMaterial({ map: assets.textures.garland, transparent: true, depthWrite: false, side: THREE.DoubleSide }),
+  )
+  garland.frustumCulled = false
+  scene.add(garland)
+  let garlandLoops = 0
+
+  /** The garland's loops over the view; built once for the span, then moved a whole loop at a time. */
+  function hangGarland(left: number, originX: number): void {
+    const loops = Math.ceil(span / garlandShape.loop) + 3
+    if (loops > garlandLoops) {
+      garlandLoops = loops
+      const ribbon = garlandRibbon(garlandShape, loops)
+      garlandGeometry.setAttribute('position', new THREE.BufferAttribute(ribbon.positions, 3))
+      garlandGeometry.setAttribute('uv', new THREE.BufferAttribute(ribbon.uvs, 2))
+      garlandGeometry.setIndex(new THREE.BufferAttribute(ribbon.indices, 1))
+    }
+    const first = Math.floor((left - originX) / garlandShape.loop) - 1
+    garland.position.set(originX + first * garlandShape.loop, state.top - garlandShape.top, garlandShape.z)
+  }
+
   const tiles: [THREE.Mesh, THREE.Texture, number][] = [
     [wall, wallTexture, wallTileWidth],
     [floor, floorTexture, FLOOR_HEIGHT * assets.aspect.floor],
@@ -211,6 +236,7 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
       state.height = nextHeight
       state.tile = curtainTile
       state.originX = originX
+      hangGarland(left, originX)
     },
     curtain() {
       return state
@@ -222,6 +248,9 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
         ;(mesh.material as THREE.Material).dispose()
         texture.dispose()
       }
+      scene.remove(garland)
+      garlandGeometry.dispose()
+      ;(garland.material as THREE.Material).dispose()
       scene.remove(curtain)
       scene.remove(shadow)
       curtainGeometry.dispose()

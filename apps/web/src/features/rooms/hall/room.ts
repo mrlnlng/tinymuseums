@@ -39,10 +39,10 @@ import { doorName, doorWidth, type DoorGuide, type DoorRoom } from '@tiny/core/r
 import { createDoorGuides } from '@/features/hall/scene/door-guide'
 import { doorDefs, doorsOf } from '../doors'
 import type { Interaction, JoinedContents, JoinedRoom, RoomDef } from '../types'
+import { hallIsReady } from './opening'
 
 
 const SCENERY_MAX_WAIT_MS = 5000
-const OPENING_MAX_WAIT_MS = 5000
 const VIEWED_WITHIN_UNITS = 3.0
 
 const GIFT_SHOP_URL = 'https://www.inspiratiq.art/'
@@ -429,7 +429,8 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
       const sceneryWaitStart = performance.now()
       const sceneryGate = window.setInterval(() => {
         const { loaded, total } = hall.stats()
-        const nearestReady = loaded >= Math.min(2, total)
+        // Nothing nearby left to load (as at a narrow entrance) needs no waiting for.
+        const nearestReady = loaded >= Math.min(2, total) || (hall.viewArt(traversal.cameraX, ctx.rig.viewWidth) !== 'pending' && hall.pendingLoads === 0)
         if (!nearestReady && performance.now() - sceneryWaitStart < SCENERY_MAX_WAIT_MS) return
         window.clearInterval(sceneryGate)
         requestScenery()
@@ -557,11 +558,16 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         },
 
         isReady(now) {
-          if (ctx.arrival.kind === 'door' && !ctx.warm && now - openingStart < 2800) return false
-          if (now - openingStart > OPENING_MAX_WAIT_MS) return true
-          const { loaded, total } = hall.stats()
-          return fontsReady && loaded >= Math.min(1, total)
+          return hallIsReady({
+            waitedMs: now - openingStart,
+            viaDoor: ctx.arrival.kind === 'door',
+            warm: ctx.warm,
+            fontsReady,
+            art: hall.viewArt(traversal.cameraX, ctx.rig.viewWidth),
+          })
         },
+
+        isBusy: () => hall.isFading(),
 
         onShown() {
           if (ctx.arrival.kind !== 'opening') return

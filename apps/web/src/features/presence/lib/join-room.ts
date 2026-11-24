@@ -23,6 +23,8 @@ export interface Pose {
 }
 
 const STANDING: Pose = { sit: false, helm: false, cup: false }
+const LIVELY_SPEED = 0.01
+const LIVELY_SAID_MS = 1000
 
 interface Options {
   /** `hall-e<epoch>`, `atelier`, or a personal `r-<slug>`. */
@@ -46,6 +48,8 @@ export interface Room {
   owns(item: Item): boolean
   /** Items other visitors hold. */
   heldByOthers(): Item[]
+  /** Someone else is walking or has just spoken. */
+  isLively(): boolean
   dispose(): void
 }
 
@@ -72,6 +76,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     onRefused: (reason) => reportSay({ ok: false, reason }),
   })
   const remote = createRemoteVisitors(host)
+  let seen: ReturnType<typeof presence.visitors> = []
   remoteVisitors = remote
 
   const stopSay = onSayRequest((text) => {
@@ -113,6 +118,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
       presence.tick()
       setInRoom(presence.status === 'open')
       const visitors = presence.visitors()
+      seen = visitors
       setPeople(visitors)
       if (draw) remote.update(dt, visitors, traversal.x, camera, viewport, scenery())
     },
@@ -120,6 +126,10 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     taken: presence.blocked,
     owns: presence.owns,
     heldByOthers: presence.heldByOthers,
+    isLively() {
+      const now = performance.now()
+      return seen.some((v) => Math.abs(v.vx) > LIVELY_SPEED || (v.said !== null && now - v.said.at < LIVELY_SAID_MS))
+    },
     dispose() {
       setInRoom(false)
       setPeople([])

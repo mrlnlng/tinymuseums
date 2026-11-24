@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { ViewArt } from '@/features/rooms/hall/opening'
 import type { HallPieceDto, HallSliceDto } from '@tiny/core'
 import { disposeDisplayTexture, loadDisplayTexture, prefersAvif, type Assets } from './assets'
 import { FIRST_PAINTING_MARK } from '@/shared/lib/vitals-marks'
@@ -78,6 +79,7 @@ export class HallScene {
   private disposed = false
   private builtGalleries = new Set<string>()
   private galleriesChanged = true
+  private updated = false
   private nearbySlots = new Set<SlotRuntime>()
   private nearbyPedestals: number[] = []
   onTextureReady: ((texture: THREE.Texture) => void) | null = null
@@ -172,6 +174,7 @@ export class HallScene {
 
   update(now: number, dt: number, cameraX: number): void {
     this.syncGalleries()
+    this.updated = true
     const wanted: { slot: SlotRuntime; distance: number }[] = []
     let mountedThisFrame = false
 
@@ -501,6 +504,33 @@ export class HallScene {
     const voices: PedestalVoice[] = []
     for (const pedestal of this.pedestals.values()) if (pedestal.voice) voices.push(pedestal.voice)
     return voices
+  }
+
+  /**
+   * The paintings in the view around `cameraX`: none that can arrive (failed ones included), one
+   * shown, or some still coming. 'pending' until the first update has placed the nearby galleries.
+   */
+  viewArt(cameraX: number, viewWidth: number): ViewArt {
+    if (!this.updated) return 'pending'
+    let coming = false
+    for (const slot of this.nearbySlots) {
+      const half = wallSize(slot.piece).width / 2
+      if (Math.abs(this.layout.centerX[slot.index] - cameraX) > viewWidth / 2 + half) continue
+      if (slot.status === 'ready') return 'ready'
+      if (slot.status !== 'error' || (slot.attempts ?? 0) < MAX_TEXTURE_ATTEMPTS) coming = true
+    }
+    return coming ? 'loading' : 'none'
+  }
+
+  /** Nearby paintings still to load. */
+  get pendingLoads(): number {
+    let pending = 0
+    for (const slot of this.nearbySlots) if (slot.status === 'idle' || slot.status === 'loading') pending++
+    return pending
+  }
+
+  isFading(): boolean {
+    return this.mountedList.some((mount) => mount.fade !== undefined)
   }
 
   stats(): { mounted: number; loaded: number; total: number } {

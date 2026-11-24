@@ -95,6 +95,8 @@ export interface RoomContents {
   isReady?(now: number): boolean
   /** An opaque activity covers this scene; keep presence alive without drawing the hidden world. */
   isCovered?(): boolean
+  /** Something is changing on screen on its own (a fade), so the stage keeps ticking every frame while the visitor rests. */
+  isBusy?(): boolean
   /** Runs once the room is shown, before the visitor walks in. Returning true means the room placed the visitor itself. */
   onShown?(): boolean | void
   /** Runs after the camera syncs and before the character updates, every frame. */

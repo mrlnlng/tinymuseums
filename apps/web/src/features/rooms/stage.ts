@@ -23,6 +23,7 @@ import { createNearby, type Nearby } from './nearby'
 import { createMinimap, MAP_PLACES } from './minimap'
 import { createPerfMeter } from './perf'
 import { warmUp } from './warm'
+import { movementSteps, shouldTick } from './frame-clock'
 import { FLICK, flickDirection, isUpwardFlick } from './flick'
 import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
 
@@ -31,6 +32,8 @@ const TAP_TIMEOUT_MS = 600
 const WALKING_SPEED = 0.12
 const MAX_RIG_WAIT_MS = 8000
 const QUIET_AFTER_SECONDS = 2
+/** How long after a room shows before slow frames can lower its resolution; the first frames upload its art. */
+const SETTLE_MS = 3000
 /** How long a room's art stays loaded after the visitor leaves it or walks away from its door. */
 const KEEP_ART_MS = 60_000
 /** Start loading the next room once the visitor is this many screen widths from its door. */
@@ -89,7 +92,6 @@ interface Entry {
   holdsArt: boolean
   warm: boolean
   disposed: boolean
-  frameCount: number
   approached: Set<string>
   prefetchX: number | null
   prefetchCheckAt: number
@@ -314,7 +316,6 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       holdsArt: false,
       warm: false,
       disposed: false,
-      frameCount: 0,
       approached: new Set(),
       prefetchX: null,
       prefetchCheckAt: 0,
@@ -347,6 +348,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       viewport.width = width
       viewport.height = height
       renderer.setSize(width, height)
+      pixelRatio.reset()
       rig.resize(width, height)
       traversal.setView(rig.viewWidth / width, rig.viewWidth)
     }
@@ -466,6 +468,9 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     renderer.domElement.addEventListener('click', handleClick)
 
     let lastFrameAt = performance.now()
+    let lastDisplayFrameAt = lastFrameAt
+    let tickedLastFrame = false
+    let wasSuspended = false
     let isCharacterShown = true
 
     // The character layer floats over the page, loading screens included, so it shows only
@@ -497,10 +502,29 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       }
     }
 
+    /** Nothing on screen needs every display frame: the visitor is still, or a page covers the room. */
+    function isResting(entry: Entry | null): boolean {
+      if (!entry?.ready || !entry.contents || passage.busy) return false
+      const suspended = entry.handlers.isSuspended() || document.querySelector('[aria-modal="true"]') !== null
+      // Opening or closing a page wakes the room for a frame.
+      if (suspended !== wasSuspended) {
+        wasSuspended = suspended
+        return false
+      }
+      if (entry.contents.isBusy?.() || entry.presence?.isLively()) return false
+      return suspended || traversal.idleSeconds > QUIET_AFTER_SECONDS
+    }
+
     function renderFrame(now: number): void {
       frameHandle = requestAnimationFrame(renderFrame)
-      const frameMs = now - lastFrameAt
       const entry = current
+      const displayMs = now - lastDisplayFrameAt
+      lastDisplayFrameAt = now
+      // The display frame after a tick is how long that tick took; frames passed over are not timed.
+      if (tickedLastFrame) pixelRatio.sample(displayMs, now - (entry?.readyAt ?? Infinity) > SETTLE_MS)
+      tickedLastFrame = shouldTick(isResting(entry), now - lastFrameAt, displayMs)
+      if (!tickedLastFrame) return
+      const frameMs = now - lastFrameAt
       try {
         drawFrame(now, entry)
       } finally {
@@ -509,8 +533,8 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     }
 
     function drawFrame(now: number, entry: Entry | null): void {
-      pixelRatio.sample(now - lastFrameAt, now - (entry?.readyAt ?? Infinity) > 3000)
-      const dt = Math.min(0.05, Math.max(0, (now - lastFrameAt) / 1000))
+      const elapsed = Math.max(0, (now - lastFrameAt) / 1000)
+      const dt = Math.min(0.05, elapsed)
       lastFrameAt = now
       showCharacter(entry !== null && entry.ready && entry.contents !== null)
 
@@ -557,7 +581,10 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
             entry.handlers.isSuspended() ||
             document.querySelector('[aria-modal="true"]') !== null,
         )
-        traversal.update(dt, entry.contents.floor.minX, entry.contents.floor.maxX(), entry.contents.stance?.()?.walk ?? undefined)
+        const steps = movementSteps(elapsed)
+        for (let i = 0; i < steps.count; i++) {
+          traversal.update(steps.dt, entry.contents.floor.minX, entry.contents.floor.maxX(), entry.contents.stance?.()?.walk ?? undefined)
+        }
         prefetchNearDoors(entry, now)
         minimap.update(traversal.x)
       }
@@ -619,9 +646,6 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       })
       for (const part of partsOf(entry)) part.update(frame)
       sound().setWalking(!traversal.isAirborne && Math.abs(walk) > WALKING_SPEED)
-      entry.frameCount += 1
-      const idle = entry.handlers.isSuspended() || traversal.idleSeconds > QUIET_AFTER_SECONDS
-      if (idle && entry.frameCount % 2 === 1) return
       renderer.render(entry.scene, rig.camera)
       perf.rendered(renderer.info)
     }

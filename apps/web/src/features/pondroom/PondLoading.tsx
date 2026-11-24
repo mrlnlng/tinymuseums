@@ -17,7 +17,7 @@ export default function PondLoading() {
       role="status"
       aria-live="polite"
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, pointerEvents: 'none' }}
       transition={{ duration: 0.45 }}
     >
       <span className="pond-room-loading-flower" aria-hidden="true">

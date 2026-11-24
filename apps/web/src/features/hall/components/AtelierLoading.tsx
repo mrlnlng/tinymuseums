@@ -17,7 +17,7 @@ export default function AtelierLoading({ leaving = false }: { leaving?: boolean 
       role="status"
       aria-live="polite"
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, pointerEvents: 'none' }}
       transition={{ duration: 0.45 }}
     >
       <svg className="atelier-loading-art" viewBox="0 0 240 300" aria-hidden="true">

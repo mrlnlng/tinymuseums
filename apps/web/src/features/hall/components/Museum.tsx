@@ -284,7 +284,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
             key="curtain"
             className="hall-curtain"
             initial={{ '--curtain-open': 0 }}
-            exit={{ '--curtain-open': 1 }}
+            exit={{ '--curtain-open': 1, pointerEvents: 'none' }}
             transition={{ duration: 1.15, ease: [0.65, 0, 0.35, 1] }}
           >
             {throughDoor?.to === 'atelier' ? <AtelierLoading leaving /> : <HallSkeleton preload={false} />}

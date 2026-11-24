@@ -613,12 +613,28 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
 
   // Pollen drifting through the light.
   const glow = keep(glowTexture())
-  const motes = Array.from({ length: still ? 0 : 54 }, () => {
-    const mesh = sprite(glow, { additive: true, colour: random() < 0.5 ? '#fff6c8' : '#ffffff', opacity: 0 })
+  const moteCount = still ? 0 : 54
+  const moteMesh = new THREE.InstancedMesh(unit, new THREE.MeshBasicMaterial({
+    map: glow,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  }), moteCount)
+  moteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+  moteMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(moteCount * 3), 3)
+  moteMesh.instanceColor.setUsage(THREE.DynamicDrawUsage)
+  moteMesh.frustumCulled = false
+  // Sorted as one object at the depth each mote used to sit at.
+  moteMesh.position.z = -0.16
+  group.add(moteMesh)
+  const moteDummy = new THREE.Object3D()
+  const moteTint = new THREE.Color()
+  const motes = Array.from({ length: moteCount }, () => {
+    const colour = new THREE.Color(random() < 0.5 ? '#fff6c8' : '#ffffff')
     const size = 0.04 + random() * 0.07
-    mesh.scale.set(size, size, 1)
     return {
-      mesh,
+      colour,
+      size,
       x: ground.minX - 2 + random() * (ground.maxX - ground.minX + 4),
       y: groundY + 0.2 + random() * 4.4,
       rise: 0.03 + random() * 0.07,
@@ -840,14 +856,21 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
       ray.mesh.rotation.z = ray.lean + Math.sin(t * 0.16 + ray.phase) * 0.012
     }
 
-    for (const mote of motes) {
+    motes.forEach((mote, index) => {
       mote.y += mote.rise * step
       mote.x += mote.drift * step
       if (mote.y > groundY + 4.8) mote.y = groundY + 0.1
       if (mote.x > ground.maxX + 2) mote.x = ground.minX - 2
-      mote.mesh.position.set(mote.x + Math.sin(clock * 0.5 + mote.phase) * 0.18, mote.y, -0.16)
-      mote.mesh.material.opacity = mote.glow * (0.4 + 0.6 * Math.pow(Math.sin(clock * 0.9 + mote.phase) * 0.5 + 0.5, 2))
-    }
+      moteDummy.position.set(mote.x + Math.sin(clock * 0.5 + mote.phase) * 0.18, mote.y, 0)
+      moteDummy.scale.set(mote.size, mote.size, 1)
+      moteDummy.updateMatrix()
+      moteMesh.setMatrixAt(index, moteDummy.matrix)
+      // Additive blending scales by alpha, so fading the colour fades the mote just as opacity did.
+      const opacity = mote.glow * (0.4 + 0.6 * Math.pow(Math.sin(clock * 0.9 + mote.phase) * 0.5 + 0.5, 2))
+      moteMesh.setColorAt(index, moteTint.copy(mote.colour).multiplyScalar(opacity))
+    })
+    moteMesh.instanceMatrix.needsUpdate = true
+    if (moteMesh.instanceColor) moteMesh.instanceColor.needsUpdate = true
 
     for (const { petal, start } of petals) {
       if (petal.y > petal.land) {
@@ -957,6 +980,7 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
       for (const texture of textures) texture.dispose()
       unit.dispose()
       rootedUnit.dispose()
+      moteMesh.dispose()
     },
   }
 }

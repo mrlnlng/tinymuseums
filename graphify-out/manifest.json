@@ -458,9 +458,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/AtelierLoading.tsx": {
-    "mtime": 1793432551.732144,
-    "seen": 1793477254.5388672,
-    "ast_hash": "9eb6a0d16b6b1c70b67d2e129c7b1484",
+    "mtime": 1795540803.4684463,
+    "seen": 1795541068.4507945,
+    "ast_hash": "5700626133bc39485cfdb37aa8143a74",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/CoinFound.tsx": {
@@ -482,9 +482,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/Museum.tsx": {
-    "mtime": 1795417772.0028121,
-    "seen": 1795418039.7224078,
-    "ast_hash": "529cf76152c804e3f72ad684cf5b93b4",
+    "mtime": 1795540803.4691675,
+    "seen": 1795541068.4508045,
+    "ast_hash": "3fa2749fc760f2c61e8be3fe074da908",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/components/RigPreview.tsx": {
@@ -710,9 +710,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/traversal.ts": {
-    "mtime": 1795378307.3324504,
-    "seen": 1795378494.8492725,
-    "ast_hash": "380d3d8a14f970ed46730b38f5d918a8",
+    "mtime": 1795540803.4692783,
+    "seen": 1795541068.4508646,
+    "ast_hash": "c24a8e3df3c31f01307b2a176a438282",
     "semantic_hash": ""
   },
   "apps/web/src/features/hall/scene/wardrobe.test.ts": {
@@ -3668,9 +3668,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondLoading.tsx": {
-    "mtime": 1794200959.8588665,
-    "seen": 1794201256.7216747,
-    "ast_hash": "6632b86682f0638c5c8253650862a6d9",
+    "mtime": 1795540803.4693546,
+    "seen": 1795541068.450899,
+    "ast_hash": "214f42b19a4c3bc7e0f3b9c11a18f796",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondPanels.tsx": {
@@ -4268,9 +4268,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/ambience.ts": {
-    "mtime": 1795070500.3696165,
-    "seen": 1795070608.0546997,
-    "ast_hash": "25c5402d291677abec8033ad9301bed3",
+    "mtime": 1795540977.0442047,
+    "seen": 1795541068.4509497,
+    "ast_hash": "04dedaf9d3e3762b3d6c21cd91e071cd",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/forest-door-sign.png": {

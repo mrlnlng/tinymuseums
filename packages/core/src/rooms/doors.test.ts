@@ -9,15 +9,24 @@ test('the museum as built is a valid set of doors', () => {
 })
 
 test('a new door comes with its way back, and both go together', () => {
-  const added = addPassage(DEFAULT_DOORS, 'hall', 'pond', 3)
+  const added = addPassage(DEFAULT_DOORS, 'atelier', 'pond', 3)
   assert.ok(added.ok)
-  const there = added.doors.find((d) => d.room === 'hall' && d.to === 'pond')!
+  const there = added.doors.find((d) => d.room === 'atelier' && d.to === 'pond')!
   const back = added.doors.find((d) => d.id === there.toDoor)!
   assert.equal(back.room, 'pond')
   assert.equal(back.toDoor, there.id)
   // The pond's own gate already stands at its left end, so the way back is placed clear of it.
   assert.ok(Math.abs(back.x - -5.6) >= 1.2)
   assert.deepEqual(removeDoor(added.doors, back.id), [...DEFAULT_DOORS])
+})
+
+test('a hall door to the pond uses the pond gate as its way back, adding no door in the pond', () => {
+  const added = addPassage(DEFAULT_DOORS, 'hall', 'pond', 3)
+  assert.ok(added.ok)
+  assert.equal(added.doors.length, DEFAULT_DOORS.length + 1)
+  const there = added.doors.find((d) => d.room === 'hall' && d.to === 'pond')!
+  assert.equal(there.toDoor, null)
+  assert.deepEqual(removeDoor(added.doors, there.id), [...DEFAULT_DOORS])
 })
 
 test('doors cannot stand on top of each other, leave their room, or lose their partner', () => {

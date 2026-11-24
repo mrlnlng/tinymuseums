@@ -211,6 +211,12 @@ export function addPassage(doors: readonly MuseumDoor[], room: DoorRoom, to: Doo
   const style: DoorStyle = to === 'pond' ? 'forest' : 'gallery'
   const backStyle: DoorStyle = room === 'pond' ? 'forest' : 'gallery'
   const here = freeSpot(doors, room, x, { style, scale: 1 })
+  // A fixed door already leads back (the pond's gate to the hall): arrive at its entrance, add no second way back.
+  if (FIXED_DOORS.some((fixed) => fixed.room === to && fixed.to === room)) {
+    if (here === null) return { ok: false, reason: 'no_room' }
+    const id = freshId(doors, `${room}-${to}`)
+    return checkDoors([...doors, { id, room, x: here, label: `To ${ROOM_LABEL(to)}`, style, scale: 1, to, toDoor: null, under: false, guide: null }])
+  }
   const there = freeSpot(doors, to, doorRoom(to)!.minX, { style: backStyle, scale: 1 })
   if (here === null || there === null) return { ok: false, reason: 'no_room' }
   const id = freshId(doors, `${room}-${to}`)

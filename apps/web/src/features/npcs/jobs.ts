@@ -66,6 +66,7 @@ export const JOBS: Record<string, Job> = {
   hazel: { visits: ['painting'], order: 'errand', dwell: [8, 12], emote: '🖼️', meet: '📏', stand: 0.35, roam: 0.15 }, // framer
   // Local wanderers
   pip: { visits: ['desk', 'board'], order: 'errand', dwell: [5, 8], emote: '📮', meet: '😊', stand: -0.3, roam: 0.15 }, // stamp clerk
+  bram: { visits: ['door', 'desk', 'seat'], order: 'errand', dwell: [4, 7], emote: '🧳', meet: '🎩', stand: 0.3, roam: 0.25 }, // bellhop
   thimble: { visits: ['rail', 'seat'], order: 'errand', dwell: [8, 12], emote: '🧵', meet: '✂️', stand: 0.3, roam: 0.2 }, // textile mender
   fig: { visits: ['painting'], order: 'errand', dwell: [8, 12], emote: '🔨', meet: '🔧', stand: -0.35, roam: 0.15 }, // frame repairer
   moss: { visits: ['water', 'painting', 'seat'], order: 'errand', dwell: [10, 16], emote: '✏️', meet: '🎨', stand: 0.5, roam: 0.15 }, // pond sketcher

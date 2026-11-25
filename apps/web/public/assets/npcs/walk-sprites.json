@@ -16,7 +16,17 @@
       "role": "Stamp clerk",
       "asset": "npcs/pip-walk",
       "anchor": {
-        "x": 138,
+        "x": 146,
+        "y": 208
+      }
+    },
+    {
+      "id": "bram",
+      "name": "Bram",
+      "role": "Bellhop",
+      "asset": "npcs/bram-walk",
+      "anchor": {
+        "x": 146,
         "y": 208
       }
     },

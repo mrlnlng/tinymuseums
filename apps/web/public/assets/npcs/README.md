@@ -1,6 +1,6 @@
 # Tiny Museum NPC sprites
 
-Twelve original museum residents with transparent walk and standing idle loops. The
+Thirteen original museum residents with transparent walk and standing idle loops. The
 [walk manifest](walk-sprites.json) and [idle manifest](idle-sprites.json) record the
 asset keys and shared ground anchors.
 

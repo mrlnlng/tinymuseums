@@ -1282,8 +1282,8 @@
       "x2": {
         "w": 1536,
         "h": 224,
-        "src": "npcs-pip-walk@2x.1c424f5f27.webp",
-        "avif": "npcs-pip-walk@2x.50864fad12.avif"
+        "src": "npcs-pip-walk@2x.d7a9716c2d.webp",
+        "avif": "npcs-pip-walk@2x.f3120bc3ee.avif"
       }
     },
     "npcs/thimble-walk": {
@@ -1402,7 +1402,8 @@
       "x2": {
         "w": 1024,
         "h": 224,
-        "src": "npcs-pip-idle@2x.c7dca5dd1a.webp"
+        "src": "npcs-pip-idle@2x.1b2ace3f05.webp",
+        "avif": "npcs-pip-idle@2x.ebea487b5e.avif"
       }
     },
     "npcs/thimble-idle": {
@@ -1552,6 +1553,26 @@
         "w": 2381,
         "h": 1691,
         "src": "pond-stone-path-baked@3x.22f038bd4a.webp"
+      }
+    },
+    "npcs/bram-idle": {
+      "w": 1024,
+      "h": 224,
+      "x2": {
+        "w": 1024,
+        "h": 224,
+        "src": "npcs-bram-idle@2x.b21ad8f6b5.webp",
+        "avif": "npcs-bram-idle@2x.a3d94aef5b.avif"
+      }
+    },
+    "npcs/bram-walk": {
+      "w": 1536,
+      "h": 224,
+      "x2": {
+        "w": 1536,
+        "h": 224,
+        "src": "npcs-bram-walk@2x.835e698788.webp",
+        "avif": "npcs-bram-walk@2x.1456ff860d.avif"
       }
     }
   },

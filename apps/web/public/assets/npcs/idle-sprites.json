@@ -51,7 +51,17 @@
       "role": "Stamp clerk",
       "asset": "npcs/pip-idle",
       "anchor": {
-        "x": 138,
+        "x": 146,
+        "y": 208
+      }
+    },
+    {
+      "id": "bram",
+      "name": "Bram",
+      "role": "Bellhop",
+      "asset": "npcs/bram-idle",
+      "anchor": {
+        "x": 146,
         "y": 208
       }
     },

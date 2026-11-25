@@ -35,7 +35,8 @@ export function idleCel(elapsedMs: number): number {
 export const WORLD_PER_PX = 0.68 / 192
 
 export const CAST: readonly NpcCharacter[] = [
-  { id: 'pip', name: 'Pip', role: 'Stamp clerk', asset: 'npcs/pip-walk', anchorX: 138, stride: 0.355 },
+  { id: 'pip', name: 'Pip', role: 'Stamp clerk', asset: 'npcs/pip-walk', anchorX: 146, stride: 0.355 },
+  { id: 'bram', name: 'Bram', role: 'Bellhop', asset: 'npcs/bram-walk', anchorX: 146, stride: 0.355 },
   { id: 'thimble', name: 'Thimble', role: 'Textile mender', asset: 'npcs/thimble-walk', anchorX: 123, stride: 0.497 },
   { id: 'fig', name: 'Fig', role: 'Frame repairer', asset: 'npcs/fig-walk', anchorX: 141, stride: 0.532 },
   { id: 'moss', name: 'Moss', role: 'Pond sketcher', asset: 'npcs/moss-walk', anchorX: 125, stride: 0.557 },
@@ -49,11 +50,11 @@ export const CAST: readonly NpcCharacter[] = [
   { id: 'pearl', name: 'Pearl', role: 'Painting caretaker', asset: 'npcs/pearl-walk', anchorX: 135, stride: 0.583 },
 ]
 
-// The six residents follow one shared schedule; the six wanderers stay local to each browser.
+// The six residents follow one shared schedule; the seven wanderers stay local to each browser.
 export const RESIDENT_IDS = ['clove', 'mabel', 'pearl', 'nell', 'percy', 'hazel'] as const
-export const WANDERER_IDS = ['pip', 'thimble', 'fig', 'moss', 'dot', 'miso'] as const
+export const WANDERER_IDS = ['pip', 'bram', 'thimble', 'fig', 'moss', 'dot', 'miso'] as const
 
-// The mean painted gait across the twelve walk sheets (see stride on each cast member).
+// The mean painted gait across the walk sheets (see stride on each cast member).
 export const NPC_WALK_SPEED = 0.55
 
 const BY_ID = new Map(CAST.map((character) => [character.id, character]))

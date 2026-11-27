@@ -26,6 +26,8 @@ import {
   pondSpeciesProbability,
   pondTreasureFor,
   pondTreasureLoot,
+  pondKeepsakeItem,
+  pondTreasurePearls,
   pondVariantFor,
   pondVariantOdds,
   readPondTicket,
@@ -431,9 +433,18 @@ export async function reelPond(
         pondRoll(secret, 'loot', check.nonce),
         pondRoll(secret, 'loot-detail', check.nonce),
       )
+      if (treasure.kind === 'keepsake') {
+        const added = await client.query(
+          `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
+           on conflict do nothing
+           returning item_id`,
+          [memberId, pondKeepsakeItem(treasure.keepsake)],
+        )
+        if (added.rows.length === 0) treasure = { kind: 'pearls', pearls: pondTreasurePearls(pondRoll(secret, 'loot-detail', check.nonce)) }
+      }
       if (treasure.kind === 'pearls') treasurePearls = treasure.pearls
       else if (treasure.kind === 'bait') await addBait(client, memberId, treasure.bait, treasure.count)
-      else lucky = treasure.casts
+      else if (treasure.kind === 'charm') lucky = treasure.casts
     }
 
     const prior = await client.query<{ species_count: number; variant_count: number; best: number | null }>(

@@ -226,3 +226,36 @@ export function claimPondBounty(id: string): Promise<PondResult<PondBountyClaim>
     },
   )
 }
+
+export interface PondPhoto {
+  id: string
+  url: string
+  at: string
+}
+
+export function fetchPondPhotos(): Promise<PondResult<PondPhoto[]>> {
+  if (memberId() === null) return Promise.resolve({ ok: false, error: 'signed_out', status: 401 })
+  return request('/api/pond/photos', {}, (body) =>
+    isRecord(body) && Array.isArray(body.photos) ? (body.photos as PondPhoto[]) : null,
+  )
+}
+
+export function uploadPondPhoto(jpeg: Blob): Promise<PondResult<PondPhoto>> {
+  const id = memberId()
+  if (id === null) return Promise.resolve({ ok: false, error: 'signed_out', status: 401 })
+  return request(
+    '/api/pond/photos',
+    { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'X-TM-Member': id }, body: jpeg },
+    (body) => (isRecord(body) && isRecord(body.photo) ? (body.photo as unknown as PondPhoto) : null),
+  )
+}
+
+export function deletePondPhoto(photoId: string): Promise<PondResult<true>> {
+  const id = memberId()
+  if (id === null) return Promise.resolve({ ok: false, error: 'signed_out', status: 401 })
+  return request(
+    `/api/pond/photos/${encodeURIComponent(photoId)}`,
+    { method: 'DELETE', headers: { 'X-TM-Member': id } },
+    () => true,
+  )
+}

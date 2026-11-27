@@ -329,7 +329,7 @@ function Odds() {
 
       <section className="pond-room-odds-section" aria-labelledby="pond-room-variants-title">
         <h3 id="pond-room-variants-title" className="pond-room-odds-heading">
-          Variants
+          Grades
         </h3>
         <ul className="pond-room-variant-list">
           {VARIANT_ODDS.map((variant) => {
@@ -338,7 +338,7 @@ function Odds() {
             return (
               <li className="pond-room-variant-row" key={variant.id}>
                 <span className={`pond-room-variant-swatch pond-variant--${variant.id}`}>
-                  <img src={fishArt('star-snapper')} alt="" width={28} height={28} loading="lazy" />
+                  <img src={fishArt('star-snapper', variant.id)} alt="" width={28} height={28} loading="lazy" />
                 </span>
                 <span className="pond-room-variant-name">{variant.label}</span>
                 <span className="pond-room-variant-odds">1 in {formatInteger(oneIn)}</span>
@@ -354,8 +354,8 @@ function Odds() {
           })}
         </ul>
         <p className="pond-room-fineprint">
-          {moon === 'full' ? 'The moon is full — moonlit fish are four times likelier today.' : 'The moon is not full today.'}
-          {lucky > 0 ? ` A lucky charm triples every variant chance for ${lucky} more cast${lucky === 1 ? '' : 's'}.` : ''}
+          {moon === 'full' ? 'The moon is full — Masterpieces are four times likelier today.' : 'The moon is not full today.'}
+          {lucky > 0 ? ` A lucky charm triples every grade chance for ${lucky} more cast${lucky === 1 ? '' : 's'}.` : ''}
         </p>
       </section>
 

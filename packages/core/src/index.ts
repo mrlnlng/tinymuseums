@@ -164,6 +164,8 @@ export {
   pondTierOdds,
   pondTreasureFor,
   pondTreasureLoot,
+  pondKeepsakeItem,
+  POND_KEEPSAKES,
   pondVariantFor,
   pondVariantOdds,
   pondWeights,
@@ -178,6 +180,7 @@ export {
   type PondSpecies,
   type PondTier,
   type PondTreasure,
+  type PondKeepsake,
   type PondVariant,
   type PondWager,
 } from './economy/pond.ts'
@@ -260,3 +263,11 @@ export {
 export { discardDoors, doorsState, publishDoors, publishedDoors, saveDoorsDraft, type DoorsState } from './domain/doors.ts'
 export type * from './types.ts'
 export { mulberry32 } from './infra/random.ts'
+export {
+  POND_PHOTO_LIMIT,
+  POND_PHOTO_MAX_BYTES,
+  addPondPhoto,
+  deletePondPhoto,
+  listPondPhotos,
+  type PondPhoto,
+} from './domain/pond-photos.ts'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { assetUrl } from '@/shared/lib/assets'
+import { catchArt, journalCatch } from '@/features/pondroom/lib/journal'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import type { CatchView } from '../lib/guest.ts'
 import type { PondSfx, PondSfxName } from '../lib/sfx.ts'
@@ -106,7 +106,8 @@ export default function RevealCard({
   dismissRef.current = onDismiss
   const species = SPECIES_BY_ID[caught.species]
   const variant = VARIANT_BY_ID[caught.variant]
-  const art = assetUrl(species.art)
+  const found = journalCatch(caught.species, caught.variant)
+  const art = catchArt(found)
   const pearlCount = useCountUp(caught.pearls, reduced ? 200 : 1100, settled)
   const confetti = useMemo(() => (caught.tier === 'legendary' && !reduced ? makeConfetti() : []), [caught.tier, reduced])
   const offer = chainOffer(chainLevel, chainPot, caught.pearls)
@@ -199,7 +200,7 @@ export default function RevealCard({
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label={`Caught a ${variant.label === 'Normal' ? '' : `${variant.label} `}${species.name}`}
+      aria-label={`Caught ${found.name}, ${variant.label} grade`}
       onClick={(event) => {
         event.stopPropagation()
         advance()
@@ -273,7 +274,7 @@ export default function RevealCard({
         </div>
 
         <div className="pond-reveal-title">
-          <h2>{species.name}</h2>
+          <h2>{found.name}</h2>
           {variant.id !== 'normal' ? <span className={`pond-variant-label is-${variant.id}`}>{variant.label}</span> : null}
         </div>
         <p className="pond-reveal-size">

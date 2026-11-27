@@ -26,6 +26,7 @@ import { warmUp } from './warm'
 import { movementSteps, shouldTick } from './frame-clock'
 import { FLICK, flickDirection, isUpwardFlick } from './flick'
 import type { Arrival, DoorRef, Frame, JoinedContents, RoomContents, RoomContext, RoomDef, RoomId, RoomSound } from './types'
+import { grabLayers, type Grab } from './snapshot'
 
 const TAP_SLOP_PX = { touch: 12, mouse: 6 }
 const TAP_TIMEOUT_MS = 600
@@ -67,6 +68,8 @@ export interface Stage {
   enter<Art>(room: RoomDef<Art>, arrival: Arrival, handlers: StageHandlers): StageRoom
   /** The visitor's character once the stage has started, for overlays that follow it. */
   readonly character: Character | null
+  /** The room's layers from the next drawn frame, for a photo; null if no frame is drawn soon. */
+  capture(): Promise<Grab | null>
   dispose(): void
 }
 
@@ -116,6 +119,7 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
   let current: Entry | null = null
   let frameHandle = 0
   let doorStartedAt: number | null = null
+  const captures: ((grab: Grab | null) => void)[] = []
   const artCache = createArtCache<RoomId, unknown>({
     load: (id) => (ROOM_ART[id] as RoomArt<unknown>).load(renderer),
     unload: (id, loaded) => (ROOM_ART[id] as RoomArt<unknown>).unload(loaded),
@@ -648,6 +652,10 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
       sound().setWalking(!traversal.isAirborne && Math.abs(walk) > WALKING_SPEED)
       renderer.render(entry.scene, rig.camera)
       perf.rendered(renderer.info)
+      if (captures.length > 0) {
+        const grab = grabLayers(renderer.domElement)
+        for (const resolve of captures.splice(0)) resolve(grab)
+      }
     }
     frameHandle = requestAnimationFrame(renderFrame)
 
@@ -682,6 +690,17 @@ export function createStage({ hosts, sound }: StageOptions): Stage {
     enter,
     get character() {
       return runtime?.character ?? null
+    },
+    capture() {
+      return new Promise<Grab | null>((resolve) => {
+        captures.push(resolve)
+        // A resting room still ticks, just slowly; give up rather than leave the shutter hanging.
+        window.setTimeout(() => {
+          const index = captures.indexOf(resolve)
+          if (index >= 0) captures.splice(index, 1)
+          resolve(null)
+        }, 2000)
+      })
     },
     dispose() {
       isDisposed = true

@@ -285,19 +285,35 @@ export function pondChainPayout(pot: number, level: number): number {
   return Math.round(pot * (level >= 2 ? 2 : 1.5))
 }
 
+export const POND_KEEPSAKES = ['mp3-player', 'camera'] as const
+
+export type PondKeepsake = (typeof POND_KEEPSAKES)[number]
+
 export type PondTreasure =
   | { kind: 'pearls'; pearls: number }
   | { kind: 'bait'; bait: PondBaitId; count: number }
   | { kind: 'charm'; casts: number }
+  | { kind: 'keepsake'; keepsake: PondKeepsake }
+
+export function pondKeepsakeItem(keepsake: PondKeepsake): string {
+  return `keepsake:${keepsake}`
+}
+
+/** Treasure pearls, also paid in place of a keepsake the member already has. */
+export function pondTreasurePearls(detail: number): number {
+  return 10 + Math.floor(Math.max(0, Math.min(0.999999, detail)) * 31)
+}
 
 export function pondTreasureLoot(roll: number, detail: number): PondTreasure {
   const bucket = Math.max(0, Math.min(0.999999, roll))
-  if (bucket < 0.8) return { kind: 'pearls', pearls: 10 + Math.floor(Math.max(0, Math.min(0.999999, detail)) * 31) }
-  if (bucket < 0.95) {
+  if (bucket < 0.76) return { kind: 'pearls', pearls: pondTreasurePearls(detail) }
+  if (bucket < 0.91) {
     const baitId = detail < 0.5 ? 'shrimp' : 'berry'
     return { kind: 'bait', bait: baitId, count: POND_BAIT_COST[baitId].pack }
   }
-  return { kind: 'charm', casts: POND_LUCKY_CASTS }
+  if (bucket < 0.96) return { kind: 'charm', casts: POND_LUCKY_CASTS }
+  // Each keepsake is 2% of treasure, about 1 cast in 250.
+  return { kind: 'keepsake', keepsake: bucket < 0.98 ? 'mp3-player' : 'camera' }
 }
 
 export type PondBountyKind = 'fish' | 'crab' | 'puffer' | 'variant' | 'trophy' | 'species' | 'pearls'
@@ -335,11 +351,11 @@ const BOUNTY_POOL: readonly BountyTemplate[] = [
     text: (target) => `Land ${target} fish`,
     id: (target) => `fish-${target}`,
   },
-  { kind: 'crab', target: 1, reward: 25, text: () => 'Land a crab at least 25 cm', id: () => 'crab-25' },
-  { kind: 'puffer', target: 1, reward: 30, text: () => 'Land a pufferfish', id: () => 'puffer' },
-  { kind: 'variant', target: 1, reward: 45, text: () => 'Land a shiny or rarer variant', id: () => 'variant-shiny' },
+  { kind: 'crab', target: 1, reward: 25, text: () => 'Land a shellfish at least 25 cm', id: () => 'crab-25' },
+  { kind: 'puffer', target: 1, reward: 30, text: () => 'Land a sunken treasure', id: () => 'puffer' },
+  { kind: 'variant', target: 1, reward: 45, text: () => 'Land a Fine grade or better', id: () => 'variant-shiny' },
   { kind: 'trophy', target: 1, reward: 40, text: () => 'Land a trophy-size fish', id: () => 'trophy' },
-  { kind: 'species', target: 3, reward: 35, text: () => 'Land 3 different species', id: () => 'species-3' },
+  { kind: 'species', target: 3, reward: 35, text: () => 'Land catches from 3 families', id: () => 'species-3' },
   { kind: 'pearls', target: 60, reward: 50, text: () => 'Earn 60 pearls from catches', id: () => 'pearls-60' },
 ]
 

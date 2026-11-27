@@ -20,8 +20,8 @@ const COAT = manifest.shopkeeper.model === manifest.models.otterRig.src
 
 const GREETINGS = [
   'Evening! Worms are on the house.',
-  'The puffers have been biting on berries.',
-  'Cupcakes for the blobfish, if you can believe it.',
+  'Berries keep turning up sunken treasure.',
+  'Cupcakes for the deep sea lot, if you can believe it.',
   'Lovely night for a cast.',
 ]
 

@@ -87,6 +87,8 @@ const expected: Record<string, number> = {
   'prop:fish-crab': 0,
   'prop:fish-puffer': 0,
   'prop:fish-blobfish': 0,
+  'keepsake:mp3-player': 0,
+  'keepsake:camera': 0,
   'finish:wallpaper-cream': 0,
   'finish:wallpaper-plaster': 0,
   'finish:wallpaper-peach-stripes': 0,
@@ -111,7 +113,7 @@ const expected: Record<string, number> = {
   'clean:mess-floor-wear': 30,
 }
 
-const slots: readonly string[] = ['bow', 'costume', 'character', 'prop', 'finish', 'room', 'clean']
+const slots: readonly string[] = ['bow', 'costume', 'character', 'prop', 'finish', 'room', 'clean', 'keepsake']
 
 test('the catalog is exactly the wardrobe and prop list, keyed by slot:id', () => {
   assert.deepEqual(Object.keys(ITEMS).sort(), Object.keys(expected).sort())
@@ -120,7 +122,7 @@ test('the catalog is exactly the wardrobe and prop list, keyed by slot:id', () =
     assert.equal(extra.length, 0, itemId)
     assert.ok(slots.includes(slot), itemId)
     assert.ok(id.length > 0, itemId)
-    if (slot !== 'prop' && slot !== 'finish' && slot !== 'room' && slot !== 'clean') assert.equal(itemIdFor(slot as ItemSlot, id), itemId)
+    if (slot !== 'prop' && slot !== 'finish' && slot !== 'room' && slot !== 'clean' && slot !== 'keepsake') assert.equal(itemIdFor(slot as ItemSlot, id), itemId)
     assert.equal(priceOf(itemId), price)
     assert.ok(isCatalogItem(itemId))
   }
@@ -178,6 +180,13 @@ test('every cozy finish has a finish catalog item', () => {
   }
 })
 
+test('pond keepsakes are earned at the pond and cannot be bought', () => {
+  for (const itemId of ['keepsake:mp3-player', 'keepsake:camera']) {
+    assert.equal(ITEMS[itemId].earnedBy, 'pond')
+    assert.equal(isBuyable(itemId), false)
+  }
+})
+
 test('fish are collectible props that cannot be bought', () => {
   for (const [itemId, item] of Object.entries(ITEMS)) {
     if (!itemId.startsWith('prop:fish-')) continue
@@ -188,7 +197,7 @@ test('fish are collectible props that cannot be bought', () => {
     assert.equal(isBuyable(itemId), false)
   }
   for (const itemId of Object.keys(ITEMS)) {
-    if (!itemId.startsWith('prop:fish-')) assert.equal(isBuyable(itemId), true)
+    if (!itemId.startsWith('prop:fish-') && !itemId.startsWith('keepsake:')) assert.equal(isBuyable(itemId), true)
   }
 })
 

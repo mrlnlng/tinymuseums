@@ -53,3 +53,13 @@ create table if not exists pond_bounty_claims (
   at        timestamptz not null default now(),
   primary key (member_id, day, bounty_id)
 );
+
+-- Pictures taken with the pond camera keepsake; the files live in media storage under the member.
+create table if not exists pond_photos (
+  id        uuid primary key default gen_random_uuid(),
+  member_id uuid not null references members(id) on delete cascade,
+  key       text not null,
+  at        timestamptz not null default now()
+);
+
+create index if not exists pond_photos_member_at on pond_photos (member_id, at desc);

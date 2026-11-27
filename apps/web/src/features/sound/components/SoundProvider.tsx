@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { staticUrl } from '@/shared/lib/static'
 import { isPublicPage } from '@/shared/lib/public-page'
@@ -20,6 +20,8 @@ interface SoundState {
   play: (name: EffectName) => void
   prepare: (name: EffectName) => void
   setWalking: (isWalking: boolean) => void
+  /** Fades the background track out while something else, like the pond's MP3 player, is playing. */
+  holdMusic: (isHeld: boolean) => void
 }
 
 const SoundContext = createContext<SoundState>({
@@ -32,6 +34,7 @@ const SoundContext = createContext<SoundState>({
   play: () => {},
   prepare: () => {},
   setWalking: () => {},
+  holdMusic: () => {},
 })
 
 export function useSound(): SoundState {
@@ -43,7 +46,8 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
   const isInMuseum = isPublicPage(pathname)
 
   const track = pathname === '/museum/atelier' ? ATELIER_TRACK : HALL_TRACK
-  const music = useBackgroundMusic({ isAllowed: isInMuseum, track })
+  const [isHeld, setIsHeld] = useState(false)
+  const music = useBackgroundMusic({ isAllowed: isInMuseum && !isHeld, track })
   const effects = useSoundEffects(music.isEnabled && isInMuseum, music.volume)
 
   return (
@@ -58,6 +62,7 @@ export default function SoundProvider({ children }: { children: React.ReactNode 
         play: effects.play,
         prepare: effects.prepare,
         setWalking: effects.setWalking,
+        holdMusic: setIsHeld,
       }}
     >
       <audio

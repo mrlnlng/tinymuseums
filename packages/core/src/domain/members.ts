@@ -2,6 +2,7 @@ import { hashPassword, hashToken, newToken, verifyPassword } from './auth.ts'
 import { query, queryOne, transaction } from '../infra/db.ts'
 import { checkDisplayName, nameFromSeed, type NameCheck } from '../presence/names.ts'
 import { SLOTS, docBytes, slotDef, upgrade, type SlotDef } from '../slots/index.ts'
+import { removePondPhotoFiles } from './pond-photos.ts'
 
 const SESSION_DAYS = 180
 
@@ -151,7 +152,8 @@ export async function deleteMember(memberId: string, password: string): Promise<
     [memberId],
   )
   if (!member || !(await verifyPassword(password, member.password_hash))) return false
-  // sessions and slots go with the member via on delete cascade
+  await removePondPhotoFiles(memberId)
+  // sessions, slots and photo records go with the member via on delete cascade
   await query(`delete from members where id = $1`, [memberId])
   return true
 }

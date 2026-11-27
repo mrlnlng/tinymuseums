@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { useWallet } from '@/features/economy'
+import { refreshWalletNow, useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { PondIcon } from '@/features/pondroom/lib/icons'
@@ -49,6 +49,8 @@ import ReelMeter, { CastMeter } from './ReelMeter'
 import RevealCard from './RevealCard'
 import WagerPicker from './WagerPicker'
 import Water from './Water'
+import KeepsakeFound from '@/features/pondroom/keepsakes/KeepsakeFound'
+import type { KeepsakeId } from '@/features/pondroom/lib/journal'
 
 export interface PondGameProps {
   onClose: () => void
@@ -130,6 +132,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [reveal, setReveal] = useState<CatchView | null>(null)
+  const [foundKeepsake, setFoundKeepsake] = useState<KeepsakeId | null>(null)
+  const pendingKeepsakeRef = useRef<KeepsakeId | null>(null)
   const [buying, setBuying] = useState<BaitId | null>(null)
   const [chest, setChest] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -433,6 +437,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           chainAtCastRef.current = 0
           commit({ ...stateRef.current, phase: 'reveal' })
           setReveal(view)
+          if (reply.treasure?.kind === 'keepsake') {
+            pendingKeepsakeRef.current = reply.treasure.keepsake
+            void refreshWalletNow()
+          }
           onCatch?.(caught.species)
         })
         const wait = landed ? 0 : castReplyAtRef.current + MIN_REPORT_MS - performance.now()
@@ -744,6 +752,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
 
   const dismissReveal = useCallback(() => {
     setReveal(null)
+    setFoundKeepsake(pendingKeepsakeRef.current)
+    pendingKeepsakeRef.current = null
     setCatches((count) => count + 1)
     resetToIdle()
     bumpStreakChip()
@@ -989,6 +999,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           onDismiss={dismissReveal}
         />
       ) : null}
+      {foundKeepsake ? <KeepsakeFound keepsake={foundKeepsake} onClose={() => setFoundKeepsake(null)} /> : null}
     </div>
   )
 }

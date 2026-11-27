@@ -3267,3 +3267,122 @@
 .pond-reveal-title h2 { line-height: 1.3; }
 
 .pond-reveal-title + .pond-reveal-size { margin-top: 9px; }
+.pond-room-panel .pond-room-panel-card.is-fishdex { width: min(100%, 980px); height: auto; max-height: calc(100dvh - 24px); }
+
+.pond-journal { display: grid; gap: 12px; }
+
+.pond-journal-progress { display: grid; justify-items: end; gap: 5px; color: var(--pond-ink); font: 15px var(--font-body); }
+
+.pond-journal-progress strong { color: var(--pond-ink); }
+
+.pond-journal-bar { width: min(200px, 50%); height: 14px; overflow: hidden; border: 2px solid var(--pond-line); border-radius: 999px; background: #fffdf7; }
+
+.pond-journal-bar > span { display: block; height: 100%; border-radius: inherit; background: #8dbb59; }
+
+.pond-journal-grid {
+  display: grid;
+  grid-template-columns: minmax(60px, 1.15fr) repeat(5, minmax(0, 1fr));
+  gap: clamp(4px, 1.4vw, 12px);
+  align-items: center;
+  padding-top: 12px;
+  border-top: 5px solid #d8b98d;
+}
+
+.pond-journal-pill {
+  display: block;
+  padding: 4px 2px;
+  border: 2px solid var(--pond-line);
+  border-radius: 999px;
+  background: #fffdf7;
+  color: var(--pond-line);
+  font: clamp(7px, 1.3vw, 11px) var(--font-ui);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.pond-journal-pill.is-small { justify-self: start; width: min(100%, 120px); padding: 2px 4px; font-size: clamp(6.5px, 1vw, 9px); }
+
+.pond-journal-pill.is-shiny, .pond-journal-pill.is-rare { background: #d6ecf4; }
+
+.pond-journal-pill.is-golden, .pond-journal-pill.is-legendary { background: #f6dc8c; }
+
+.pond-journal-pill.is-moonlit { background: #d9d9f2; }
+
+.pond-journal-pill.is-prismatic { background: #f6cfe0; }
+
+.pond-journal-pill.is-uncommon { background: #d8edc6; }
+
+.pond-journal-family { display: grid; gap: 6px; min-width: 0; }
+
+.pond-journal-family-name { color: var(--pond-line); font: clamp(10px, 1.8vw, 18px) var(--font-ui); letter-spacing: 0.04em; line-height: 1.05; text-transform: uppercase; }
+
+.pond-journal-cell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  aspect-ratio: 1.75;
+  padding: 4px 3px 3px;
+  border: 3px solid #e2d3b8;
+  border-radius: 10px;
+  background: #f4eadb;
+  color: #7a5a48;
+  font: clamp(7px, 1.2vw, 12px) var(--font-body);
+}
+
+.pond-journal-cell.is-found { border-color: #e1b04c; background: #fffaf0; color: var(--pond-line); }
+
+.pond-journal-art { position: relative; display: grid; place-items: center; width: 100%; height: 100%; min-height: 0; font-size: clamp(16px, 4vw, 40px); line-height: 1; }
+
+.pond-journal-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+.pond-journal-cell:not(.is-found) .pond-journal-art img { filter: brightness(0); opacity: 0.22; }
+
+@media (max-width: 520px) {
+  .pond-journal-cell { aspect-ratio: 1 / 1.1; border-width: 2px; border-radius: 7px; }
+  .pond-journal-grid { grid-template-columns: minmax(48px, 1fr) repeat(5, minmax(0, 1fr)); }
+  .pond-journal-pill { padding-inline: 1px; font-size: 6.5px; letter-spacing: 0; overflow-wrap: normal; hyphens: manual; }
+}
+
+.pond-room-panel .is-fishdex .pond-room-panel-title { font-family: var(--font-ui); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.pond-journal-keepsakes {
+  display: grid;
+  grid-template-columns: minmax(60px, 1.15fr) repeat(5, minmax(0, 1fr));
+  gap: clamp(4px, 1.4vw, 12px);
+  align-items: center;
+  padding-top: 12px;
+  border-top: 5px solid #d8b98d;
+}
+
+.pond-journal-keepsakes h3 { margin: 0; }
+
+.pond-journal-pill.is-keepsake { background: #f6cfe0; }
+
+button.pond-journal-cell { cursor: pointer; transition: transform 0.15s ease; }
+
+button.pond-journal-cell:hover { transform: translateY(-2px); }
+
+button.pond-journal-cell:focus-visible { outline: 3px solid #662f14; outline-offset: 2px; }
+
+.pond-journal-cell.is-keepsake.is-found .pond-journal-stat { color: #a52b50; font-family: var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; }
+
+@media (max-width: 520px) {
+  .pond-journal-keepsakes { grid-template-columns: minmax(48px, 1fr) repeat(5, minmax(0, 1fr)); gap: 4px; }
+}
+
+.pond-keepsake-dock { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; z-index: 70; display: flex; align-items: center; gap: 12px; width: min(calc(100% - 32px), 420px); padding: 10px 14px 10px 10px; border: 3px solid #50291d; border-radius: 20px; background: #fff3c9; color: #50291d; transform: translateX(-50%); box-shadow: 0 10px 30px rgb(9 13 24 / 40%); }
+
+.pond-keepsake-dock-art { width: 64px; height: 64px; object-fit: contain; }
+
+.pond-keepsake-dock-info { display: grid; flex: 1; gap: 4px; min-width: 0; font-size: 12px; }
+
+.pond-keepsake-dock-info strong { font: 15px var(--font-ui); text-transform: uppercase; }
+
+.pond-keepsake-dock-info .pond-journal-bar { width: 100%; height: 10px; }
+
+.pond-room-panel-card.is-fishdex .pond-notice-tabs { padding: 10px 16px 0; }
+
+.pond-keepsake-dock { z-index: 65; }

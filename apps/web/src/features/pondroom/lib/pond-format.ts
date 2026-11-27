@@ -1,11 +1,11 @@
 /** Table and formatting facts for the pond room's panels. Kept client-side only. */
-import { assetUrl } from '@/shared/lib/assets'
+import { catchArt, gradeLabel, journalCatch } from './journal'
 
 export const POND_SPECIES = [
-  { id: 'star-snapper', name: 'Star snapper', tier: 'common', medianCm: 22 },
-  { id: 'crab', name: 'Crab', tier: 'uncommon', medianCm: 18 },
-  { id: 'puffer', name: 'Pufferfish', tier: 'rare', medianCm: 26 },
-  { id: 'blobfish', name: 'Sir Blobfish', tier: 'legendary', medianCm: 35 },
+  { id: 'star-snapper', name: 'Fish', tier: 'common', medianCm: 22 },
+  { id: 'crab', name: 'Shellfish', tier: 'uncommon', medianCm: 18 },
+  { id: 'puffer', name: 'Sunken treasure', tier: 'rare', medianCm: 26 },
+  { id: 'blobfish', name: 'Deep sea creature', tier: 'legendary', medianCm: 35 },
 ] as const
 
 export type PondFishId = (typeof POND_SPECIES)[number]['id']
@@ -19,7 +19,7 @@ export const POND_BAIT = [
     id: 'shrimp',
     name: 'Shrimp',
     emoji: '🦐',
-    favours: 'Crabs love shrimp',
+    favours: 'Shellfish love shrimp',
     pack: 5,
     price: 20,
   },
@@ -27,7 +27,7 @@ export const POND_BAIT = [
     id: 'berry',
     name: 'Berry',
     emoji: '🫐',
-    favours: 'Puffers love berries',
+    favours: 'Berries turn up sunken treasure',
     pack: 5,
     price: 20,
   },
@@ -35,7 +35,7 @@ export const POND_BAIT = [
     id: 'cupcake',
     name: 'Cupcake',
     emoji: '🧁',
-    favours: 'Blobfish love cupcakes',
+    favours: 'Deep sea creatures love cupcakes',
     pack: 3,
     price: 40,
   },
@@ -50,10 +50,10 @@ export const ODDS_BAIT: readonly { id: PondBaitId; name: string }[] = [
 ]
 
 export const VARIANT_ODDS = [
-  { id: 'shiny', label: 'Shiny', odds: 40, fullMoonOdds: 40, multiplier: 2 },
-  { id: 'golden', label: 'Golden', odds: 200, fullMoonOdds: 200, multiplier: 5 },
-  { id: 'moonlit', label: 'Moonlit', odds: 600, fullMoonOdds: 150, multiplier: 10 },
-  { id: 'prismatic', label: 'Prismatic', odds: 2500, fullMoonOdds: 2500, multiplier: 25 },
+  { id: 'shiny', label: 'Fine', odds: 40, fullMoonOdds: 40, multiplier: 2 },
+  { id: 'golden', label: 'Premium', odds: 200, fullMoonOdds: 200, multiplier: 5 },
+  { id: 'moonlit', label: 'Masterpiece', odds: 600, fullMoonOdds: 150, multiplier: 10 },
+  { id: 'prismatic', label: 'Sashimi grade', odds: 2500, fullMoonOdds: 2500, multiplier: 25 },
 ] as const
 
 export const TIERS: readonly PondTier[] = ['common', 'uncommon', 'rare', 'legendary']
@@ -77,22 +77,18 @@ export function speciesTier(id: string | null | undefined): PondTier | null {
 }
 
 export function variantLabel(variant: string | null | undefined): string {
-  if (!variant || variant === 'normal') return 'Normal'
+  if (!variant || variant === 'normal') return 'Basic'
+  if ((POND_VARIANTS as readonly string[]).includes(variant)) return gradeLabel(variant)
   return variant.charAt(0).toUpperCase() + variant.slice(1)
 }
 
-/** "Golden Crab", or just "Crab" for a normal one. */
+/** The journal cell's creature: a shiny crab row is the hermit crab. */
 export function catchLabel(species: string | null | undefined, variant: string | null | undefined): string {
-  const name = speciesName(species)
-  return variant && variant !== 'normal' ? `${variantLabel(variant)} ${name}` : name
+  return journalCatch(species, variant).name
 }
 
-const FISH_ART = ['star-snapper', 'crab', 'puffer', 'blobfish'] as const
-
-/** The catch's drawing from the asset manifest; species without their own art show the snapper. */
-export function fishArt(species: string | null | undefined): string {
-  const art = FISH_ART.find((id) => id === species) ?? 'star-snapper'
-  return assetUrl(`pond/fish-${art}`)
+export function fishArt(species: string | null | undefined, variant?: string | null): string {
+  return catchArt(journalCatch(species, variant))
 }
 
 export function formatInteger(value: number): string {

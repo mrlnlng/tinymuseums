@@ -19,6 +19,7 @@ export type PondTreasure =
   | { kind: 'pearls'; pearls: number }
   | { kind: 'bait'; bait: BaitId; count: number }
   | { kind: 'charm'; casts: number }
+  | { kind: 'keepsake'; keepsake: 'mp3-player' | 'camera' }
 
 export interface Species {
   id: FishId
@@ -112,11 +113,11 @@ export interface Variant {
 
 /** Display order; the roll order below matches core's rare-first draw. */
 export const VARIANTS: readonly Variant[] = [
-  { id: 'normal', label: 'Normal', odds: 1, fullMoonOdds: 1, multiplier: 1 },
-  { id: 'shiny', label: 'Shiny', odds: 1 / 40, fullMoonOdds: 1 / 40, multiplier: 2 },
-  { id: 'golden', label: 'Golden', odds: 1 / 200, fullMoonOdds: 1 / 200, multiplier: 5 },
-  { id: 'moonlit', label: 'Moonlit', odds: 1 / 600, fullMoonOdds: 1 / 150, multiplier: 10 },
-  { id: 'prismatic', label: 'Prismatic', odds: 1 / 2500, fullMoonOdds: 1 / 2500, multiplier: 25 },
+  { id: 'normal', label: 'Basic', odds: 1, fullMoonOdds: 1, multiplier: 1 },
+  { id: 'shiny', label: 'Fine', odds: 1 / 40, fullMoonOdds: 1 / 40, multiplier: 2 },
+  { id: 'golden', label: 'Premium', odds: 1 / 200, fullMoonOdds: 1 / 200, multiplier: 5 },
+  { id: 'moonlit', label: 'Masterpiece', odds: 1 / 600, fullMoonOdds: 1 / 150, multiplier: 10 },
+  { id: 'prismatic', label: 'Sashimi grade', odds: 1 / 2500, fullMoonOdds: 1 / 2500, multiplier: 25 },
 ]
 
 export const VARIANT_BY_ID: Record<FishVariant, Variant> = Object.fromEntries(
@@ -302,6 +303,7 @@ export function treasureLabel(treasure: PondTreasure | null | undefined): string
   if (!treasure) return null
   if (treasure.kind === 'pearls') return `${treasure.pearls} pearls`
   if (treasure.kind === 'bait') return `${treasure.count} ${BAIT_BY_ID[treasure.bait].name.toLowerCase()}`
+  if (treasure.kind === 'keepsake') return treasure.keepsake === 'camera' ? 'a tiny camera!' : 'an MP3 player!'
   return `Lucky charm (${treasure.casts} casts)`
 }
 

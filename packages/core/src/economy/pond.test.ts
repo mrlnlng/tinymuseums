@@ -27,6 +27,7 @@ import {
   pondVariantOdds,
   pondWeights,
   readPondTicket,
+  pondTreasureLoot,
 } from './pond.ts'
 
 const SECRET = 'test-secret'
@@ -313,4 +314,13 @@ test('bounty progress follows the catches of the day', () => {
   assert.equal(pondBountyProgress({ kind: 'species', target: 3 }, catches), 3)
   assert.equal(pondBountyProgress({ kind: 'pearls', target: 60 }, catches), 24)
   assert.equal(pondBountyProgress({ kind: 'species', target: 3 }, []), 0)
+})
+
+test('treasure loot keeps charms at 5% and gives each keepsake 2%', () => {
+  assert.equal(pondTreasureLoot(0.5, 0).kind, 'pearls')
+  assert.equal(pondTreasureLoot(0.8, 0).kind, 'bait')
+  assert.equal(pondTreasureLoot(0.93, 0).kind, 'charm')
+  assert.deepEqual(pondTreasureLoot(0.97, 0), { kind: 'keepsake', keepsake: 'mp3-player' })
+  assert.deepEqual(pondTreasureLoot(0.99, 0), { kind: 'keepsake', keepsake: 'camera' })
+  assert.deepEqual(pondTreasureLoot(1, 0), { kind: 'keepsake', keepsake: 'camera' })
 })

@@ -1,7 +1,7 @@
 export type ItemSlot = 'bow' | 'costume' | 'character'
 import { CLOSET_MESSES, cleanItemId, cleanupFor } from '../rooms/work.ts'
 
-export type CatalogKind = 'piece' | 'character' | 'prop' | 'finish' | 'room' | 'clean'
+export type CatalogKind = 'piece' | 'character' | 'prop' | 'finish' | 'room' | 'clean' | 'keepsake'
 
 export interface CatalogItem {
   price: number
@@ -93,6 +93,9 @@ export const ITEMS: Record<string, CatalogItem> = {
   'prop:fish-crab': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
   'prop:fish-puffer': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
   'prop:fish-blobfish': { price: 0, kind: 'prop', collection: 'fish', earnedBy: 'pond' },
+
+  'keepsake:mp3-player': { price: 0, kind: 'keepsake', collection: 'keepsake', earnedBy: 'pond' },
+  'keepsake:camera': { price: 0, kind: 'keepsake', collection: 'keepsake', earnedBy: 'pond' },
 
   'finish:wallpaper-cream': { price: 0, kind: 'finish', collection: 'wallpaper', starter: true },
   'finish:wallpaper-plaster': { price: 0, kind: 'finish', collection: 'wallpaper', starter: true },

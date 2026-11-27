@@ -67,7 +67,7 @@ function BoardRow({ board, row }: { board: PondBoardId; row: PondBoardRow }) {
         <span className="pond-room-board-name">{row.name}</span>
         {showCatch ? (
           <span className="pond-room-board-catch">
-            <img src={fishArt(row.species)} alt="" width={22} height={22} loading="lazy" />
+            <img src={fishArt(row.species, row.variant)} alt="" width={22} height={22} loading="lazy" />
             <span>
               {catchLabel(row.species, row.variant)} · {formatSizeCm(row.sizeCm)}
             </span>

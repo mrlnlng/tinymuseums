@@ -15,6 +15,7 @@ export default function GameDesktop({ onPick, onClose }: GameDesktopProps) {
       onClose={onClose}
       closeLabel="Close the computer"
       cardClassName="gamedesktop"
+      sounds
       header={<span className="sketchbook-round gamedesktop-title">Tiny Museum computer</span>}
     >
       <p className="gamedesktop-greeting">Pick something to play.</p>

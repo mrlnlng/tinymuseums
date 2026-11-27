@@ -8,6 +8,7 @@ import Stamp from '@/features/economy/components/Stamp'
 import { stampLabel } from '@/features/economy/lib/stamp'
 import { useSlot } from '@/shared/lib/slots'
 import { useStage } from '@/features/rooms/MuseumStage'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { CHARACTER_NAMES, keepName } from '../scene/atelier'
 import { keepStamps, type KeepStamp } from '../scene/keep-stamps'
 import { pieceUrl } from '../scene/piece-art'
@@ -33,6 +34,7 @@ function labelOf(stamp: KeepStamp, balance: number): string {
  */
 export default function AtelierKeeps() {
   const wallet = useWallet()
+  const { play } = useSound()
   const [outfitDoc] = useSlot(outfit)
   const [justKept, setJustKept] = useState<KeepStamp | null>(null)
   const live = keepStamps(lookOf(outfitDoc), wallet)
@@ -131,14 +133,15 @@ export default function AtelierKeeps() {
     setBusy(null)
     setFill(0)
     if (result === 'ok') {
+      play('purchase')
       if (stamp) {
         setJustKept({ ...stamp, progress: 1 })
         window.setTimeout(() => setJustKept((k) => (k?.itemId === itemId ? null : k)), 700)
       }
       flash(itemId, 'kept')
     }
-    else if (result === 'insufficient') { setPurseShake((n) => n + 1); flash(itemId, 'shake') }
-    else flash(itemId, 'shake')
+    else if (result === 'insufficient') { play('error'); setPurseShake((n) => n + 1); flash(itemId, 'shake') }
+    else { play('error'); flash(itemId, 'shake') }
   }
 
   function press(stamp: KeepStamp): void {

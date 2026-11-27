@@ -9,6 +9,7 @@ import ReadScreen from '@/features/guestboard/components/ReadScreen'
 import { PostRejected, useGuestNotes, type NoteDraft } from '@/features/guestboard/hooks/useGuestNotes'
 import { track } from '@/shared/lib/visit'
 import { earn } from '@/features/economy/store'
+import { useSound } from '@/features/sound/components/SoundProvider'
 
 type View = { screen: 'board' } | { screen: 'compose' } | { screen: 'read'; index: number }
 
@@ -23,35 +24,56 @@ function blankDraft(): NoteDraft {
 
 export default function GuestBoard({ onClose }: GuestBoardProps) {
   const { notes, hasMore, loadMore, post } = useGuestNotes()
+  const { play } = useSound()
   const [view, setView] = useState<View>({ screen: 'board' })
   const [draft, setDraft] = useState<NoteDraft>(blankDraft)
   const [publishError, setPublishError] = useState<string | null>(null)
 
-  const toBoard = useCallback(() => setView({ screen: 'board' }), [])
+  const close = useCallback(() => {
+    play('close')
+    onClose()
+  }, [onClose, play])
+
+  const toBoard = useCallback(() => {
+    play('close')
+    setView({ screen: 'board' })
+  }, [play])
+
+  const openCompose = useCallback(() => {
+    play('open')
+    setView({ screen: 'compose' })
+  }, [play])
+
+  const openNote = useCallback((index: number) => {
+    play('select')
+    setView({ screen: 'read', index })
+  }, [play])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if (view.screen === 'board') onClose()
+      if (view.screen === 'board') close()
       else toBoard()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [view.screen, onClose, toBoard])
+  }, [view.screen, close, toBoard])
 
   const publish = useCallback(async () => {
     setPublishError(null)
-    toBoard()
+    setView({ screen: 'board' })
     try {
       const posted: NoteDraft & { tzOffset: number } = {
         ...draft,
         tzOffset: -new Date().getTimezoneOffset(),
       }
       await post(posted)
+      play('confirm')
       track('guest_note_posted')
       earn('secret', { feature: 'guest_note_posted' })
       setDraft(blankDraft())
     } catch (postError) {
+      play('error')
       setPublishError(
         postError instanceof PostRejected
           ? postError.message
@@ -59,7 +81,7 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
       )
       setView({ screen: 'compose' })
     }
-  }, [draft, post, toBoard])
+  }, [draft, play, post])
 
   return (
     <motion.div
@@ -84,9 +106,9 @@ export default function GuestBoard({ onClose }: GuestBoardProps) {
           {view.screen === 'board' ? (
             <BoardScreen
               notes={notes}
-              onClose={onClose}
-              onAddNote={() => setView({ screen: 'compose' })}
-              onOpenNote={(index) => setView({ screen: 'read', index })}
+              onClose={close}
+              onAddNote={openCompose}
+              onOpenNote={openNote}
             />
           ) : view.screen === 'compose' ? (
             <ComposeScreen

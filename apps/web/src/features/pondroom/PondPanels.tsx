@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { openAccount } from '@/features/account/lib/account'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import type { PondPanelKind } from '@/features/rooms/pond/room'
@@ -50,13 +51,30 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
   const special = useTodaysSpecial()
   const cardRef = useModalFocus()
   const closeRef = useRef<HTMLButtonElement>(null)
-  useEscapeKey(onClose)
+  const { play } = useSound()
   const title = activeKind === 'rules' ? 'Pond rules' : TITLES[activeKind]
   const isBoard = activeKind === 'bounties' || activeKind === 'leaderboard'
 
   useEffect(() => {
     closeRef.current?.focus({ preventScroll: true })
   }, [])
+
+  useEffect(() => {
+    play('open')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function close() {
+    play('close')
+    onClose()
+  }
+
+  function pickTab(kind: PondOverlayKind) {
+    play('select')
+    setActiveKind(kind)
+  }
+
+  useEscapeKey(close)
 
   function signIn() {
     onClose()
@@ -82,13 +100,13 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
   if (activeKind === 'rules') {
     return (
       <div className="pond-room-panel is-rules" role="dialog" aria-modal="true" aria-labelledby="pond-room-panel-title">
-        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={onClose} aria-label="Close the pond rules" />
+        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={close} aria-label="Close the pond rules" />
         <div ref={cardRef} className="pond-rules-host">
           <PondRules
-            onJournal={() => setActiveKind('fishdex')}
+            onJournal={() => pickTab('fishdex')}
             onStartFishing={startFishing}
-            onNoticeboard={() => setActiveKind('bounties')}
-            onClose={onClose}
+            onNoticeboard={() => pickTab('bounties')}
+            onClose={close}
             special={special}
           />
         </div>
@@ -99,9 +117,9 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
   if (activeKind === 'fishdex') {
     return (
       <div className="pond-room-panel" role="dialog" aria-modal="true" aria-labelledby="pond-room-panel-title">
-        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={onClose} aria-label="Close the fish journal" />
+        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={close} aria-label="Close the fish journal" />
         <div ref={cardRef} className="pond-journal-card">
-          <FishdexPanel onClose={onClose} special={special} />
+          <FishdexPanel onClose={close} special={special} />
         </div>
       </div>
     )
@@ -113,7 +131,7 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
         type="button"
         tabIndex={-1}
         className="pond-room-panel-scrim"
-        onClick={onClose}
+        onClick={close}
         aria-label={`Close the ${title.toLowerCase()}`}
       />
       <div ref={cardRef} className={`pond-room-panel-card is-${activeKind}`}>
@@ -124,7 +142,7 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
             <p className="pond-room-panel-intro">{SUBTITLES[activeKind]}</p>
           </div>
           <button ref={closeRef} type="button" className="pond-room-panel-close"
-            onClick={onClose} aria-label={`Close the ${title.toLowerCase()}`}>
+            onClick={close} aria-label={`Close the ${title.toLowerCase()}`}>
             <PondIcon name="close" />
           </button>
         </header>
@@ -139,12 +157,12 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
                 aria-selected={activeKind === tab.kind}
                 aria-controls="pond-notice-content"
                 tabIndex={activeKind === tab.kind ? 0 : -1}
-                onClick={() => setActiveKind(tab.kind)}
+                onClick={() => pickTab(tab.kind)}
                 onKeyDown={(event) => {
                   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
                   event.preventDefault()
                   const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index
-                  setActiveKind(BOARD_TABS[next].kind)
+                  pickTab(BOARD_TABS[next].kind)
                   document.getElementById(`pond-notice-tab-${BOARD_TABS[next].kind}`)?.focus()
                 }}
               >
@@ -173,7 +191,7 @@ export default function PondPanels({ kind, onClose }: PondPanelsProps) {
           ) : null}
         </div>
         <footer className="pond-room-panel-footer">
-          <button type="button" className="pond-room-button is-quiet" onClick={onClose}>← Keep exploring</button>
+          <button type="button" className="pond-room-button is-quiet" onClick={close}>← Keep exploring</button>
           {snapshot.isReady && !snapshot.isMember ? (
             <button type="button" className="pond-room-signin" onClick={signIn}>Sign in to save catches</button>
           ) : null}

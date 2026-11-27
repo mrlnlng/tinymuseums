@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { guideOffer } from '@tiny/core/rooms'
 import { castMember, FRAME, IDLE } from '@/features/npcs/cast'
 import type { GuideTalk as Talk } from '@/features/rooms/hall/room'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { assetEntry, assetUrl, type AssetName } from '@/shared/lib/assets'
@@ -12,9 +13,14 @@ import { assetEntry, assetUrl, type AssetName } from '@/shared/lib/assets'
 export default function GuideTalk({ talk, onClose }: { talk: Talk; onClose(): void }) {
   const character = castMember(talk.guide.npc)
   const [at, setAt] = useState(0)
+  const { play } = useSound()
   const cardRef = useModalFocus()
   const nextRef = useRef<HTMLButtonElement>(null)
-  useEscapeKey(onClose)
+  const close = () => {
+    play('close')
+    onClose()
+  }
+  useEscapeKey(close)
   const last = at === talk.guide.lines.length - 1
   const idle = `npcs/${character.id}-idle` as AssetName
   const hasIdle = Boolean(assetEntry(idle))
@@ -31,7 +37,7 @@ export default function GuideTalk({ talk, onClose }: { talk: Talk; onClose(): vo
 
   return (
     <div className="guide-talk" role="dialog" aria-modal="true" aria-labelledby="guide-talk-name" aria-describedby="guide-talk-line">
-      <button type="button" tabIndex={-1} className="guide-talk-scrim" onClick={onClose} aria-label={`Stop talking to ${character.name}`} />
+      <button type="button" tabIndex={-1} className="guide-talk-scrim" onClick={close} aria-label={`Stop talking to ${character.name}`} />
       <div ref={cardRef} className="guide-talk-card">
         <span
           className="guide-talk-face"
@@ -44,11 +50,11 @@ export default function GuideTalk({ talk, onClose }: { talk: Talk; onClose(): vo
           <div className="guide-talk-actions">
             {last ? (
               <>
-                <button type="button" className="guide-talk-button is-quiet" onClick={onClose}>Maybe later</button>
+                <button type="button" className="guide-talk-button is-quiet" onClick={close}>Maybe later</button>
                 <button ref={nextRef} type="button" className="guide-talk-button" onClick={go}>{guideOffer({ to: talk.to })}</button>
               </>
             ) : (
-              <button ref={nextRef} type="button" className="guide-talk-button" onClick={() => setAt(at + 1)}>Next</button>
+              <button ref={nextRef} type="button" className="guide-talk-button" onClick={() => { play('blip'); setAt(at + 1) }}>Next</button>
             )}
           </div>
         </div>

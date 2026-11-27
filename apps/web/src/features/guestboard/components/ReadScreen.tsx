@@ -3,6 +3,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import type { GuestNoteDto } from '@tiny/core'
 import StickyNote from '@/features/guestboard/components/StickyNote'
 import AssetImage from '@/shared/components/AssetImage'
+import { useSound } from '@/features/sound/components/SoundProvider'
 
 const LOAD_AHEAD = 3
 
@@ -15,6 +16,7 @@ interface ReadScreenProps {
 }
 
 export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onBack }: ReadScreenProps) {
+  const { play } = useSound()
   const [viewportRef, embla] = useEmblaCarousel({ startIndex, align: 'center', duration: 22 })
   const [selected, setSelected] = useState(startIndex)
   const [canPrev, setCanPrev] = useState(false)
@@ -43,12 +45,18 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
   useEffect(() => {
     if (!embla) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') embla.scrollPrev()
-      if (e.key === 'ArrowRight') embla.scrollNext()
+      if (e.key === 'ArrowLeft' && embla.canScrollPrev()) {
+        play('select')
+        embla.scrollPrev()
+      }
+      if (e.key === 'ArrowRight' && embla.canScrollNext()) {
+        play('select')
+        embla.scrollNext()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [embla])
+  }, [embla, play])
 
   return (
     <div className="guestboard-stage">
@@ -86,14 +94,20 @@ export default function ReadScreen({ notes, startIndex, hasMore, onNeedMore, onB
       <button
         type="button"
         className="guestboard-arrow guestboard-arrow--prev"
-        onClick={() => embla?.scrollPrev()}
+        onClick={() => {
+          play('select')
+          embla?.scrollPrev()
+        }}
         disabled={!canPrev}
         aria-label="Previous note"
       />
       <button
         type="button"
         className="guestboard-arrow guestboard-arrow--next"
-        onClick={() => embla?.scrollNext()}
+        onClick={() => {
+          play('select')
+          embla?.scrollNext()
+        }}
         disabled={!canNext}
         aria-label="Next note"
       />

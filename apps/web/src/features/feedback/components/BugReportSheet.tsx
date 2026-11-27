@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { MAX_BUG_CONTACT, MAX_BUG_MESSAGE } from '@tiny/core/bugs'
 import { collectContext } from '@/features/feedback/lib/bug-report'
+import { useSound } from '@/features/sound/components/SoundProvider'
 
 type Status = 'editing' | 'sending' | 'sent'
 
@@ -12,6 +13,7 @@ const SEND_FAILED = 'Could not send that — try again in a moment.'
 
 export default function BugReportSheet({ onClose }: { onClose: () => void }) {
   const dialogRef = useModalFocus()
+  const { play } = useSound()
   const pathname = usePathname()
   const [message, setMessage] = useState('')
   const [contact, setContact] = useState('')
@@ -43,7 +45,9 @@ export default function BugReportSheet({ onClose }: { onClose: () => void }) {
         throw new Error(body?.error ?? SEND_FAILED)
       }
       setStatus('sent')
+      play('confirm')
     } catch (e) {
+      play('error')
       setError(e instanceof Error ? e.message : SEND_FAILED)
       setStatus('editing')
     }
@@ -58,7 +62,7 @@ export default function BugReportSheet({ onClose }: { onClose: () => void }) {
           <h2 id="bug-report-title" className="script bug-report-title">Thank you!</h2>
           <p className="bug-report-note">We&apos;ll take a look and get it fixed.</p>
           <div className="bug-report-actions">
-            <button type="button" className="button" onClick={onClose}>
+            <button type="button" className="button" onClick={onClose} data-sound>
               Close
             </button>
           </div>
@@ -91,13 +95,14 @@ export default function BugReportSheet({ onClose }: { onClose: () => void }) {
           {error ? <p className="bug-report-error" role="alert">{error}</p> : null}
 
           <div className="bug-report-actions">
-            <button type="button" className="button quiet" onClick={onClose}>
+            <button type="button" className="button quiet" onClick={onClose} data-sound>
               Cancel
             </button>
             <button
               type="submit"
               className="button"
               disabled={status === 'sending' || !message.trim()}
+              data-sound
             >
               {status === 'sending' ? 'Sending…' : 'Send'}
             </button>

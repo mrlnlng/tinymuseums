@@ -703,6 +703,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       isEditingRef.current = false
       setIsEditing(false)
       setNotice('Your room could not be opened for decorating just now.')
+      play('error')
       return
     }
     const record = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
@@ -717,7 +718,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     controller.setCharacterOpacity(0.3)
     loadedRef.current = true
     setLoaded(true)
-    play('click')
+    play('open')
   }, [controller, placements, play, slug])
 
   const leaveEdit = useCallback(() => {
@@ -799,7 +800,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   const applyFinish = useCallback(
     (zone: FinishSlot, ref: string) => {
       apply(withFinish(draftRef.current, zone, ref))
-      play('click')
+      play('select')
     },
     [apply, play],
   )
@@ -1098,9 +1099,10 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       setPaying(false)
       if (outcome !== 'ok') {
         setNotice(outcome === 'insufficient' ? `Not enough stamps to ${isRepair(ref) ? 'repair' : 'clear'} that yet.` : 'That could not be paid for just now.')
+        play('error')
         return
       }
-      play('coin')
+      play('purchase')
     }
     setOffer(null)
     // Paid for but not started (left Decorate meanwhile): tapping it later finishes the job for free.
@@ -1207,7 +1209,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     <>
       {canEdit && isReady && !isEditing ? (
         <div className="decor-enter-wrap">
-          <button type="button" className="button decor-enter" onClick={() => void enterEdit()}>
+          <button type="button" className="button decor-enter" data-sound onClick={() => void enterEdit()}>
             <span aria-hidden="true">{'✦'}</span> Decorate
           </button>
         </div>

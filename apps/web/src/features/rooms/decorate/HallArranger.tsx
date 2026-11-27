@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Placement } from '@tiny/core'
 import MinigameFrame from '@/features/minigames/components/MinigameFrame'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { currentHallOrder, hallPlacements, reasonLabel } from '@/features/rooms/decorate/logic'
 
 export interface HallRoomData {
@@ -27,6 +28,7 @@ interface HallArrangerProps {
 }
 
 export default function HallArranger({ room, onClose, onPublished }: HallArrangerProps) {
+  const { play } = useSound()
   const [order, setOrder] = useState<string[]>(() => currentHallOrder(room.draft, room.published))
   const [paintings, setPaintings] = useState<Painting[] | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -114,6 +116,7 @@ export default function HallArranger({ room, onClose, onPublished }: HallArrange
     setNotice(null)
     setPublishing(true)
     if (!(await saveDraft())) {
+      play('error')
       setPublishing(false)
       return
     }
@@ -122,6 +125,7 @@ export default function HallArranger({ room, onClose, onPublished }: HallArrange
     try {
       response = await fetch(`/api/rooms/${room.slug}/publish`, { method: 'POST' })
     } catch {
+      play('error')
       setPublishing(false)
       setNotice('The hall could not be published just now.')
       return
@@ -133,14 +137,16 @@ export default function HallArranger({ room, onClose, onPublished }: HallArrange
           ? ((body as { reason?: unknown; error?: unknown }).reason ??
             (body as { error?: unknown }).error)
           : null
+      play('error')
       setPublishing(false)
       setNotice(reasonLabel(typeof reason === 'string' ? reason : null))
       return
     }
 
+    play('confirm')
     setPublishing(false)
     onPublished()
-  }, [onPublished, room.slug, saveDraft])
+  }, [onPublished, play, room.slug, saveDraft])
 
   return (
     <MinigameFrame
@@ -243,10 +249,10 @@ export default function HallArranger({ room, onClose, onPublished }: HallArrange
               {status}
             </span>
           ) : null}
-          <button type="button" className="button arranger-btn" onClick={() => void saveDraft()} disabled={saving || publishing}>
+          <button type="button" className="button arranger-btn" data-sound onClick={() => { void saveDraft().then((ok) => play(ok ? 'confirm' : 'error')) }} disabled={saving || publishing}>
             {saving ? 'Saving…' : 'Save draft'}
           </button>
-          <button type="button" className="button arranger-publish" onClick={() => void publish()} disabled={saving || publishing}>
+          <button type="button" className="button arranger-publish" data-sound onClick={() => void publish()} disabled={saving || publishing}>
             {publishing ? 'Publishing…' : 'Publish'}
           </button>
         </footer>

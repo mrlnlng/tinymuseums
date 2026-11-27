@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { MESSAGE_MAX } from '@tiny/core/presence/messages'
 import {
   getPeople,
@@ -28,6 +29,7 @@ const REFUSED: Record<Exclude<SayResult, { ok: true }>['reason'], string> = {
 
 /** Shown only while this page shares a room, so there is someone who could read it. */
 export default function ChatButton() {
+  const { play } = useSound()
   const [inRoom, setInRoom] = useState(false)
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -36,45 +38,66 @@ export default function ChatButton() {
   const [, setMutes] = useState(0)
   const control = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
+  const openRef = useRef(false)
+
+  const openPanel = useCallback(() => {
+    if (openRef.current) return
+    openRef.current = true
+    setOpen(true)
+    play('open')
+  }, [play])
+
+  const closePanel = useCallback(() => {
+    if (!openRef.current) return
+    openRef.current = false
+    setOpen(false)
+    play('close')
+  }, [play])
 
   useEffect(() => {
     setInRoom(isInRoom())
     const stops = [
       onInRoomChange(() => {
         setInRoom(isInRoom())
-        if (!isInRoom()) setOpen(false)
+        if (!isInRoom()) {
+          openRef.current = false
+          setOpen(false)
+        }
       }),
       onPeopleChange(() => setPeople(getPeople())),
       onMutedChange(() => setMutes((n) => n + 1)),
       onOpenChat(() => {
-        if (isInRoom()) setOpen(true)
+        if (isInRoom()) openPanel()
       }),
       onSayResult((result) => {
         if (result.ok) {
+          play('confirm')
+          openRef.current = false
           setText('')
           setNote(null)
           setOpen(false)
         } else {
+          play('error')
           setNote(REFUSED[result.reason])
         }
       }),
     ]
     return () => stops.forEach((stop) => stop())
-  }, [])
+  }, [openPanel, play])
 
   useEffect(() => {
     if (!open) return
     input.current?.focus()
     const onPointer = (event: PointerEvent) => {
-      if (!control.current?.contains(event.target as Node)) setOpen(false)
+      if (!control.current?.contains(event.target as Node)) closePanel()
     }
     window.addEventListener('pointerdown', onPointer)
     return () => {
       window.removeEventListener('pointerdown', onPointer)
     }
-  }, [open])
+  }, [open, closePanel])
 
-  useEscapeKey(() => setOpen(false), open)
+  useEscapeKey(closePanel, open)
 
   if (!inRoom) return null
   return (
@@ -82,9 +105,11 @@ export default function ChatButton() {
       <button
         type="button"
         className="chrome-button chat-toggle"
+        data-sound
         onClick={() => {
-          setOpen(!open)
           setNote(null)
+          if (open) closePanel()
+          else openPanel()
         }}
         aria-label="Say something to other visitors"
         aria-expanded={open}

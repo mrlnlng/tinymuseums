@@ -153,6 +153,8 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
   const revealRef = useRef<SketchReveal | null>(null)
   const revealForRef = useRef<LoadedRound | null>(null)
   const drawnRef = useRef(0)
+  const hasOpened = useRef(false)
+  const previousPhase = useRef<Phase>('choosing')
   const poolSizeRef = useRef(prepared?.first.round.poolSize ?? 0)
   const abortRef = useRef<AbortController | null>(null)
   const roundsRef = useRef(
@@ -189,6 +191,17 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       abortRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    if (hasOpened.current) return
+    hasOpened.current = true
+    play('open')
+  }, [play])
+
+  useEffect(() => {
+    if (phase === 'error' && previousPhase.current !== 'error') play('error')
+    previousPhase.current = phase
+  }, [phase, play])
 
   useEscapeKey(onClose)
 
@@ -292,7 +305,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       if (milestone) setBonus((n) => n + 1)
       setBestStreak(saveIfHigher(BEST_STREAK_KEY, nextStreak))
       setPhase('answered')
-      play(milestone ? 'harp' : correct ? 'coin' : 'click')
+      play(milestone ? 'level-up' : correct ? 'success' : 'failure')
     },
     [phase, loaded, play, streak, step],
   )
@@ -332,9 +345,11 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       bonus,
       url: `${window.location.origin}/museum`,
     })
-    play('click')
     track('sketch_share')
-    setShareOutcome(await shareResult(text))
+    const outcome = await shareResult(text)
+    setShareOutcome(outcome)
+    if (outcome === 'shared' || outcome === 'copied') play('confirm')
+    else if (outcome === 'failed') play('error')
   }, [mode, difficulty, scores, bonus, play])
 
   useEffect(() => {
@@ -351,9 +366,8 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
       setDifficulty(level)
       setStarted(true)
       track('sketch_start')
-      play('click')
     },
-    [mode, play],
+    [mode],
   )
 
   useEffect(() => {
@@ -443,7 +457,10 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
                   role="radio"
                   aria-checked={option === mode}
                   className={option === mode ? 'is-selected' : undefined}
-                  onClick={() => setMode(option)}
+                  onClick={() => {
+                    setMode(option)
+                    play('select')
+                  }}
                 >
                   {MODES[option].label}
                 </button>
@@ -456,7 +473,10 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
                   key={level}
                   type="button"
                   className={`sketchbook-level${level === difficulty ? ' is-last' : ''}`}
-                  onClick={() => startGame(level)}
+                  onClick={() => {
+                    play('select')
+                    startGame(level)
+                  }}
                 >
                   <span className="sketchbook-level-name">{level}</span>
                   <span className="sketchbook-level-hint">{LEVEL_HINTS[level]}</span>
@@ -494,7 +514,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
               Best on {spec.label.toLowerCase()}, {difficulty}: {best} · Best streak: {bestStreak}
             </p>
             <div className="sketchbook-actions">
-              <button type="button" className="button" onClick={share}>
+              <button type="button" className="button" data-sound onClick={share}>
                 {shareOutcome === 'copied'
                   ? 'Copied!'
                   : shareOutcome === 'failed'
@@ -504,7 +524,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
               <button type="button" className="button secondary" onClick={playAgain}>
                 Play again
               </button>
-              <button type="button" className="button secondary" onClick={onClose}>
+              <button type="button" className="button secondary" data-sound onClick={onClose}>
                 Back to the hall
               </button>
             </div>

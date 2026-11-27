@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useWallet } from '@/features/economy/hooks'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { KEEPSAKES, catchArt, ownedKeepsakes } from '../lib/journal'
@@ -12,14 +13,23 @@ import PondMusic from './PondMusic'
 import { onOpenCamera, type CameraView } from './camera-events'
 
 function AlbumOverlay({ onClose }: { onClose(): void }) {
+  const { play } = useSound()
   const ref = useModalFocus()
-  useEscapeKey(onClose)
+  function close() {
+    play('close')
+    onClose()
+  }
+  useEffect(() => {
+    play('open')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEscapeKey(close)
   return (
     <div className="pond-keepsake-dim" role="dialog" aria-modal="true" aria-labelledby="room-album-title">
       <div ref={ref} className="room-album">
         <header className="room-album-head">
           <h2 id="room-album-title">Photo album</h2>
-          <button type="button" className="pond-keepsake-round is-quiet" onClick={onClose} aria-label="Close the album">
+          <button type="button" className="pond-keepsake-round is-quiet" onClick={close} aria-label="Close the album">
             ✕
           </button>
         </header>
@@ -45,6 +55,7 @@ function ToolIcon() {
 /** Members' gadgets, found as the Basic and Fine sunken treasures, usable in every room. */
 export default function Gadgets() {
   const pathname = usePathname()
+  const { play } = useSound()
   const wallet = useWallet()
   const owned = wallet.isMember ? ownedKeepsakes(wallet.items) : []
   const [menu, setMenu] = useState(false)
@@ -59,6 +70,7 @@ export default function Gadgets() {
     setMenu(false)
   }, [pathname])
   useEscapeKey(() => {
+    play('close')
     setMenu(false)
     toggle.current?.focus()
   }, menu)
@@ -121,7 +133,10 @@ export default function Gadgets() {
             title="Gadgets"
             aria-expanded={menu}
             aria-controls="gadget-menu"
-            onClick={() => setMenu((open) => !open)}
+            onClick={() => {
+              play(menu ? 'close' : 'open')
+              setMenu((open) => !open)
+            }}
           >
             <ToolIcon />
           </button>

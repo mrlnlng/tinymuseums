@@ -9,6 +9,20 @@ import { useSoundEffects, type EffectName } from '@/features/sound/hooks/useSoun
 
 const HALL_TRACK = process.env.NEXT_PUBLIC_MUSIC_URL ?? staticUrl('/audio/hall.mp3')
 const ATELIER_TRACK = process.env.NEXT_PUBLIC_ATELIER_MUSIC_URL ?? staticUrl('/audio/atelier.mp3')
+const POND_TRACK = process.env.NEXT_PUBLIC_POND_MUSIC_URL ?? staticUrl('/audio/pond.mp3')
+const ROOM_TRACK = process.env.NEXT_PUBLIC_ROOM_MUSIC_URL ?? staticUrl('/audio/room.mp3')
+
+/** The pond and the visitors' own rooms sound too, though they are not tracked as public pages. */
+function hasSound(pathname: string): boolean {
+  return isPublicPage(pathname) || pathname === '/museum/pond' || pathname === '/museum/home' || pathname.startsWith('/museum/r/')
+}
+
+function trackFor(pathname: string): string {
+  if (pathname === '/museum/atelier') return ATELIER_TRACK
+  if (pathname === '/museum/pond') return POND_TRACK
+  if (pathname === '/museum/home' || pathname.startsWith('/museum/r/')) return ROOM_TRACK
+  return HALL_TRACK
+}
 
 interface SoundState {
   isEnabled: boolean
@@ -43,9 +57,9 @@ export function useSound(): SoundState {
 
 export default function SoundProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isInMuseum = isPublicPage(pathname)
+  const isInMuseum = hasSound(pathname)
 
-  const track = pathname === '/museum/atelier' ? ATELIER_TRACK : HALL_TRACK
+  const track = trackFor(pathname)
   const [isHeld, setIsHeld] = useState(false)
   const music = useBackgroundMusic({ isAllowed: isInMuseum && !isHeld, track })
   const effects = useSoundEffects(music.isEnabled && isInMuseum, music.volume)

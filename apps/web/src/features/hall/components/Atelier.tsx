@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SpotPainting } from '@tiny/core'
 import { AnimatePresence } from 'motion/react'
 import { outfit, restamp } from '@tiny/core/slots'
@@ -18,6 +18,7 @@ import type { DoorRef } from '@/features/rooms/types'
 import { lookOf, ownedLook, shouldRewriteOutfit } from '@/features/hall/scene/wardrobe'
 import { allowedCharacter, owns, useWallet } from '@/features/economy'
 import type { CharacterKind } from '@/features/hall/scene/rig'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useSlot } from '@/shared/lib/slots'
 
 export default function Atelier({ spots, from }: { spots: Record<string, SpotPainting>; from: string | null }) {
@@ -27,9 +28,12 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
   const [becoming, setBecoming] = useState<CharacterKind | null>(null)
   const [closetOpen, setClosetOpen] = useState(false)
   const [dressing, setDressing] = useState<{ costume: string | null; bow: string | null } | null>(null)
+  const { play } = useSound()
+  const playRef = useRef(play)
+  playRef.current = play
   const [hooks] = useState<AtelierHooks>(() => ({
-    onMirror: () => setMirrorOpen(true),
-    onCloset: () => setClosetOpen(true),
+    onMirror: () => { playRef.current('open'); setMirrorOpen(true) },
+    onCloset: () => { playRef.current('open'); setClosetOpen(true) },
     become: { current: null },
     dress: { current: null },
     wardrobeDoors: { current: null },

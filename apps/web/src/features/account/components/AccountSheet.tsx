@@ -8,6 +8,7 @@ import type { AccountMode as Mode } from '@/features/account/lib/account'
 import { useVisitorName, type NameError } from '@/features/presence/lib/useVisitorName'
 import WalkAlone from '@/features/presence/components/WalkAlone'
 import Purse from '@/features/economy/components/Purse'
+import { useSound } from '@/features/sound/components/SoundProvider'
 
 type View = 'menu' | 'name' | 'password' | 'delete'
 
@@ -34,6 +35,7 @@ export default function AccountSheet({
   initialMode?: Mode
 }) {
   const dialogRef = useModalFocus()
+  const { play } = useSound()
   const { member, refreshMember, signUp, signIn, changePassword, signOut, deleteAccount } = useMember()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [view, setView] = useState<View>('menu')
@@ -83,7 +85,9 @@ export default function AccountSheet({
         const result = await signUp(email, password)
         if (result === null) {
           setPassword('')
+          play('confirm')
         } else {
+          play('error')
           setError(
             result === 'email_taken'
               ? 'That email already has an account — sign in instead.'
@@ -92,10 +96,16 @@ export default function AccountSheet({
         }
       } else {
         const ok = await signIn(email, password)
-        if (ok) setPassword('')
-        else setError("That email and password don't match.")
+        if (ok) {
+          setPassword('')
+          play('confirm')
+        } else {
+          play('error')
+          setError("That email and password don't match.")
+        }
       }
     } catch {
+      play('error')
       setError(FAILED)
     } finally {
       setBusy(false)
@@ -113,10 +123,13 @@ export default function AccountSheet({
         setCurrent('')
         setNext('')
         setNotice('Password changed.')
+        play('confirm')
       } else {
+        play('error')
         setError(PASSWORD_FAILED)
       }
     } catch {
+      play('error')
       setError(FAILED)
     } finally {
       setBusy(false)
@@ -129,10 +142,12 @@ export default function AccountSheet({
     try {
       const failed = await change()
       if (failed) {
+        play('error')
         setError(NAME_ERRORS[failed])
       } else {
         setView('menu')
         setNotice('Name saved.')
+        play('confirm')
       }
     } finally {
       setBusy(false)
@@ -150,7 +165,9 @@ export default function AccountSheet({
     try {
       const result = await signOut({ force })
       if (result === 'dirty') setPending({ action: 'sign-out' })
+      else play('confirm')
     } catch {
+      play('error')
       setError(FAILED)
     } finally {
       setBusy(false)
@@ -166,10 +183,13 @@ export default function AccountSheet({
         setPending({ action: 'delete', password: passwordValue })
       } else if (result === true) {
         setDeletePassword('')
+        play('confirm')
       } else {
+        play('error')
         setError(DELETE_FAILED)
       }
     } catch {
+      play('error')
       setError(FAILED)
     } finally {
       setBusy(false)
@@ -250,10 +270,10 @@ export default function AccountSheet({
           ) : null}
 
           <div className="bug-report-actions">
-            <button type="button" className="button quiet" onClick={onClose}>
+            <button type="button" className="button quiet" onClick={onClose} data-sound>
               Close
             </button>
-            <button type="submit" className="button" disabled={busy}>
+            <button type="submit" className="button" disabled={busy} data-sound>
               {mode === 'create' ? 'Create account' : 'Sign in'}
             </button>
           </div>
@@ -284,7 +304,7 @@ export default function AccountSheet({
             >
               Cancel
             </button>
-            <button type="button" className="button" disabled={busy} onClick={continueAnyway}>
+            <button type="button" className="button" disabled={busy} onClick={continueAnyway} data-sound>
               Continue anyway
             </button>
           </div>
@@ -341,6 +361,7 @@ export default function AccountSheet({
                 className="button quiet"
                 disabled={busy}
                 onClick={() => void doSignOut(false)}
+                data-sound
               >
                 Sign out
               </button>
@@ -392,7 +413,7 @@ export default function AccountSheet({
                 >
                   Cancel
                 </button>
-                <button type="submit" className="button" disabled={busy}>
+                <button type="submit" className="button" disabled={busy} data-sound>
                   Save
                 </button>
               </div>
@@ -431,7 +452,7 @@ export default function AccountSheet({
                 >
                   Cancel
                 </button>
-                <button type="submit" className="button" disabled={busy}>
+                <button type="submit" className="button" disabled={busy} data-sound>
                   Save
                 </button>
               </div>
@@ -463,7 +484,7 @@ export default function AccountSheet({
                 >
                   Cancel
                 </button>
-                <button type="submit" className="button quiet account-danger" disabled={busy}>
+                <button type="submit" className="button quiet account-danger" disabled={busy} data-sound>
                   Delete account
                 </button>
               </div>

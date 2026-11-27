@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 
 export default function FollowForm({ slug, artistName }: { slug: string; artistName: string }) {
+  const { play } = useSound()
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -16,8 +18,11 @@ export default function FollowForm({ slug, artistName }: { slug: string; artistN
         body: JSON.stringify({ slug, email: formData.get('email') }),
       })
       const data = (await response.json()) as { message?: string; error?: string }
+      if (response.ok) play('confirm')
+      else play('error')
       setMessage(data.message ?? data.error ?? 'Something went wrong')
     } catch {
+      play('error')
       setMessage('Could not reach the museum. Try again in a moment.')
     } finally {
       setBusy(false)
@@ -55,7 +60,7 @@ export default function FollowForm({ slug, artistName }: { slug: string; artistN
                 One email when there is new work. Nothing else, and no account needed.
               </span>
             </div>
-            <button className="button" type="submit" disabled={busy}>
+            <button className="button" type="submit" disabled={busy} data-sound>
               {busy ? 'Sending…' : 'Follow'}
             </button>
           </motion.form>

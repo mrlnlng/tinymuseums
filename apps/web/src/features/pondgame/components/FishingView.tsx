@@ -118,6 +118,7 @@ function isTyping(target: EventTarget | null): boolean {
 export default function FishingView({ onClose, onCatch, spotUnavailable = false }: PondGameProps) {
   const wallet = useWallet()
   const sound = useSound()
+  const play = sound.play
   const reduced = useReducedMotion() ?? false
   const sfx = useMemo(() => createPondSfx(), [])
   const debug = useMemo(() => debugTokens(), [])
@@ -224,13 +225,17 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       event.preventDefault()
-      if (settingsOpen) setSettingsOpen(false)
-      else if (pickerOpen) setPickerOpen(false)
-      else if (!reveal) onClose()
+      if (settingsOpen) {
+        play('close')
+        setSettingsOpen(false)
+      } else if (pickerOpen) {
+        play('close')
+        setPickerOpen(false)
+      } else if (!reveal) onClose()
     }
     window.addEventListener('keydown', escape)
     return () => window.removeEventListener('keydown', escape)
-  }, [onClose, pickerOpen, reveal, settingsOpen])
+  }, [onClose, pickerOpen, play, reveal, settingsOpen])
 
   useEffect(() => {
     return () => {
@@ -319,6 +324,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const buyBait = useCallback(
     async (baitId: BaitId) => {
       if (!memberRef.current) {
+        play('error')
         showToast('Sign in to buy bait packs.')
         return
       }
@@ -327,6 +333,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       const result = await buyPondBait(baitId)
       setBuying(null)
       if (!result.ok) {
+        play('error')
         showToast(
           result.error === 'insufficient' ? 'Not enough pearls for that pack.' : 'That pack could not be bought just now.',
         )
@@ -335,10 +342,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       publishPondState(result.value)
       pondStateRef.current = result.value
       setSelectedBaitState(baitId)
-      sfx.play('coin')
+      play('purchase')
       showToast(`Bought ${BAIT_BY_ID[baitId].pack} ${BAIT_BY_ID[baitId].name.toLowerCase()}.`)
     },
-    [sfx, showToast],
+    [play, showToast],
   )
 
   const finishReel = useCallback(
@@ -766,9 +773,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   }, [bumpStreakChip, resetToIdle])
 
   const selectBait = useCallback((bait: BaitId) => {
+    play('select')
     setSelectedBaitState(bait)
     selectedBaitRef.current = bait
-  }, [])
+  }, [play])
 
   const openWagerPicker = useCallback(() => {
     if (!memberRef.current) {
@@ -777,7 +785,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     }
     setSettingsOpen(false)
     setPickerOpen(true)
-  }, [showToast])
+    play('open')
+  }, [play, showToast])
 
   const lockWager = useCallback(
     (wager: { tier: FishTier; stake: number }) => {
@@ -793,6 +802,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     async (catchId: string) => {
       const result = await chainPondBait(catchId)
       if (!result.ok) {
+        play('error')
         showToast(
           result.error === 'not_chainable'
             ? 'That catch cannot be used as live bait.'
@@ -809,16 +819,22 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       showToast('Live bait hooked — the next cast hunts bigger fish.', undefined, 2800)
       return true
     },
-    [bumpStreakChip, resetToIdle, sfx, showToast],
+    [bumpStreakChip, play, resetToIdle, sfx, showToast],
   )
 
-  const toggleSettings = useCallback(() => setSettingsOpen((open) => !open), [])
+  const toggleSettings = useCallback(() => {
+    play(settingsOpen ? 'close' : 'open')
+    setSettingsOpen((open) => !open)
+  }, [play, settingsOpen])
   const toggleEasyReel = useCallback(() => {
     const next = !easyRef.current
     writeLocal('tm:pond:reel', next ? 'easy' : 'normal')
     setEasyReel(next)
   }, [])
-  const closePicker = useCallback(() => setPickerOpen(false), [])
+  const closePicker = useCallback(() => {
+    play('close')
+    setPickerOpen(false)
+  }, [play])
 
   const phase = state.phase
   const member = wallet.isMember

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { refreshWalletNow, useWallet } from '@/features/economy'
 import {
   buyPondBait,
@@ -40,6 +41,7 @@ type Tone = 'ok' | 'warn'
 
 function BaitShop() {
   const snapshot = usePondState()
+  const { play } = useSound()
   const [busy, setBusy] = useState<PondShopBaitId | null>(null)
   const [notice, setNotice] = useState<{ tone: Tone; text: string } | null>(null)
   const pearls = snapshot.state?.pearls ?? 0
@@ -51,6 +53,7 @@ function BaitShop() {
     const result = await buyPondBait(bait)
     setBusy(null)
     if (!result.ok) {
+      play('error')
       if (result.status === 401 || result.error === 'signed_out') {
         setNotice({ tone: 'warn', text: 'Sign in to buy bait. Guests fish with the free worm.' })
       } else if (result.error === 'insufficient') {
@@ -63,6 +66,7 @@ function BaitShop() {
       }
       return
     }
+    play('purchase')
     setPondState(result.value)
     setNotice({
       tone: 'ok',
@@ -126,6 +130,7 @@ function BaitShop() {
 
 function Exchange() {
   const snapshot = usePondState()
+  const { play } = useSound()
   const wallet = useWallet()
   const [amount, setAmount] = useState(EXCHANGE_PEARLS_PER_STAMP)
   const [remaining, setRemaining] = useState(EXCHANGE_DAILY_STAMPS)
@@ -153,6 +158,7 @@ function Exchange() {
     const result = await exchangePondPearls(amount)
     setBusy(false)
     if (!result.ok) {
+      play('error')
       if (result.status === 401 || result.error === 'signed_out') {
         setNotice({ tone: 'warn', text: 'Sign in to exchange pearls for stamps.' })
       } else if (result.error === 'insufficient') {
@@ -163,6 +169,7 @@ function Exchange() {
       return
     }
 
+    play('purchase')
     const { state, granted, capped } = result.value
     setRemaining((current) => (capped ? 0 : Math.max(0, current - granted)))
     setConfirmed(true)
@@ -207,7 +214,10 @@ function Exchange() {
         <button
           type="button"
           className="pond-room-stepper-button"
-          onClick={() => setAmount((current) => Math.max(EXCHANGE_PEARLS_PER_STAMP, current - EXCHANGE_PEARLS_PER_STAMP))}
+          onClick={() => {
+            play('select')
+            setAmount((current) => Math.max(EXCHANGE_PEARLS_PER_STAMP, current - EXCHANGE_PEARLS_PER_STAMP))
+          }}
           disabled={!snapshot.isMember || busy || amount <= EXCHANGE_PEARLS_PER_STAMP}
           aria-label={`${EXCHANGE_PEARLS_PER_STAMP} fewer pearls`}
         >
@@ -225,7 +235,10 @@ function Exchange() {
         <button
           type="button"
           className="pond-room-stepper-button"
-          onClick={() => setAmount((current) => Math.min(max, current + EXCHANGE_PEARLS_PER_STAMP))}
+          onClick={() => {
+            play('select')
+            setAmount((current) => Math.min(max, current + EXCHANGE_PEARLS_PER_STAMP))
+          }}
           disabled={!snapshot.isMember || busy || amount >= max}
           aria-label={`${EXCHANGE_PEARLS_PER_STAMP} more pearls`}
         >
@@ -252,6 +265,7 @@ function Exchange() {
 
 function Odds() {
   const snapshot = usePondState()
+  const { play } = useSound()
   const [bait, setBait] = useState<PondBaitId>('worm')
   const [view, setView] = useState<PondStateView | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
@@ -298,7 +312,10 @@ function Odds() {
               type="button"
               className={`pond-room-odds-bait${bait === entry.id ? ' is-active' : ''}`}
               aria-pressed={bait === entry.id}
-              onClick={() => setBait(entry.id)}
+              onClick={() => {
+                play('select')
+                setBait(entry.id)
+              }}
             >
               {entry.name}
             </button>
@@ -407,6 +424,7 @@ function Odds() {
 }
 
 export default function FishmongerPanel() {
+  const { play } = useSound()
   const [tab, setTab] = useState<Tab>('bait')
 
   return (
@@ -419,7 +437,10 @@ export default function FishmongerPanel() {
             role="tab"
             aria-selected={tab === entry.id}
             className={`pond-room-tab${tab === entry.id ? ' is-active' : ''}`}
-            onClick={() => setTab(entry.id)}
+            onClick={() => {
+              play('select')
+              setTab(entry.id)
+            }}
           >
             {entry.label}
           </button>

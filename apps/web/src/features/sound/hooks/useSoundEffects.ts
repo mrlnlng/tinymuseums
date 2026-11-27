@@ -13,6 +13,24 @@ const EFFECTS = {
   'cafe-hello': { file: staticUrl('/audio/sfx-cafe-hello.mp3'), volume: 0.87, start: 0.48, end: 1.3 },
   coin: { file: staticUrl('/audio/sfx-coin.mp3'), volume: 0.72, start: 0.06 },
   jump: { file: staticUrl('/audio/sfx-jump.mp3'), volume: 2.5 },
+  // "Cute & Cozy UI" pack (Case Portman Audio), loudness-matched; see public/audio/README.md.
+  open: { file: staticUrl('/audio/ui/open.mp3'), volume: 0.5 },
+  close: { file: staticUrl('/audio/ui/close.mp3'), volume: 0.45 },
+  select: { file: staticUrl('/audio/ui/select.mp3'), volume: 0.5 },
+  confirm: { file: staticUrl('/audio/ui/confirm.mp3'), volume: 0.6 },
+  purchase: { file: staticUrl('/audio/ui/purchase.mp3'), volume: 0.6 },
+  sell: { file: staticUrl('/audio/ui/sell.mp3'), volume: 0.6 },
+  error: { file: staticUrl('/audio/ui/error.mp3'), volume: 0.5 },
+  warning: { file: staticUrl('/audio/ui/warning.mp3'), volume: 0.5 },
+  unlock: { file: staticUrl('/audio/ui/unlock.mp3'), volume: 0.6 },
+  lock: { file: staticUrl('/audio/ui/lock.mp3'), volume: 0.55 },
+  'level-up': { file: staticUrl('/audio/ui/level-up.mp3'), volume: 0.6 },
+  success: { file: staticUrl('/audio/ui/success.mp3'), volume: 0.55 },
+  failure: { file: staticUrl('/audio/ui/failure.mp3'), volume: 0.5 },
+  tick: { file: staticUrl('/audio/ui/tick.mp3'), volume: 0.45 },
+  chat: { file: staticUrl('/audio/ui/chat.mp3'), volume: 0.55 },
+  blip: { file: staticUrl('/audio/ui/blip.mp3'), volume: 0.35 },
+  transition: { file: staticUrl('/audio/ui/transition.mp3'), volume: 0.5 },
 } as const
 
 export type EffectName = keyof typeof EFFECTS
@@ -29,6 +47,12 @@ const FOOTSTEPS = { file: staticUrl('/audio/sfx-footsteps.mp3'), volume: 0.3 }
 const VOICES = 3
 
 const CLICKABLE = '.button, .chrome-button, .gift-shop-button'
+// A control that plays its own effect opts out of the generic click with data-sound.
+const OWN_SOUND = '[data-sound]'
+
+// The same effect fired again within this window is dropped, so a burst of
+// events (a double tap, a re-render) never stacks into something loud.
+const REPEAT_MS = 60
 
 export interface SoundEffects {
   play: (name: EffectName) => void
@@ -44,6 +68,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const isWalkingRef = useRef(false)
   const clipsRef = useRef(new Map<EffectName, AudioBuffer | null>())
   const sourcesRef = useRef(new Map<EffectName, AudioBufferSourceNode>())
+  const lastPlayedRef = useRef(new Map<EffectName, number>())
 
   const volumeRef = useRef(volume)
   volumeRef.current = volume
@@ -122,6 +147,11 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const play = useCallback(
     (name: EffectName) => {
       if (!isEnabled) return
+
+      const now = performance.now()
+      const last = lastPlayedRef.current.get(name)
+      if (last !== undefined && now - last < REPEAT_MS) return
+      lastPlayedRef.current.set(name, now)
 
       const spec = EFFECTS[name] as EffectSpec
       const clip = clipsRef.current.get(name)
@@ -215,7 +245,7 @@ export function useSoundEffects(isEnabled: boolean, volume: number): SoundEffect
   const bindClickSound = useCallback(() => {
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest(CLICKABLE)) play('click')
+      if (target?.closest(CLICKABLE) && !target.closest(OWN_SOUND)) play('click')
     }
     document.addEventListener('pointerdown', handlePointerDown, { passive: true })
     return () => document.removeEventListener('pointerdown', handlePointerDown)

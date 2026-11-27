@@ -2,6 +2,7 @@
 
 import { PearlIcon } from '../lib/icons'
 import { useEffect, useState } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { claimPondBounty, fetchPondBounties, type PondBounties } from '../lib/pond-api'
 import { formatInteger, nextUtcMidnight, utcDayLabel } from '../lib/pond-format'
 import { setPondState } from '../lib/pond-state'
@@ -13,6 +14,7 @@ function dayLabel(day: string): string {
 }
 
 export default function BountyPanel() {
+  const { play } = useSound()
   const [data, setData] = useState<PondBounties | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'guest' | 'error'>('loading')
   const [claiming, setClaiming] = useState<string | null>(null)
@@ -46,6 +48,7 @@ export default function BountyPanel() {
     const result = await claimPondBounty(id)
     setClaiming(null)
     if (!result.ok) {
+      play('error')
       if (result.error === 'already_claimed') {
         setNotice({ tone: 'warn', text: 'That bounty was already claimed today.' })
       } else if (result.error === 'not_done') {
@@ -55,6 +58,7 @@ export default function BountyPanel() {
       }
       return
     }
+    play('level-up')
     setData(result.value.bounties)
     setPondState(result.value.state)
     const claimed = result.value.bounties.bounties.find((bounty) => bounty.id === id)

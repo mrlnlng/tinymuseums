@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { PearlIcon } from '@/features/pondroom/lib/icons'
 import { BAIT, type BaitId } from '../lib/tables.ts'
 
@@ -36,6 +37,7 @@ export default function BaitTray({
   extras,
   children,
 }: BaitTrayProps) {
+  const { play } = useSound()
   const pouchRef = useRef<HTMLDetailsElement>(null)
   useEffect(() => {
     if (disabled && pouchRef.current) pouchRef.current.open = false
@@ -49,7 +51,13 @@ export default function BaitTray({
       </div>
       <div className="pond-panel-body">
         {isMember ? <details className="pond-bait-pouch" ref={pouchRef}>
-          <summary aria-label="Choose bait" aria-disabled={disabled} onClick={(event) => { if (disabled) event.preventDefault() }}>
+          <summary aria-label="Choose bait" aria-disabled={disabled} onClick={(event) => {
+            if (disabled) {
+              event.preventDefault()
+              return
+            }
+            play(pouchRef.current?.open ? 'close' : 'open')
+          }}>
             <span aria-hidden="true">{bait.glyph}</span>
             <span>{bait.name}<small>{count} · Bait pouch</small></span>
           </summary>

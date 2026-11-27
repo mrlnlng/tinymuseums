@@ -151,7 +151,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
     const outcome = await buy(itemId)
     setBuying(null)
     if (outcome === 'ok') {
-      play('coin')
+      play('purchase')
       then()
       if (bought) {
         setJustBought(bought)
@@ -159,6 +159,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
       }
       return
     }
+    play('error')
     setShopNote(outcome === 'insufficient' ? 'Not enough stamps for that yet.' : 'That could not be bought just now.')
   }
 
@@ -185,12 +186,13 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
     if (trying?.ref === finish) {
       setTrying(null)
       onPreviewFinish(zone, null)
+      play('select')
       return
     }
     if (trying && trying.zone !== zone) onPreviewFinish(trying.zone, null)
     setTrying({ zone, ref: finish })
     onPreviewFinish(zone, finish)
-    play('click')
+    play('select')
   }
 
   function swatch(finish: string): React.CSSProperties {
@@ -252,7 +254,10 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
             role="tab"
             aria-selected={tab === entry.id}
             className={`decor-chip${tab === entry.id ? ' is-selected' : ''}${entry.id === 'shop' ? ' is-shop' : ''}`}
-            onClick={() => setTab(entry.id)}
+            onClick={() => {
+              if (tab !== entry.id) play('select')
+              setTab(entry.id)
+            }}
           >
             {entry.label}
             {entry.id === 'room' ? (

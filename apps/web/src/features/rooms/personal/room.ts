@@ -145,9 +145,13 @@ export function createPersonalRoom({ slug, placements, ownerName, open, canEdit,
           showOpen()
           void setOpen(shownOpen).then((saved) => {
             turning = false
-            if (saved) return
+            if (saved) {
+              ctx.sound.play(shownOpen ? 'unlock' : 'lock')
+              return
+            }
             shownOpen = !shownOpen
             showOpen()
+            ctx.sound.play('error')
           })
         })
       }

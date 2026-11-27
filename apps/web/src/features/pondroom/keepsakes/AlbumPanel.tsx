@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { deletePondPhoto, fetchPondPhotos, type PondPhoto } from '../lib/pond-api'
 import { openCamera } from './camera-events'
 
 const ALBUM_SIZE = 24
 
 export default function AlbumPanel({ hasCamera }: { hasCamera: boolean }) {
+  const { play } = useSound()
   const [photos, setPhotos] = useState<PondPhoto[] | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'guest' | 'error'>('loading')
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -27,7 +29,12 @@ export default function AlbumPanel({ hasCamera }: { hasCamera: boolean }) {
 
   async function remove(id: string) {
     const result = await deletePondPhoto(id)
-    if (result.ok) setPhotos((list) => list?.filter((photo) => photo.id !== id) ?? null)
+    if (result.ok) {
+      play('confirm')
+      setPhotos((list) => list?.filter((photo) => photo.id !== id) ?? null)
+    } else {
+      play('error')
+    }
     setConfirming(null)
   }
 
@@ -51,7 +58,15 @@ export default function AlbumPanel({ hasCamera }: { hasCamera: boolean }) {
                 <button type="button" onClick={() => setConfirming(null)}>Keep</button>
               </span>
             ) : (
-              <button type="button" className="pond-album-delete" aria-label="Delete this photo" onClick={() => setConfirming(photo.id)}>
+              <button
+                type="button"
+                className="pond-album-delete"
+                aria-label="Delete this photo"
+                onClick={() => {
+                  play('warning')
+                  setConfirming(photo.id)
+                }}
+              >
                 ✕
               </button>
             )}

@@ -197,7 +197,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           if (lobby.hitTestCat(raycaster)) {
             track('help')
             earn('secret', { feature: 'help' })
-            ctx.sound.play('click')
+            ctx.sound.play('open')
             callbacks().onOpenHelp()
             return true
           }
@@ -279,7 +279,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           }
           if (guestBoard?.hitTestDesktop(raycaster)) {
             track('sketch_open')
-            ctx.sound.play('click')
+            ctx.sound.play('open')
             callbacks().onOpenComputer()
             return true
           }
@@ -291,7 +291,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           }
           if (guestBoard?.hitTest(raycaster)) {
             track('guest_board')
-            ctx.sound.play('click')
+            ctx.sound.play('open')
             callbacks().onOpenGuestBoard()
             return true
           }
@@ -362,7 +362,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           (id) => {
             const kept = doorsOf('hall').find((d) => d.id === id)
             if (!kept?.guide || ctx.isQuiet() || traversal.isIntro) return
-            ctx.sound.play('click')
+            ctx.sound.play('chat')
             callbacks().onTalkToGuide({ guide: kept.guide, to: kept.to, go: () => enterDoor(id) })
           },
         )

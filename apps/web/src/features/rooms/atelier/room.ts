@@ -169,8 +169,8 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         hitTest(raycaster) {
           const item = room.hitTestItem(raycaster)
           if (item) return { activate: () => closet.tapItem(item) }
-          if (room.hitTestMirror(raycaster)) return { activate: openMirror }
-          if (room.hitTestWardrobe(raycaster)) return { activate: () => hooks.onCloset() }
+          if (room.hitTestMirror(raycaster)) return { silent: true, activate: openMirror }
+          if (room.hitTestWardrobe(raycaster)) return { silent: true, activate: () => hooks.onCloset() }
           const through = room.hitTestDoor(raycaster)
           if (through) return { activate: () => leaveByDoor(through) }
           return null

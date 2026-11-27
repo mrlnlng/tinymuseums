@@ -1,7 +1,8 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 
 interface MinigameFrameProps {
@@ -10,6 +11,10 @@ interface MinigameFrameProps {
   header: ReactNode
   closeLabel?: string
   cardClassName?: string
+  /** Opt in to the shared open/close effects; panels that own their trigger handle their own sound. */
+  sounds?: boolean
+  /** Off when closing this panel immediately opens another one (e.g. back to the desktop). */
+  closeSound?: boolean
   children: ReactNode
 }
 
@@ -19,11 +24,27 @@ export default function MinigameFrame({
   header,
   closeLabel,
   cardClassName,
+  sounds = false,
+  closeSound = true,
   children,
 }: MinigameFrameProps) {
+  const { play } = useSound()
   const isStill = useReducedMotion()
-  useEscapeKey(onClose)
+  const hasOpened = useRef(false)
   const closeText = closeLabel ?? `Close ${label}`
+
+  useEffect(() => {
+    if (!sounds || hasOpened.current) return
+    hasOpened.current = true
+    play('open')
+  }, [play, sounds])
+
+  const handleClose = useCallback(() => {
+    if (sounds && closeSound) play('close')
+    onClose()
+  }, [closeSound, onClose, play, sounds])
+
+  useEscapeKey(handleClose)
 
   return (
     <motion.div
@@ -39,7 +60,7 @@ export default function MinigameFrame({
       <button
         type="button"
         className="sketch-guess-scrim"
-        onClick={onClose}
+        onClick={handleClose}
         aria-label={closeText}
       />
 
@@ -55,7 +76,7 @@ export default function MinigameFrame({
           <button
             type="button"
             className="sketchbook-close"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label={closeText}
           >
             ×

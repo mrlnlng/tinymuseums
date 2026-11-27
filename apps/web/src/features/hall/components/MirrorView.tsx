@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import manifest from '@/generated/asset-manifest.json'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { builtUrl } from '@/shared/lib/assets'
 import { CONFIG } from '../scene/config'
 import { CHARACTER_NAMES } from '../scene/atelier'
@@ -28,6 +29,7 @@ interface Props {
 
 /** The mirror, close up: one character at a time in the glass, the next ones peeking in at its edges. */
 export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose }: Props) {
+  const { play } = useSound()
   const [position, setPosition] = useState(() => MIRROR_KINDS.indexOf(kind))
   const [drag, setDrag] = useState(0)
   const [images, setImages] = useState<Partial<Record<CharacterKind, string>>>({})
@@ -60,12 +62,18 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
   useEffect(() => { centre.current?.focus({ preventScroll: true }) }, [position])
 
   function move(by: number): void {
+    play('select')
     setDrag(0)
     setPosition((p) => p + by)
   }
 
+  function close(): void {
+    play('close')
+    onClose()
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === 'Escape') { event.preventDefault(); onClose() }
+    if (event.key === 'Escape') { event.preventDefault(); close() }
     else if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1) }
     else if (event.key === 'ArrowRight') { event.preventDefault(); move(1) }
     else trapTab(event)
@@ -100,7 +108,9 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
     }
     swiped.current = true
     const velocity = dx / Math.max(1, event.timeStamp - p.t)
-    setPosition((at) => settle(at, dx, width, velocity))
+    const next = settle(position, dx, width, velocity)
+    if (next !== position) play('select')
+    setPosition(next)
     setDrag(0)
   }
 
@@ -112,9 +122,9 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
       aria-modal="true"
       aria-label="The mirror"
       onKeyDown={onKeyDown}
-      onClick={(event) => { if (event.target === event.currentTarget) onClose() }}
+      onClick={(event) => { if (event.target === event.currentTarget) close() }}
     >
-      <button type="button" className="mirror-view-close" aria-label="Close the mirror" onClick={onClose}>
+      <button type="button" className="mirror-view-close" aria-label="Close the mirror" onClick={close}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
       <button type="button" className="mirror-view-turn is-back" aria-label="Previous character" onClick={() => move(-1)}>
@@ -161,7 +171,10 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
                 }}
                 onClick={() => {
                   if (swiped.current) { swiped.current = false; return }
-                  if (here) onBecome(k)
+                  if (here) {
+                    play('select')
+                    onBecome(k)
+                  }
                 }}
               >
                 {images[k] ? <img src={images[k]} alt="" draggable={false} /> : <span className="mirror-view-mist" />}

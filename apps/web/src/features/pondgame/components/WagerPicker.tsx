@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useEffect, useState } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import {
   clampWagerStake,
   formatPayout,
@@ -33,6 +34,7 @@ function WagerPicker({
   onLock,
   onCancel,
 }: WagerPickerProps) {
+  const { play } = useSound()
   const [tier, setTier] = useState<FishTier>('common')
   const [stake, setStake] = useState(0)
   const limits = wagerLimits(pearls, wageredToday)
@@ -51,8 +53,14 @@ function WagerPicker({
   const capBlocked = limits.leftToday < WAGER_MIN
 
   function chooseTier(next: FishTier): void {
+    play('select')
     setTier(next)
     if (stake < 5) setStake(clampWagerStake(20, pearls, wageredToday))
+  }
+
+  function stepStake(direction: 1 | -1): void {
+    play('select')
+    setStake(stepWagerStake(stake, direction, pearls, wageredToday))
   }
 
   return (
@@ -92,7 +100,7 @@ function WagerPicker({
           className="pond-wager-step"
           aria-label="Decrease stake"
           disabled={limits.maxStake < WAGER_MIN || stake <= WAGER_MIN}
-          onClick={() => setStake(stepWagerStake(stake, -1, pearls, wageredToday))}
+          onClick={() => stepStake(-1)}
         >
           −
         </button>
@@ -106,7 +114,7 @@ function WagerPicker({
           className="pond-wager-step"
           aria-label="Increase stake"
           disabled={limits.maxStake < WAGER_MIN || stake >= limits.maxStake}
-          onClick={() => setStake(stepWagerStake(stake, 1, pearls, wageredToday))}
+          onClick={() => stepStake(1)}
         >
           +
         </button>

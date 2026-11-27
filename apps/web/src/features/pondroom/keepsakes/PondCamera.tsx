@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { composeJpeg } from '@/features/rooms/snapshot'
 import { useStage } from '@/features/rooms/MuseumStage'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { uploadPondPhoto } from '../lib/pond-api'
@@ -17,17 +18,34 @@ const ERRORS: Record<string, string> = {
 
 function Polaroid({ shot, onRetake, onKept }: { shot: Shot; onRetake(): void; onKept(): void }) {
   const ref = useModalFocus()
+  const { play } = useSound()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  useEscapeKey(onRetake)
+
+  function retake() {
+    play('close')
+    onRetake()
+  }
+
+  useEffect(() => {
+    play('open')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEscapeKey(retake)
 
   async function keep() {
     setSaving(true)
     setError(null)
     const result = await uploadPondPhoto(shot.blob)
     setSaving(false)
-    if (result.ok) onKept()
-    else setError(ERRORS[result.error] ?? 'The photo could not be saved just now.')
+    if (result.ok) {
+      play('confirm')
+      onKept()
+    } else {
+      play('error')
+      setError(ERRORS[result.error] ?? 'The photo could not be saved just now.')
+    }
   }
 
   return (
@@ -45,7 +63,7 @@ function Polaroid({ shot, onRetake, onKept }: { shot: Shot; onRetake(): void; on
           </p>
         ) : null}
         <div className="pond-keepsake-photo-actions">
-          <button type="button" className="pond-keepsake-button is-quiet" onClick={onRetake} disabled={saving}>
+          <button type="button" className="pond-keepsake-button is-quiet" onClick={retake} disabled={saving}>
             Retake
           </button>
           <button type="button" className="pond-keepsake-button" onClick={keep} disabled={saving}>
@@ -59,11 +77,23 @@ function Polaroid({ shot, onRetake, onKept }: { shot: Shot; onRetake(): void; on
 
 export default function PondCamera({ onClose, onAlbum }: { onClose(): void; onAlbum(): void }) {
   const stage = useStage()
+  const { play } = useSound()
   const [shot, setShot] = useState<Shot | null>(null)
   const [busy, setBusy] = useState(false)
   const [flash, setFlash] = useState(false)
   const [note, setNote] = useState<string | null>(null)
-  useEscapeKey(onClose, shot === null)
+
+  function close() {
+    play('close')
+    onClose()
+  }
+
+  useEffect(() => {
+    play('open')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEscapeKey(close, shot === null)
 
   useEffect(() => () => {
     if (shot) URL.revokeObjectURL(shot.url)
@@ -79,7 +109,10 @@ export default function PondCamera({ onClose, onAlbum }: { onClose(): void; onAl
     setFlash(false)
     setBusy(false)
     if (blob) setShot({ blob, url: URL.createObjectURL(blob), at: new Date(), place: document.title })
-    else setNote('The camera could not focus. Try again.')
+    else {
+      play('error')
+      setNote('The camera could not focus. Try again.')
+    }
   }
 
   return (
@@ -95,7 +128,7 @@ export default function PondCamera({ onClose, onAlbum }: { onClose(): void; onAl
           </p>
         ) : null}
         <div className="pond-keepsake-shutter-row">
-          <button type="button" className="pond-keepsake-round is-quiet" onClick={onClose} aria-label="Put the camera away">
+          <button type="button" className="pond-keepsake-round is-quiet" onClick={close} aria-label="Put the camera away">
             ✕
           </button>
           <button type="button" className="pond-keepsake-shutter" onClick={snap} disabled={busy} aria-label="Take a picture" />

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 import { itemIdFor, priceOf } from '@tiny/core/economy'
 import manifest from '@/generated/asset-manifest.json'
 import Stamp from '@/features/economy/components/Stamp'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { builtUrl } from '@/shared/lib/assets'
 import { keepName } from '../scene/atelier'
 import { choiceAt, HEADPIECES, OUTFITS, positionOf } from '../scene/closet'
@@ -37,6 +38,7 @@ interface Props {
  * shows under it only while it isn't kept.
  */
 export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }: Props) {
+  const { play } = useSound()
   const [slot, setSlot] = useState<Slot>('costume')
   const [position, setPosition] = useState({ costume: positionOf(OUTFITS, costume), bow: positionOf(HEADPIECES, bow) })
   const [loaded, setLoaded] = useState(false)
@@ -94,21 +96,34 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
   useEffect(() => { rigRef.current?.setCostume(draft.costume, draft.bow) }, [draft.costume, draft.bow])
   useEffect(() => { done.current?.focus({ preventScroll: true }) }, [])
 
-  const turn = (by: number) => setPosition((p) => ({ ...p, [slot]: p[slot] + by }))
+  const turn = (by: number) => {
+    play('select')
+    setPosition((p) => ({ ...p, [slot]: p[slot] + by }))
+  }
 
   function shuffle(): void {
     const pick = (list: readonly (string | null)[]) => Math.floor(Math.random() * list.length)
+    play('select')
     setPosition((p) => ({
       costume: p.costume + 1 + pick(OUTFITS.slice(1)),
       bow: p.bow + 1 + pick(HEADPIECES.slice(1)),
     }))
   }
 
+  function close(): void {
+    play('close')
+    onClose()
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === 'Escape') { event.preventDefault(); onClose() }
+    if (event.key === 'Escape') { event.preventDefault(); close() }
     else if (event.key === 'ArrowLeft') { event.preventDefault(); turn(-1) }
     else if (event.key === 'ArrowRight') { event.preventDefault(); turn(1) }
-    else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); setSlot((s) => (s === 'costume' ? 'bow' : 'costume')) }
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      play('select')
+      setSlot((s) => (s === 'costume' ? 'bow' : 'costume'))
+    }
     else trapTab(event)
   }
 
@@ -123,9 +138,9 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
       aria-modal="true"
       aria-label="The closet"
       onKeyDown={onKeyDown}
-      onClick={(event) => { if (event.target === event.currentTarget) onClose() }}
+      onClick={(event) => { if (event.target === event.currentTarget) close() }}
     >
-      <button type="button" className="mirror-view-close" aria-label="Put everything back" onClick={onClose}>
+      <button type="button" className="mirror-view-close" aria-label="Put everything back" onClick={close}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
 
@@ -144,7 +159,10 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
             aria-selected={slot === s}
             aria-label={`${PLACE[s][0].toUpperCase()}${PLACE[s].slice(1)}s`}
             className={`closet-tab${slot === s ? ' is-on' : ''}`}
-            onClick={() => setSlot(s)}
+            onClick={() => {
+              if (slot !== s) play('select')
+              setSlot(s)
+            }}
           >
             {s === 'costume' ? (
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5a1.8 1.8 0 1 1 1.8 1.8c-.9 0-1.8.6-1.8 1.5v.7M12 9.5 3 16.5h18z" /></svg>
@@ -175,7 +193,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
             <circle cx="8.5" cy="15.5" r="1.3" className="pip" />
           </svg>
         </button>
-        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => onDone(draft.costume, draft.bow)}>
+        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => { play('confirm'); onDone(draft.costume, draft.bow) }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </button>
       </div>

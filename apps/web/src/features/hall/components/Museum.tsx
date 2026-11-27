@@ -97,7 +97,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
   }, [])
 
   const { notes: guestNotes } = useGuestNotes({ enabled: isGuestBoardHung, live: false })
-  const { setWalking } = useSound()
+  const { play, setWalking } = useSound()
   const router = useRouter()
 
   const isSuspended =
@@ -204,7 +204,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
       </div>
 
       {arrangeRoom && isReady && !isArrangerOpen ? (
-        <button type="button" className="arranger-open" onClick={() => setIsArrangerOpen(true)}>
+        <button type="button" className="arranger-open" onClick={() => { play('open'); setIsArrangerOpen(true) }}>
           Arrange hall
         </button>
       ) : null}
@@ -214,7 +214,7 @@ export default function Museum({ initialSlice, arrival }: MuseumProps) {
           <HallArranger
             key="hall-arranger"
             room={arrangeRoom}
-            onClose={() => setIsArrangerOpen(false)}
+            onClose={() => { play('close'); setIsArrangerOpen(false) }}
             onPublished={() => {
               setIsArrangerOpen(false)
               window.location.reload()

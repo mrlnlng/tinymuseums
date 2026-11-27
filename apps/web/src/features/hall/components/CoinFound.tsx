@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { motion } from 'motion/react'
 import AssetImage from '@/shared/components/AssetImage'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { pictureSources } from '@/shared/lib/assets'
 
 const coin = pictureSources('coin-large')
@@ -12,13 +13,19 @@ interface CoinFoundProps {
 }
 
 export default function CoinFound({ onClose }: CoinFoundProps) {
+  const { play } = useSound()
+  const close = useCallback(() => {
+    play('close')
+    onClose()
+  }, [onClose, play])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [close])
 
   return (
     <motion.div
@@ -30,7 +37,7 @@ export default function CoinFound({ onClose }: CoinFoundProps) {
       role="dialog"
       aria-modal="true"
       aria-label="You found a coin"
-      onClick={onClose}
+      onClick={close}
     >
       <div className="coin-found-stage">
         <AssetImage name="pedestal-5-large" className="coin-found-urn" />

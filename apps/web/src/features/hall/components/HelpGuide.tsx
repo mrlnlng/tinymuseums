@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { openBugReport } from '@/features/feedback/lib/bug-report'
 
 const AWNING = 0.462
@@ -36,7 +37,12 @@ interface HelpGuideProps {
 }
 
 export default function HelpGuide({ onClose }: HelpGuideProps) {
-  useEscapeKey(onClose)
+  const { play } = useSound()
+  const close = () => {
+    play('close')
+    onClose()
+  }
+  useEscapeKey(close)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const fitRef = useRef<HTMLDivElement>(null)
@@ -95,7 +101,7 @@ export default function HelpGuide({ onClose }: HelpGuideProps) {
       <button
         type="button"
         className="help-guide-scrim"
-        onClick={onClose}
+        onClick={close}
         aria-label="Close the help guide"
       />
 

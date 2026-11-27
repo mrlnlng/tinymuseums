@@ -52,7 +52,7 @@ export default function ColorRecall({ onClose }: ColorRecallProps) {
         const nextStreak = streak + 1
         setStreak(nextStreak)
         setIsCorrect(true)
-        play('harp')
+        play('success')
         if (nextStreak > best) {
           setBest(nextStreak)
           writeLocal(BEST_KEY, String(nextStreak))
@@ -61,7 +61,7 @@ export default function ColorRecall({ onClose }: ColorRecallProps) {
       }
 
       setPhase('over')
-      play('click')
+      play('failure')
       if (streak > 0) earn('game', { game: 'colorrecall', score: streak })
       if (streak > best) {
         setBest(streak)
@@ -95,6 +95,8 @@ export default function ColorRecall({ onClose }: ColorRecallProps) {
     <MinigameFrame
       label="Color Recall"
       onClose={onClose}
+      sounds
+      closeSound={false}
       cardClassName="colorrecall"
       header={
         <>
@@ -159,7 +161,7 @@ export default function ColorRecall({ onClose }: ColorRecallProps) {
             <button type="button" className="button" onClick={start}>
               Play again
             </button>
-            <button type="button" className="button secondary" onClick={onClose}>
+            <button type="button" className="button secondary" data-sound onClick={onClose}>
               Back
             </button>
           </div>

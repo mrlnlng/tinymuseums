@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import {
   fetchPondLeaderboard,
   type PondBoardId,
@@ -80,6 +81,7 @@ function BoardRow({ board, row }: { board: PondBoardId; row: PondBoardRow }) {
 }
 
 export default function LeaderboardPanel() {
+  const { play } = useSound()
   const [board, setBoard] = useState<PondBoardId>('biggest')
   const [period, setPeriod] = useState<PondBoardPeriod>('week')
   const [data, setData] = useState<PondLeaderboard | null>(null)
@@ -115,7 +117,10 @@ export default function LeaderboardPanel() {
             role="tab"
             aria-selected={board === entry.id}
             className={`pond-room-tab${board === entry.id ? ' is-active' : ''}`}
-            onClick={() => setBoard(entry.id)}
+            onClick={() => {
+              play('select')
+              setBoard(entry.id)
+            }}
           >
             {entry.label}
           </button>
@@ -129,7 +134,10 @@ export default function LeaderboardPanel() {
             type="button"
             aria-pressed={period === entry.id}
             className={`pond-room-period${period === entry.id ? ' is-active' : ''}`}
-            onClick={() => setPeriod(entry.id)}
+            onClick={() => {
+              play('select')
+              setPeriod(entry.id)
+            }}
           >
             {entry.label}
           </button>

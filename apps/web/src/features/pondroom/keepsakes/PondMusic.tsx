@@ -9,11 +9,23 @@ import { catchArt } from '../lib/journal'
 const SONG = staticUrl('/audio/pond-song.mp3')
 
 export default function PondMusic({ onClose }: { onClose(): void }) {
-  const { isEnabled, volume, holdMusic } = useSound()
+  const { isEnabled, volume, holdMusic, play } = useSound()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [missing, setMissing] = useState(false)
   const [progress, setProgress] = useState(0)
+
+  function close() {
+    play('close')
+    onClose()
+  }
+
+  // Taking the player out starts the song (the tap is the gesture browsers need),
+  // so the song itself is the open feedback.
+  useEffect(() => {
+    if (isEnabled) void audioRef.current?.play().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     holdMusic(playing)
@@ -61,11 +73,12 @@ export default function PondMusic({ onClose }: { onClose(): void }) {
         className="pond-keepsake-round"
         onClick={toggle}
         disabled={missing}
+        data-sound
         aria-label={playing ? 'Pause' : 'Play'}
       >
         {playing ? '❚❚' : '▶'}
       </button>
-      <button type="button" className="pond-keepsake-round is-quiet" onClick={onClose} aria-label="Put the MP3 player away">
+      <button type="button" className="pond-keepsake-round is-quiet" onClick={close} aria-label="Put the MP3 player away">
         ✕
       </button>
     </div>

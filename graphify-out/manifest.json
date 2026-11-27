@@ -872,9 +872,9 @@
     "semantic_hash": "f1eae512cc73927ef3c62aed081d8acc"
   },
   "apps/web/src/shared/components/ScreenChrome.tsx": {
-    "mtime": 1795761260.9488795,
-    "seen": 1795761408.0422204,
-    "ast_hash": "b692ffefcc204125bce1f03d787c9723",
+    "mtime": 1795763937.898263,
+    "seen": 1795764147.8442743,
+    "ast_hash": "70a9ca54eac9bf5a6c4fa9aef1bba628",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/ServiceWorker.tsx": {
@@ -1250,9 +1250,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/index.ts": {
-    "mtime": 1795760353.4757466,
-    "seen": 1795760997.5950174,
-    "ast_hash": "7bd9a3b61e905f140220abf5cc2c8869",
+    "mtime": 1795763837.2558618,
+    "seen": 1795764147.8444378,
+    "ast_hash": "1a29aa063d8aca5079deab29b034ea58",
     "semantic_hash": ""
   },
   "packages/core/src/infra/db.ts": {
@@ -2972,9 +2972,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/layout.tsx": {
-    "mtime": 1795761260.9488177,
-    "seen": 1795761408.0419698,
-    "ast_hash": "1b7d5df4e6a0a68956928dcff1a2e8c4",
+    "mtime": 1795763937.89817,
+    "seen": 1795764147.8438642,
+    "ast_hash": "7dbea63b2140edcc613e5f8c9f5e50f5",
     "semantic_hash": ""
   },
   "apps/web/src/features/economy/components/CoinToast.tsx": {
@@ -3308,15 +3308,15 @@
     "semantic_hash": ""
   },
   "packages/core/src/economy/pond.test.ts": {
-    "mtime": 1795760289.732008,
-    "seen": 1795760997.5950131,
-    "ast_hash": "78f7387c84d3ab85ca99dd3c56c6c581",
+    "mtime": 1795763869.311366,
+    "seen": 1795764147.8444297,
+    "ast_hash": "b1347804d812913978845a772f33e704",
     "semantic_hash": ""
   },
   "packages/core/src/economy/pond.ts": {
-    "mtime": 1795760268.6625807,
-    "seen": 1795760997.5950139,
-    "ast_hash": "8c87a1265ac7877e9ef30d09f6112d89",
+    "mtime": 1795763837.2557566,
+    "seen": 1795764147.8444314,
+    "ast_hash": "a7b63a5a5bd76edb0bda33421693d019",
     "semantic_hash": ""
   },
   "apps/web/src/app/apple-icon.png": {
@@ -3674,15 +3674,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondPanels.tsx": {
-    "mtime": 1795761260.9486613,
-    "seen": 1795761408.0421207,
-    "ast_hash": "604b01c7f95463002844450c036fb6c4",
+    "mtime": 1795763905.228957,
+    "seen": 1795764147.8441098,
+    "ast_hash": "93506c1a4ddcc1300c241a424c025203",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondRoom.tsx": {
-    "mtime": 1795761260.94875,
-    "seen": 1795761408.0421216,
-    "ast_hash": "378443c1babf0e5a38ed0fbbbbe18c23",
+    "mtime": 1795763905.2290442,
+    "seen": 1795764147.8441112,
+    "ast_hash": "6ed84fed9e0e0e2decb7a80c169498ed",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
@@ -3698,21 +3698,21 @@
     "semantic_hash": ""
   },
   "packages/core/db-tests/pond.test.ts": {
-    "mtime": 1794100571.9543114,
-    "seen": 1794100770.4311996,
-    "ast_hash": "151f4e15ea6513a9189dd25d2099bece",
+    "mtime": 1795762699.1155326,
+    "seen": 1795762852.9166105,
+    "ast_hash": "62c47a1eee78ca1ccabd9a0eda21197b",
     "semantic_hash": ""
   },
   "packages/core/schema/pond.sql": {
-    "mtime": 1795760353.4662452,
-    "seen": 1795760997.5949802,
-    "ast_hash": "fb3e28d88d5d2ad53c3daf4dce5ce76b",
+    "mtime": 1795763837.2607358,
+    "seen": 1795764147.8443775,
+    "ast_hash": "9de395bf245f040ae2da8bab79cbcc99",
     "semantic_hash": ""
   },
   "packages/core/src/domain/pond.ts": {
-    "mtime": 1795760268.6627598,
-    "seen": 1795760997.5949998,
-    "ast_hash": "0b386127516dd9d6212ba9d43323129e",
+    "mtime": 1795763846.1341503,
+    "seen": 1795764147.8444085,
+    "ast_hash": "4b6601ed85cc8c5b2ab30da6dce4da90",
     "semantic_hash": ""
   },
   "docs/pond-room-design.md": {
@@ -3752,9 +3752,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/api.ts": {
-    "mtime": 1794102926.5924654,
-    "seen": 1794104366.7656267,
-    "ast_hash": "cea7d1bdca9ac8534bf7ac6f4b04bd74",
+    "mtime": 1795763890.2798698,
+    "seen": 1795764147.844096,
+    "ast_hash": "37b44413f6b57d47045496902f05d039",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/guest.ts": {
@@ -3782,15 +3782,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/tables.test.ts": {
-    "mtime": 1794100694.0210168,
-    "seen": 1794100770.431109,
-    "ast_hash": "f2c20509f8167c517828794117b37884",
+    "mtime": 1795763998.125514,
+    "seen": 1795764147.8441052,
+    "ast_hash": "f7a301bc72802985668e8d2e8c2cd880",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/tables.ts": {
-    "mtime": 1795760661.0649714,
-    "seen": 1795760997.5948143,
-    "ast_hash": "6964eb37050da0bbe1e2b204853f40b3",
+    "mtime": 1795763890.2796907,
+    "seen": 1795764147.8441062,
+    "ast_hash": "2ecc06deaa47bd1b139bc8efb80152be",
     "semantic_hash": ""
   },
   "packages/core/src/domain/pond-boards.ts": {
@@ -3806,9 +3806,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/FishingView.tsx": {
-    "mtime": 1795760699.4281363,
-    "seen": 1795760997.5947957,
-    "ast_hash": "50d28be06cee33d522d60e08bc86b356",
+    "mtime": 1795763890.2799935,
+    "seen": 1795764147.8440855,
+    "ast_hash": "1fe021930468c5b54213738e56ae473c",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Hud.tsx": {
@@ -3848,9 +3848,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/pond-api.ts": {
-    "mtime": 1795760566.6694984,
-    "seen": 1795760997.5948265,
-    "ast_hash": "5f4fb355a411a40a7a85850e901ac80b",
+    "mtime": 1795762648.3843746,
+    "seen": 1795762852.9164698,
+    "ast_hash": "39ceade3eee7208397f1b397faf55d4b",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/pond-format.ts": {
@@ -3884,9 +3884,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/FishdexPanel.tsx": {
-    "mtime": 1795760661.0645936,
-    "seen": 1795760997.594833,
-    "ast_hash": "45181b4109aead76e7c9fe4dadb08e59",
+    "mtime": 1795763937.8883953,
+    "seen": 1795764147.84414,
+    "ast_hash": "5b00c5132b0d53eae3a7ac71506ea01b",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/FishmongerPanel.tsx": {
@@ -4154,9 +4154,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/identity.ts": {
-    "mtime": 1794200689.7809842,
-    "seen": 1794201256.7216787,
-    "ast_hash": "643a5edd2e8f108ce736206aa74abbd3",
+    "mtime": 1795761856.1317036,
+    "seen": 1795762852.916468,
+    "ast_hash": "f103c57f181d6cb9fc08540598259cf8",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/asset-layout.test.ts": {
@@ -7154,15 +7154,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/journal.ts": {
-    "mtime": 1795759780.141277,
-    "seen": 1795760997.5948255,
-    "ast_hash": "8fb876daca4b1f060a3ae397b0afa507",
+    "mtime": 1795763937.8886914,
+    "seen": 1795764147.844128,
+    "ast_hash": "5b3db1fcde7307a241fa4890d324984a",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/FishJournal.tsx": {
-    "mtime": 1795759737.6904187,
-    "seen": 1795760997.594832,
-    "ast_hash": "3cd0c64141fe257137f548d653d7d190",
+    "mtime": 1795763937.8885922,
+    "seen": 1795764147.8441389,
+    "ast_hash": "5e77b557fe93684254f45ef4dec2f07e",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/catch/anglerfish.png": {
@@ -7207,12 +7207,6 @@
     "ast_hash": "e1f0e0b97a88fef13f2d95b831c6c29a",
     "semantic_hash": ""
   },
-  "apps/web/public/assets/pond/catch/old-boot.png": {
-    "mtime": 1795758584.3480022,
-    "seen": 1795758899.4757679,
-    "ast_hash": "76ff1885298a6a589a69f9e943c41000",
-    "semantic_hash": ""
-  },
   "apps/web/public/assets/pond/catch/painter-shrimp.png": {
     "mtime": 1795758306.5974178,
     "seen": 1795758899.4757683,
@@ -7223,12 +7217,6 @@
     "mtime": 1795758306.5414164,
     "seen": 1795758899.475769,
     "ast_hash": "ce89d572c29a160ade815d4adbea4e3b",
-    "semantic_hash": ""
-  },
-  "apps/web/public/assets/pond/catch/pearl-string.png": {
-    "mtime": 1795758584.3540022,
-    "seen": 1795758899.4757695,
-    "ast_hash": "539bb26a483884c03db874bb7cbb7950",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/catch/puffer.png": {
@@ -7304,9 +7292,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/keepsakes/KeepsakeFound.tsx": {
-    "mtime": 1795760638.5166056,
-    "seen": 1795760997.594821,
-    "ast_hash": "90a6affbb508b026bb571b0b6e256897",
+    "mtime": 1795763890.2800844,
+    "seen": 1795764147.8441174,
+    "ast_hash": "58f2f397de4c4874643c971b5ac3dfec",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/keepsakes/PondCamera.tsx": {
@@ -7345,16 +7333,46 @@
     "ast_hash": "e52d9378dc57103600151e8f690ed588",
     "semantic_hash": ""
   },
-  "apps/web/src/features/pondroom/keepsakes/RoomCamera.tsx": {
-    "mtime": 1795761260.9416435,
-    "seen": 1795761408.0421274,
-    "ast_hash": "624d470c8538da6ee5d79eab02461609",
-    "semantic_hash": ""
-  },
   "apps/web/src/features/pondroom/keepsakes/camera-events.ts": {
     "mtime": 1795761260.9396434,
     "seen": 1795761408.042128,
     "ast_hash": "d43bb03672d43a5e040944b3035e95a3",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/pond/special/route.ts": {
+    "mtime": 1795762648.3803744,
+    "seen": 1795762852.9162695,
+    "ast_hash": "6d0572e19132f3e9e6dbd7b547a1c835",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/SpecialFound.tsx": {
+    "mtime": 1795762667.8189087,
+    "seen": 1795762852.9164655,
+    "ast_hash": "556f0cf8d4d962a279139addc273d28f",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/lib/use-special.ts": {
+    "mtime": 1795762648.3863747,
+    "seen": 1795762852.9164743,
+    "ast_hash": "aad067bc0b6fb80d7622f9ed8a92641c",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/panels/PondRules.tsx": {
+    "mtime": 1795763298.7565243,
+    "seen": 1795763430.340507,
+    "ast_hash": "b90944fada957f2946702e63e832d19c",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/rules-board.png": {
+    "mtime": 1795763284.7690897,
+    "seen": 1795763430.34099,
+    "ast_hash": "95accd9da42e665a0b458a1af84867a5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/Gadgets.tsx": {
+    "mtime": 1795763937.8915856,
+    "seen": 1795764147.8441155,
+    "ast_hash": "1b6e845c60a81c6ea4f93fc0fc8c7727",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

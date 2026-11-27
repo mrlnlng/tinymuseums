@@ -794,9 +794,9 @@
     "semantic_hash": "a1a5c587e0bc3fb4f0ad42c49fbdb81c"
   },
   "apps/web/src/features/sound/components/SoundProvider.tsx": {
-    "mtime": 1793490130.7020729,
-    "seen": 1793490433.2803159,
-    "ast_hash": "520436206426cea53dad536a0388da29",
+    "mtime": 1795760590.584355,
+    "seen": 1795760997.5948994,
+    "ast_hash": "1dfbd8506118c9a83c0d382451c860a5",
     "semantic_hash": ""
   },
   "apps/web/src/features/sound/components/SoundToggle.tsx": {
@@ -872,9 +872,9 @@
     "semantic_hash": "f1eae512cc73927ef3c62aed081d8acc"
   },
   "apps/web/src/shared/components/ScreenChrome.tsx": {
-    "mtime": 1794467064.719042,
-    "seen": 1794467389.1969445,
-    "ast_hash": "70a9ca54eac9bf5a6c4fa9aef1bba628",
+    "mtime": 1795761260.9488795,
+    "seen": 1795761408.0422204,
+    "ast_hash": "b692ffefcc204125bce1f03d787c9723",
     "semantic_hash": ""
   },
   "apps/web/src/shared/components/ServiceWorker.tsx": {
@@ -1184,9 +1184,9 @@
     "semantic_hash": "7ba1f1b627b45c212ed896f6ac47b148"
   },
   "packages/core/src/domain/members.ts": {
-    "mtime": 1794984469.601042,
-    "seen": 1794984709.2083106,
-    "ast_hash": "f56b39d9fba80b4e1bd37aacf876f94f",
+    "mtime": 1795760353.4756584,
+    "seen": 1795760997.5949972,
+    "ast_hash": "333c6a4f70c4368cd3c5c7fb67323221",
     "semantic_hash": ""
   },
   "packages/core/src/domain/publish.ts": {
@@ -1250,9 +1250,9 @@
     "semantic_hash": ""
   },
   "packages/core/src/index.ts": {
-    "mtime": 1795395253.8025937,
-    "seen": 1795395832.134894,
-    "ast_hash": "51f2dad99b1e5cc0775131bb9771a974",
+    "mtime": 1795760353.4757466,
+    "seen": 1795760997.5950174,
+    "ast_hash": "7bd9a3b61e905f140220abf5cc2c8869",
     "semantic_hash": ""
   },
   "packages/core/src/infra/db.ts": {
@@ -2900,15 +2900,15 @@
     "semantic_hash": ""
   },
   "packages/core/src/economy/catalog.test.ts": {
-    "mtime": 1794983245.2180839,
-    "seen": 1794983384.6128752,
-    "ast_hash": "e0747213f25a7d4463cd7df61885e481",
+    "mtime": 1795760875.852096,
+    "seen": 1795760997.595009,
+    "ast_hash": "f9c9e50ebe9a556310171b52cbdf378f",
     "semantic_hash": ""
   },
   "packages/core/src/economy/catalog.ts": {
-    "mtime": 1794981318.0445669,
-    "seen": 1794982084.6438198,
-    "ast_hash": "7c461499d43c5a7141373075e4f1c1f3",
+    "mtime": 1795760268.6626809,
+    "seen": 1795760997.59501,
+    "ast_hash": "4999d16c921b40ac937c78e33e61bbba",
     "semantic_hash": ""
   },
   "packages/core/src/economy/day.test.ts": {
@@ -2972,9 +2972,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/museum/layout.tsx": {
-    "mtime": 1795394257.7102141,
-    "seen": 1795394940.1272871,
-    "ast_hash": "a64062ecc4da34084bf4d3be86b338e0",
+    "mtime": 1795761260.9488177,
+    "seen": 1795761408.0419698,
+    "ast_hash": "1b7d5df4e6a0a68956928dcff1a2e8c4",
     "semantic_hash": ""
   },
   "apps/web/src/features/economy/components/CoinToast.tsx": {
@@ -3080,9 +3080,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/stage.ts": {
-    "mtime": 1795487045.1355126,
-    "seen": 1795487190.4089296,
-    "ast_hash": "cc44719c2b7dd222880b76ebe65289f8",
+    "mtime": 1795760548.4620116,
+    "seen": 1795760997.5948856,
+    "ast_hash": "87b0af2329659cbec4528309ffeff472",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/types.ts": {
@@ -3308,15 +3308,15 @@
     "semantic_hash": ""
   },
   "packages/core/src/economy/pond.test.ts": {
-    "mtime": 1794100506.912637,
-    "seen": 1794100770.4312391,
-    "ast_hash": "e8b7cb21d005feca26b53cb976d040b5",
+    "mtime": 1795760289.732008,
+    "seen": 1795760997.5950131,
+    "ast_hash": "78f7387c84d3ab85ca99dd3c56c6c581",
     "semantic_hash": ""
   },
   "packages/core/src/economy/pond.ts": {
-    "mtime": 1794100638.8091962,
-    "seen": 1794100770.4312398,
-    "ast_hash": "c3aab322f126ad1effc4c46b486b337f",
+    "mtime": 1795760268.6625807,
+    "seen": 1795760997.5950139,
+    "ast_hash": "8c87a1265ac7877e9ef30d09f6112d89",
     "semantic_hash": ""
   },
   "apps/web/src/app/apple-icon.png": {
@@ -3674,15 +3674,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondPanels.tsx": {
-    "mtime": 1794200689.7819843,
-    "seen": 1794201256.7216759,
-    "ast_hash": "11c4c2f88e7b6adf7c9275cc3f5b586c",
+    "mtime": 1795761260.9486613,
+    "seen": 1795761408.0421207,
+    "ast_hash": "604b01c7f95463002844450c036fb6c4",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondRoom.tsx": {
-    "mtime": 1795394266.9748862,
-    "seen": 1795394940.1274197,
-    "ast_hash": "9bbfd28c46ff3d44f680c3044ea59325",
+    "mtime": 1795761260.94875,
+    "seen": 1795761408.0421216,
+    "ast_hash": "378443c1babf0e5a38ed0fbbbbe18c23",
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/art.ts": {
@@ -3704,15 +3704,15 @@
     "semantic_hash": ""
   },
   "packages/core/schema/pond.sql": {
-    "mtime": 1794100410.5984573,
-    "seen": 1794100770.4312093,
-    "ast_hash": "e811c1c17cba632bafba191aeb349519",
+    "mtime": 1795760353.4662452,
+    "seen": 1795760997.5949802,
+    "ast_hash": "fb3e28d88d5d2ad53c3daf4dce5ce76b",
     "semantic_hash": ""
   },
   "packages/core/src/domain/pond.ts": {
-    "mtime": 1794984525.1471748,
-    "seen": 1794984709.2083123,
-    "ast_hash": "f5a53eb5b55431cf35b482f4dbb469c6",
+    "mtime": 1795760268.6627598,
+    "seen": 1795760997.5949998,
+    "ast_hash": "0b386127516dd9d6212ba9d43323129e",
     "semantic_hash": ""
   },
   "docs/pond-room-design.md": {
@@ -3788,9 +3788,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/tables.ts": {
-    "mtime": 1794122653.856811,
-    "seen": 1794123341.7362726,
-    "ast_hash": "6677c09b0787927f5b2f1890a6f1a6e5",
+    "mtime": 1795760661.0649714,
+    "seen": 1795760997.5948143,
+    "ast_hash": "6964eb37050da0bbe1e2b204853f40b3",
     "semantic_hash": ""
   },
   "packages/core/src/domain/pond-boards.ts": {
@@ -3806,9 +3806,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/FishingView.tsx": {
-    "mtime": 1794364555.414588,
-    "seen": 1794364999.5362918,
-    "ast_hash": "e6165d30c8d40fa028d2c88220777559",
+    "mtime": 1795760699.4281363,
+    "seen": 1795760997.5947957,
+    "ast_hash": "50d28be06cee33d522d60e08bc86b356",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Hud.tsx": {
@@ -3824,9 +3824,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/RevealCard.tsx": {
-    "mtime": 1794364667.2612379,
-    "seen": 1794364999.5362961,
-    "ast_hash": "c8ab9ea7b46bdde6797d71751a663f44",
+    "mtime": 1795758667.3707376,
+    "seen": 1795758899.4753551,
+    "ast_hash": "7a33c4c46b9618df1776407ed248c8d7",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Water.tsx": {
@@ -3848,15 +3848,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/pond-api.ts": {
-    "mtime": 1794101336.369756,
-    "seen": 1794102326.5117168,
-    "ast_hash": "9fc5a8e3f55f99a1690a9a28e77d4c5e",
+    "mtime": 1795760566.6694984,
+    "seen": 1795760997.5948265,
+    "ast_hash": "5f4fb355a411a40a7a85850e901ac80b",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/pond-format.ts": {
-    "mtime": 1794176943.7181091,
-    "seen": 1794198394.5777965,
-    "ast_hash": "3857a151a6b1e10500cfd38deb4ce001",
+    "mtime": 1795758637.7823253,
+    "seen": 1795758899.4753726,
+    "ast_hash": "fda11652bc49473780e3d62faea16c54",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/lib/pond-state.ts": {
@@ -3884,21 +3884,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/FishdexPanel.tsx": {
-    "mtime": 1794122777.2267692,
-    "seen": 1794123341.7362835,
-    "ast_hash": "607bf75a5f2175f4eeabe3a3c68519fb",
+    "mtime": 1795760661.0645936,
+    "seen": 1795760997.594833,
+    "ast_hash": "45181b4109aead76e7c9fe4dadb08e59",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/FishmongerPanel.tsx": {
-    "mtime": 1794122664.2151864,
-    "seen": 1794123341.7362845,
-    "ast_hash": "4810a16ebd7f71a542df5a1c68382be4",
+    "mtime": 1795758643.9137409,
+    "seen": 1795758899.475378,
+    "ast_hash": "dc676e3f9350aad1af118bacfd89b037",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/panels/LeaderboardPanel.tsx": {
-    "mtime": 1794102113.7982092,
-    "seen": 1794102326.511722,
-    "ast_hash": "be5c81fb37e5e278fe67e1eeb272e07b",
+    "mtime": 1795758637.782441,
+    "seen": 1795758899.4753788,
+    "ast_hash": "401f7653e8a61da2c0364f02af9066a5",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/WagerPicker.tsx": {
@@ -3986,9 +3986,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/rooms/pond/shopkeeper.ts": {
-    "mtime": 1795335230.419123,
-    "seen": 1795335417.5414479,
-    "ast_hash": "d26aea5201356b96f388f9527fb72e82",
+    "mtime": 1795758664.8418615,
+    "seen": 1795758899.4754205,
+    "ast_hash": "ff98d3155a16e52267718ae77a397d1c",
     "semantic_hash": ""
   },
   "apps/web/public/assets/pond/fishing-apron.png": {
@@ -7151,6 +7151,210 @@
     "mtime": 1795584200.5679698,
     "seen": 1795584339.513976,
     "ast_hash": "03dcb32cd92e8d1a4af4c210db7a6b22",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/lib/journal.ts": {
+    "mtime": 1795759780.141277,
+    "seen": 1795760997.5948255,
+    "ast_hash": "8fb876daca4b1f060a3ae397b0afa507",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/panels/FishJournal.tsx": {
+    "mtime": 1795759737.6904187,
+    "seen": 1795760997.594832,
+    "ast_hash": "3cd0c64141fe257137f548d653d7d190",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/anglerfish.png": {
+    "mtime": 1795758584.3690028,
+    "seen": 1795758899.4757638,
+    "ast_hash": "8be548184de31fa6ca249844500d9e69",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/blobfish.png": {
+    "mtime": 1795758306.711421,
+    "seen": 1795758899.4757645,
+    "ast_hash": "26786df78d5b905fecd0b20a87fc7c7a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/crab.png": {
+    "mtime": 1795758306.642419,
+    "seen": 1795758899.475765,
+    "ast_hash": "a491d8258831c9816a66c972fbb43a7a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/deep-fine.png": {
+    "mtime": 1795758584.3720028,
+    "seen": 1795758899.4757657,
+    "ast_hash": "8be548184de31fa6ca249844500d9e69",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/deep-masterpiece.png": {
+    "mtime": 1795758584.3750029,
+    "seen": 1795758899.4757662,
+    "ast_hash": "8be548184de31fa6ca249844500d9e69",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/deep-sashimi.png": {
+    "mtime": 1795758584.380003,
+    "seen": 1795758899.475767,
+    "ast_hash": "0679a11cd5f1c7c37485d79a946789fe",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/hermit-crab.png": {
+    "mtime": 1795758306.6184185,
+    "seen": 1795758899.4757674,
+    "ast_hash": "e1f0e0b97a88fef13f2d95b831c6c29a",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/old-boot.png": {
+    "mtime": 1795758584.3480022,
+    "seen": 1795758899.4757679,
+    "ast_hash": "76ff1885298a6a589a69f9e943c41000",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/painter-shrimp.png": {
+    "mtime": 1795758306.5974178,
+    "seen": 1795758899.4757683,
+    "ast_hash": "922f80bc8cd12b3ffc079657031310ba",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/party-clownfish.png": {
+    "mtime": 1795758306.5414164,
+    "seen": 1795758899.475769,
+    "ast_hash": "ce89d572c29a160ade815d4adbea4e3b",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/pearl-string.png": {
+    "mtime": 1795758584.3540022,
+    "seen": 1795758899.4757695,
+    "ast_hash": "539bb26a483884c03db874bb7cbb7950",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/puffer.png": {
+    "mtime": 1795758306.524416,
+    "seen": 1795758899.47577,
+    "ast_hash": "707cd1a281e9aaac3c07e7fda81d9f14",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/salmon-nigiri.png": {
+    "mtime": 1795758306.5864177,
+    "seen": 1795758899.475771,
+    "ast_hash": "201bc206c435176f67f209173b4d3963",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/star-snapper.png": {
+    "mtime": 1795758306.5104156,
+    "seen": 1795758899.4757714,
+    "ast_hash": "1607a280f4fdb14c391b23ee8177f332",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/starry-goldfish.png": {
+    "mtime": 1795758306.565417,
+    "seen": 1795758899.475772,
+    "ast_hash": "ed0f9a09b9af3f10a911074f80859302",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/sunken-crown.png": {
+    "mtime": 1795758584.3590024,
+    "seen": 1795758899.4757726,
+    "ast_hash": "3cd48bb2f4fcfd8e9ad9d6e9b4dd7d44",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/tempura-shrimp.png": {
+    "mtime": 1795758306.6934204,
+    "seen": 1795758899.475773,
+    "ast_hash": "a5e0d007bfa8e0605d62839968f781dc",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/treasure-chest.png": {
+    "mtime": 1795758584.3610024,
+    "seen": 1795758899.475774,
+    "ast_hash": "a5fa6b14998fb6606bea35f2c8f74205",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/treasure-sashimi.png": {
+    "mtime": 1795758584.3660026,
+    "seen": 1795758899.4757745,
+    "ast_hash": "0679a11cd5f1c7c37485d79a946789fe",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/venus-cat.png": {
+    "mtime": 1795758306.6684198,
+    "seen": 1795758899.475775,
+    "ast_hash": "8f689b8d8befad09e1a1c9b6ba3cce1c",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/pond/photos/[id]/route.ts": {
+    "mtime": 1795760378.4639783,
+    "seen": 1795760997.5946245,
+    "ast_hash": "a7d78fb894e79d184a62974a157a11f2",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/pond/photos/route.ts": {
+    "mtime": 1795760378.4622793,
+    "seen": 1795760997.594626,
+    "ast_hash": "71683b2d9ad479585a1db2f4b29ae0f2",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/AlbumPanel.tsx": {
+    "mtime": 1795761260.948581,
+    "seen": 1795761408.0421236,
+    "ast_hash": "2c872c03a4dd33d462e003355ae606bc",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/KeepsakeFound.tsx": {
+    "mtime": 1795760638.5166056,
+    "seen": 1795760997.594821,
+    "ast_hash": "90a6affbb508b026bb571b0b6e256897",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/PondCamera.tsx": {
+    "mtime": 1795761260.9484906,
+    "seen": 1795761408.0421252,
+    "ast_hash": "fc3846455de466df5c8aae32c9398987",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/PondMusic.tsx": {
+    "mtime": 1795760638.5186057,
+    "seen": 1795760997.5948224,
+    "ast_hash": "5c37b037ce011ce3471dfc1d4f1022f6",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/rooms/snapshot.ts": {
+    "mtime": 1795760548.232576,
+    "seen": 1795760997.5948849,
+    "ast_hash": "1e8cee2e9816ce37a6ccd00c05c1e61e",
+    "semantic_hash": ""
+  },
+  "packages/core/src/domain/pond-photos.ts": {
+    "mtime": 1795760357.8777876,
+    "seen": 1795760997.594999,
+    "ast_hash": "367225155d0bf86931ead9e19b8bc65d",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/camera.png": {
+    "mtime": 1795759711.7437892,
+    "seen": 1795760997.595266,
+    "ast_hash": "2d2ca3609845b21ee56df2419c955ab9",
+    "semantic_hash": ""
+  },
+  "apps/web/public/assets/pond/catch/mp3-player.png": {
+    "mtime": 1795759711.7167883,
+    "seen": 1795760997.595271,
+    "ast_hash": "e52d9378dc57103600151e8f690ed588",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/RoomCamera.tsx": {
+    "mtime": 1795761260.9416435,
+    "seen": 1795761408.0421274,
+    "ast_hash": "624d470c8538da6ee5d79eab02461609",
+    "semantic_hash": ""
+  },
+  "apps/web/src/features/pondroom/keepsakes/camera-events.ts": {
+    "mtime": 1795761260.9396434,
+    "seen": 1795761408.042128,
+    "ast_hash": "d43bb03672d43a5e040944b3035e95a3",
     "semantic_hash": ""
   },
   "amplify/layers/sharp/nodejs/package-lock.json": {

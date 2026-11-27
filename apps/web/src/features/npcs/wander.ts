@@ -47,6 +47,8 @@ export interface WanderCtx {
   others: readonly Neighbour[]
   speed: number          // world units / second
   rand(): number         // [0,1)
+  /** Keep this local wanderer in the room instead of letting it roam out through a door. */
+  stay?: boolean
 }
 
 const IDLE_MIN = 3
@@ -292,7 +294,7 @@ function beginNext(w: Wanderer, ctx: WanderCtx): void {
     // This is not one of its rooms: head out, or stroll if it has no door.
     w.stop = null
     w.stopX = null
-    if (doorsIn(ctx.info).length > 0) {
+    if (!ctx.stay && doorsIn(ctx.info).length > 0) {
       startLeave(w, ctx)
       return
     }
@@ -309,7 +311,7 @@ function beginNext(w: Wanderer, ctx: WanderCtx): void {
     return
   }
 
-  if (doorsIn(ctx.info).length > 0 && ctx.rand() < w.job.roam) {
+  if (!ctx.stay && doorsIn(ctx.info).length > 0 && ctx.rand() < w.job.roam) {
     w.stop = null
     w.stopX = null
     startLeave(w, ctx)

@@ -28,19 +28,22 @@ import {
 import { buy, stampLabel, useWallet } from '@/features/economy'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import LetterMailbox from '@/features/letters/components/LetterMailbox'
+import { reportQuestEvent } from '@/features/letters/events'
 import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import { createPersonalRoom } from '@/features/rooms/personal/room'
 import type { DoorRef } from '@/features/rooms/types'
 import DecorDrawer from '@/features/rooms/decorate/DecorDrawer'
 import { createDecorController } from '@/features/rooms/decorate/controller'
-import type { WorkKind } from '@/features/rooms/themes/cozy'
+import { cozyPropImageUrl, type WorkKind } from '@/features/rooms/themes/cozy'
 import { CEILING } from '@/features/rooms/themes/room-light'
 import {
   clampX,
   clampY,
   cozyLevel,
   freeX,
+  isRemovedProceduralFish,
   messLabel,
   messNote,
   moveWithRiders,
@@ -48,6 +51,7 @@ import {
   propHeight,
   putAwayWithRiders,
   reasonLabel,
+  roomStars,
   restAt,
   restInView,
   ridersAfter,
@@ -99,6 +103,8 @@ interface Job {
   startedAt: number
   /** Where to show the ring, in room units, for work spread over a whole surface. */
   at?: { x: number; y: number }
+  /** The visitor's very first clean ends with a burst and a cheer. */
+  celebrate?: boolean
 }
 
 /** A piece of junk or damage on offer; `at` is where a whole-surface one was tapped. */
@@ -121,6 +127,7 @@ function sizeOfWidth(width: number) {
   return ROOM_SIZES.find((size) => size.width >= width - 1e-6) ?? ROOM_SIZES[ROOM_SIZES.length - 1]
 }
 const SEEN_KEY = 'tm:room:seen'
+const FIRST_CLEAN_KEY = 'tm:room:first-clean'
 const HISTORY_LIMIT = 40
 const DRAG_START_PX = 6
 const MAX_TILT = 0.2
@@ -178,8 +185,14 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   widthRef.current = roomSize.width
   const sizedRef = useRef(sizedTheme(COZY, roomSize.width))
   sizedRef.current = sizedTheme(COZY, roomSize.width)
+  // The five procedurally drawn fish are no longer part of the personal room; artist-asset
+  // trophies stay. Filtering here also drops them from the draft on the next save.
+  const keptPlacements = useMemo(
+    () => placements.filter((placement) => !isRemovedProceduralFish(placement.ref)),
+    [placements],
+  )
   // Rebuild the room only when what it shows changes, not on every re-render of the page.
-  const placementsKey = JSON.stringify(placements)
+  const placementsKey = JSON.stringify(keptPlacements)
   const room = useMemo(
     () =>
       createPersonalRoom({
@@ -210,7 +223,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   const [arriving, setArriving] = useState(!canEdit && Boolean(ownerName))
   const [isEditing, setIsEditing] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const [draft, setDraft] = useState<Placement[]>(placements)
+  const [draft, setDraft] = useState<Placement[]>(keptPlacements)
   const [history, setHistory] = useState<Placement[][]>([])
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [notice, setNotice] = useState<string | null>(null)
@@ -225,15 +238,18 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   const [jobs, setJobs] = useState<Job[]>([])
   const [offer, setOffer] = useState<Offer | null>(null)
   const [paying, setPaying] = useState(false)
+  const [firstCleanDone, setFirstCleanDone] = useState(false)
+  const [broomBusy, setBroomBusy] = useState(false)
   const jobsRef = useRef<Job[]>([])
   const payingRef = useRef(false)
   const ringsRef = useRef(new Map<string, HTMLDivElement>())
   const offerRef = useRef<HTMLDivElement>(null)
+  const sparkleRef = useRef(new Map<string, HTMLSpanElement>())
 
   const draftRef = useRef<Placement[]>(draft)
   draftRef.current = draft
-  const savedRef = useRef<Placement[]>(placements)
-  const publishedRef = useRef<Placement[]>(placements)
+  const savedRef = useRef<Placement[]>(keptPlacements)
+  const publishedRef = useRef<Placement[]>(keptPlacements)
   const loadedRef = useRef(false)
   const carryRef = useRef<Carry | null>(null)
   const panRef = useRef<{ pointerId: number; lastX: number; lastY: number; moved: boolean; dismissing: boolean } | null>(null)
@@ -257,7 +273,15 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
 
   useEffect(() => {
     setSeen(readSeen())
+    setFirstCleanDone(readLocal(FIRST_CLEAN_KEY) === '1')
   }, [])
+
+  // A room cleaned before the letters existed still counts as clean.
+  useEffect(() => {
+    // Wait for the saved room, so messes still on their way in are not read as a clean room.
+    if (!canEdit || !isReady || isEditing || !loaded) return
+    if (!draftRef.current.some((placement) => placement.kind === 'mess')) reportQuestEvent('room-clean')
+  }, [canEdit, isEditing, isReady, loaded])
 
   useEffect(
     () => () => {
@@ -275,6 +299,30 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     const owned = trayPropIds(wallet.items, [])
     return new Set(owned.filter((ref) => !seen.has(ref)))
   }, [seen, wallet.items])
+
+  const dirtyMesses = useMemo(() => draft.filter((placement) => placement.kind === 'mess'), [draft])
+
+  // A soft sparkle over each mess while the room is dirty; the sparkles are DOM, the messes are canvas.
+  useEffect(() => {
+    if (isEditing || dirtyMesses.length === 0) return
+    let handle = 0
+    const follow = () => {
+      handle = requestAnimationFrame(follow)
+      for (const mess of dirtyMesses) {
+        const sparkle = sparkleRef.current.get(mess.id)
+        if (!sparkle) continue
+        const box = controller.screenBox(mess.id)
+        if (!box) {
+          sparkle.style.visibility = 'hidden'
+          continue
+        }
+        sparkle.style.visibility = 'visible'
+        sparkle.style.transform = `translate3d(${box.left.toFixed(1)}px, ${((box.top + box.bottom) / 2).toFixed(1)}px, 0) translate(-50%, -50%)`
+      }
+    }
+    follow()
+    return () => cancelAnimationFrame(handle)
+  }, [controller, dirtyMesses, isEditing])
 
   const markSeen = useCallback((ref: string) => {
     setSeen((current) => {
@@ -344,8 +392,9 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       const now = cozyLevel(next)
       if (now.hearts > bestHeartsRef.current) {
         bestHeartsRef.current = now.hearts
+        const stars = roomStars(now).stars
         play('harp')
-        showToast(`Your room feels ${now.name} now!`)
+        showToast(`Your room is a ${stars}-star room now!`)
         if (landed) puffAt(landed, true)
       }
     },
@@ -707,7 +756,8 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       return
     }
     const record = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
-    const next = Array.isArray(record.draft) ? (record.draft as Placement[]) : placements
+    const serverDraft = Array.isArray(record.draft) ? (record.draft as Placement[]) : keptPlacements
+    const next = serverDraft.filter((placement) => !isRemovedProceduralFish(placement.ref))
     versionRef.current = typeof record.draftVersion === 'number' ? record.draftVersion : null
     bestHeartsRef.current = cozyLevel(next).hearts
     savedRef.current = next
@@ -719,7 +769,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     loadedRef.current = true
     setLoaded(true)
     play('open')
-  }, [controller, placements, play, slug])
+  }, [controller, keptPlacements, play, slug])
 
   const leaveEdit = useCallback(() => {
     loadedRef.current = false
@@ -1047,8 +1097,8 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     return controller.screenPoint(at.x, at.y)
   }
 
-  function startJob(id: string, kind: WorkKind, seconds: number, at?: { x: number; y: number }): void {
-    const job = { id, kind, seconds, startedAt: performance.now(), at }
+  function startJob(id: string, kind: WorkKind, seconds: number, at?: { x: number; y: number }, celebrate = false): void {
+    const job = { id, kind, seconds, startedAt: performance.now(), at, celebrate }
     jobsRef.current = [...jobsRef.current.filter((entry) => entry.id !== id), job]
     setJobs(jobsRef.current)
     controller.work(id, kind, 0)
@@ -1073,22 +1123,32 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     setHistory((stack) => stack.map((entry) => entry.filter((placement) => placement.id !== job.id)))
     replaceDraft(next)
     if (box) {
-      const puff = { id: ++puffId.current, left: box.left, top: (box.top + box.bottom) / 2, big: isLast }
+      const puff = { id: ++puffId.current, left: box.left, top: (box.top + box.bottom) / 2, big: isLast || job.celebrate === true }
       setPuffs((current) => [...current, puff])
       later(() => setPuffs((current) => current.filter((entry) => entry.id !== puff.id)), 900)
     }
     if (isLast) {
-      play('harp')
-      showToast('All clean! The place looks brighter already.')
+      play(job.celebrate ? 'success' : 'harp')
+      showToast(job.celebrate ? 'Your first tidy-up! It already feels more like home.' : 'All clean! The place looks brighter already.')
+      reportQuestEvent('room-clean')
+    } else if (job.celebrate) {
+      play('success')
+      showToast('Lovely! One mess down, and the room is starting to shine.')
     } else {
       play('click')
     }
+    if (job.celebrate) {
+      setFirstCleanDone(true)
+      writeLocal(FIRST_CLEAN_KEY, '1')
+    }
   }
 
-  /** Pays for a piece of junk (unless it already is) and starts clearing it. */
-  async function confirmClean(): Promise<void> {
-    if (!offer || paying) return
-    const { id, ref, at } = offer
+  /**
+   * Pays for a piece of junk (unless it already is) and starts clearing it.
+   * `celebrate` is the first-ever clean: no confirmation step and a two-second job.
+   */
+  async function cleanNow(id: string, ref: string, at: { x: number; y: number } | undefined, celebrate: boolean): Promise<boolean> {
+    if (payingRef.current) return false
     const itemId = cleanItemId(id)
     if (!wallet.items.includes(itemId)) {
       setPaying(true)
@@ -1100,13 +1160,50 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       if (outcome !== 'ok') {
         setNotice(outcome === 'insufficient' ? `Not enough stamps to ${isRepair(ref) ? 'repair' : 'clear'} that yet.` : 'That could not be paid for just now.')
         play('error')
-        return
+        return false
       }
       play('purchase')
     }
     setOffer(null)
     // Paid for but not started (left Decorate meanwhile): tapping it later finishes the job for free.
-    if (isEditingRef.current && draftRef.current.some((placement) => placement.id === id)) startJob(id, 'clean', cleanupFor(ref).seconds, at)
+    const placement = draftRef.current.find((entry) => entry.id === id)
+    if (isEditingRef.current && placement) {
+      controller.panTo(placement.x)
+      startJob(id, 'clean', celebrate ? Math.min(2, cleanupFor(ref).seconds) : cleanupFor(ref).seconds, at, celebrate)
+    }
+    return true
+  }
+
+  /** Pays for a piece of junk (unless it already is) and starts clearing it. */
+  async function confirmClean(): Promise<void> {
+    if (!offer || paying) return
+    await cleanNow(offer.id, offer.ref, offer.at, false)
+  }
+
+  /**
+   * The broom is the one-tap way to tidy. The first clean is deliberately easier:
+   * no offer card, no confirmation, a short job, and a celebration at the end.
+   * Later sweeps open the ordinary offer, so they still need the paid confirmation.
+   */
+  async function tidyWithBroom(): Promise<void> {
+    if (broomBusy || payingRef.current) return
+    setBroomBusy(true)
+    try {
+      if (!isEditingRef.current) await enterEdit()
+      if (!isEditingRef.current) return
+      const messes = draftRef.current.filter((placement) => placement.kind === 'mess')
+      if (messes.length === 0) return
+      const mess = [...messes].sort((a, b) => cleanupFor(a.ref).price - cleanupFor(b.ref).price)[0]
+      if (firstCleanDone) {
+        controller.panTo(mess.x)
+        setOffer({ id: mess.id, ref: mess.ref })
+        play('click')
+        return
+      }
+      await cleanNow(mess.id, mess.ref, undefined, true)
+    } finally {
+      setBroomBusy(false)
+    }
   }
 
   /** Keyboard activation of a card (Enter or Space); pointer taps go through the carry instead. */
@@ -1204,6 +1301,8 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   }
 
   const selectedPlacement = selected === null ? null : draft.find((entry) => entry.id === selected) ?? null
+  const broomImage = cozyPropImageUrl('broom')
+  const showTidy = canEdit && isReady && !isEditing && dirtyMesses.length > 0
 
   return (
     <>
@@ -1214,6 +1313,42 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
           </button>
         </div>
       ) : null}
+
+      {showTidy ? (
+        <>
+          <div className="room-broom-wrap">
+            <p className="room-tidy-hint">Your room is dusty! Tap the broom to tidy up.</p>
+            <button
+              type="button"
+              className={`room-broom${firstCleanDone ? '' : ' is-first'}${broomBusy ? ' is-busy' : ''}`}
+              onClick={() => void tidyWithBroom()}
+              aria-label={firstCleanDone ? 'Tidy up with the broom' : 'Tidy up with the broom (your first clean is quick)'}
+              title="Tidy up"
+            >
+              {broomImage ? <img src={broomImage} alt="" draggable={false} /> : <span aria-hidden="true">{'🧹'}</span>}
+              <span className="room-broom-spark" aria-hidden="true">
+                {'✦'}
+              </span>
+            </button>
+          </div>
+          <div className="room-mess-sparkles" aria-hidden="true">
+            {dirtyMesses.map((mess) => (
+              <span
+                key={mess.id}
+                ref={(element) => {
+                  if (element) sparkleRef.current.set(mess.id, element)
+                  else sparkleRef.current.delete(mess.id)
+                }}
+                className="room-mess-sparkle"
+              >
+                {'✦'}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {canEdit && isReady && !isEditing ? <LetterMailbox ownerName={ownerName} /> : null}
 
       {isEditing ? (
         <>

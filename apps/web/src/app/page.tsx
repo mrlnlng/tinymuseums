@@ -69,7 +69,6 @@ export default function LandingPage() {
           {/* These walk or peek in later, so they wait behind what shows first. */}
           <AssetImage name="landing/otter-walk" className="landing-walker-cat" fetchPriority="low" />
           <AssetImage name="landing/peek-bunny" className="landing-peeker" fetchPriority="low" />
-          <AssetImage name="landing/peek-cat" className="landing-peeker" fetchPriority="low" />
         </div>
       </div>
 

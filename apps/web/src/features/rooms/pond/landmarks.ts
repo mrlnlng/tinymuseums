@@ -1,5 +1,5 @@
 import type { PondPanelKind } from './room'
-import { PROP_DEPTH, type PondPath } from './depth'
+import { PROP_DEPTH, type PondPath } from './depth.ts'
 import type { AssetName } from '@/shared/lib/assets'
 
 /** The woodland entrance shares the costume-gallery door's scale and interaction. */

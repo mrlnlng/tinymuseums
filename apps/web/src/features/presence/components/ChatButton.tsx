@@ -4,16 +4,24 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { MESSAGE_MAX } from '@tiny/core/presence/messages'
+import type { ChatMessage } from '../lib/chat-history'
+import WalkAlone from './WalkAlone'
 import {
+  getChatHistory,
   getPeople,
+  isChatMuted,
   isInRoom,
   isMuted,
+  onChatHistoryChange,
+  onChatMutedChange,
   onInRoomChange,
   onMutedChange,
   onOpenChat,
   onPeopleChange,
   onSayResult,
+  refreshChatHistory,
   requestSay,
+  setChatMuted as setChatMutedPreference,
   setMuted,
   type SayResult,
 } from '../lib/room-events'
@@ -35,27 +43,38 @@ export default function ChatButton() {
   const [text, setText] = useState('')
   const [note, setNote] = useState<string | null>(null)
   const [people, setPeople] = useState(getPeople)
+  const [history, setHistory] = useState<ChatMessage[]>(getChatHistory)
+  const [chatMuted, setChatMuted] = useState(isChatMuted)
   const [, setMutes] = useState(0)
   const control = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const openRef = useRef(false)
 
+  const playChatSound = useCallback(
+    (name: 'open' | 'close' | 'confirm' | 'error') => {
+      if (!isChatMuted()) play(name)
+    },
+    [play],
+  )
+
   const openPanel = useCallback(() => {
     if (openRef.current) return
     openRef.current = true
+    setHistory(refreshChatHistory())
     setOpen(true)
-    play('open')
-  }, [play])
+    playChatSound('open')
+  }, [playChatSound])
 
   const closePanel = useCallback(() => {
     if (!openRef.current) return
     openRef.current = false
     setOpen(false)
-    play('close')
-  }, [play])
+    playChatSound('close')
+  }, [playChatSound])
 
   useEffect(() => {
     setInRoom(isInRoom())
+    setHistory(getChatHistory())
     const stops = [
       onInRoomChange(() => {
         setInRoom(isInRoom())
@@ -65,25 +84,27 @@ export default function ChatButton() {
         }
       }),
       onPeopleChange(() => setPeople(getPeople())),
+      onChatHistoryChange(() => setHistory(getChatHistory())),
+      onChatMutedChange(() => setChatMuted(isChatMuted())),
       onMutedChange(() => setMutes((n) => n + 1)),
       onOpenChat(() => {
         if (isInRoom()) openPanel()
       }),
       onSayResult((result) => {
         if (result.ok) {
-          play('confirm')
+          playChatSound('confirm')
           openRef.current = false
           setText('')
           setNote(null)
           setOpen(false)
         } else {
-          play('error')
+          playChatSound('error')
           setNote(REFUSED[result.reason])
         }
       }),
     ]
     return () => stops.forEach((stop) => stop())
-  }, [openPanel, play])
+  }, [openPanel, playChatSound])
 
   useEffect(() => {
     if (!open) return
@@ -100,6 +121,10 @@ export default function ChatButton() {
   useEscapeKey(closePanel, open)
 
   if (!inRoom) return null
+  const here = people.length + 1
+  // Muted chat, or a muted visitor, stays out of the history list as well as the bubbles.
+  const shownHistory = chatMuted ? history.filter((m) => m.pid === 'self') : history.filter((m) => m.pid === 'self' || !isMuted(m.pid))
+
   return (
     <div className="chat-control" ref={control}>
       <button
@@ -111,9 +136,9 @@ export default function ChatButton() {
           if (open) closePanel()
           else openPanel()
         }}
-        aria-label="Say something to other visitors"
+        aria-label={`Say something to other visitors. ${here} here`}
         aria-expanded={open}
-        title="Say something"
+        title={`Say something — ${here} here`}
       >
         <svg viewBox="0 0 75 75" aria-hidden="true">
           <mask id="chat-toggle-cutout">
@@ -123,9 +148,37 @@ export default function ChatButton() {
           </mask>
           <circle cx="37.5" cy="37.5" r="37.5" mask="url(#chat-toggle-cutout)" />
         </svg>
+        <span className="chat-count" aria-hidden="true">
+          {here}
+        </span>
       </button>
       {open ? (
         <div className="chat-panel">
+          <div className="chat-head">
+            <p className="chat-here">{here} here</p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={chatMuted}
+              className="chat-mute-all"
+              onClick={() => setChatMutedPreference(!chatMuted)}
+              title={chatMuted ? 'Show and hear incoming chat again' : 'Hide and silence incoming chat'}
+            >
+              {chatMuted ? 'Unmute chat' : 'Mute chat'}
+            </button>
+          </div>
+          <ol className="chat-history" aria-label="Recent messages in this room">
+            {shownHistory.length === 0 ? (
+              <li className="chat-empty">{chatMuted ? 'Chat is muted.' : 'No messages yet.'}</li>
+            ) : (
+              shownHistory.map((message, index) => (
+                <li key={`${message.at}-${index}`} className="chat-line" data-self={message.pid === 'self' ? '' : undefined}>
+                  <span className="chat-who">{message.name}</span>{' '}
+                  <span className="chat-text">{message.text}</span>
+                </li>
+              ))
+            )}
+          </ol>
           <form
             className="chat-form"
             onSubmit={(event) => {
@@ -171,6 +224,7 @@ export default function ChatButton() {
               ))}
             </ul>
           ) : null}
+          <WalkAlone label="Visit alone" />
         </div>
       ) : null}
     </div>

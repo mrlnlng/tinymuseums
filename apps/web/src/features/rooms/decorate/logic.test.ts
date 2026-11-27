@@ -25,6 +25,9 @@ import {
   paintingOrder,
   propLabel,
   cozyWorth,
+  roomStars,
+  REMOVED_PROCEDURAL_FISH,
+  isRemovedProceduralFish,
   reasonLabel,
   samePlacements,
   shopPropIds,
@@ -332,4 +335,37 @@ test('the shop sells finishes the member lacks, never the free ones', () => {
 test('a chosen wallpaper adds to coziness, the default does not', () => {
   assert.equal(cozyLevel(withFinish([], 'wallpaper', 'wallpaper-cream')).score, 0)
   assert.equal(cozyLevel(withFinish([], 'wallpaper', 'wallpaper-ornate')).score, 3)
+})
+
+
+test('room stars map the six levels onto 1–5 and keep the score', () => {
+  const bare = cozyLevel([])
+  assert.equal(bare.score, 0)
+  assert.deepEqual(roomStars(bare), {
+    stars: 1,
+    maxStars: 5,
+    progress: bare.progress,
+    caption: 'More stars when your room is clean and decorated.',
+  })
+
+  const starters = ['shelf', 'carpet', 'pillow-red'].map((ref, i): Placement => ({ id: `star-${i}`, kind: 'prop', ref, zone: 'floor', x: 4 }))
+  const snug = cozyLevel(starters)
+  assert.equal(snug.name, 'Snug')
+  assert.equal(roomStars(snug).stars, 3)
+  assert.equal(roomStars({ ...snug, hearts: 4 }).stars, 5)
+  assert.equal(roomStars({ ...snug, hearts: 5 }).stars, 5)
+  assert.equal(roomStars({ ...snug, hearts: 5 }).progress, 1)
+})
+
+test('the procedurally drawn fish are gone from the tray; the artist-asset fish stay', () => {
+  const items = [
+    'prop:fish-koi',
+    'prop:fish-star-snapper',
+    'prop:fish-blobfish',
+    'prop:shelf',
+  ]
+  assert.equal(isRemovedProceduralFish('fish-koi'), true)
+  assert.equal(isRemovedProceduralFish('fish-star-snapper'), false)
+  assert.deepEqual(trayPropIds(items, []), ['fish-star-snapper', 'fish-blobfish', 'shelf'])
+  for (const ref of REMOVED_PROCEDURAL_FISH) assert.equal(trayPropIds([`prop:${ref}`], []).length, 0)
 })

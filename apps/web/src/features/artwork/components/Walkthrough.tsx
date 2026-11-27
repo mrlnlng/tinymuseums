@@ -5,6 +5,7 @@ import { motion, AnimatePresence, type Variants } from 'motion/react'
 import type { PieceDto } from '@tiny/core'
 import { frameFor, isFrameReady, markFrameReady } from '@/features/artwork/lib/frame'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { pictureSources } from '@/shared/lib/assets'
 import AssetImage from '@/shared/components/AssetImage'
@@ -69,6 +70,12 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(0)
 
+  // The screen chrome can then hide the chat dock while a closeup is open.
+  useEffect(() => {
+    document.body.classList.add('walkthrough-open')
+    return () => document.body.classList.remove('walkthrough-open')
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     loadArtistPieces(slug)
@@ -125,6 +132,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
 
   useEffect(() => {
     if (!piece) return
+    reportQuestEvent('view-artwork', piece.id)
     void fetch('/api/events', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

@@ -29,9 +29,10 @@ test('gallery rooms stay within the size limit', () => {
 
 test('every painting, pedestal and landmark falls inside a room of the right kind', () => {
   const layout = computeLayout(paintings(25), true)
-  for (const x of [...layout.centerX, ...layout.pedestalX, layout.comingSoonX!]) {
+  for (const x of [...layout.centerX, ...layout.pedestalX]) {
     assert.equal(roomAt(layout, x)?.kind, 'gallery', `x ${x}`)
   }
+  assert.equal(layout.comingSoonX, null)
   assert.equal(roomAt(layout, layout.cafeX!)?.kind, 'cafe')
   assert.equal(roomAt(layout, layout.guestBoardX!)?.kind, 'cafe')
   assert.equal(roomAt(layout, layout.giftShopX! - 0.01)?.kind, 'giftShop')

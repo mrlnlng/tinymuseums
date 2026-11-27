@@ -60,3 +60,15 @@ test('the mirror stands on the floor between the cabinet and the wardrobe, touch
   assert.ok(mirror.x + width / 2 < wardrobe.x - wardrobe.width / 2)
   assert.ok(mirror.glass.left < mirror.glass.right && mirror.glass.top < mirror.glass.bottom)
 })
+
+
+test('the credited room names Jazlynn and keeps an empty description field for her copy', () => {
+  const credited = COLLECTIONS.filter((room) => room.artist)
+  assert.equal(credited.length, 1)
+  assert.deepEqual(credited[0].artist, {
+    name: 'Jazlynn',
+    instagram: 'https://www.instagram.com/jazlynn.art/',
+    website: 'https://jazlynnart.com/',
+    description: '',
+  })
+})

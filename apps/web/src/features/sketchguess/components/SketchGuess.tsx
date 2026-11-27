@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { BRAND } from '@tiny/core/brand'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { track } from '@/shared/lib/visit'
@@ -317,6 +318,7 @@ export default function SketchGuess({ epochId, prepared, onClose }: SketchGuessP
     }
     setBest(saveIfHigher(bestKeyFor(mode, difficulty), total))
     setPhase('done')
+    reportQuestEvent('finish-minigame')
     track('sketch_finish')
     earn('game', { game: 'sketch', score: total })
   }, [roundIndex, total, mode, difficulty])

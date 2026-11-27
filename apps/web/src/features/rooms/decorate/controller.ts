@@ -1,9 +1,11 @@
 import * as THREE from 'three'
 import type { Placement } from '@tiny/core/rooms'
 import type { Character } from '@/features/hall/scene/character'
+import { reportQuestEvent } from '@/features/letters/events'
 import { centerYFor } from '@/features/hall/scene/config'
 import type { Traversal } from '@/features/hall/scene/traversal'
 import type { GhostOptions, HighlightArea, PlacementLayer, WorkKind } from '../themes/cozy'
+import { isRemovedProceduralFish } from './logic.ts'
 
 export interface DecorLive {
   camera: THREE.OrthographicCamera
@@ -104,8 +106,9 @@ export function createDecorController(): DecorController {
     attach(next) {
       live = next
       if (placements) {
-        next.layer.set(placements)
-        next.onPlacements?.(placements)
+        const shown = placements.filter((entry) => !isRemovedProceduralFish(entry.ref))
+        next.layer.set(shown)
+        next.onPlacements?.(shown)
       }
       if (opacity !== null) next.character.setOpacity(opacity)
     },
@@ -183,9 +186,14 @@ export function createDecorController(): DecorController {
     },
 
     setPlacements(next) {
+      if (placements !== null) {
+        const before = new Set(placements.filter((entry) => entry.kind === 'prop').map((entry) => entry.id))
+        if (next.some((entry) => entry.kind === 'prop' && !before.has(entry.id))) reportQuestEvent('place-decoration')
+      }
       placements = next
-      live?.layer.set(next)
-      live?.onPlacements?.(next)
+      const shown = next.filter((entry) => !isRemovedProceduralFish(entry.ref))
+      live?.layer.set(shown)
+      live?.onPlacements?.(shown)
     },
 
     pick(clientX, clientY) {

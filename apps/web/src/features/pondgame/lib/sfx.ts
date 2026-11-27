@@ -3,6 +3,25 @@
  * No audio files: the sound setting from SoundProvider is the only switch.
  */
 
+import type { LostReason } from './machine.ts'
+import type { FishTier } from './tables.ts'
+
+/** The whoosh when the line leaves the rod. */
+export const CAST_SFX = 'cast' as const
+
+/** A bigger catch should sound bigger: a plink, then a chime, then the fanfare. */
+export function catchSfx(tier: FishTier): PondSfxName {
+  if (tier === 'legendary') return 'fanfare'
+  if (tier === 'rare') return 'chime3'
+  if (tier === 'uncommon') return 'chime2'
+  return 'plink'
+}
+
+/** A snapped line has its own crack; every other loss gets the gentle falling notes. */
+export function lossSfx(reason: LostReason): PondSfxName {
+  return reason === 'snap' ? 'snap' : 'lost'
+}
+
 export type PondSfxName =
   | 'cast'
   | 'splash'

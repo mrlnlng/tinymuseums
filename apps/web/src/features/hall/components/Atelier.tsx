@@ -16,10 +16,39 @@ import { hrefFor } from '@/features/rooms/links'
 import { useRoom } from '@/features/rooms/MuseumStage'
 import type { DoorRef } from '@/features/rooms/types'
 import { lookOf, ownedLook, shouldRewriteOutfit } from '@/features/hall/scene/wardrobe'
+import type { ArtistCredit } from '@/features/hall/scene/atelier-layout'
 import { allowedCharacter, owns, useWallet } from '@/features/economy'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
+import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import { useSlot } from '@/shared/lib/slots'
+
+/** The sounds a change of clothes or character makes. */
+const CHANGE_SOUND = { costume_on: 'confirm', costume_off: 'select', character: 'transition' } as const
+
+/** A painting's artist, with the two places their work lives. The blurb waits for real copy. */
+function ArtistCard({ artist, onClose }: { artist: ArtistCredit; onClose(): void }) {
+  const cardRef = useModalFocus()
+  useEscapeKey(onClose)
+  return (
+    <div className="guide-talk atelier-artist" role="dialog" aria-modal="true" aria-labelledby="atelier-artist-name">
+      <button type="button" tabIndex={-1} className="guide-talk-scrim" onClick={onClose} aria-label={`Close ${artist.name}'s card`} />
+      <div ref={cardRef} className="guide-talk-card atelier-artist-card">
+        <p className="guide-talk-who">Artist</p>
+        <h2 id="atelier-artist-name" className="atelier-artist-name">{artist.name}</h2>
+        {artist.description ? <p className="atelier-artist-description">{artist.description}</p> : null}
+        <div className="atelier-artist-links">
+          <a href={artist.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a href={artist.website} target="_blank" rel="noopener noreferrer">Website</a>
+        </div>
+        <div className="guide-talk-actions">
+          <button type="button" className="guide-talk-button" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Atelier({ spots, from }: { spots: Record<string, SpotPainting>; from: string | null }) {
   // In through the door the visitor came by; without one, the first door in the fashion area.
@@ -28,12 +57,15 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
   const [becoming, setBecoming] = useState<CharacterKind | null>(null)
   const [closetOpen, setClosetOpen] = useState(false)
   const [dressing, setDressing] = useState<{ costume: string | null; bow: string | null } | null>(null)
+  const [artist, setArtist] = useState<ArtistCredit | null>(null)
   const { play } = useSound()
   const playRef = useRef(play)
   playRef.current = play
   const [hooks] = useState<AtelierHooks>(() => ({
     onMirror: () => { playRef.current('open'); setMirrorOpen(true) },
     onCloset: () => { playRef.current('open'); setClosetOpen(true) },
+    onArtist: (credit) => { playRef.current('open'); setArtist(credit) },
+    onChange: { current: (change) => playRef.current(CHANGE_SOUND[change]) },
     become: { current: null },
     dress: { current: null },
     wardrobeDoors: { current: null },
@@ -86,6 +118,11 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
     )
   }
 
+  function closeArtist(): void {
+    play('close')
+    setArtist(null)
+  }
+
   return (
     <>
       <AtelierKeeps />
@@ -109,6 +146,7 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
           onClose={() => setMirrorOpen(false)}
         />
       ) : null}
+      {artist ? <ArtistCard artist={artist} onClose={closeArtist} /> : null}
       <AnimatePresence>{isReady ? null : <AtelierLoading key="loading" />}</AnimatePresence>
     </>
   )

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Assets } from './assets'
 import { disposeBoards, plane, stretchedBoard } from './board'
 import { CONFIG } from './config'
-import { createGalleryDoor, GALLERY_DOOR, INSET_DOOR_Z } from './gallery-door'
+import { createGalleryDoor, GALLERY_DOOR, INSET_DOOR_Z, loadGalleryPillow } from './gallery-door'
 import { placeLabel, type Viewport } from './overlay'
 
 export interface HallDoor {
@@ -71,7 +71,7 @@ export function createHallDoors(scene: THREE.Scene, host: HTMLElement, onEnter: 
   }
 }
 
-/** The museum pillar left of the visitor centre. */
+/** The museum pillar left of the visitor centre, with a red cushion resting on its top. */
 export function createLobbyPillar(scene: THREE.Scene, pillarImage: HTMLImageElement) {
   const group = new THREE.Group()
   const pillar = new THREE.Texture(pillarImage)
@@ -80,8 +80,32 @@ export function createLobbyPillar(scene: THREE.Scene, pillarImage: HTMLImageElem
   pillar.anisotropy = 4
   pillar.userData.ownedByBoard = true
   const height = CONFIG.atelier.column.height / CONFIG.atelier.mock.unit
-  group.add(plane(height * pillarImage.naturalWidth / pillarImage.naturalHeight, height,
-    pillar, -1.84, GALLERY_DOOR.lobbyBase + height / 2, 0.3))
+  const width = height * pillarImage.naturalWidth / pillarImage.naturalHeight
+  const x = -1.84
+  group.add(plane(width, height, pillar, x, GALLERY_DOOR.lobbyBase + height / 2, 0.3))
+
+  let disposed = false
+  void loadGalleryPillow()
+    .then((pillowImage) => {
+      if (disposed) return
+      const pillow = new THREE.Texture(pillowImage)
+      pillow.needsUpdate = true
+      pillow.colorSpace = THREE.SRGBColorSpace
+      pillow.anisotropy = 4
+      pillow.userData.ownedByBoard = true
+      const pillowWidth = width * 0.5
+      const pillowHeight = pillowWidth * pillowImage.naturalHeight / pillowImage.naturalWidth
+      const top = GALLERY_DOOR.lobbyBase + height
+      // Sit it on the capital, overlapping the edge a touch so it reads as resting there.
+      group.add(plane(pillowWidth, pillowHeight, pillow, x, top - pillowHeight * 0.08 + pillowHeight / 2, 0.32))
+    })
+    .catch(() => {})
+
   scene.add(group)
-  return { dispose: () => disposeBoards(scene, group) }
+  return {
+    dispose: () => {
+      disposed = true
+      disposeBoards(scene, group)
+    },
+  }
 }

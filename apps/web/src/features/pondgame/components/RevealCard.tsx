@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { catchArt, journalCatch } from '@/features/pondroom/lib/journal'
 import { useModalFocus } from '@/shared/hooks/useModalFocus'
 import type { CatchView } from '../lib/guest.ts'
-import type { PondSfx, PondSfxName } from '../lib/sfx.ts'
+import { catchSfx, type PondSfx } from '../lib/sfx.ts'
 import { chainOffer, missWagerLabel } from '../lib/risk.ts'
 import {
   SPECIES_BY_ID,
@@ -19,13 +19,6 @@ const TIER_MS: Record<FishTier, number> = {
   uncommon: 1700,
   rare: 2700,
   legendary: 4400,
-}
-
-const TIER_SFX: Record<FishTier, PondSfxName> = {
-  common: 'plink',
-  uncommon: 'chime2',
-  rare: 'chime3',
-  legendary: 'fanfare',
 }
 
 function useCountUp(target: number, duration: number, instant: boolean): number {
@@ -139,7 +132,7 @@ export default function RevealCard({
   useEffect(() => {
     const duration = reduced ? Math.min(1300, TIER_MS[caught.tier]) : TIER_MS[caught.tier]
     const timer = window.setTimeout(settle, duration)
-    sfx.play(TIER_SFX[caught.tier])
+    sfx.play(catchSfx(caught.tier))
     const extra = window.setTimeout(() => {
       if (caught.treasure) sfx.play('treasure')
       else if (caught.variant !== 'normal') sfx.play('coin')

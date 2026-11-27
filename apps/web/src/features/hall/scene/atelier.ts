@@ -9,7 +9,7 @@ import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from './rig'
-import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
+import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type ArtistCredit, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
 import { CARDIGANS, COSTUMES, HIBISCUS } from './wardrobe'
 import { MIRROR_KINDS } from './mirror'
 import { pieceUrl } from './piece-art'
@@ -95,6 +95,8 @@ export interface AtelierActions {
   onWardrobe(): void
   /** The visitor tapped the mirror's glass. */
   onMirror(): void
+  /** The visitor tapped a painting credited to an artist. */
+  onArtist(artist: ArtistCredit): void
   onLeave(door: string): void
 }
 
@@ -123,6 +125,8 @@ export interface AtelierRoom {
   mirrorGlass(): { left: number; right: number; top: number; bottom: number } | null
   /** The mirror has been opened, so its glint can rest. */
   markMirrorSeen(): void
+  /** The closet has been opened, so its glint can rest. */
+  markClosetSeen(): void
   /**
    * Sends each unkept thing from the visitor (`from`, in page pixels) back to where it lives: a
    * costume to the wardrobe or its form, a headpiece to its stand, a character into the mirror.
@@ -352,6 +356,16 @@ export function createAtelierRoom(
       return control
     }
 
+    /** A soft halo that keeps breathing until the visitor finds the thing under it. */
+    function beacon(spot: Spot, aspect: number, shown: () => boolean): void {
+      const node = document.createElement('div')
+      node.className = 'atelier-beacon'
+      node.setAttribute('aria-hidden', 'true')
+      node.style.aspectRatio = String(aspect)
+      own(spot, node, 0.1)
+      glints.push({ node, shown })
+    }
+
     /** A small gold seal on a piece the member has kept, in place of the price it no longer needs. */
     function seal(spot: Spot, itemId: string, shown: () => boolean = () => true): void {
       const node = document.createElement('div')
@@ -372,7 +386,7 @@ export function createAtelierRoom(
     }
 
     return {
-      pieces, button, glint, seal,
+      pieces, button, glint, beacon, seal,
       onRefresh: (fn: () => void) => { refreshers.push(fn) },
       onDispose: (fn: () => void) => { cleanup.push(fn) },
       built: (extra: { wardrobe?: Painted; mirror?: Painted } = {}): BuiltRoom => ({ pieces, glints, ...extra, refresh, dispose: () => { for (const fn of cleanup) fn() } }),
@@ -388,7 +402,8 @@ export function createAtelierRoom(
     const body = plane(units(W), units(H), art.wardrobeClosed, wx(wardrobe.x), wy(top + H / 2), wardrobe.z) as Painted
     group.add(body)
     kit.button('Open the closet', 'atelier-item atelier-wardrobe', { x: wardrobe.x, y: top + H / 2, width: W * 0.92 }, () => actions?.onWardrobe())
-    kit.glint({ x: wardrobe.x, y: top + wardrobe.handles.y * H, width: wardrobe.handles.width }, 1.4, () => !wardrobeOpen)
+    kit.glint({ x: wardrobe.x, y: top + wardrobe.handles.y * H, width: wardrobe.handles.width }, 1.4, () => !closetSeen)
+    kit.beacon({ x: wardrobe.x, y: top + H / 2, width: W * 1.16 }, 0.9, () => !closetSeen)
     kit.onRefresh(() => { body.material.map = wardrobeOpen ? art.wardrobeOpen : art.wardrobeClosed })
     return body
   }
@@ -438,6 +453,7 @@ export function createAtelierRoom(
 
     kit.button('Look in the mirror', 'atelier-item atelier-mirror', { x: glassX, y: top + (glass.top + glass.bottom) / 2 * H, width: glassWidth }, () => actions?.onMirror())
     kit.glint({ x: spec.x, y: top + H * 0.3, width: W * 0.8 }, 0.8, () => !mirrorSeen)
+    kit.beacon({ x: spec.x, y: top + H / 2, width: W * 1.18 }, 0.4, () => !mirrorSeen)
     kit.onRefresh(paintGems)
     kit.onDispose(() => {
       gemMap.dispose()
@@ -534,6 +550,15 @@ export function createAtelierRoom(
     const rightSpot = { x: C + rightFrame.dx + out, y: rightFrame.y }
     hang(picture(group, collection.right.painting as AtelierImage, { ...rightSpot, width: rightFrame.width * rightFrame.fill, z: 0.19 }), `${collection.key}.right`)
     picture(group, 'bruceFrameCream', { ...rightSpot, width: rightFrame.width, z: 0.2 })
+
+    // A painting by a known artist opens a small credit card; the buttons sit over both frames.
+    if (collection.artist) {
+      const artist = collection.artist
+      const label = `About the artist, ${artist.name}`
+      const open = () => actions?.onArtist(artist)
+      button(label, 'atelier-item atelier-artwork', { x: C + leftFrame.dx - out, y: leftFrame.y, width: leftFrame.width }, open)
+      button(label, 'atelier-item atelier-artwork', { x: C + rightFrame.dx + out, y: rightFrame.y, width: rightFrame.width }, open)
+    }
 
     const { mannequin } = atelier
     const unit = units(mannequin.height) / mannequin.canvas.form[1]
@@ -634,8 +659,12 @@ export function createAtelierRoom(
   }
 
   const MIRROR_SEEN = 'tm:atelier:mirror-seen'
-  let mirrorSeen = false
-  try { mirrorSeen = window.sessionStorage.getItem(MIRROR_SEEN) === '1' } catch {}
+  const CLOSET_SEEN = 'tm:atelier:closet-seen'
+  const readSeen = (key: string): boolean => {
+    try { return window.localStorage.getItem(key) === '1' } catch { return false }
+  }
+  let mirrorSeen = readSeen(MIRROR_SEEN)
+  let closetSeen = readSeen(CLOSET_SEEN)
   const { glass } = atelier.mirror
   const onGlass = (u: number, v: number) => u >= glass.left && u <= glass.right && v >= glass.top && v <= glass.bottom
 
@@ -716,7 +745,12 @@ export function createAtelierRoom(
 
     markMirrorSeen() {
       mirrorSeen = true
-      try { window.sessionStorage.setItem(MIRROR_SEEN, '1') } catch {}
+      try { window.localStorage.setItem(MIRROR_SEEN, '1') } catch {}
+    },
+
+    markClosetSeen() {
+      closetSeen = true
+      try { window.localStorage.setItem(CLOSET_SEEN, '1') } catch {}
     },
 
     sync(camera, viewport, enabled) {

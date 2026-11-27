@@ -8,7 +8,19 @@ import type { Traversal } from '@/features/hall/scene/traversal'
 import { getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
 import { defaultStore } from '@/shared/lib/slots'
 import { createRemoteVisitors, type VisitorScenery } from '../scene/remote-visitors'
-import { isMuted, onNameChange, onSayRequest, openChat, reportSay, setInRoom, setPeople } from './room-events'
+import {
+  isChatMuted,
+  isMuted,
+  leaveRoom,
+  onNameChange,
+  onSayRequest,
+  openChat,
+  recordMessage,
+  reportSay,
+  setInRoom,
+  setPeople,
+  setRoom,
+} from './room-events'
 import { createPresence } from './presence'
 import { createTabTurn } from './tab-turn'
 
@@ -59,6 +71,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
   const prefs = store.getSlot(presenceSlot)
   if (prefs.snapshot().seed === null) prefs.update((current) => ({ ...current, seed: randomSeed() }))
   const seed = prefs.snapshot().seed ?? randomSeed()
+  setRoom(room)
 
   let facing: 1 | -1 = 1
   const turn = createTabTurn()
@@ -71,7 +84,8 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     visible: () => document.visibilityState === 'visible',
     active: turn.active,
     onSaid: (pid, name, text) => {
-      if (!isMuted(pid)) remoteVisitors?.announce(`${name} says: ${text}`)
+      recordMessage(pid, name, text)
+      if (!isChatMuted() && !isMuted(pid)) remoteVisitors?.announce(`${name} says: ${text}`)
     },
     onRefused: (reason) => reportSay({ ok: false, reason }),
   })
@@ -83,6 +97,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     const result = presence.say(text)
     reportSay(result.ok ? { ok: true } : result)
     if (!result.ok) return
+    recordMessage('self', 'You', result.text)
     remote.showOwnMessage(result.text)
     character.bounce()
   })
@@ -133,6 +148,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
     dispose() {
       setInRoom(false)
       setPeople([])
+      leaveRoom(room)
       stopSay()
       stopNames()
       stopMember()

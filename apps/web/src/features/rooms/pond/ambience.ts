@@ -581,13 +581,13 @@ export function createPondAmbience(group: THREE.Group, art: PondArt, ground: Pon
     const map = tuftMaps[drift.flowers ? Math.floor(random() * tuftMaps.length) : random() < 0.5 ? 0 : 1]
     spots.push({ x, depth, size: 0.5 + random() * 0.3, map, reed: false })
   }
+  // A few big reed clumps, spaced along the bank, instead of a crowd of small ones.
   const reedBeds: [number, number][] = [
-    [0.205, 0.745], [0.218, 0.775], [0.236, 0.715], [0.268, 0.7], [0.29, 0.682], [0.325, 0.672],
-    [0.705, 0.672], [0.75, 0.68], [0.785, 0.69], [0.802, 0.712], [0.812, 0.755], [0.818, 0.785],
+    [0.205, 0.748], [0.315, 0.676], [0.805, 0.748],
   ]
   for (const [fx, fy] of reedBeds) {
     const lift = (layout.scene.feet - fy) * H
-    spots.push({ x: fx * W + (random() - 0.5) * 0.12, depth: depthAtLift(lift), size: 0.55 + random() * 0.25, map: art.cattail, reed: true })
+    spots.push({ x: fx * W + (random() - 0.5) * 0.08, depth: depthAtLift(lift), size: 0.95 + random() * 0.35, map: art.cattail, reed: true })
   }
   spots.sort((a, b) => b.depth - a.depth)
   spots.forEach((spot, index) => {

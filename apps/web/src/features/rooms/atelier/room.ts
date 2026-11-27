@@ -12,6 +12,7 @@ import { atelierRoomInfo } from '@/features/npcs/room-places'
 import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
 import type { AtelierArtwork } from '../art'
+import type { ArtistCredit } from '@/features/hall/scene/atelier-layout'
 import type { SpotPainting } from '@tiny/core'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import type { JoinedRoom, RoomDef } from '../types'
@@ -22,6 +23,10 @@ import { doorDefs, doorsOf } from '../doors'
 export interface AtelierHooks {
   onMirror(): void
   onCloset(): void
+  /** The visitor tapped a credited painting. */
+  onArtist(artist: ArtistCredit): void
+  /** Plays the sound that matches an outfit or character change. */
+  onChange: { current: ((change: 'costume_on' | 'costume_off' | 'character') => void) | null }
   become: { current: ((kind: CharacterKind) => void) | null }
   /** Puts on what was chosen in the closet. */
   dress: { current: ((costume: string | null, bow: string | null) => void) | null }
@@ -80,13 +85,21 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         character: ctx.character,
         room,
         outfit: outfitSlot,
-        onChange: (change) => { track(change); sparkle(ctx.characterHost) },
+        onChange: (change) => {
+          track(change)
+          sparkle(ctx.characterHost)
+          hooks.onChange.current?.(change)
+        },
         onIdle: follower.sync,
       })
       const closet = wardrobe
       function openMirror(): void {
         room.markMirrorSeen()
         hooks.onMirror()
+      }
+      function openCloset(): void {
+        room.markClosetSeen()
+        hooks.onCloset()
       }
       hooks.become.current = (kind) => closet.tapDisplay(kind)
       hooks.dress.current = (costume, bow) => closet.dress(costume, bow)
@@ -143,7 +156,8 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
       room.setActions({
         onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
         onMirror: () => { if (!ctx.isQuiet()) openMirror() },
-        onWardrobe: () => { if (!ctx.isQuiet()) hooks.onCloset() },
+        onWardrobe: () => { if (!ctx.isQuiet()) openCloset() },
+        onArtist: (artist) => { if (!ctx.isQuiet()) hooks.onArtist(artist) },
         onLeave: (through) => { if (!ctx.isQuiet()) leaveByDoor(through) },
       })
 
@@ -170,7 +184,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
           const item = room.hitTestItem(raycaster)
           if (item) return { activate: () => closet.tapItem(item) }
           if (room.hitTestMirror(raycaster)) return { silent: true, activate: openMirror }
-          if (room.hitTestWardrobe(raycaster)) return { silent: true, activate: () => hooks.onCloset() }
+          if (room.hitTestWardrobe(raycaster)) return { silent: true, activate: openCloset }
           const through = room.hitTestDoor(raycaster)
           if (through) return { activate: () => leaveByDoor(through) }
           return null
@@ -196,6 +210,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
           hooks.become.current = null
           hooks.dress.current = null
           hooks.wardrobeDoors.current = null
+          hooks.onChange.current = null
           reflection.dispose()
           stopWallet()
           follower.dispose()

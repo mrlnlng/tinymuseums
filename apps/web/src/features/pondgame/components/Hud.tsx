@@ -2,6 +2,7 @@
 
 import { memo } from 'react'
 import { PearlIcon, PondIcon } from '@/features/pondroom/lib/icons'
+import { EASY_REEL_NOTE } from '../lib/copy.ts'
 import { formatPayout, streakChip } from '../lib/risk.ts'
 import { TIER_LABEL, type FishTier } from '../lib/tables.ts'
 
@@ -106,7 +107,7 @@ function Hud({
               <label className="pond-settings-row">
                 <span>
                   Easy reel
-                  <small>Wider safe band, gentler runs</small>
+                  <small>{EASY_REEL_NOTE}</small>
                 </span>
                 <input type="checkbox" checked={easyReel} onChange={onToggleEasyReel} />
               </label>

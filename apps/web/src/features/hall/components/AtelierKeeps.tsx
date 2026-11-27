@@ -47,6 +47,7 @@ export default function AtelierKeeps() {
   const [cue, setCue] = useState<{ itemId: string; kind: 'nudge' | 'shake' | 'kept' } | null>(null)
   const [purseShake, setPurseShake] = useState(0)
   const [hint, setHint] = useState(false)
+  const [signIn, setSignIn] = useState(false)
   const follow = useRef<HTMLDivElement>(null)
   const stage = useStage()
   const any = stamps.length > 0
@@ -147,7 +148,13 @@ export default function AtelierKeeps() {
   function press(stamp: KeepStamp): void {
     setHint(false)
     if (busy) return
-    if (stamp.state === 'locked') { openAccount(); return }
+    if (stamp.state === 'locked') {
+      // The guest sees why the sheet is opening, in the atelier's own lettering.
+      setSignIn(true)
+      window.setTimeout(() => setSignIn(false), 2800)
+      openAccount()
+      return
+    }
     if (stamp.state === 'short') { setPurseShake((n) => n + 1); flash(stamp.itemId, 'shake'); return }
     setHold({ itemId: stamp.itemId, start: performance.now() })
   }
@@ -205,10 +212,13 @@ export default function AtelierKeeps() {
                   </svg>
                   {picture ? <img src={picture} alt="" draggable={false} /> : null}
                   {stamp.state === 'locked' ? (
-                    <svg className="keep-stamp-lock" viewBox="0 0 24 24" aria-hidden="true">
-                      <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
-                      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
-                    </svg>
+                    <>
+                      <span className="keep-stamp-signin" aria-hidden="true">Sign in</span>
+                      <svg className="keep-stamp-lock" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+                        <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+                      </svg>
+                    </>
                   ) : null}
                   {hint && i === 0 ? <span className="keep-stamp-hint" aria-hidden="true" /> : null}
                 </span>
@@ -221,6 +231,7 @@ export default function AtelierKeeps() {
           })}
         </div>
       ) : null}
+      {signIn ? <p className="atelier-signin-prompt" role="status">Sign in to keep what you&apos;re wearing.</p> : null}
       <span className="sr-only" role="status" aria-live="polite">
         {cue?.kind === 'kept' ? 'Kept' : ''}
       </span>

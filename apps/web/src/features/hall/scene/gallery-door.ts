@@ -32,6 +32,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 export const loadGalleryDoor = () => loadImage(manifest.galleryDoor.src)
 export const loadGalleryPillar = () => loadImage(manifest.atelier.column.src)
+export const loadGalleryPillow = () => loadImage(manifest.atelier.pillowRed.src)
 
 /** A door set into the wall: in front of the wall and baseboard, behind the floor, which hides its foot. */
 export const INSET_DOOR_Z = -0.42

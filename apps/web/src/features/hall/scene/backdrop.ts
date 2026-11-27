@@ -6,8 +6,6 @@ import { garlandRibbon } from './garland'
 export interface Backdrop {
   /** Keeps the wall, floor and dressings under the camera, however long the room is. */
   update(cameraX: number, viewWidth: number, viewTop: number): void
-  /** The valance's current placement, so the string lights can sit on its painted bulbs. */
-  curtain(): { top: number; height: number; tile: number; originX: number; z: number }
   dispose(): void
 }
 
@@ -17,7 +15,6 @@ const PATTERN_ORIGIN_X = -60
 const SPAN_SCREENS = 3
 const FLOOR_HEIGHT = 2.6
 const WALL_HEIGHT = 30
-const CURTAIN_BAND_HEIGHT = 4
 const WALL_SHADE_Z = -0.47
 const FLOOR_SHADE_Z = -0.39
 
@@ -97,34 +94,6 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
   baseboard.position.set(0, CONFIG.baseboard.height / 2, CONFIG.baseboard.z)
   scene.add(baseboard)
 
-  const curtainTexture = assets.textures.curtain.clone()
-  curtainTexture.wrapS = THREE.RepeatWrapping
-  curtainTexture.wrapT = THREE.ClampToEdgeWrapping
-  curtainTexture.needsUpdate = true
-  const curtainGeometry = new THREE.PlaneGeometry(1, 1)
-  const curtainMaterial = new THREE.MeshBasicMaterial({ map: curtainTexture, transparent: true })
-  const curtain = new THREE.Mesh(curtainGeometry, curtainMaterial)
-  curtain.matrixAutoUpdate = false
-  scene.add(curtain)
-
-  const shadowMaterial = new THREE.MeshBasicMaterial({
-    map: curtainTexture,
-    color: '#000000',
-    transparent: true,
-    opacity: CONFIG.curtain.shadow.opacity,
-    depthWrite: false,
-  })
-  const shadow = new THREE.Mesh(curtainGeometry, shadowMaterial)
-  shadow.matrixAutoUpdate = false
-  scene.add(shadow)
-
-  const band = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, CURTAIN_BAND_HEIGHT),
-    new THREE.MeshBasicMaterial({ color: CONFIG.curtain.bandColor }),
-  )
-  band.position.z = CONFIG.curtain.z
-  scene.add(band)
-
   const wallShadeMap = wallShadeTexture()
   const wallShade = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
@@ -162,7 +131,7 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
       garlandGeometry.setIndex(new THREE.BufferAttribute(ribbon.indices, 1))
     }
     const first = Math.floor((left - originX) / garlandShape.loop) - 1
-    garland.position.set(originX + first * garlandShape.loop, state.top - garlandShape.top, garlandShape.z)
+    garland.position.set(originX + first * garlandShape.loop, viewTopY - garlandShape.top, garlandShape.z)
   }
 
   const tiles: [THREE.Mesh, THREE.Texture, number][] = [
@@ -170,76 +139,36 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
     [floor, floorTexture, FLOOR_HEIGHT * assets.aspect.floor],
     [baseboard, baseboardTexture, baseboardTileWidth],
   ]
-  const state = { top: 0, height: 0, tile: 0, originX: PATTERN_ORIGIN_X, z: CONFIG.curtain.z }
   let span = 0
-  let curtainTop = Number.NaN
-  let curtainHeight = 0
-  let curtainTile = 0
+  let viewTopY = 0
 
   return {
     update(cameraX, viewWidth, viewTop) {
       const width = Math.max(1, viewWidth) * SPAN_SCREENS
-      const nextHeight = THREE.MathUtils.clamp(
-        viewTop - CONFIG.curtain.clearY,
-        CONFIG.curtain.minHeight,
-        CONFIG.curtain.height,
-      )
       if (width !== span) {
         span = width
         for (const [mesh, texture, tile] of tiles) {
           mesh.scale.x = width
           texture.repeat.x = width / tile
         }
-        if (curtainTile > 0) curtainTexture.repeat.x = width / curtainTile
-        band.scale.x = width
-      }
-      if (viewTop !== curtainTop || nextHeight !== curtainHeight) {
-        curtainTop = viewTop
-        curtainHeight = nextHeight
-        curtainTile = curtainHeight * assets.aspect.curtain
-        curtainTexture.repeat.x = span / curtainTile
-        band.position.y = viewTop + CURTAIN_BAND_HEIGHT / 2
       }
 
-      const originX = PATTERN_ORIGIN_X - cameraX * CONFIG.curtain.parallax
-      const baseY = viewTop - nextHeight / 2
-      curtain.matrix.set(
-        width, 0, 0, cameraX,
-        0, nextHeight, 0, baseY,
-        0, 0, 1, CONFIG.curtain.z,
-        0, 0, 0, 1,
-      )
-      curtain.matrixWorldNeedsUpdate = true
-      const shadowY = baseY - CONFIG.curtain.shadow.drop * nextHeight
-      shadow.matrix.set(
-        width, 0, 0, cameraX,
-        0, nextHeight, 0, shadowY,
-        0, 0, 1, CONFIG.curtain.z - 0.02,
-        0, 0, 0, 1,
-      )
-      shadow.matrixWorldNeedsUpdate = true
+      // The garland alone dresses the top of the wall now; it hangs from the view's top edge.
+      const originX = PATTERN_ORIGIN_X
 
       const left = cameraX - span / 2
       for (const [mesh, texture, tile] of tiles) {
         mesh.position.x = cameraX
         texture.offset.x = ((left - PATTERN_ORIGIN_X) / tile) % 1
       }
-      curtainTexture.offset.x = ((left - originX) / curtainTile) % 1
-      band.position.x = cameraX
 
       wallShade.scale.set(Math.max(1, viewWidth), viewTop, 1)
       wallShade.position.set(cameraX, viewTop / 2, WALL_SHADE_Z)
       floorShade.scale.set(Math.max(1, viewWidth), FLOOR_HEIGHT, 1)
       floorShade.position.set(cameraX, -FLOOR_HEIGHT / 2, FLOOR_SHADE_Z)
 
-      state.top = viewTop
-      state.height = nextHeight
-      state.tile = curtainTile
-      state.originX = originX
+      viewTopY = viewTop
       hangGarland(left, originX)
-    },
-    curtain() {
-      return state
     },
     dispose() {
       for (const [mesh, texture] of tiles) {
@@ -251,15 +180,6 @@ export function createBackdrop(scene: THREE.Scene, assets: Assets): Backdrop {
       scene.remove(garland)
       garlandGeometry.dispose()
       ;(garland.material as THREE.Material).dispose()
-      scene.remove(curtain)
-      scene.remove(shadow)
-      curtainGeometry.dispose()
-      curtainMaterial.dispose()
-      shadowMaterial.dispose()
-      curtainTexture.dispose()
-      scene.remove(band)
-      band.geometry.dispose()
-      ;(band.material as THREE.Material).dispose()
       scene.remove(wallShade)
       wallShade.geometry.dispose()
       ;(wallShade.material as THREE.Material).dispose()

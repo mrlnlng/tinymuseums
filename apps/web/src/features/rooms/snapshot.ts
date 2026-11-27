@@ -9,6 +9,8 @@ type Rect = { x: number; y: number; w: number; h: number }
 type Layer =
   | { kind: 'canvas'; image: HTMLCanvasElement; at: Rect }
   | { kind: 'sprite'; url: string; at: Rect; source: Rect; sheet: { w: number; h: number }; flip: boolean; alpha: number }
+  // Plaque lettering lives in the HTML overlay, so it has to be re-drawn into the photo.
+  | { kind: 'text'; text: string; at: Rect; font: string; fontSize: number; color: string; lineHeight: number; align: CanvasTextAlign; alpha: number }
 
 export interface Grab {
   width: number
@@ -57,6 +59,28 @@ function spriteLayer(element: HTMLElement, origin: DOMRect): Layer | null {
   }
 }
 
+/** The painted lettering on a plaque or title, which the WebGL scene itself does not draw. */
+function textLayer(element: HTMLElement, origin: DOMRect): Layer | null {
+  const text = (element.textContent ?? '').trim()
+  const rect = element.getBoundingClientRect()
+  if (!text || rect.width < 1 || rect.height < 1) return null
+  const style = getComputedStyle(element)
+  const fontSize = Number.parseFloat(style.fontSize) || 12
+  const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2
+  const align: CanvasTextAlign = style.textAlign === 'left' || style.textAlign === 'right' ? style.textAlign : 'center'
+  return {
+    kind: 'text',
+    text,
+    at: relative(rect, origin),
+    font: `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,
+    fontSize,
+    color: style.color,
+    lineHeight,
+    align,
+    alpha: Number(style.opacity),
+  }
+}
+
 /** Paint order: scene, other drawn props, townsfolk, other visitors, then the visitor. */
 export function grabLayers(main: HTMLCanvasElement): Grab {
   const origin = main.getBoundingClientRect()
@@ -71,6 +95,10 @@ export function grabLayers(main: HTMLCanvasElement): Grab {
   const isCrowd = (canvas: HTMLCanvasElement) => canvas.classList.contains('visitor-layer')
   const props = canvases.filter((canvas) => !isVisitor(canvas) && !isCrowd(canvas))
   const sprites = [...root.querySelectorAll<HTMLElement>('.npc-sprite')].filter(visible)
+  const text = [...root.querySelectorAll<HTMLElement>('.placard, .placard-title')]
+    .filter(visible)
+    .map((element) => textLayer(element, origin))
+    .filter((layer): layer is Layer => layer !== null)
 
   return {
     width: origin.width,
@@ -78,6 +106,7 @@ export function grabLayers(main: HTMLCanvasElement): Grab {
     layers: [
       canvasLayer(main),
       ...props.map(canvasLayer),
+      ...text,
       ...sprites.map((sprite) => spriteLayer(sprite, origin)).filter((layer): layer is Layer => layer !== null),
       ...canvases.filter(isCrowd).map(canvasLayer),
       ...canvases.filter(isVisitor).map(canvasLayer),
@@ -95,6 +124,43 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
   })
 }
 
+/** Break text into lines that fit `maxWidth`, keeping words whole unless one is wider than the plaque. */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = []
+  let line = ''
+  const push = (word: string): void => {
+    const next = line ? `${line} ${word}` : word
+    if (ctx.measureText(next).width <= maxWidth || !line) {
+      line = next
+      return
+    }
+    lines.push(line)
+    line = word
+  }
+  for (const word of text.split(/\s+/)) {
+    if (ctx.measureText(word).width > maxWidth) {
+      if (line) {
+        lines.push(line)
+        line = ''
+      }
+      let piece = ''
+      for (const char of word) {
+        if (piece && ctx.measureText(piece + char).width > maxWidth) {
+          lines.push(piece)
+          piece = char
+        } else {
+          piece += char
+        }
+      }
+      line = piece
+    } else {
+      push(word)
+    }
+  }
+  if (line) lines.push(line)
+  return lines.length > 0 ? lines : [text]
+}
+
 async function paint(grab: Grab, scale: number, withSprites: boolean): Promise<HTMLCanvasElement> {
   const out = document.createElement('canvas')
   out.width = Math.round(grab.width * scale)
@@ -105,6 +171,27 @@ async function paint(grab: Grab, scale: number, withSprites: boolean): Promise<H
     const { x, y, w, h } = layer.at
     if (layer.kind === 'canvas') {
       ctx.drawImage(layer.image, x, y, w, h)
+      continue
+    }
+    if (layer.kind === 'text') {
+      ctx.save()
+      ctx.globalAlpha = layer.alpha
+      ctx.font = layer.font
+      ctx.fillStyle = layer.color
+      ctx.textAlign = layer.align
+      ctx.textBaseline = 'top'
+      // Match the overlay's clipping so long descriptions stay within their plaque.
+      ctx.beginPath()
+      ctx.rect(x, y, w, h)
+      ctx.clip()
+      const lines = wrapText(ctx, layer.text, w)
+      const tx = layer.align === 'center' ? x + w / 2 : layer.align === 'right' ? x + w : x
+      const leading = Math.max(0, (layer.lineHeight - layer.fontSize) / 2)
+      for (let i = 0; i < lines.length; i++) {
+        // The title's ink is vertically centred in its line box, as the browser does.
+        ctx.fillText(lines[i], tx, y + i * layer.lineHeight + leading)
+      }
+      ctx.restore()
       continue
     }
     if (!withSprites) continue

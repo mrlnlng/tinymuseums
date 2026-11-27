@@ -90,7 +90,7 @@ export function trayPropIds(items: readonly string[], placements: readonly Place
   const seen = new Set<string>()
   const result: string[] = []
   for (const ref of propIds(items)) {
-    if (placed.has(ref) || seen.has(ref)) continue
+    if (placed.has(ref) || seen.has(ref) || isRemovedProceduralFish(ref)) continue
     seen.add(ref)
     result.push(ref)
   }
@@ -316,6 +316,43 @@ export interface CozyLevel {
   /** 0..1 toward the next level; 1 at the top. */
   progress: number
   next: string | null
+}
+
+/** The 1–5 star presentation of a room level. The score behind it is unchanged. */
+export interface RoomStars {
+  stars: number
+  maxStars: 5
+  /** 0..1 toward the next star; 1 at five stars. */
+  progress: number
+  caption: string
+}
+
+/**
+ * Maps the existing six cozy levels onto five stars:
+ * Bare 1, Settling in 2, Snug 3, Cozy 4, Dreamy 5, Legendary 5.
+ * Only the words and hearts change; `cozyLevel` still computes the score.
+ */
+export function roomStars(level: CozyLevel): RoomStars {
+  const stars = Math.min(5, Math.max(1, level.hearts + 1))
+  return {
+    stars,
+    maxStars: 5,
+    progress: stars >= 5 ? 1 : level.progress,
+    caption: 'More stars when your room is clean and decorated.',
+  }
+}
+
+/** Fish that were drawn in code rather than from the artist's image assets. */
+export const REMOVED_PROCEDURAL_FISH: ReadonlySet<string> = new Set([
+  'fish-minnow',
+  'fish-perch',
+  'fish-carp',
+  'fish-koi',
+  'fish-golden-koi',
+])
+
+export function isRemovedProceduralFish(ref: string): boolean {
+  return REMOVED_PROCEDURAL_FISH.has(ref)
 }
 
 export function cozyLevel(placements: readonly Placement[]): CozyLevel {

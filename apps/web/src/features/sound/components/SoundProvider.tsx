@@ -18,7 +18,7 @@ function hasSound(pathname: string): boolean {
 }
 
 function trackFor(pathname: string): string {
-  if (pathname === '/museum/atelier') return ATELIER_TRACK
+  if (pathname === '/' || pathname === '/museum/atelier') return ATELIER_TRACK
   if (pathname === '/museum/pond') return POND_TRACK
   if (pathname === '/museum/home' || pathname.startsWith('/museum/r/')) return ROOM_TRACK
   return HALL_TRACK

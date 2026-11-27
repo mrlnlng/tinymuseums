@@ -33,7 +33,8 @@ export default function ScreenChrome() {
 
   const showHome = pathname !== '/'
   const showMyRoom = pathname === '/museum'
-  const showChat = pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier'
+  // ChatButton hides itself unless the page shares a room, so every museum room can offer it.
+  const showChat = pathname === '/' || pathname.startsWith('/museum')
 
   return (
     <>

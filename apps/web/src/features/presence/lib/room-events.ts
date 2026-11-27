@@ -1,10 +1,18 @@
 import type { Refusal } from '@tiny/core/presence/wire'
+import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
+import { appendChatMessage, readChatHistory, type ChatMessage } from './chat-history'
 
 // The chat panel lives in the screen chrome, the room in the scene; they meet here.
 
 let inRoom = false
 let people: Person[] = []
 const muted = new Set<string>()
+let room: string | null = null
+let history: ChatMessage[] = []
+
+const CHAT_MUTED_KEY = 'tiny:chat-muted'
+let chatMuted =
+  typeof window !== 'undefined' && readLocal(CHAT_MUTED_KEY) === '1'
 
 export interface Person {
   pid: string
@@ -18,6 +26,8 @@ const SAY_RESULT = 'tiny:say-result'
 const ROOM = 'tiny:presence'
 const PEOPLE = 'tiny:people'
 const MUTED = 'tiny:muted'
+const CHAT_MUTED = 'tiny:chat-muted-changed'
+const MESSAGES = 'tiny:chat-messages'
 const OPEN_CHAT = 'tiny:open-chat'
 const NAME = 'tiny:name-changed'
 
@@ -53,6 +63,56 @@ export function setPeople(next: readonly Person[]): void {
 }
 export const getPeople = () => people
 export const onPeopleChange = (listener: () => void) => on(PEOPLE, listener)
+
+function sessionStorage(): { getItem(key: string): string | null; setItem(key: string, value: string): void } | null {
+  try {
+    return typeof window === 'undefined' ? null : window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+/** The room whose short history the panel should show, and its saved lines for this tab. */
+export function setRoom(next: string | null): void {
+  if (next === room) return
+  room = next
+  history = next === null ? [] : readChatHistory(sessionStorage(), next, Date.now())
+  emit(MESSAGES)
+}
+
+/** Leaving one room must not clear the history of a room that has just replaced it. */
+export function leaveRoom(value: string): void {
+  if (room !== value) return
+  room = null
+  history = []
+  emit(MESSAGES)
+}
+
+export function recordMessage(pid: string, name: string, text: string): void {
+  if (room === null || text.length === 0) return
+  const now = Date.now()
+  history = appendChatMessage(sessionStorage(), room, { pid, name, text, at: now }, now)
+  emit(MESSAGES)
+}
+
+export const getChatHistory = () => history
+
+/** Re-reads the room's saved lines, so opening the panel after a while drops expired ones. */
+export function refreshChatHistory(): ChatMessage[] {
+  history = room === null ? [] : readChatHistory(sessionStorage(), room, Date.now())
+  return history
+}
+export const onChatHistoryChange = (listener: () => void) => on(MESSAGES, listener)
+
+/** Hides incoming chat, here and in the scene; kept on this device. */
+export function setChatMuted(value: boolean): void {
+  if (value === chatMuted) return
+  chatMuted = value
+  if (typeof window !== 'undefined') writeLocal(CHAT_MUTED_KEY, value ? '1' : '0')
+  emit(CHAT_MUTED)
+}
+export const isChatMuted = () => chatMuted
+export const onChatMutedChange = (listener: () => void) => on(CHAT_MUTED, listener)
 
 /** Muted visitors' messages are hidden on this page; it lasts until the page closes. */
 export function setMuted(pid: string, value: boolean): void {

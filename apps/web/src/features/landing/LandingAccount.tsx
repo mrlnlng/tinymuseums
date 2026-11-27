@@ -21,10 +21,10 @@ export default function LandingAccount() {
         onClick={openAccountCreation}
         data-track="create_account"
       >
-        Create an account
+        Create your account
       </button>
       <button type="button" className="landing-login" onClick={openAccount} data-track="member_login">
-        Already a member? Login.
+        Log in
       </button>
     </>
   )

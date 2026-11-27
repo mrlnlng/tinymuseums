@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { refreshWalletNow, useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { PondIcon } from '@/features/pondroom/lib/icons'
 import { setPondState as publishPondState } from '@/features/pondroom/lib/pond-state'
@@ -25,6 +26,14 @@ import {
   type GuestRoll,
 } from '../lib/guest.ts'
 import {
+  hookTutorialNeeded,
+  HOOK_TUTORIAL_COPY,
+  HOOK_TUTORIAL_KEY,
+  idleHint,
+  idlePrompt,
+  type CastStage,
+} from '../lib/copy.ts'
+import {
   armCast,
   createFishingState,
   DANGER_TENSION,
@@ -40,8 +49,9 @@ import {
   type FishingState,
   type LostReason,
 } from '../lib/machine.ts'
+import { landedRetryDelay, reportDelay } from '../lib/reel-report.ts'
 import { missWagerLabel } from '../lib/risk.ts'
-import { createPondSfx } from '../lib/sfx.ts'
+import { CAST_SFX, createPondSfx, lossSfx } from '../lib/sfx.ts'
 import { BAIT_BY_ID, type BaitId, type FishId, type FishTier } from '../lib/tables.ts'
 import BaitTray from './BaitTray'
 import Hud from './Hud'
@@ -67,8 +77,8 @@ interface Toast {
 const LOST: Record<Exclude<LostReason, null>, Toast> = {
   spooked: { message: 'Too early — it got spooked', note: 'Tap only when the bobber plunges.' },
   missed: { message: 'It got away', note: 'You missed the hook window.' },
-  snap: { message: 'Snap! The line broke', note: 'Ease off when a run starts.' },
-  escaped: { message: 'It got away', note: 'Keep some line in hand.' },
+  snap: { message: 'Snap! The line broke', note: 'Let go when it pulls.' },
+  escaped: { message: 'It got away', note: 'Hold on, but let go when it pulls.' },
 }
 
 const CAST_ERRORS: Record<string, string> = {
@@ -81,8 +91,6 @@ const CAST_ERRORS: Record<string, string> = {
   offline: 'The pond could not be reached.',
 }
 
-/** The server refuses a reel report sooner than this after its cast, so a quick loss waits it out. */
-const MIN_REPORT_MS = 1900
 /** Long enough to see what went wrong before a press casts again. */
 const RECAST_GUARD_MS = 350
 const REEL_TICK_MS = 110
@@ -134,6 +142,9 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [reveal, setReveal] = useState<CatchView | null>(null)
+  useEffect(() => {
+    if (reveal) reportQuestEvent('finish-minigame')
+  }, [reveal])
   // Cards that follow the catch card: today's special, then any keepsake.
   type Found = { kind: 'special'; species: string; variant: string; pearls: number } | { kind: 'keepsake'; keepsake: KeepsakeId }
   const [found, setFound] = useState<Found[]>([])
@@ -151,6 +162,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [tapCast, setTapCast] = useState(false)
   const [pop, setPop] = useState<{ id: number; text: string } | null>(null)
   const [catches, setCatches] = useState(0)
+  const [castStage, setCastStage] = useState<CastStage>('first')
+  const [hookTip, setHookTip] = useState(false)
 
   const stateRef = useRef(state)
   const narrowRef = useRef(false)
@@ -285,6 +298,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     holdingRef.current = false
     tapCastRef.current = false
     setTapCast(false)
+    setHookTip(false)
     reelSentRef.current = false
     guestRollRef.current = null
     activeWagerRef.current = null
@@ -371,12 +385,29 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           return
         }
         if (!landed) lossPendingRef.current = true
-        const report = () => void reelPond({ ticket, landed, perfectCast, perfectHook, treasureGrabbed }).then((result) => {
+        const report = (attempt = 0) => void reelPond({ ticket, landed, perfectCast, perfectHook, treasureGrabbed }).then((result) => {
           if (!landed) lossPendingRef.current = false
           if (castSerialRef.current !== serial) return
           if (!result.ok) {
+            // A landed catch is too valuable to drop on a timing hiccup or a lost signal.
+            const retry = landed
+              ? landedRetryDelay(result, attempt, castReplyAtRef.current, performance.now())
+              : null
+            if (retry !== null) {
+              window.setTimeout(() => {
+                if (castSerialRef.current === serial) report(attempt + 1)
+              }, retry)
+              return
+            }
             if (landed) {
-              showToast(result.error === 'too_soon' ? 'Give the fish another moment.' : 'The catch could not be landed.')
+              // A retry that finds its ticket used means the first report reached the pond and the
+              // fish was kept; only the reply was lost.
+              const keptEarlier = attempt > 0 && result.error === 'used_ticket'
+              showToast(
+                keptEarlier
+                  ? 'Your fish is safe in your journal!'
+                  : result.error === 'too_soon' ? 'Give the fish another moment.' : 'The catch could not be landed.',
+              )
               resetToIdle()
             }
             void refreshState()
@@ -456,7 +487,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           pendingFoundRef.current = pending
           onCatch?.(caught.species)
         })
-        const wait = landed ? 0 : castReplyAtRef.current + MIN_REPORT_MS - performance.now()
+        const wait = reportDelay(castReplyAtRef.current, performance.now())
         if (wait > 0) window.setTimeout(report, wait)
         else report()
         return
@@ -517,17 +548,24 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
         sfx.play('hook')
         vibrate(30)
         if (next.perfectHook) showPop('Perfect hook!')
+        if (hookTutorialNeeded(readLocal(HOOK_TUTORIAL_KEY))) {
+          writeLocal(HOOK_TUTORIAL_KEY, '1')
+          setHookTip(true)
+        }
       }
       if (next.phase === 'landing' && before.phase === 'reeling') finishReel(next, true)
       if (next.phase === 'lost' && before.phase !== 'lost') {
+        setHookTip(false)
+        setCastStage('again')
         lostAtRef.current = performance.now()
         if (next.lostReason === 'snap') vibrate([40, 30, 60])
         finishReel(next, false)
         const lost = LOST[next.lostReason ?? 'escaped']
         showToast(lost.message, lost.note)
-        sfx.play(next.lostReason === 'snap' ? 'snap' : 'lost')
+        sfx.play(lossSfx(next.lostReason))
         scheduleReset()
       }
+      if (next.phase === 'landing') setHookTip(false)
     },
     [finishReel, scheduleReset, sfx, showPop, showToast],
   )
@@ -591,7 +629,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     holdingRef.current = false
     tapCastRef.current = false
     setTapCast(false)
-    sfx.play('cast')
+    sfx.play(CAST_SFX)
     if (next.perfectCast) {
       showPop('Perfect cast!')
       sfx.play('plink')
@@ -768,6 +806,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     setFound(pendingFoundRef.current)
     pendingFoundRef.current = []
     setCatches((count) => count + 1)
+    setCastStage('caught')
+    setHookTip(false)
     resetToIdle()
     bumpStreakChip()
   }, [bumpStreakChip, resetToIdle])
@@ -813,6 +853,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       publishPondState(result.value)
       pondStateRef.current = result.value
       setReveal(null)
+      setCastStage('caught')
       resetToIdle()
       bumpStreakChip()
       sfx.play('coin')
@@ -862,7 +903,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     if (spotUnavailable) return { label: 'Back to bank', sub: 'Choose another ripple' }
     if (phase === 'idle') {
       if (mustBuy) return { label: `Buy ${selected.pack}`, sub: `${selected.cost} pearls` }
-      return { label: 'Cast', sub: touch ? 'Tap to start' : 'Hold to charge' }
+      return idlePrompt(touch, castStage)
     }
     if (phase === 'charging') return tapCast ? { label: 'Tap!', sub: 'In the gold zone' } : { label: 'Let go!', sub: 'In the gold zone' }
     if (phase === 'flying') return { label: 'Casting…', sub: 'Wait for it' }
@@ -871,23 +912,23 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     if (phase === 'reeling') return { label: 'Reel', sub: touch ? 'Hold anywhere' : 'Hold · let go to rest' }
     if (phase === 'landing') return { label: 'Landing…', sub: 'The line is coming in' }
     if (phase === 'reveal') return { label: 'Caught!', sub: 'Tap the card' }
-    return { label: 'Cast again', sub: touch ? 'Tap to start' : 'Hold to charge' }
+    return idlePrompt(touch, 'again')
   })()
 
   const hint = (() => {
     if (spotUnavailable) return 'Another visitor is fishing here now.'
     if (phase === 'idle') {
       if (mustBuy) return `Out of ${selected.name.toLowerCase()} — tap it to buy ${selected.pack} for ${selected.cost} pearls`
-      return touch ? 'Tap anywhere to cast' : 'Hold the button, then let go in the gold zone'
+      return idleHint(touch, castStage)
     }
     if (phase === 'charging') return 'A Perfect cast hooks bigger fish'
     if (phase === 'flying') return 'Here it goes…'
     if (phase === 'waiting') return state.nibbleActive ? 'Just a nibble — wait for it…' : 'Watch the bobber…'
     if (phase === 'bite') return touch ? 'It’s biting — tap anywhere!' : 'It’s biting — tap now!'
-    if (phase === 'reeling') return touch ? 'Hold anywhere to reel · lift when it runs' : 'Hold to reel · let go when it runs'
+    if (phase === 'reeling') return touch ? 'Hold anywhere to pull it in · let go when it pulls' : 'Hold to pull it in · let go when it pulls'
     if (phase === 'landing') return 'Almost in…'
     if (phase === 'reveal') return 'Tap to keep your catch'
-    return 'Cast again when you’re ready'
+    return idleHint(touch, 'again')
   })()
 
   return (
@@ -953,7 +994,17 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           onLock={lockWager}
           onCancel={closePicker}
         />
-        {showReel ? <ReelMeter reel={state.reel!} easy={easyReel} /> : null}
+        {showReel ? (
+          <div className="pond-reel-stack">
+            {hookTip && phase === 'reeling' ? (
+              <p className="pond-hook-tip" role="status">
+                <strong>{HOOK_TUTORIAL_COPY}</strong> The fish comes in while it’s green.
+                <span className="pond-hook-tip-arrow" aria-hidden="true" />
+              </p>
+            ) : null}
+            <ReelMeter reel={state.reel!} easy={easyReel} />
+          </div>
+        ) : null}
         {phase === 'charging' ? <CastMeter power={state.power} touch={touch} /> : null}
         <BaitTray
           counts={pondState?.bait ?? {}}

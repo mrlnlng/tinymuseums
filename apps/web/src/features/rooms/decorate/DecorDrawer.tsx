@@ -15,6 +15,7 @@ import {
   finishOf,
   ownedFinishIds,
   propLabel,
+  roomStars,
   shopFinishIds,
   shopPropIds,
   slotOf,
@@ -143,6 +144,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
   const isFull = thingsIn(placements) >= maxPlacements
   const shop = shopPropIds(wallet.items)
   const level = cozyLevel(placements)
+  const stars = roomStars(level)
 
   /** `bought` is the "is yours" note; null when the room celebrates the purchase itself. */
   async function purchase(itemId: string, bought: { name: string; where: string } | null, then: () => void): Promise<void> {
@@ -209,20 +211,21 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
       aria-label="Decorate your room"
     >
       <header className="decor-drawer-head">
-        <div className="decor-meter" title={level.next ? `Next: ${level.next}` : 'As cozy as it gets'}>
-          <span className="decor-meter-hearts" aria-hidden="true">
-            {Array.from({ length: level.maxHearts }, (_, i) => (
-              <span key={i} className={i < level.hearts ? 'is-full' : undefined}>
-                {i < level.hearts ? '♥' : '♡'}
+        <div className="decor-meter" title={stars.caption}>
+          <span className="decor-meter-stars" aria-hidden="true">
+            {Array.from({ length: stars.maxStars }, (_, i) => (
+              <span key={i} className={i < stars.stars ? 'is-full' : undefined}>
+                {i < stars.stars ? '★' : '☆'}
               </span>
             ))}
           </span>
-          <span className="decor-meter-name">{level.name}</span>
+          <span className="decor-meter-name">Room stars</span>
+          <span className="decor-meter-caption">{stars.caption}</span>
           <span className="decor-meter-bar" aria-hidden="true">
-            <span style={{ width: `${Math.round(level.progress * 100)}%` }} />
+            <span style={{ width: `${Math.round(stars.progress * 100)}%` }} />
           </span>
           <span className="decor-sr">
-            Your room is {level.name}.{level.next ? ` Keep decorating to reach ${level.next}.` : ''}
+            Room stars: {stars.stars} out of {stars.maxStars}. {stars.caption}
           </span>
         </div>
 

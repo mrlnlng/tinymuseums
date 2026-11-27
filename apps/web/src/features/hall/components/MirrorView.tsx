@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import manifest from '@/generated/asset-manifest.json'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { builtUrl } from '@/shared/lib/assets'
 import { CONFIG } from '../scene/config'
 import { CHARACTER_NAMES } from '../scene/atelier'
@@ -171,10 +172,8 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
                 }}
                 onClick={() => {
                   if (swiped.current) { swiped.current = false; return }
-                  if (here) {
-                    play('select')
-                    onBecome(k)
-                  }
+                  // The room plays the character-change sound once the new rig is on.
+                  if (here) { reportQuestEvent('change-outfit'); onBecome(k) }
                 }}
               >
                 {images[k] ? <img src={images[k]} alt="" draggable={false} /> : <span className="mirror-view-mist" />}

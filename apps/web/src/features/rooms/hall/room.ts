@@ -8,8 +8,8 @@ import { loadScenery, type Scenery } from '@/features/hall/scene/assets'
 import { createHallAmbience } from '@/features/hall/scene/ambience'
 import { createBackdrop } from '@/features/hall/scene/backdrop'
 import { createCafe, type Cafe } from '@/features/hall/scene/cafe'
-import { createComingSoon, type ComingSoon } from '@/features/hall/scene/comingsoon'
 import { CONFIG, centerYFor } from '@/features/hall/scene/config'
+import { createDoorPetals, type DoorPetals } from '@/features/hall/scene/petals'
 import { createGiftShop, type GiftShop } from '@/features/hall/scene/giftshop'
 import { createGuestBoard, type GuestBoard } from '@/features/hall/scene/guestboard'
 import { createHelm, type Helm } from '@/features/hall/scene/helm'
@@ -19,7 +19,6 @@ import { createHallDoors, createLobbyPillar } from '@/features/hall/scene/lobby-
 import { createMatcha, type Matcha } from '@/features/hall/scene/matcha'
 import {
   CafeLink,
-  ComingSoonNote,
   FunZoneSign,
   GiftShopSigns,
   GuestBoardNotes,
@@ -90,6 +89,14 @@ function takenStands(items: Item[]): Set<number> {
 
 /** Where a guide beside a door set into the wall stands: just in front of the wall's foot. */
 const GUIDE_AT_WALL = -0.08
+
+/** A guest's guide mentions the room they could open for themselves. */
+const ACCOUNT_INVITE = 'Psst, you can have your very own room here! Make an account to open it.'
+
+function withAccountInvite(guide: DoorGuide): DoorGuide {
+  if (defaultStore().getMemberSnapshot() !== null || guide.lines.includes(ACCOUNT_INVITE)) return guide
+  return { ...guide, lines: [...guide.lines, ACCOUNT_INVITE] }
+}
 
 /** A hall room's name on the map. */
 function mapLabel(room: HallRoomSpan): string {
@@ -217,26 +224,14 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         }
       }
 
-      /** The last gallery also holds Coming Soon. */
+      /** A gallery holds the hall's paintings; nothing else is hung in it now. */
       function galleryRoom(key: string): JoinedContents {
         hall.setGalleryBuilt(key, true)
-        let comingSoon: ComingSoon | null = null
-        let note: ComingSoonNote | null = null
         return {
           hitTest: () => null,
-          update(frame) {
-            const x = hall.layout.comingSoonX
-            const span = hall.layout.rooms.find((r) => r.key === key)
-            if (!comingSoon && scenery && x !== null && span && x >= span.startX && x < span.endX) {
-              comingSoon = createComingSoon(scene, assets, scenery, x)
-              note = new ComingSoonNote(overlayHost, comingSoon.noteMark)
-            }
-            note?.sync(frame.camera, frame.viewport)
-          },
+          update() {},
           dispose() {
             hall.setGalleryBuilt(key, false)
-            note?.clear()
-            comingSoon?.dispose()
           },
         }
       }
@@ -349,6 +344,19 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
         const contents = buildRoomContents(room)
         if (inside.length === 0) return contents
         const doors = createHallDoors(scene, overlayHost, enterDoor, inside, assets)
+        // A few petals drift in front of the door to the pond, so it catches the eye.
+        const petals: DoorPetals[] = standing
+          .filter((d) => d.to === 'pond')
+          .map((d) => createDoorPetals(
+            scene,
+            {
+              x: d.x,
+              width: doorWidth(d),
+              base: GALLERY_DOOR.lobbyBase,
+              height: GALLERY_DOOR.height * d.scale,
+            },
+            reducedMotion,
+          ))
         // A guide stands just past their door's right-hand post, feet level with the door's: at the
         // wall for a door set into it, out on the floor for one standing there.
         const guides = createDoorGuides(
@@ -363,7 +371,7 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
             const kept = doorsOf('hall').find((d) => d.id === id)
             if (!kept?.guide || ctx.isQuiet() || traversal.isIntro) return
             ctx.sound.play('chat')
-            callbacks().onTalkToGuide({ guide: kept.guide, to: kept.to, go: () => enterDoor(id) })
+            callbacks().onTalkToGuide({ guide: withAccountInvite(kept.guide), to: kept.to, go: () => enterDoor(id) })
           },
         )
         return {
@@ -376,9 +384,11 @@ export function createHallRoom(options: HallRoomOptions): RoomDef<HallArt> {
           update(frame) {
             doors.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro)
             guides.sync(frame.camera, frame.viewport, !ctx.isQuiet() && !traversal.isIntro, traversal.x)
+            for (const petal of petals) petal.update(frame.now, frame.dt)
             contents.update(frame)
           },
           dispose() {
+            for (const petal of petals) petal.dispose()
             guides.dispose()
             doors.dispose()
             contents.dispose()

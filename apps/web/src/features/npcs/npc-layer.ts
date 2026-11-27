@@ -15,7 +15,7 @@ import {
 } from '@/features/npcs/cast'
 import type { FloorSpot, NpcRoomInfo } from '@/features/npcs/jobs'
 import { JOBS } from '@/features/npcs/jobs'
-import { residentsAt } from '@/features/npcs/schedule'
+import { residentsAt, type ResidentState } from '@/features/npcs/schedule'
 import {
   createWanderer,
   startMeeting,
@@ -39,6 +39,9 @@ export interface NpcFrame {
 type ViewedRoom = 'hall' | 'atelier' | 'pond'
 
 const MAX_DRAWN = 5
+/** The hall keeps a small, stable cast: the four nearest its entrance. */
+const HALL_MAX_DRAWN = 4
+const HALL_ENTRANCE_X = CONFIG.lobby.startX
 const PLAYER_FOCUS = 1.5
 const WAVE_MS = 2500
 const WAVE_COOLDOWN_MS = 25_000
@@ -80,6 +83,10 @@ interface NpcView {
   fadeOutAt: number | null
   fadeOutFrom: number
   opacity: number
+  /** Where the hall last drew this character, kept while the schedule has them elsewhere. */
+  lastX: number | null
+  lastD: number
+  lastFacing: 1 | -1
 }
 
 interface ResidentView extends NpcView {
@@ -179,6 +186,9 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       fadeOutAt: null,
       fadeOutFrom: 0,
       opacity: 0,
+      lastX: null,
+      lastD: 0,
+      lastFacing: 1,
     }
 
     return view
@@ -283,8 +293,8 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
 
   function startWanderers(minX: number, maxX: number, playerX: number, nowMs: number): void {
     startedWanderers = true
-    // A hall busy with joined rooms can hold one more local face than a small side room.
-    wandererCap = room === 'hall' ? 2 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2)
+    // The hall already has its residents; one local face keeps the cast small and stable.
+    wandererCap = room === 'hall' ? 1 : 1 + Math.floor(Math.random() * 2)
     // Spawning across the whole floor can put every local face off screen; gather them by the visitor.
     const base = Math.min(maxX - 0.5, Math.max(minX + 0.5, playerX))
     for (let i = 0; i < wandererCap; i++) {
@@ -338,6 +348,7 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
     celHeight: number,
     depthScale: number,
     front: boolean | null,
+    instant: boolean,
   ): void {
     const anchorX = castMember(view.id).anchorX * scale
     const anchorY = FRAME.anchorY * scale
@@ -364,14 +375,19 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       view.shadowHidden = false
       view.shadow.hidden = false
     }
-    if (view.fadeOutAt !== null) {
+    if (instant) {
+      // The hall keeps its characters present; no fade-in or fade-out cycles there.
+      view.fadeOutAt = null
+      view.appearAt = null
+      view.opacity = 1
+    } else if (view.fadeOutAt !== null) {
       // Reappeared mid-fade: carry on from the opacity already on screen.
       view.appearAt = frame.nowMs - view.opacity * FADE_MS
       view.fadeOutAt = null
     } else if (view.appearAt === null) {
       view.appearAt = frame.nowMs
     }
-    view.opacity = Math.min(1, (frame.nowMs - view.appearAt) / FADE_MS)
+    if (!instant) view.opacity = Math.min(1, (frame.nowMs - view.appearAt!) / FADE_MS)
     writeStyle(view.sprite, view.spriteStyles, 'opacity', view.opacity.toFixed(3))
     writeStyle(view.shadow, view.shadowStyles, 'opacity', view.opacity.toFixed(3))
 
@@ -496,20 +512,33 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       writeStyle(container, containerStyles, 'z-index', ground ? 'auto' : '-1')
 
       const states = residentRoom === null ? [] : residentsAt(Date.now(), { room: residentRoom, info })
+      const hall = residentRoom === 'hall'
       // A character keeping a door stands there all day, so they are not also seen about the museum.
       const guiding = guides()
-      const shownResidents = states.filter((state) => state.room === residentRoom && state.x !== null && !guiding.has(state.id))
-      const presentResidents = new Set(shownResidents.map((state) => state.id))
-      for (const [id, view] of residents) {
-        if (presentResidents.has(id)) continue
-        if (fadeOut(view, nowMs)) {
-          removeView(view)
-          residents.delete(id)
+      const shownResidents: ResidentState[] = states.filter((state) => state.room === residentRoom && state.x !== null && !guiding.has(state.id))
+      if (hall) {
+        // The hall keeps the faces it has shown: when the shared schedule walks a resident away,
+        // they stay at their last spot and keep idling rather than fading out and back in.
+        const present = new Set(shownResidents.map((state) => state.id))
+        for (const [id, view] of residents) {
+          if (present.has(id) || view.lastX === null) continue
+          shownResidents.push({ id, room: 'hall', x: view.lastX, d: view.lastD, facing: view.lastFacing, walk: null, meetingWith: null, emote: null })
+        }
+        shownResidents.sort((a, b) => Math.abs((a.x ?? 0) - HALL_ENTRANCE_X) - Math.abs((b.x ?? 0) - HALL_ENTRANCE_X))
+      } else {
+        const presentResidents = new Set(shownResidents.map((state) => state.id))
+        for (const [id, view] of residents) {
+          if (presentResidents.has(id)) continue
+          if (fadeOut(view, nowMs)) {
+            removeView(view)
+            residents.delete(id)
+          }
         }
       }
 
       const drawn = new Set<NpcView>()
-      const residentLimit = Math.min(shownResidents.length, MAX_DRAWN)
+      const drawnLimit = hall ? HALL_MAX_DRAWN : MAX_DRAWN
+      const residentLimit = Math.min(shownResidents.length, drawnLimit)
       const residentNeighbours: { id: string; x: number; canMeet: boolean; stopX: number | null }[] = []
       for (let i = 0; i < shownResidents.length; i++) {
         const state = shownResidents[i]
@@ -540,6 +569,9 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
         view.facing = facing
         const emote = state.emote ?? (nowMs < view.waveUntil ? '👋' : null)
         const d = ground ? state.d ?? 0 : 0
+        view.lastX = x
+        view.lastD = d
+        view.lastFacing = facing
         const place = ground ? ground.place(d) : FLAT
         const depthScale = place.scale
         draw(
@@ -555,6 +587,7 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
           celHeight * depthScale,
           depthScale,
           ground ? d < playerD : null,
+          hall,
         )
         drawn.add(view)
         residentNeighbours.push({
@@ -568,7 +601,8 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
       for (let i = wanderers.length - 1; i >= 0; i--) {
         const view = wanderers[i]
         if (view.wanderer.mode !== 'gone') continue
-        if (fadeOut(view, nowMs)) {
+        // The hall never fades a face away; the wanderers there are not allowed to leave anyway.
+        if (hall || fadeOut(view, nowMs)) {
           removeView(view)
           wanderers.splice(i, 1)
           departedAt.set(view.wanderer.id, nowMs)
@@ -600,6 +634,7 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
           others,
           speed: NPC_WALK_SPEED,
           rand: Math.random,
+          stay: hall,
         })
       }
 
@@ -619,7 +654,7 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
         }
       }
 
-      const wandererLimit = Math.max(0, MAX_DRAWN - residentLimit)
+      const wandererLimit = Math.max(0, drawnLimit - residentLimit)
       for (let i = 0; i < wanderers.length; i++) {
         const view = wanderers[i]
         if (view.wanderer.mode === 'gone') continue
@@ -649,6 +684,7 @@ export function createNpcLayer(host: HTMLElement, room: RoomId): {
           celHeight * depthScale,
           depthScale,
           ground ? d < playerD : null,
+          hall,
         )
         drawn.add(view)
       }

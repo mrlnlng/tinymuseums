@@ -17,7 +17,7 @@ export default function ReelMeter({ reel, easy }: { reel: ReelState; easy: boole
         : danger
           ? 'Too tight — ease off'
           : tension < band.low
-            ? 'Slack — hold to reel'
+            ? 'Slack — hold to pull'
             : 'Keep it in the green'
   return (
     <aside

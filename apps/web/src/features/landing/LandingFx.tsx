@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useSound } from '@/features/sound/components/SoundProvider'
 import { runLandingCat } from './cat'
 
 const POKEABLE = '[data-poke], .landing-cat, .landing-perfume, .landing-jewelry, .landing-book'
 
 type Mote = { x: number; y: number; r: number; vy: number; phase: number; speed: number; alpha: number }
+
+type Mist = { x: number; y: number; vx: number; vy: number; age: number; life: number; r: number; alpha: number }
 
 function glowSprite(): HTMLCanvasElement {
   const sprite = document.createElement('canvas')
@@ -20,8 +23,24 @@ function glowSprite(): HTMLCanvasElement {
   return sprite
 }
 
+function mistSprite(): HTMLCanvasElement {
+  const sprite = document.createElement('canvas')
+  sprite.width = sprite.height = 64
+  const g = sprite.getContext('2d')!
+  const fill = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+  fill.addColorStop(0, 'rgba(255, 247, 250, 0.95)')
+  fill.addColorStop(0.45, 'rgba(255, 214, 232, 0.55)')
+  fill.addColorStop(1, 'rgba(255, 198, 222, 0)')
+  g.fillStyle = fill
+  g.fillRect(0, 0, 64, 64)
+  return sprite
+}
+
 export default function LandingFx() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { isEnabled, volume } = useSound()
+  const soundRef = useRef({ isEnabled, volume })
+  soundRef.current = { isEnabled, volume }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -31,10 +50,13 @@ export default function LandingFx() {
 
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const sprite = glowSprite()
+    const mist = mistSprite()
     let width = 0
     let height = 0
     let unit = 1
     let motes: Mote[] = []
+    let puffs: Mist[] = []
+    let audioCtx: AudioContext | null = null
 
     function resize(): void {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -71,6 +93,68 @@ export default function LandingFx() {
       pointerAt = performance.now()
     }
 
+    // A short band-passed noise burst, made on the spot so it stays a gesture sound.
+    function psst(): void {
+      const { isEnabled, volume } = soundRef.current
+      if (!isEnabled || volume <= 0) return
+      const Ctor =
+        window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (!Ctor) return
+      try {
+        audioCtx ??= new Ctor()
+      } catch {
+        return
+      }
+      const ctx = audioCtx
+      if (!ctx) return
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
+
+      const seconds = 0.25
+      const length = Math.max(1, Math.round(ctx.sampleRate * seconds))
+      const noise = ctx.createBuffer(1, length, ctx.sampleRate)
+      const samples = noise.getChannelData(0)
+      for (let i = 0; i < length; i += 1) samples[i] = Math.random() * 2 - 1
+
+      const source = ctx.createBufferSource()
+      source.buffer = noise
+      const band = ctx.createBiquadFilter()
+      band.type = 'bandpass'
+      band.frequency.value = 2600
+      band.Q.value = 0.9
+      const gain = ctx.createGain()
+      const now = ctx.currentTime
+      const peak = 0.2 * (0.4 + volume * 0.6)
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.exponentialRampToValueAtTime(peak, now + 0.025)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25)
+      source.connect(band)
+      band.connect(gain)
+      gain.connect(ctx.destination)
+      source.start(now)
+      source.stop(now + 0.26)
+    }
+
+    function spawnMist(target: HTMLElement): void {
+      const frame = root!.getBoundingClientRect()
+      const rect = target.getBoundingClientRect()
+      const x = rect.left - frame.left + rect.width * 0.52
+      const y = rect.top - frame.top + rect.height * 0.1
+      for (let i = 0; i < 22; i += 1) {
+        const spread = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5
+        puffs.push({
+          x: x + (Math.random() - 0.5) * rect.width * 0.14,
+          y: y + (Math.random() - 0.5) * rect.height * 0.06,
+          vx: spread * 0.4 * rect.width,
+          vy: -(0.45 + Math.random() * 0.7) * rect.height,
+          age: 0,
+          life: 0.75 + Math.random() * 0.45,
+          r: (0.03 + Math.random() * 0.05) * rect.width,
+          alpha: 0.18 + Math.random() * 0.3,
+        })
+      }
+    }
+
     function onClick(event: MouseEvent): void {
       const target = event.target as Element
 
@@ -91,6 +175,10 @@ export default function LandingFx() {
       poked.classList.remove('is-poked')
       void poked.offsetWidth
       poked.classList.add('is-poked')
+      if (poked.classList.contains('landing-perfume')) {
+        psst()
+        if (!still) spawnMist(poked)
+      }
     }
 
     let frameId = 0
@@ -133,6 +221,26 @@ export default function LandingFx() {
         g!.globalAlpha = mote.alpha * (0.75 + 0.25 * Math.sin(t * mote.speed * 0.9 + mote.phase))
         g!.drawImage(sprite, mote.x - camX * mote.r * 6 - size / 2, mote.y - camY * mote.r * 4 - size / 2, size, size)
       }
+
+      if (puffs.length > 0) {
+        g!.globalCompositeOperation = 'source-over'
+        for (let i = puffs.length - 1; i >= 0; i -= 1) {
+          const puff = puffs[i]
+          puff.age += dt
+          if (puff.age >= puff.life) {
+            puffs.splice(i, 1)
+            continue
+          }
+          puff.x += puff.vx * dt
+          puff.y += puff.vy * dt
+          puff.vx *= Math.max(0, 1 - 1.6 * dt)
+          puff.vy += 2.4 * unit * dt
+          const fade = puff.age / puff.life
+          const size = puff.r * (3.2 + fade * 2.6)
+          g!.globalAlpha = puff.alpha * Math.min(1, puff.age / 0.1) * (1 - fade) ** 1.3
+          g!.drawImage(mist, puff.x - size / 2, puff.y - size / 2, size, size)
+        }
+      }
       g!.globalAlpha = 1
     }
 
@@ -163,6 +271,7 @@ export default function LandingFx() {
       root.removeEventListener('pointermove', onPointerMove)
       document.removeEventListener('visibilitychange', onVisibility)
       root.classList.remove('is-leaving')
+      if (audioCtx) void audioCtx.close()
     }
   }, [])
 

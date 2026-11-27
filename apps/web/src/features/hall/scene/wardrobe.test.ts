@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { outfit as definition, type Outfit } from '@tiny/core/slots'
-import { createWardrobe, followOutfit, lookOf } from './wardrobe.ts'
+import { createWardrobe, followOutfit, lookOf, toggleWorn } from './wardrobe.ts'
 import type { Character, Look } from './character.ts'
 import type { AtelierRoom } from './atelier.ts'
 import type { SlotHandle } from '@/shared/lib/slots'
@@ -146,4 +146,37 @@ test('the closet dresses an outfit and headpiece together, and can take both off
   s.wardrobe.dress('unknown', null)
   await s.settled()
   assert.deepEqual(lookOf(s.slot.snapshot()), { kind: 'bunny', costume: null, bow: null })
+})
+
+
+test('clothing stacks by place: one item each, a new one replaces only its place, a worn one comes off', () => {
+  const fits = () => true
+  let look: Look = { kind: 'bunny', costume: null, bow: null }
+  look = toggleWorn(look, { slot: 'costume', id: 'kiki' }, fits)!
+  look = toggleWorn(look, { slot: 'bow', id: 'flower-crown' }, fits)!
+  assert.deepEqual(look, { kind: 'bunny', costume: 'kiki', bow: 'flower-crown' })
+  // A second costume replaces the first, leaving the crown alone.
+  look = toggleWorn(look, { slot: 'costume', id: 'blue-floral' }, fits)!
+  assert.deepEqual(look, { kind: 'bunny', costume: 'blue-floral', bow: 'flower-crown' })
+  // A second headpiece replaces the crown, leaving the dress alone.
+  look = toggleWorn(look, { slot: 'bow', id: 'blue-cap' }, fits)!
+  assert.deepEqual(look, { kind: 'bunny', costume: 'blue-floral', bow: 'blue-cap' })
+  // Tapping what is already worn takes only that piece off.
+  look = toggleWorn(look, { slot: 'costume', id: 'blue-floral' }, fits)!
+  assert.deepEqual(look, { kind: 'bunny', costume: null, bow: 'blue-cap' })
+  // A piece that doesn't fit this character changes nothing.
+  assert.equal(toggleWorn(look, { slot: 'bow', id: 'cape' }, () => false), null)
+})
+
+test('the closet leaves the other place exactly as it was', async () => {
+  const s = setup()
+  s.wardrobe.dress('kiki', 'flower-crown')
+  await s.settled()
+  const before = s.slot.snapshot()
+  s.wardrobe.dress('blue-floral', 'flower-crown')
+  await s.settled()
+  const after = s.slot.snapshot()
+  assert.equal(after.costume.v, 'blue-floral')
+  assert.deepEqual(after.bow, before.bow)
+  assert.equal(after.costume.at > before.costume.at, true)
 })

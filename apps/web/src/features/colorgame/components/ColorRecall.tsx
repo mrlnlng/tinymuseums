@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
 import { earn } from '@/features/economy/store'
 import MinigameFrame from '@/features/minigames/components/MinigameFrame'
@@ -61,6 +62,7 @@ export default function ColorRecall({ onClose }: ColorRecallProps) {
       }
 
       setPhase('over')
+      reportQuestEvent('finish-minigame')
       play('failure')
       if (streak > 0) earn('game', { game: 'colorrecall', score: streak })
       if (streak > best) {

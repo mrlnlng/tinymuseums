@@ -11,6 +11,7 @@ export interface HallLayout {
   giftShopX: number | null
   cafeX: number | null
   guestBoardX: number | null
+  /** Kept for the studio's landmark labels; the hall no longer hangs a coming-soon board. */
   comingSoonX: number | null
   /** The rooms the hall is made of, joined wall to wall; they tile the floor end to end. */
   rooms: HallRoomSpan[]
@@ -66,10 +67,6 @@ function cafeAfterIndex(widths: number[], isComplete: boolean): number | null {
   return null
 }
 
-export function comingSoonWidth(): number {
-  return CONFIG.comingSoon.canvas.w * CONFIG.piece.scale
-}
-
 /**
  * A door standing in the hall: its centre and width. Paintings and rooms step round it, unless it
  * stands under a painting (`top`, the height of its top): then that painting hangs higher instead.
@@ -93,7 +90,7 @@ const DOOR_CLEARANCE = 0.45
 const UNDER_ROOM = 0.08
 
 export function computeLayout(paintings: number[], isComplete = false, doors: readonly DoorSpan[] = []): HallLayout {
-  const widths = isComplete ? [...paintings, comingSoonWidth()] : paintings
+  const widths = paintings
   const blocked = doors
     .filter((door) => door.top === undefined)
     .map(({ x, width }) => ({ start: x - width / 2 - DOOR_CLEARANCE, end: x + width / 2 + DOOR_CLEARANCE }))
@@ -145,7 +142,7 @@ export function computeLayout(paintings: number[], isComplete = false, doors: re
   if (isComplete) cursor = clear(cursor, CONFIG.giftShop.length * 2)
   const giftShopX = isComplete ? cursor + CONFIG.giftShop.length : null
 
-  const comingSoonX = isComplete ? centerX.pop()! : null
+  const comingSoonX = null
   const lift = centerX.map((x, i) => Math.max(0, ...doors
     .filter((door) => door.top !== undefined && Math.abs(door.x - x) < (widths[i] + door.width) / 2)
     .map((door) => door.top! + UNDER_ROOM - CONFIG.displayBottomY)))

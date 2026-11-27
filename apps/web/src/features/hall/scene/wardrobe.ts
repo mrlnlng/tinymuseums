@@ -71,6 +71,19 @@ export function followOutfit(
   return { sync, dispose() { disposed = true; unsubscribe() } }
 }
 
+/**
+ * The two places a costume can sit. Each holds one item at a time: putting on another in the
+ * same place replaces only that place, and putting the worn one on again takes it off. The
+ * catalog's `collection` names (dress, cardigan, set, bow) all resolve to one of these places.
+ */
+export type WornSlot = 'costume' | 'bow'
+
+/** The item as it should be worn after a tap, or null when it doesn't fit this character. */
+export function toggleWorn(look: Look, item: ClothingItem, fits: (id: string) => boolean): Look | null {
+  if (!fits(item.id)) return null
+  return { ...look, [item.slot]: look[item.slot] === item.id ? null : item.id }
+}
+
 export interface Wardrobe {
   readonly busy: boolean
   reflect(): void
@@ -116,14 +129,15 @@ export function createWardrobe({ character, room, outfit, onChange, onIdle }: Op
   return {
     get busy() { return pending > 0 },
     reflect,
-    tapItem({ slot: key, id }) {
+    tapItem(item) {
       enqueue(async () => {
-        if (!FITS[character.look.kind].includes(id)) return
-        const wearing = character.look[key] === id
-        const value = wearing ? null : id
-        if (!await character.wear({ ...character.look, [key]: value })) return
+        const next = toggleWorn(character.look, item, (id) => FITS[character.look.kind].includes(id))
+        if (next === null) return
+        const wearing = character.look[item.slot] === item.id
+        if (!await character.wear(next)) return
         if (disposed) return
-        outfit.update((o) => ({ ...o, [key]: restamp(o[key], value) }))
+        // Only this place is restamped; the other stays exactly as it was.
+        outfit.update((o) => ({ ...o, [item.slot]: restamp(o[item.slot], next[item.slot]) }))
         onChange(wearing ? 'costume_off' : 'costume_on')
       })
     },
@@ -135,7 +149,12 @@ export function createWardrobe({ character, room, outfit, onChange, onIdle }: Op
         if (next.costume === character.look.costume && next.bow === character.look.bow) return
         if (!await character.wear(next)) return
         if (disposed) return
-        outfit.update((o) => ({ ...o, costume: restamp(o.costume, next.costume), bow: restamp(o.bow, next.bow) }))
+        // Stacking: a changed place is replaced; an unchanged one keeps its old stamp.
+        outfit.update((o) => ({
+          ...o,
+          ...(o.costume.v !== next.costume ? { costume: restamp(o.costume, next.costume) } : {}),
+          ...(o.bow.v !== next.bow ? { bow: restamp(o.bow, next.bow) } : {}),
+        }))
         onChange(next.costume === null && next.bow === null ? 'costume_off' : 'costume_on')
       })
     },

@@ -33,7 +33,6 @@ const ENTRANCE_FILES = {
   floor: 'floor.png',
   wallpaper: 'hall/wallpaper.png',
   baseboard: 'hall/baseboard.png',
-  curtain: 'hall/curtain.png',
   garland: 'hall/garland.png',
   christmasTree: 'hall/christmas-tree.png',
   door: 'door.png',
@@ -52,7 +51,6 @@ const SCENERY_FILES = {
   cafeThanks: 'cafe/thanks-board.png',
   guestBoard: 'guestboard/board-hall.png',
   sitArea: 'guestboard/sit-area.png',
-  comingSoon: 'coming-soon.png',
 } as const
 
 export const HELM_PEDESTAL_FILE = 'pedestal-4.png'

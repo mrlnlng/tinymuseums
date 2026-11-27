@@ -32,6 +32,15 @@ export interface HeadpieceSpot {
   rotation: number
 }
 
+/** Who made the work in a collection room. The card shows the name and links, not the blurb yet. */
+export interface ArtistCredit {
+  name: string
+  instagram: string
+  website: string
+  /** Empty until the artist supplies one; the info card leaves out a blank description. */
+  description?: string
+}
+
 export interface CollectionRoom {
   key: string
   title: string
@@ -48,6 +57,8 @@ export interface CollectionRoom {
   ribbon: 'ribbon' | 'ribbonBlue'
   /** Flowers around the form's platform: Jazlyn's own touch for Bruce's booth. */
   flowers?: boolean
+  /** The artist whose work hangs in this room, when known. */
+  artist?: ArtistCredit
   /** The column beside the form: a cushion and the decoration resting on it. */
   pillar: {
     pillow: { image: 'pillowBlue' | 'pillowRed'; y: number; width: number }
@@ -83,6 +94,12 @@ export const COLLECTIONS: readonly CollectionRoom[] = [
     portrait: { own: 'bruce', image: 'portraitBruce', width: 116 },
     ribbon: 'ribbonBlue',
     flowers: true,
+    artist: {
+      name: 'Jazlynn',
+      instagram: 'https://www.instagram.com/jazlynn.art/',
+      website: 'https://jazlynnart.com/',
+      description: '',
+    },
     pillar: {
       pillow: { image: 'pillowRed', y: 433, width: 210 },
       pieces: [

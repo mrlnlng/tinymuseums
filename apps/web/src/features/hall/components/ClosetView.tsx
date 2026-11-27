@@ -5,6 +5,7 @@ import { itemIdFor, priceOf } from '@tiny/core/economy'
 import manifest from '@/generated/asset-manifest.json'
 import Stamp from '@/features/economy/components/Stamp'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { reportQuestEvent } from '@/features/letters/events'
 import { builtUrl } from '@/shared/lib/assets'
 import { keepName } from '../scene/atelier'
 import { choiceAt, HEADPIECES, OUTFITS, positionOf } from '../scene/closet'
@@ -193,7 +194,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
             <circle cx="8.5" cy="15.5" r="1.3" className="pip" />
           </svg>
         </button>
-        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => { play('confirm'); onDone(draft.costume, draft.bow) }}>
+        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => { play('close'); reportQuestEvent('change-outfit'); onDone(draft.costume, draft.bow) }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </button>
       </div>

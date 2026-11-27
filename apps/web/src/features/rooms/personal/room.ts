@@ -3,6 +3,7 @@ import { GALLERY_DOOR, createGalleryDoor } from '@/features/hall/scene/gallery-d
 import { placeLabel, writeStyle } from '@/features/hall/scene/overlay'
 import { personalRoomInfo, personalShade } from '@/features/npcs/room-places'
 import type { DecorController } from '../decorate/controller'
+import { isRemovedProceduralFish } from '../decorate/logic'
 import {
   type RoomLight,
   cozyTheme,
@@ -87,7 +88,7 @@ export function createPersonalRoom({ slug, placements, ownerName, open, canEdit,
     build(ctx, { cozy, door }) {
       let shownWidth = width()
       const backdrop = createCozyBackdrop(ctx.scene, cozy, shownWidth)
-      let arrangement: readonly Placement[] = placements
+      let arrangement: readonly Placement[] = placements.filter((placement) => !isRemovedProceduralFish(placement.ref))
       let lit = lightOf(arrangement)
       function light(): void {
         lit = lightOf(arrangement)
@@ -106,10 +107,10 @@ export function createPersonalRoom({ slug, placements, ownerName, open, canEdit,
         writeStyle(doorSign, 'filter', signFilter(shadeAt(DOOR_SIGN.x, DOOR_SIGN.y)))
         writeStyle(openSign, 'filter', signFilter(shadeAt(OPEN_SIGN.x, OPEN_SIGN.y)))
       }
-      backdrop.setFinishes(placements)
+      backdrop.setFinishes(arrangement)
       light()
       const layer = createPlacementLayer(ctx.scene, cozy, cozyTheme, () => shownWidth)
-      layer.set(placements)
+      layer.set([...arrangement])
       const hallDoor = createGalleryDoor(ctx.scene, door, DOOR_X, DOOR_BASE)
 
       const doorSign = document.createElement('div')
@@ -157,9 +158,9 @@ export function createPersonalRoom({ slug, placements, ownerName, open, canEdit,
       }
       ctx.overlay.append(openSign)
 
-      function showArrangement(next: Placement[]): void {
-        arrangement = next
-        backdrop.setFinishes(next)
+      function showArrangement(next: readonly Placement[]): void {
+        arrangement = next.filter((placement) => !isRemovedProceduralFish(placement.ref))
+        backdrop.setFinishes(arrangement)
         light()
       }
 

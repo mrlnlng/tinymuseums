@@ -5,7 +5,7 @@ import { CONFIG } from '@/features/hall/scene/config'
 import { writeHidden, type Viewport } from '@/features/hall/scene/overlay'
 import { clearRigLayer, createRigLayer, disposeRigLayer, loadRig, type Rig } from '@/features/hall/scene/rig'
 import { createRigState, rigFacing, stepRigState, type RigState } from '@/features/hall/scene/rig-motion'
-import { isMuted } from '../lib/room-events'
+import { isChatMuted, isMuted } from '../lib/room-events'
 import type { RemoteVisitor } from '../lib/peers'
 import { createPlayerCard } from './player-card'
 
@@ -297,7 +297,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
 
         const rig = entry.rig
         // Muted visitors still walk about; their messages just don't show.
-        const said = visitor.said && !isMuted(visitor.pid) ? visitor.said : null
+        const said = visitor.said && !isChatMuted() && !isMuted(visitor.pid) ? visitor.said : null
         const saidAge = said ? now - said.at : Infinity
         const hop = !reducedMotion && saidAge < HOP_MS ? Math.sin((Math.PI * saidAge) / HOP_MS) * heightPx * 0.08 : 0
         const seat = visitor.sit && visitor.look.kind === 'bunny' ? scenery?.seat : undefined

@@ -52,6 +52,8 @@ export type PondReelReply =
   | {
       catch: PondCatch
       treasure: PondTreasure | null
+      special?: { pearls: number } | null
+      keepsake?: 'mp3-player' | 'camera' | null
       wagerWon: number | null
       chainPaid: number | null
       trophyCollected: boolean

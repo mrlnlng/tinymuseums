@@ -26,18 +26,18 @@ export interface JournalFamily {
 
 const c = (id: string, name: string): JournalCatch => ({ id, name })
 
-// Treasure and most deep-sea art is not drawn yet; their PNGs are grey stand-ins with the same ids.
+// The crown, chest and most deep-sea art are not drawn yet; their PNGs are grey stand-ins with the same ids.
 export const JOURNAL_FAMILIES: readonly JournalFamily[] = [
   {
     species: 'star-snapper',
     label: 'Fish',
     rarity: 'common',
     catches: [
-      c('star-snapper', 'Star snapper'),
+      c('star-snapper', 'Snapper Fish'),
       c('puffer', 'Pufferfish'),
-      c('party-clownfish', 'Party clownfish'),
-      c('starry-goldfish', 'Starry goldfish'),
-      c('salmon-nigiri', 'Salmon nigiri bunny'),
+      c('party-clownfish', 'Clown Fish'),
+      c('starry-goldfish', 'Starry Night Fish'),
+      c('salmon-nigiri', 'Sashimi Bao'),
     ],
   },
   {
@@ -45,11 +45,11 @@ export const JOURNAL_FAMILIES: readonly JournalFamily[] = [
     label: 'Shellfish',
     rarity: 'uncommon',
     catches: [
-      c('painter-shrimp', 'Painter shrimp'),
-      c('hermit-crab', 'Hermit crab'),
-      c('crab', 'Crab'),
-      c('venus-cat', 'Venus in her shell'),
-      c('tempura-shrimp', 'Tempura bunny'),
+      c('painter-shrimp', 'Shrimp Artist'),
+      c('hermit-crab', 'Hermit Palette'),
+      c('crab', 'Starry Crab'),
+      c('venus-cat', 'The Birth of Venus'),
+      c('tempura-shrimp', 'Tempura Bao'),
     ],
   },
   {
@@ -57,8 +57,8 @@ export const JOURNAL_FAMILIES: readonly JournalFamily[] = [
     label: 'Sunken treasures',
     rarity: 'rare',
     catches: [
-      c('old-boot', 'Old boot'),
-      c('pearl-string', 'String of pearls'),
+      c('mp3-player', 'Ipod'),
+      c('camera', 'Digi-Cam'),
       c('sunken-crown', 'Sunken crown'),
       c('treasure-chest', 'Treasure chest'),
       c('treasure-sashimi', 'Golden sashimi'),
@@ -97,10 +97,14 @@ export function catchArt(item: { id: string }): string {
   return staticUrl(`/assets/pond/catch/${item.id}.png`)
 }
 
-/** Rare treasure finds the visitor keeps and can use, shown under the grid. */
+/** The Basic and Fine sunken treasures are gadgets a member keeps and uses from the gadget button. */
 export const KEEPSAKES = [
-  { id: 'mp3-player', name: 'MP3 player', action: 'Play' },
-  { id: 'camera', name: 'Tiny camera', action: 'Snap' },
+  { id: 'mp3-player', name: 'Ipod', action: 'Listen' },
+  { id: 'camera', name: 'Digi-Cam', action: 'Take photos' },
 ] as const
 
 export type KeepsakeId = (typeof KEEPSAKES)[number]['id']
+
+export function ownedKeepsakes(items: readonly string[]): KeepsakeId[] {
+  return KEEPSAKES.filter((item) => items.includes(`keepsake:${item.id}`)).map((item) => item.id)
+}

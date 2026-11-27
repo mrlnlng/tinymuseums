@@ -3705,14 +3705,6 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
 
 .pond-room-panel .pond-room-bait.is-free { background: #f4fbf3; border-color: #a9cfb2; }
 
-.pond-room-panel .pond-room-panel-card.is-fishdex {
-  background:
-    repeating-linear-gradient(180deg, transparent 0 27px, rgb(79 143 140 / 16%) 27px 28px) padding-box,
-    linear-gradient(180deg, #fffaf0, var(--pond-paper)) padding-box,
-    repeating-linear-gradient(174deg, transparent 0 10px, rgb(122 64 22 / 20%) 10px 12px, transparent 12px 26px) border-box,
-    linear-gradient(180deg, #e6a259, var(--pond-wood) 45%, var(--pond-wood-dark)) border-box;
-}
-
 .pond-room-panel .pond-room-panel-body.is-leaderboard .pond-room-tab { min-height: 34px; padding: 5px 8px; border-radius: 999px; font-size: 12px; }
 
 .pond-room-panel .pond-room-period.is-active { border-color: var(--pond-line); background: #fff3d6; color: var(--pond-ink); }
@@ -3994,7 +3986,7 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
 
 .pond-keepsake-found h2 { margin: 0; font: 26px var(--font-ui); text-transform: uppercase; letter-spacing: 0.03em; }
 
-.pond-keepsake-found p { margin: 0; font-size: 13px; }
+.pond-keepsake-found p { margin: 0; font-family: var(--font-body); font-size: 13px; }
 
 .pond-keepsake-kicker { color: #a52b50; font-family: var(--font-ui) !important; text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -4083,3 +4075,50 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
 .room-album-head h2 { margin: 0; font: 24px var(--font-ui); letter-spacing: 0.03em; text-transform: uppercase; }
 
 .room-album-body { min-height: 0; padding: 14px 16px 18px; overflow-y: auto; overscroll-behavior: contain; }
+
+/* Gadgets: the members' tool button in the bottom-left of every room. */
+.gadgets { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: max(16px, env(safe-area-inset-left)); z-index: 55; display: grid; justify-items: start; gap: 10px; }
+
+.gadgets-toggle { display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 3px solid #50291d; border-radius: 50%; background: #fbf2e1; color: #c22252; box-shadow: 0 4px 0 rgb(80 41 29 / 25%); cursor: pointer; }
+
+.gadgets-toggle svg { width: 26px; height: 26px; }
+
+.gadgets-toggle[aria-expanded="true"] { background: #f6b8d0; color: #50291d; }
+
+.gadgets-toggle:focus-visible, .gadgets-row:focus-visible { outline: 3px solid #662f14; outline-offset: 2px; }
+
+.gadgets-menu { display: grid; gap: 6px; min-width: 220px; padding: 12px; border: 3px solid #50291d; border-radius: 18px; background: #fff6e5; color: #4a2e22; box-shadow: 0 10px 30px rgb(9 13 24 / 35%); }
+
+.gadgets-heading { margin: 0 4px 2px; font: 15px var(--font-ui); letter-spacing: 0.05em; text-transform: uppercase; }
+
+.gadgets-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 12px 6px 6px; border: 2px solid #e4d4ba; border-radius: 12px; background: #fffaf0; color: inherit; font: 14px var(--font-body); text-align: left; cursor: pointer; }
+
+.gadgets-row:hover { border-color: #deb446; }
+
+.gadgets-row img, .gadgets-album { display: grid; place-items: center; width: 52px; height: 44px; object-fit: contain; font-size: 26px; }
+
+.gadgets-row span:last-child { display: grid; line-height: 1.2; }
+
+.gadgets-row strong { font: 15px var(--font-ui); letter-spacing: 0.03em; }
+
+.gadgets-row small { color: #8a6249; font-size: 12px; }
+
+
+/* The MP3 player's dock, available in every room. */
+.pond-keepsake-dock { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; z-index: 70; display: flex; align-items: center; gap: 12px; width: min(calc(100% - 32px), 420px); padding: 10px 14px 10px 10px; border: 3px solid #50291d; border-radius: 20px; background: #fff3c9; color: #50291d; transform: translateX(-50%); box-shadow: 0 10px 30px rgb(9 13 24 / 40%); }
+
+.pond-keepsake-dock-art { width: 64px; height: 64px; object-fit: contain; }
+
+.pond-keepsake-dock-info { display: grid; flex: 1; gap: 4px; min-width: 0; font-size: 12px; }
+
+.pond-keepsake-dock-info strong { font: 15px var(--font-ui); text-transform: uppercase; }
+
+.pond-keepsake-dock-info .pond-journal-bar { width: 100%; height: 10px; }
+
+.pond-keepsake-dock { z-index: 65; }
+
+.pond-keepsake-dock .pond-journal-bar { display: block; overflow: hidden; border: 3px solid #3d2f14; border-radius: 999px; background: #fffdf7; }
+
+.pond-keepsake-dock .pond-journal-bar > span { display: block; height: 100%; border-radius: inherit; background: #94bd55; }
+
+@media (max-width: 520px) { .pond-keepsake-dock { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); } }

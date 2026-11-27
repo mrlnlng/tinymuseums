@@ -18,6 +18,7 @@ import {
   type PondCastResult,
 } from '../src/index.ts'
 import { buyPondBait } from '../src/domain/pond.ts'
+import { POND_SPECIAL_PEARLS, pondSpecialFor } from '../src/economy/pond.ts'
 import { signUp } from '../src/domain/members.ts'
 import { nameFromSeed } from '../src/presence/names.ts'
 import { closePool, query, queryOne } from '../src/infra/db.ts'
@@ -489,4 +490,28 @@ test('bounties progress from today catches and a claim pays once', async () => {
     error: 'not_done',
   })
   assert.deepEqual(await claimPondBounty(empty, 'not-a-bounty', noon), { error: 'invalid' })
+})
+
+test('today\'s special fish pays once per member per day', async () => {
+  // A day whose special is the common Basic star snapper, so a few casts land it.
+  let day = new Date(Date.UTC(2030, 0, 1, 12))
+  while (pondSpecialFor(day.toISOString().slice(0, 10)).species !== 'star-snapper' || pondSpecialFor(day.toISOString().slice(0, 10)).variant !== 'normal') {
+    day = new Date(day.getTime() + 86_400_000)
+  }
+  const id = await member()
+  const paid: number[] = []
+  for (let attempt = 0; attempt < 60 && paid.length < 2; attempt++) {
+    const castAt = new Date(day.getTime() + attempt * 5_000)
+    const cast = castResult(await castPond(id, { bait: 'worm' }, SECRET, castAt))
+    const reel = await reelPond(
+      id,
+      { ticket: cast.ticket, landed: true, perfectCast: false, perfectHook: false, treasureGrabbed: false },
+      SECRET,
+      reelTime(castAt),
+    )
+    assert.ok('catch' in reel, JSON.stringify(reel))
+    if (reel.catch.species === 'star-snapper' && reel.catch.variant === 'normal') paid.push(reel.special?.pearls ?? 0)
+    else assert.equal(reel.special, null)
+  }
+  assert.deepEqual(paid, [POND_SPECIAL_PEARLS, 0])
 })

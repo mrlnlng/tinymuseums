@@ -5,15 +5,12 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import SettingsMenu from './SettingsMenu'
 import AssetImage from '@/shared/components/AssetImage'
 import ChatButton from '@/features/presence/components/ChatButton'
-import { useWallet } from '@/features/economy/hooks'
-import { openCamera } from '@/features/pondroom/keepsakes/camera-events'
 
 export default function ScreenChrome() {
   const pathname = usePathname()
   const router = useRouter()
   const [leaving, setLeaving] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const wallet = useWallet()
   const wasPending = useRef(false)
 
   // One trip at a time: repeat taps while the next page loads are ignored, not queued.
@@ -36,7 +33,6 @@ export default function ScreenChrome() {
 
   const showHome = pathname !== '/'
   const showMyRoom = pathname === '/museum'
-  const showCamera = pathname.startsWith('/museum') && wallet.isMember && wallet.items.includes('keepsake:camera')
   const showChat = pathname === '/' || pathname === '/museum' || pathname === '/museum/atelier'
 
   return (
@@ -82,20 +78,6 @@ export default function ScreenChrome() {
                 <path fill="black" d="M41 39v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2Z" />
               </mask>
               <circle cx="37.5" cy="37.5" r="37.5" fill="#c22252" mask="url(#my-room-toggle-cutout)" />
-            </svg>
-          </button>
-        ) : null}
-        {showCamera ? (
-          <button type="button" className="chrome-button chrome-camera" onClick={() => openCamera('camera')} aria-label="Camera" title="Camera">
-            <svg viewBox="0 0 75 75" aria-hidden="true">
-              <mask id="camera-toggle-cutout">
-                <rect width="75" height="75" fill="white" />
-                <rect x="15" y="26" width="45" height="31" rx="6" fill="black" />
-                <rect x="29" y="20" width="17" height="9" rx="3" fill="black" />
-                <circle cx="37.5" cy="41.5" r="9.5" fill="white" />
-                <circle cx="37.5" cy="41.5" r="5.5" fill="black" />
-              </mask>
-              <circle cx="37.5" cy="37.5" r="37.5" fill="#c22252" mask="url(#camera-toggle-cutout)" />
             </svg>
           </button>
         ) : null}

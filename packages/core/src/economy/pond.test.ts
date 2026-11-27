@@ -28,6 +28,8 @@ import {
   pondWeights,
   readPondTicket,
   pondTreasureLoot,
+  pondSpecialFor,
+  pondKeepsakeFor,
 } from './pond.ts'
 
 const SECRET = 'test-secret'
@@ -138,9 +140,9 @@ test('the build-contract species table carries tiers, pearls and sizes', () => {
   assert.deepEqual(
     POND_SPECIES.map((fish) => [fish.id, fish.tier, fish.weight, fish.pearls, fish.medianCm, fish.minCm, fish.maxCm, fish.fight]),
     [
-      ['star-snapper', 'common', 55, 2, 22, 14, 40, 0],
+      ['star-snapper', 'common', 63, 2, 22, 14, 40, 0],
       ['crab', 'uncommon', 28, 4, 18, 10, 34, 1],
-      ['puffer', 'rare', 14, 8, 26, 15, 45, 2],
+      ['puffer', 'rare', 6, 8, 26, 15, 45, 2],
       ['blobfish', 'legendary', 3, 40, 35, 22, 60, 3],
     ],
   )
@@ -154,17 +156,17 @@ test('the build-contract species table carries tiers, pearls and sizes', () => {
 
 test('tier odds and payouts follow the weights and the 10% cut', () => {
   const odds = pondOdds({ bait: 'worm', chainLevel: 0, pity: 0 })
-  assert.deepEqual(odds.tiers, { common: 0.55, uncommon: 0.28, rare: 0.14, legendary: 0.03 })
-  assert.deepEqual(odds.payouts, { common: 1.6, uncommon: 3.2, rare: 6.4, legendary: 30 })
+  assert.deepEqual(odds.tiers, { common: 0.63, uncommon: 0.28, rare: 0.06, legendary: 0.03 })
+  assert.deepEqual(odds.payouts, { common: 1.4, uncommon: 3.2, rare: 15, legendary: 30 })
   assert.equal(pondPayoutMultiplier(0.5), 1.8)
   assert.equal(pondPayoutMultiplier(0), 0)
   assert.equal(pondPayoutMultiplier(1), 0.9)
 
   const shrimp = pondOdds({ bait: 'shrimp', chainLevel: 0, pity: 0 })
   assert.deepEqual(shrimp.tiers, {
-    common: 55 / 156,
+    common: 63 / 156,
     uncommon: 84 / 156,
-    rare: 14 / 156,
+    rare: 6 / 156,
     legendary: 3 / 156,
   })
 })
@@ -172,8 +174,8 @@ test('tier odds and payouts follow the weights and the 10% cut', () => {
 test('live bait doubles then triples rare and legendary weights', () => {
   const one = pondSpeciesWeights({ bait: 'worm', chainLevel: 1, pity: 0 })
   const two = pondSpeciesWeights({ bait: 'worm', chainLevel: 2, pity: 0 })
-  assert.deepEqual(one.map((fish) => fish.weight), [55, 28, 28, 6])
-  assert.deepEqual(two.map((fish) => fish.weight), [55, 28, 42, 9])
+  assert.deepEqual(one.map((fish) => fish.weight), [63, 28, 12, 6])
+  assert.deepEqual(two.map((fish) => fish.weight), [63, 28, 18, 9])
 })
 
 test('pity lifts the legendary from cast 60 and guarantees it at 120', () => {
@@ -316,11 +318,27 @@ test('bounty progress follows the catches of the day', () => {
   assert.equal(pondBountyProgress({ kind: 'species', target: 3 }, []), 0)
 })
 
-test('treasure loot keeps charms at 5% and gives each keepsake 2%', () => {
+test('the Basic and Fine sunken treasures are the gadgets', () => {
+  assert.equal(pondKeepsakeFor('puffer', 'normal'), 'mp3-player')
+  assert.equal(pondKeepsakeFor('puffer', 'shiny'), 'camera')
+  assert.equal(pondKeepsakeFor('puffer', 'golden'), null)
+  assert.equal(pondKeepsakeFor('crab', 'normal'), null)
+})
+
+test('treasure loot is pearls, bait or a charm', () => {
   assert.equal(pondTreasureLoot(0.5, 0).kind, 'pearls')
-  assert.equal(pondTreasureLoot(0.8, 0).kind, 'bait')
-  assert.equal(pondTreasureLoot(0.93, 0).kind, 'charm')
-  assert.deepEqual(pondTreasureLoot(0.97, 0), { kind: 'keepsake', keepsake: 'mp3-player' })
-  assert.deepEqual(pondTreasureLoot(0.99, 0), { kind: 'keepsake', keepsake: 'camera' })
-  assert.deepEqual(pondTreasureLoot(1, 0), { kind: 'keepsake', keepsake: 'camera' })
+  assert.equal(pondTreasureLoot(0.9, 0).kind, 'bait')
+  assert.equal(pondTreasureLoot(0.99, 0).kind, 'charm')
+})
+
+test('the special fish is one reachable journal cell, the same all day and varied across days', () => {
+  assert.deepEqual(pondSpecialFor('2026-11-27'), pondSpecialFor('2026-11-27'))
+  const picks = new Set<string>()
+  for (let day = 1; day <= 28; day++) {
+    const special = pondSpecialFor(`2026-12-${String(day).padStart(2, '0')}`)
+    assert.ok(special.variant === 'normal' || special.variant === 'shiny')
+    if (special.variant === 'shiny') assert.ok(special.species === 'star-snapper' || special.species === 'crab')
+    picks.add(`${special.species}:${special.variant}`)
+  }
+  assert.ok(picks.size >= 4)
 })

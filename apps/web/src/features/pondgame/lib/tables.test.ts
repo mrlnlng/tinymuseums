@@ -91,19 +91,19 @@ test('the client variant table matches core odds, full-moon odds and multipliers
 test('species weights and rolls follow the bait boosts', () => {
   assert.deepEqual(
     speciesWeights('worm').map((entry) => entry.weight),
-    [55, 28, 14, 3],
+    [63, 28, 6, 3],
   )
   assert.deepEqual(
     speciesWeights('shrimp').map((entry) => entry.weight),
-    [55, 84, 14, 3],
+    [63, 84, 6, 3],
   )
   assert.deepEqual(
     speciesWeights('berry').map((entry) => entry.weight),
-    [55, 28, 42, 3],
+    [63, 28, 18, 3],
   )
   assert.deepEqual(
     speciesWeights('cupcake').map((entry) => entry.weight),
-    [55, 28, 14, 12],
+    [63, 28, 6, 12],
   )
   assert.equal(pickSpecies('worm', () => 0), 'star-snapper')
   assert.equal(pickSpecies('worm', () => 0.999999), 'blobfish')

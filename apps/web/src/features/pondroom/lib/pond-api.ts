@@ -259,3 +259,18 @@ export function deletePondPhoto(photoId: string): Promise<PondResult<true>> {
     () => true,
   )
 }
+
+export interface PondSpecialToday {
+  day: string
+  species: string
+  variant: string
+  pearls: number
+}
+
+export function fetchPondSpecial(): Promise<PondResult<PondSpecialToday>> {
+  return request('/api/pond/special', {}, (body) =>
+    isRecord(body) && typeof body.species === 'string' && typeof body.variant === 'string'
+      ? (body as unknown as PondSpecialToday)
+      : null,
+  )
+}

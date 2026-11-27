@@ -16,9 +16,6 @@ import PondHud from './PondHud'
 import PondLoading from './PondLoading'
 import PondPanels, { type PondOverlayKind } from './PondPanels'
 import PondTicker from './PondTicker'
-import { openCamera } from './keepsakes/camera-events'
-import PondMusic from './keepsakes/PondMusic'
-import type { KeepsakeId } from './lib/journal'
 import { POND_NAME } from './lib/identity'
 
 const PondGame = dynamic(() => import('@/features/pondgame/components/PondGame'), { ssr: false })
@@ -102,16 +99,6 @@ export default function PondRoom({ callbacks: overrides, from = null }: PondRoom
     setPanelCloses((count) => count + 1)
   }, [])
 
-  const [music, setMusic] = useState(false)
-  const useKeepsake = useCallback(
-    (id: KeepsakeId) => {
-      closePanel()
-      if (id === 'camera') openCamera('camera')
-      else setMusic(true)
-    },
-    [closePanel],
-  )
-
   const { isReady, error } = useRoom({
     room,
     arrival: from && from !== 'hall' && doorsOf('pond').some((door) => door.id === from) ? { kind: 'door', door: from } : { kind: 'opening' },
@@ -142,11 +129,10 @@ export default function PondRoom({ callbacks: overrides, from = null }: PondRoom
 
       <AnimatePresence>
         {panel !== null ? (
-          <PondPanels key={`pond-panel-${panel}`} kind={panel} onClose={closePanel} onUseKeepsake={useKeepsake} />
+          <PondPanels key={`pond-panel-${panel}`} kind={panel} onClose={closePanel} />
         ) : null}
       </AnimatePresence>
 
-      {music ? <PondMusic onClose={() => setMusic(false)} /> : null}
 
       <AnimatePresence>{isReady ? null : <PondLoading key="pond-loading" />}</AnimatePresence>
     </>

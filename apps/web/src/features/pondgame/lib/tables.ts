@@ -19,7 +19,6 @@ export type PondTreasure =
   | { kind: 'pearls'; pearls: number }
   | { kind: 'bait'; bait: BaitId; count: number }
   | { kind: 'charm'; casts: number }
-  | { kind: 'keepsake'; keepsake: 'mp3-player' | 'camera' }
 
 export interface Species {
   id: FishId
@@ -40,7 +39,7 @@ export const SPECIES: readonly Species[] = [
     name: 'Star snapper',
     art: 'pond/fish-star-snapper',
     tier: 'common',
-    weight: 55,
+    weight: 63,
     pearls: 2,
     medianCm: 22,
     minCm: 14,
@@ -64,7 +63,7 @@ export const SPECIES: readonly Species[] = [
     name: 'Pufferfish',
     art: 'pond/fish-puffer',
     tier: 'rare',
-    weight: 14,
+    weight: 6,
     pearls: 8,
     medianCm: 26,
     minCm: 15,
@@ -303,7 +302,6 @@ export function treasureLabel(treasure: PondTreasure | null | undefined): string
   if (!treasure) return null
   if (treasure.kind === 'pearls') return `${treasure.pearls} pearls`
   if (treasure.kind === 'bait') return `${treasure.count} ${BAIT_BY_ID[treasure.bait].name.toLowerCase()}`
-  if (treasure.kind === 'keepsake') return treasure.keepsake === 'camera' ? 'a tiny camera!' : 'an MP3 player!'
   return `Lucky charm (${treasure.casts} casts)`
 }
 

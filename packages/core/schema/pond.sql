@@ -63,3 +63,20 @@ create table if not exists pond_photos (
 );
 
 create index if not exists pond_photos_member_at on pond_photos (member_id, at desc);
+
+-- Today's special fish pays once per member per UTC day.
+create table if not exists pond_special_claims (
+  member_id uuid not null references members(id) on delete cascade,
+  day       text not null,
+  at        timestamptz not null default now(),
+  primary key (member_id, day)
+);
+
+-- Gadgets come from landing the Basic and Fine sunken treasures; members who already had those catches get them too.
+insert into wallet_items (member_id, item_id, price)
+select distinct member_id, 'keepsake:mp3-player', 0 from pond_catches where species = 'puffer' and variant = 'normal'
+on conflict do nothing;
+
+insert into wallet_items (member_id, item_id, price)
+select distinct member_id, 'keepsake:camera', 0 from pond_catches where species = 'puffer' and variant = 'shiny'
+on conflict do nothing;

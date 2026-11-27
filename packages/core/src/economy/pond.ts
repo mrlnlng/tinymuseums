@@ -49,9 +49,10 @@ export interface PondSpecies {
 }
 
 export const POND_SPECIES = [
-  { id: 'star-snapper', tier: 'common', weight: 55, pearls: 2, medianCm: 22, minCm: 14, maxCm: 40, fight: 0 },
+  { id: 'star-snapper', tier: 'common', weight: 63, pearls: 2, medianCm: 22, minCm: 14, maxCm: 40, fight: 0 },
   { id: 'crab', tier: 'uncommon', weight: 28, pearls: 4, medianCm: 18, minCm: 10, maxCm: 34, fight: 1 },
-  { id: 'puffer', tier: 'rare', weight: 14, pearls: 8, medianCm: 26, minCm: 15, maxCm: 45, fight: 2 },
+  // Sunken treasures hold the gadgets, so they turn up less often than the fish around them.
+  { id: 'puffer', tier: 'rare', weight: 6, pearls: 8, medianCm: 26, minCm: 15, maxCm: 45, fight: 2 },
   { id: 'blobfish', tier: 'legendary', weight: 3, pearls: 40, medianCm: 35, minCm: 22, maxCm: 60, fight: 3 },
 ] as const satisfies readonly PondSpecies[]
 
@@ -293,7 +294,12 @@ export type PondTreasure =
   | { kind: 'pearls'; pearls: number }
   | { kind: 'bait'; bait: PondBaitId; count: number }
   | { kind: 'charm'; casts: number }
-  | { kind: 'keepsake'; keepsake: PondKeepsake }
+
+/** The Basic and Fine sunken treasures are gadgets the member keeps once landed. */
+export function pondKeepsakeFor(species: string, variant: string): PondKeepsake | null {
+  if (species !== 'puffer') return null
+  return variant === 'normal' ? 'mp3-player' : variant === 'shiny' ? 'camera' : null
+}
 
 export function pondKeepsakeItem(keepsake: PondKeepsake): string {
   return `keepsake:${keepsake}`
@@ -306,14 +312,12 @@ export function pondTreasurePearls(detail: number): number {
 
 export function pondTreasureLoot(roll: number, detail: number): PondTreasure {
   const bucket = Math.max(0, Math.min(0.999999, roll))
-  if (bucket < 0.76) return { kind: 'pearls', pearls: pondTreasurePearls(detail) }
-  if (bucket < 0.91) {
+  if (bucket < 0.8) return { kind: 'pearls', pearls: pondTreasurePearls(detail) }
+  if (bucket < 0.95) {
     const baitId = detail < 0.5 ? 'shrimp' : 'berry'
     return { kind: 'bait', bait: baitId, count: POND_BAIT_COST[baitId].pack }
   }
-  if (bucket < 0.96) return { kind: 'charm', casts: POND_LUCKY_CASTS }
-  // Each keepsake is 2% of treasure, about 1 cast in 250.
-  return { kind: 'keepsake', keepsake: bucket < 0.98 ? 'mp3-player' : 'camera' }
+  return { kind: 'charm', casts: POND_LUCKY_CASTS }
 }
 
 export type PondBountyKind = 'fish' | 'crab' | 'puffer' | 'variant' | 'trophy' | 'species' | 'pearls'
@@ -369,6 +373,26 @@ function bountySeed(day: string): number {
 }
 
 /** Three distinct goals seeded by the UTC day, so every visitor sees the same board. */
+export const POND_SPECIAL_PEARLS = 100
+
+// Only cells a visitor can reasonably land in a day: every family's Basic, and the commoner Fines.
+const SPECIAL_POOL = [
+  { species: 'star-snapper', variant: 'normal' },
+  { species: 'crab', variant: 'normal' },
+  { species: 'puffer', variant: 'normal' },
+  { species: 'blobfish', variant: 'normal' },
+  { species: 'star-snapper', variant: 'shiny' },
+  { species: 'crab', variant: 'shiny' },
+] as const satisfies readonly { species: PondFishId; variant: PondVariant }[]
+
+export type PondSpecial = (typeof SPECIAL_POOL)[number]
+
+/** Today's special fish: one journal cell per UTC day, the same for everyone. */
+export function pondSpecialFor(utcDay: string): PondSpecial {
+  const roll = mulberry32(bountySeed(`special:${utcDay}`))()
+  return SPECIAL_POOL[Math.min(SPECIAL_POOL.length - 1, Math.floor(roll * SPECIAL_POOL.length))]
+}
+
 export function pondBountiesFor(utcDay: string): PondBounty[] {
   const random = mulberry32(bountySeed(utcDay))
   const pool = BOUNTY_POOL.slice()

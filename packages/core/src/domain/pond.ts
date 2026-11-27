@@ -27,7 +27,10 @@ import {
   pondTreasureFor,
   pondTreasureLoot,
   pondKeepsakeItem,
-  pondTreasurePearls,
+  pondKeepsakeFor,
+  type PondKeepsake,
+  pondSpecialFor,
+  POND_SPECIAL_PEARLS,
   pondVariantFor,
   pondVariantOdds,
   readPondTicket,
@@ -349,6 +352,10 @@ export type PondReelResult =
   | {
       catch: PondCatch
       treasure: PondTreasure | null
+      /** Pearls for landing today's special fish, the first time today. */
+      special: { pearls: number } | null
+      /** A gadget handed over by this catch, the first time it is landed. */
+      keepsake: PondKeepsake | null
       wagerWon: number | null
       chainPaid: number | null
       trophyCollected: boolean
@@ -433,15 +440,6 @@ export async function reelPond(
         pondRoll(secret, 'loot', check.nonce),
         pondRoll(secret, 'loot-detail', check.nonce),
       )
-      if (treasure.kind === 'keepsake') {
-        const added = await client.query(
-          `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
-           on conflict do nothing
-           returning item_id`,
-          [memberId, pondKeepsakeItem(treasure.keepsake)],
-        )
-        if (added.rows.length === 0) treasure = { kind: 'pearls', pearls: pondTreasurePearls(pondRoll(secret, 'loot-detail', check.nonce)) }
-      }
       if (treasure.kind === 'pearls') treasurePearls = treasure.pearls
       else if (treasure.kind === 'bait') await addBait(client, memberId, treasure.bait, treasure.count)
       else if (treasure.kind === 'charm') lucky = treasure.casts
@@ -490,6 +488,27 @@ export async function reelPond(
         )
       : { rows: [] }
 
+    // Landing the Basic or Fine sunken treasure for the first time hands over its gadget.
+    const gadget = pondKeepsakeFor(species.id, variant)
+    let keepsake: PondKeepsake | null = null
+    if (gadget) {
+      const added = await client.query(
+        `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0) on conflict do nothing returning item_id`,
+        [memberId, pondKeepsakeItem(gadget)],
+      )
+      if (added.rows.length > 0) keepsake = gadget
+    }
+
+    const today = pondSpecialFor(utcDay(now))
+    let specialPearls = 0
+    if (today.species === species.id && today.variant === variant) {
+      const won = await client.query(
+        `insert into pond_special_claims (member_id, day) values ($1, $2) on conflict do nothing returning day`,
+        [memberId, utcDay(now)],
+      )
+      if (won.rows.length > 0) specialPearls = POND_SPECIAL_PEARLS
+    }
+
     const next: PondState = {
       ...state,
       pearls:
@@ -497,7 +516,8 @@ export async function reelPond(
         catchPearls +
         (wagerWon ?? 0) +
         (chainPaid ?? 0) +
-        treasurePearls,
+        treasurePearls +
+        specialPearls,
       streak,
       pity: species.tier === 'legendary' ? 0 : state.pity,
       lucky,
@@ -522,6 +542,8 @@ export async function reelPond(
         personalBest,
       },
       treasure,
+      special: specialPearls > 0 ? { pearls: specialPearls } : null,
+      keepsake,
       wagerWon,
       chainPaid,
       trophyCollected: collected.rows.length > 0,

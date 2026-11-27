@@ -50,6 +50,7 @@ import RevealCard from './RevealCard'
 import WagerPicker from './WagerPicker'
 import Water from './Water'
 import KeepsakeFound from '@/features/pondroom/keepsakes/KeepsakeFound'
+import SpecialFound from '@/features/pondroom/keepsakes/SpecialFound'
 import type { KeepsakeId } from '@/features/pondroom/lib/journal'
 
 export interface PondGameProps {
@@ -132,8 +133,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [reveal, setReveal] = useState<CatchView | null>(null)
-  const [foundKeepsake, setFoundKeepsake] = useState<KeepsakeId | null>(null)
-  const pendingKeepsakeRef = useRef<KeepsakeId | null>(null)
+  // Cards that follow the catch card: today's special, then any keepsake.
+  type Found = { kind: 'special'; species: string; variant: string; pearls: number } | { kind: 'keepsake'; keepsake: KeepsakeId }
+  const [found, setFound] = useState<Found[]>([])
+  const pendingFoundRef = useRef<Found[]>([])
   const [buying, setBuying] = useState<BaitId | null>(null)
   const [chest, setChest] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -437,10 +440,13 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           chainAtCastRef.current = 0
           commit({ ...stateRef.current, phase: 'reveal' })
           setReveal(view)
-          if (reply.treasure?.kind === 'keepsake') {
-            pendingKeepsakeRef.current = reply.treasure.keepsake
+          const pending: Found[] = []
+          if (reply.special) pending.push({ kind: 'special', species: caught.species, variant: caught.variant, pearls: reply.special.pearls })
+          if (reply.keepsake) {
+            pending.push({ kind: 'keepsake', keepsake: reply.keepsake })
             void refreshWalletNow()
           }
+          pendingFoundRef.current = pending
           onCatch?.(caught.species)
         })
         const wait = landed ? 0 : castReplyAtRef.current + MIN_REPORT_MS - performance.now()
@@ -752,8 +758,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
 
   const dismissReveal = useCallback(() => {
     setReveal(null)
-    setFoundKeepsake(pendingKeepsakeRef.current)
-    pendingKeepsakeRef.current = null
+    setFound(pendingFoundRef.current)
+    pendingFoundRef.current = []
     setCatches((count) => count + 1)
     resetToIdle()
     bumpStreakChip()
@@ -999,7 +1005,11 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           onDismiss={dismissReveal}
         />
       ) : null}
-      {foundKeepsake ? <KeepsakeFound keepsake={foundKeepsake} onClose={() => setFoundKeepsake(null)} /> : null}
+      {found[0]?.kind === 'special' ? (
+        <SpecialFound {...found[0]} onClose={() => setFound((list) => list.slice(1))} />
+      ) : found[0]?.kind === 'keepsake' ? (
+        <KeepsakeFound keepsake={found[0].keepsake} onClose={() => setFound((list) => list.slice(1))} />
+      ) : null}
     </div>
   )
 }

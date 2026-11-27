@@ -10,11 +10,10 @@ import { SHOPKEEPER_NAME } from '@/features/rooms/pond/shopkeeper'
 import { usePondState } from './lib/use-pond-state'
 import { PondIcon } from './lib/icons'
 import BountyPanel from './panels/BountyPanel'
-import { useWallet } from '@/features/economy/hooks'
-import AlbumPanel from './keepsakes/AlbumPanel'
-import type { KeepsakeId } from './lib/journal'
-import FishdexPanel, { ownedKeepsakes } from './panels/FishdexPanel'
+import FishdexPanel from './panels/FishdexPanel'
 import FishmongerPanel from './panels/FishmongerPanel'
+import PondRules from './panels/PondRules'
+import { useTodaysSpecial } from './lib/use-special'
 import LeaderboardPanel from './panels/LeaderboardPanel'
 
 export type PondOverlayKind = PondPanelKind
@@ -41,24 +40,18 @@ const BOARD_TABS = [
 export interface PondPanelsProps {
   kind: PondOverlayKind
   onClose(): void
-  onUseKeepsake?(id: KeepsakeId): void
 }
 
-const JOURNAL_TABS = [
-  { id: 'catches', label: 'Catches', icon: 'scroll' },
-  { id: 'album', label: 'Album', icon: null },
-] as const
-
 /** Each pondside object has one home; the two notices share a board. */
-export default function PondPanels({ kind, onClose, onUseKeepsake }: PondPanelsProps) {
-  const [activeKind, setActiveKind] = useState(kind)
-  const [journalTab, setJournalTab] = useState<'catches' | 'album'>('catches')
-  const wallet = useWallet()
+export default function PondPanels({ kind, onClose }: PondPanelsProps) {
+  // The sign by the gate is the pond rules; its noticeboard opens from there.
+  const [activeKind, setActiveKind] = useState<PondOverlayKind | 'rules'>(kind === 'bounties' ? 'rules' : kind)
   const snapshot = usePondState()
+  const special = useTodaysSpecial()
   const cardRef = useModalFocus()
   const closeRef = useRef<HTMLButtonElement>(null)
   useEscapeKey(onClose)
-  const title = TITLES[activeKind]
+  const title = activeKind === 'rules' ? 'Pond rules' : TITLES[activeKind]
   const isBoard = activeKind === 'bounties' || activeKind === 'leaderboard'
 
   useEffect(() => {
@@ -69,6 +62,49 @@ export default function PondPanels({ kind, onClose, onUseKeepsake }: PondPanelsP
     onClose()
     // Leave the pond panel before the account sheet takes focus.
     window.requestAnimationFrame(openAccount)
+  }
+
+  function startFishing() {
+    onClose()
+    // Walk to the free fishing spot nearest the visitor and cast, as tapping that ripple would.
+    window.requestAnimationFrame(() => {
+      const bunny = document.querySelector('.hall-bunny-rig')?.getBoundingClientRect()
+      const at = bunny ? bunny.left + bunny.width / 2 : window.innerWidth / 2
+      const spots = [...document.querySelectorAll<HTMLButtonElement>('.pond-room-ripple:not(:disabled)')]
+      const centre = (spot: HTMLElement) => {
+        const rect = spot.getBoundingClientRect()
+        return Math.abs(rect.left + rect.width / 2 - at)
+      }
+      spots.sort((a, b) => centre(a) - centre(b))[0]?.click()
+    })
+  }
+
+  if (activeKind === 'rules') {
+    return (
+      <div className="pond-room-panel is-rules" role="dialog" aria-modal="true" aria-labelledby="pond-room-panel-title">
+        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={onClose} aria-label="Close the pond rules" />
+        <div ref={cardRef} className="pond-rules-host">
+          <PondRules
+            onJournal={() => setActiveKind('fishdex')}
+            onStartFishing={startFishing}
+            onNoticeboard={() => setActiveKind('bounties')}
+            onClose={onClose}
+            special={special}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (activeKind === 'fishdex') {
+    return (
+      <div className="pond-room-panel" role="dialog" aria-modal="true" aria-labelledby="pond-room-panel-title">
+        <button type="button" tabIndex={-1} className="pond-room-panel-scrim" onClick={onClose} aria-label="Close the fish journal" />
+        <div ref={cardRef} className="pond-journal-card">
+          <FishdexPanel onClose={onClose} special={special} />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -118,37 +154,11 @@ export default function PondPanels({ kind, onClose, onUseKeepsake }: PondPanelsP
             ))}
           </div>
         ) : null}
-        {activeKind === 'fishdex' ? (
-          <div className="pond-notice-tabs" role="tablist" aria-label="Fish journal">
-            {JOURNAL_TABS.map((tab, index) => (
-              <button
-                key={tab.id}
-                id={`pond-journal-tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={journalTab === tab.id}
-                aria-controls="pond-journal-content"
-                tabIndex={journalTab === tab.id ? 0 : -1}
-                onClick={() => setJournalTab(tab.id)}
-                onKeyDown={(event) => {
-                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-                  event.preventDefault()
-                  const next = JOURNAL_TABS[event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index].id
-                  setJournalTab(next)
-                  document.getElementById(`pond-journal-tab-${next}`)?.focus()
-                }}
-              >
-                {tab.icon ? <PondIcon name={tab.icon} size={22} /> : <span aria-hidden="true">📷</span>}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
         <div
           className={`pond-room-panel-body is-${activeKind}`}
-          id={isBoard ? 'pond-notice-content' : activeKind === 'fishdex' ? 'pond-journal-content' : undefined}
-          role={isBoard || activeKind === 'fishdex' ? 'tabpanel' : undefined}
-          aria-labelledby={isBoard ? `pond-notice-tab-${activeKind}` : activeKind === 'fishdex' ? `pond-journal-tab-${journalTab}` : undefined}
+          id={isBoard ? 'pond-notice-content' : undefined}
+          role={isBoard ? 'tabpanel' : undefined}
+          aria-labelledby={isBoard ? `pond-notice-tab-${activeKind}` : undefined}
         >
           {activeKind === 'leaderboard' ? <LeaderboardPanel /> : null}
           {activeKind === 'bounties' ? <BountyPanel /> : null}
@@ -160,10 +170,6 @@ export default function PondPanels({ kind, onClose, onUseKeepsake }: PondPanelsP
               </p>
               <FishmongerPanel />
             </>
-          ) : null}
-          {activeKind === 'fishdex' && journalTab === 'catches' ? <FishdexPanel onUseKeepsake={onUseKeepsake} /> : null}
-          {activeKind === 'fishdex' && journalTab === 'album' ? (
-            <AlbumPanel hasCamera={ownedKeepsakes(wallet.items).includes('camera')} />
           ) : null}
         </div>
         <footer className="pond-room-panel-footer">

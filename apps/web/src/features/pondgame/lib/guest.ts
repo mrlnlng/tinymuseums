@@ -42,6 +42,8 @@ export interface CatchView {
   wager: CatchWagerView | null
   chainPaid: number | null
   guest: boolean
+  /** A net catch is banked as-is; it never becomes live bait. */
+  net?: boolean
 }
 
 export interface GuestRoll {

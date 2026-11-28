@@ -106,6 +106,7 @@ export default function RevealCard({
   const offer = chainOffer(chainLevel, chainPot, caught.pearls)
   const canChain =
     !caught.guest &&
+    !caught.net &&
     settled &&
     (caught.tier === 'common' || caught.tier === 'uncommon') &&
     chainLevel < 2

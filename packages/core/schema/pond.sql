@@ -45,6 +45,9 @@ create table if not exists pond_state (
   wagered_today integer not null default 0 check (wagered_today >= 0),
   updated_at    timestamptz not null default now()
 );
+-- A net is a one-off purchase, and its scoop cooldown is tracked here so it survives restarts.
+alter table pond_state add column if not exists owns_net boolean not null default false;
+alter table pond_state add column if not exists last_scoop_at timestamptz;
 
 create table if not exists pond_bounty_claims (
   member_id uuid not null references members(id) on delete cascade,

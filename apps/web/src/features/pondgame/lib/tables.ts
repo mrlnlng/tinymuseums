@@ -150,6 +150,9 @@ export const BAIT_BY_ID: Record<BaitId, Bait> = Object.fromEntries(
   BAIT.map((bait) => [bait.id, bait]),
 ) as Record<BaitId, Bait>
 
+/** The fishing net is a one-time buy, mirrored from core's POND_NET_COST (tables.test.ts checks). */
+export const POND_NET_COST = 100
+
 export interface VariantOddsRow {
   variant: FishVariant
   multiplier: number

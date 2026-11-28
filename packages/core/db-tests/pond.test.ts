@@ -3,6 +3,10 @@ import { randomBytes } from 'node:crypto'
 import { after, test } from 'node:test'
 import {
   POND_MIN_REEL_MS,
+  POND_NET_COST,
+  POND_NET_SPECIES,
+  POND_SCOOP_GAP_MS,
+  buyPondNet,
   castPond,
   chainPondBait,
   claimPondBounty,
@@ -15,6 +19,7 @@ import {
   isoWeek,
   pondBountiesFor,
   reelPond,
+  scoopPond,
   type PondCastResult,
 } from '../src/index.ts'
 import { buyPondBait } from '../src/domain/pond.ts'
@@ -48,6 +53,8 @@ interface StatePatch {
   chainCatch?: string | null
   wageredDay?: string | null
   wageredToday?: number
+  ownsNet?: boolean
+  lastScoopAt?: Date | null
 }
 
 const COLUMNS: Record<keyof StatePatch, string> = {
@@ -60,6 +67,8 @@ const COLUMNS: Record<keyof StatePatch, string> = {
   chainCatch: 'chain_catch',
   wageredDay: 'wagered_day',
   wageredToday: 'wagered_today',
+  ownsNet: 'owns_net',
+  lastScoopAt: 'last_scoop_at',
 }
 
 async function setState(memberId: string, patch: StatePatch): Promise<void> {
@@ -251,6 +260,51 @@ test('buying bait spends pearls and refuses when they are short', async () => {
   assert.equal(bought.state.pearls, 0)
   assert.deepEqual(bought.state.bait, { shrimp: 5 })
   assert.deepEqual(await buyPondBait(id, 'cupcake'), { error: 'insufficient' })
+})
+
+test('the net is bought once, then scoops net fish on a cooldown', async () => {
+  const id = await member()
+  await grantPearls(id, POND_NET_COST + 5)
+  const bought = await buyPondNet(id)
+  assert.ok('state' in bought)
+  assert.equal(bought.state.ownsNet, true)
+  assert.equal(bought.state.pearls, 5)
+  assert.deepEqual(await buyPondNet(id), { error: 'owned' })
+
+  const poor = await member()
+  await grantPearls(poor, POND_NET_COST - 1)
+  assert.deepEqual(await buyPondNet(poor), { error: 'insufficient' })
+
+  await setState(id, { streak: 2, pity: 4, lucky: 1, chainLevel: 1, chainPot: 3 })
+  const now = new Date()
+  const first = await scoopPond(id, SECRET, now)
+  assert.ok('catch' in first, JSON.stringify(first))
+  assert.ok((POND_NET_SPECIES as readonly string[]).includes(first.catch.species))
+  assert.equal(first.catch.variant, 'normal')
+  assert.equal(first.treasure, null)
+  assert.equal(first.wagerWon, null)
+  assert.equal(first.chainPaid, null)
+  assert.equal(first.state.streak, 3)
+  assert.equal(first.state.pity, 4)
+  assert.equal(first.state.lucky, 1)
+  assert.deepEqual(first.state.chain, { level: 1, pot: 3 })
+  assert.equal(first.state.pearls, 5 + first.catch.pearls + (first.special?.pearls ?? 0))
+
+  const rows = await query(`select species, variant from pond_catches where member_id = $1`, [id])
+  assert.equal(rows.length, 1)
+  assert.equal((rows[0] as { species: string }).species, first.catch.species)
+  assert.equal((rows[0] as { variant: string }).variant, 'normal')
+
+  assert.deepEqual(
+    await scoopPond(id, SECRET, new Date(now.getTime() + POND_SCOOP_GAP_MS - 1)),
+    { error: 'too_soon' },
+  )
+  const second = await scoopPond(id, SECRET, new Date(now.getTime() + POND_SCOOP_GAP_MS))
+  assert.ok('catch' in second)
+  assert.equal(second.state.streak, 4)
+
+  const noNet = await member()
+  assert.deepEqual(await scoopPond(noNet, SECRET, new Date()), { error: 'no_net' })
 })
 
 test('only the last landed common or uncommon can become chain bait', async () => {

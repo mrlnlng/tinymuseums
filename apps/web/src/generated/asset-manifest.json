@@ -1574,6 +1574,20 @@
         "src": "npcs-bram-walk@2x.835e698788.webp",
         "avif": "npcs-bram-walk@2x.1456ff860d.avif"
       }
+    },
+    "pond/net": {
+      "w": 849,
+      "h": 866,
+      "x2": {
+        "w": 566,
+        "h": 577,
+        "src": "pond-net@2x.7a8f01e63b.webp"
+      },
+      "x3": {
+        "w": 849,
+        "h": 866,
+        "src": "pond-net@3x.59a75452af.webp"
+      }
     }
   },
   "atlases": {

@@ -92,15 +92,6 @@ test('a release outside the sweet zone is not a perfect cast and lands nearer', 
   assert.ok(full.landing.x < landingForPower(SWEET_HIGH).x)
 })
 
-test('portrait casts land inside the visible left-bank crop', () => {
-  for (const power of [0, 0.4, SWEET_LOW, 0.85, SWEET_HIGH, 1]) {
-    const point = landingForPower(power, true)
-    assert.ok(point.x >= 0.3 && point.x <= 0.48, `${power}: ${point.x}`)
-    assert.ok(point.y >= 0.76 && point.y <= 0.84, `${power}: ${point.y}`)
-    assert.ok(point.x < landingForPower(power, false).x)
-  }
-})
-
 test('the waiting state schedules 0.5–1.1s nibbles and a tap during one spooks the fish', () => {
   for (const roll of [0, 0.5, 0.999]) {
     let state = armCast(

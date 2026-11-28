@@ -3,6 +3,8 @@ import { isCatalogItem } from '../economy/catalog.ts'
 import {
   POND_BAIT_COST,
   POND_CHAIN_MAX,
+  POND_NET_COST,
+  POND_SCOOP_GAP_MS,
   POND_WAGER_DAILY_CAP,
   POND_WAGER_MAX,
   POND_WAGER_MIN,
@@ -15,6 +17,8 @@ import {
   pondCatchPearls,
   pondChainPayout,
   pondMoon,
+  pondNetSpeciesFor,
+  pondNetSpeciesProbability,
   pondNibblesFor,
   pondNonce,
   pondOdds,
@@ -38,6 +42,7 @@ import {
   type PondBountyCatch,
   type PondFishId,
   type PondOdds,
+  type PondSpecies,
   type PondTier,
   type PondTreasure,
   type PondVariant,
@@ -57,6 +62,8 @@ export interface PondState {
   chainCatch: string | null
   wageredDay: string | null
   wageredToday: number
+  ownsNet: boolean
+  lastScoopAt: Date | null
 }
 
 export interface PondStateView {
@@ -67,6 +74,7 @@ export interface PondStateView {
   lucky: number
   pity: number
   wageredToday: number
+  ownsNet: boolean
   moon: 'full' | 'other'
   odds: PondOdds
 }
@@ -81,6 +89,8 @@ interface PondStateRow {
   chain_catch: string | null
   wagered_day: string | null
   wagered_today: number
+  owns_net: boolean
+  last_scoop_at: Date | null
 }
 
 const ONCE = { limit: 1, windowSeconds: 5 * 60 }
@@ -104,6 +114,8 @@ function stateOf(row: PondStateRow): PondState {
     chainCatch: row.chain_catch,
     wageredDay: row.wagered_day,
     wageredToday: row.wagered_today,
+    ownsNet: row.owns_net,
+    lastScoopAt: row.last_scoop_at,
   }
 }
 
@@ -111,7 +123,7 @@ async function readPondState(client: PoolClient, memberId: string): Promise<Pond
   await client.query(`insert into pond_state (member_id) values ($1) on conflict do nothing`, [memberId])
   const { rows } = await client.query<PondStateRow>(
     `select pearls, streak, pity, lucky, chain_level, chain_pot, chain_catch,
-            wagered_day::text as wagered_day, wagered_today
+            wagered_day::text as wagered_day, wagered_today, owns_net, last_scoop_at
        from pond_state where member_id = $1`,
     [memberId],
   )
@@ -122,7 +134,7 @@ async function lockPondState(client: PoolClient, memberId: string): Promise<Pond
   await client.query(`insert into pond_state (member_id) values ($1) on conflict do nothing`, [memberId])
   const { rows } = await client.query<PondStateRow>(
     `select pearls, streak, pity, lucky, chain_level, chain_pot, chain_catch,
-            wagered_day::text as wagered_day, wagered_today
+            wagered_day::text as wagered_day, wagered_today, owns_net, last_scoop_at
        from pond_state where member_id = $1 for update`,
     [memberId],
   )
@@ -134,7 +146,8 @@ async function savePondState(client: PoolClient, memberId: string, state: PondSt
     `update pond_state
         set pearls = $2, streak = $3, pity = $4, lucky = $5,
             chain_level = $6, chain_pot = $7, chain_catch = $8,
-            wagered_day = $9, wagered_today = $10, updated_at = now()
+            wagered_day = $9, wagered_today = $10, owns_net = $11, last_scoop_at = $12,
+            updated_at = now()
       where member_id = $1`,
     [
       memberId,
@@ -147,6 +160,8 @@ async function savePondState(client: PoolClient, memberId: string, state: PondSt
       state.chainCatch,
       state.wageredDay,
       state.wageredToday,
+      state.ownsNet,
+      state.lastScoopAt,
     ],
   )
 }
@@ -179,6 +194,7 @@ async function stateView(
     lucky: state.lucky,
     pity: state.pity,
     wageredToday,
+    ownsNet: state.ownsNet,
     moon: pondMoon(now),
     odds: pondOdds({ bait, chainLevel, pity: state.pity }),
   }
@@ -209,6 +225,19 @@ export async function buyPondBait(memberId: string, baitId: string): Promise<Pon
       [memberId, baitId, pack],
     )
     const next = { ...state, pearls: state.pearls - cost }
+    await savePondState(client, memberId, next)
+    return { state: await stateView(client, memberId, next, new Date()) }
+  })
+}
+
+export type PondNetResult = { state: PondStateView } | { error: 'insufficient' | 'owned' }
+
+export async function buyPondNet(memberId: string): Promise<PondNetResult> {
+  return transaction(async (client) => {
+    const state = await lockPondState(client, memberId)
+    if (state.ownsNet) return { error: 'owned' as const }
+    if (state.pearls < POND_NET_COST) return { error: 'insufficient' as const }
+    const next = { ...state, pearls: state.pearls - POND_NET_COST, ownsNet: true }
     await savePondState(client, memberId, next)
     return { state: await stateView(client, memberId, next, new Date()) }
   })
@@ -372,6 +401,115 @@ async function addBait(client: PoolClient, memberId: string, baitId: PondBaitId,
   )
 }
 
+interface LandedCatchInput {
+  species: PondSpecies
+  variant: PondVariant
+  size: { sizeCm: number; trophy: boolean }
+  pearls: number
+  breakdown: PondCatch['breakdown']
+  odds: number
+  score: number
+}
+
+interface LandedCatchResult {
+  catch: PondCatch
+  special: { pearls: number } | null
+  keepsake: PondKeepsake | null
+  trophyCollected: boolean
+}
+
+/** The journal, wallet, keepsake, special and trophy work shared by every landed catch. */
+async function recordLandedCatch(
+  client: PoolClient,
+  memberId: string,
+  caught: LandedCatchInput,
+  now: Date,
+): Promise<LandedCatchResult> {
+  const { species, variant, size } = caught
+  const prior = await client.query<{ species_count: number; variant_count: number; best: number | null }>(
+    `select count(*) filter (where species = $2)::int as species_count,
+            count(*) filter (where species = $2 and variant = $3)::int as variant_count,
+            max(size_cm) filter (where species = $2) as best
+       from pond_catches where member_id = $1`,
+    [memberId, species.id, variant],
+  )
+  const earlier = prior.rows[0]
+  const isNewSpecies = earlier.species_count === 0
+  const isNewVariant = earlier.variant_count === 0
+  const personalBest = earlier.best === null || size.sizeCm > earlier.best
+
+  const inserted = await client.query<{ id: string }>(
+    `insert into pond_catches
+       (member_id, species, tier, variant, size_cm, pearls, odds, week, at, chained, score, trophy)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $10, $11)
+     returning id`,
+    [
+      memberId,
+      species.id,
+      species.tier,
+      variant,
+      size.sizeCm,
+      caught.pearls,
+      caught.odds,
+      isoWeek(now),
+      now,
+      caught.score,
+      size.trophy,
+    ],
+  )
+  const catchId = inserted.rows[0].id
+
+  const itemId = `prop:fish-${species.id}`
+  const collected = isCatalogItem(itemId)
+    ? await client.query(
+        `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
+         on conflict do nothing
+         returning item_id`,
+        [memberId, itemId],
+      )
+    : { rows: [] }
+
+  // Landing the Basic or Fine sunken treasure for the first time hands over its gadget.
+  const gadget = pondKeepsakeFor(species.id, variant)
+  let keepsake: PondKeepsake | null = null
+  if (gadget) {
+    const added = await client.query(
+      `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0) on conflict do nothing returning item_id`,
+      [memberId, pondKeepsakeItem(gadget)],
+    )
+    if (added.rows.length > 0) keepsake = gadget
+  }
+
+  const today = pondSpecialFor(utcDay(now))
+  let specialPearls = 0
+  if (today.species === species.id && today.variant === variant) {
+    const won = await client.query(
+      `insert into pond_special_claims (member_id, day) values ($1, $2) on conflict do nothing returning day`,
+      [memberId, utcDay(now)],
+    )
+    if (won.rows.length > 0) specialPearls = POND_SPECIAL_PEARLS
+  }
+
+  return {
+    catch: {
+      id: catchId,
+      species: species.id,
+      tier: species.tier,
+      variant,
+      sizeCm: size.sizeCm,
+      trophy: size.trophy,
+      pearls: caught.pearls,
+      breakdown: caught.breakdown,
+      isNewSpecies,
+      isNewVariant,
+      personalBest,
+    },
+    special: specialPearls > 0 ? { pearls: specialPearls } : null,
+    keepsake,
+    trophyCollected: collected.rows.length > 0,
+  }
+}
+
 export async function reelPond(
   memberId: string,
   request: unknown,
@@ -445,69 +583,20 @@ export async function reelPond(
       else if (treasure.kind === 'charm') lucky = treasure.casts
     }
 
-    const prior = await client.query<{ species_count: number; variant_count: number; best: number | null }>(
-      `select count(*) filter (where species = $2)::int as species_count,
-              count(*) filter (where species = $2 and variant = $3)::int as variant_count,
-              max(size_cm) filter (where species = $2) as best
-         from pond_catches where member_id = $1`,
-      [memberId, species.id, variant],
-    )
-    const earlier = prior.rows[0]
-    const isNewSpecies = earlier.species_count === 0
-    const isNewVariant = earlier.variant_count === 0
-    const personalBest = earlier.best === null || size.sizeCm > earlier.best
-
-    const inserted = await client.query<{ id: string }>(
-      `insert into pond_catches
-         (member_id, species, tier, variant, size_cm, pearls, odds, week, at, chained, score, trophy)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $10, $11)
-       returning id`,
-      [
-        memberId,
-        species.id,
-        species.tier,
+    const recorded = await recordLandedCatch(
+      client,
+      memberId,
+      {
+        species,
         variant,
-        size.sizeCm,
-        catchPearls,
-        speciesOdds * variantOdds,
-        isoWeek(now),
-        now,
+        size,
+        pearls: catchPearls,
+        breakdown,
+        odds: speciesOdds * variantOdds,
         score,
-        size.trophy,
-      ],
+      },
+      now,
     )
-    const catchId = inserted.rows[0].id
-
-    const itemId = `prop:fish-${species.id}`
-    const collected = isCatalogItem(itemId)
-      ? await client.query(
-          `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0)
-           on conflict do nothing
-           returning item_id`,
-          [memberId, itemId],
-        )
-      : { rows: [] }
-
-    // Landing the Basic or Fine sunken treasure for the first time hands over its gadget.
-    const gadget = pondKeepsakeFor(species.id, variant)
-    let keepsake: PondKeepsake | null = null
-    if (gadget) {
-      const added = await client.query(
-        `insert into wallet_items (member_id, item_id, price) values ($1, $2, 0) on conflict do nothing returning item_id`,
-        [memberId, pondKeepsakeItem(gadget)],
-      )
-      if (added.rows.length > 0) keepsake = gadget
-    }
-
-    const today = pondSpecialFor(utcDay(now))
-    let specialPearls = 0
-    if (today.species === species.id && today.variant === variant) {
-      const won = await client.query(
-        `insert into pond_special_claims (member_id, day) values ($1, $2) on conflict do nothing returning day`,
-        [memberId, utcDay(now)],
-      )
-      if (won.rows.length > 0) specialPearls = POND_SPECIAL_PEARLS
-    }
 
     const next: PondState = {
       ...state,
@@ -517,7 +606,7 @@ export async function reelPond(
         (wagerWon ?? 0) +
         (chainPaid ?? 0) +
         treasurePearls +
-        specialPearls,
+        (recorded.special?.pearls ?? 0),
       streak,
       pity: species.tier === 'legendary' ? 0 : state.pity,
       lucky,
@@ -528,25 +617,85 @@ export async function reelPond(
     await savePondState(client, memberId, next)
 
     return {
-      catch: {
-        id: catchId,
-        species: species.id,
-        tier: species.tier,
-        variant,
-        sizeCm: size.sizeCm,
-        trophy: size.trophy,
-        pearls: catchPearls,
-        breakdown,
-        isNewSpecies,
-        isNewVariant,
-        personalBest,
-      },
+      catch: recorded.catch,
       treasure,
-      special: specialPearls > 0 ? { pearls: specialPearls } : null,
-      keepsake,
+      special: recorded.special,
+      keepsake: recorded.keepsake,
       wagerWon,
       chainPaid,
-      trophyCollected: collected.rows.length > 0,
+      trophyCollected: recorded.trophyCollected,
+      state: await stateView(client, memberId, next, now),
+    }
+  })
+}
+
+export type PondScoopError = 'no_net' | 'too_soon'
+
+export type PondScoopResult =
+  | {
+      catch: PondCatch
+      treasure: null
+      special: { pearls: number } | null
+      keepsake: PondKeepsake | null
+      wagerWon: null
+      chainPaid: null
+      trophyCollected: boolean
+      state: PondStateView
+    }
+  | { error: PondScoopError }
+
+export async function scoopPond(
+  memberId: string,
+  secret: string,
+  now = new Date(),
+): Promise<PondScoopResult> {
+  return transaction(async (client) => {
+    const state = await lockPondState(client, memberId)
+    if (!state.ownsNet) return { error: 'no_net' as const }
+    if (state.lastScoopAt !== null && now.getTime() - state.lastScoopAt.getTime() < POND_SCOOP_GAP_MS) {
+      return { error: 'too_soon' as const }
+    }
+
+    const nonce = pondNonce()
+    const species = pondSpeciesById(pondNetSpeciesFor(pondRoll(secret, 'species', nonce)))
+    const variant = 'normal' as const
+    const size = pondSizeFor(pondRoll(secret, 'size', nonce), species.id)
+    const streak = state.streak + 1
+    const { pearls: catchPearls, breakdown } = pondCatchPearls(species.id, size.sizeCm, variant, streak)
+    const { pearls: score } = pondCatchPearls(species.id, size.sizeCm, variant, 1)
+
+    const recorded = await recordLandedCatch(
+      client,
+      memberId,
+      {
+        species,
+        variant,
+        size,
+        pearls: catchPearls,
+        breakdown,
+        odds: pondNetSpeciesProbability(species.id),
+        score,
+      },
+      now,
+    )
+
+    // Scooping leaves pity, lucky and the chain alone; it is a small catch, not a cast.
+    const next: PondState = {
+      ...state,
+      pearls: state.pearls + catchPearls + (recorded.special?.pearls ?? 0),
+      streak,
+      lastScoopAt: now,
+    }
+    await savePondState(client, memberId, next)
+
+    return {
+      catch: recorded.catch,
+      treasure: null,
+      special: recorded.special,
+      keepsake: recorded.keepsake,
+      wagerWon: null,
+      chainPaid: null,
+      trophyCollected: recorded.trophyCollected,
       state: await stateView(client, memberId, next, now),
     }
   })

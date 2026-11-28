@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   BAIT,
   BAIT_BY_ID,
+  POND_NET_COST,
   SPECIES,
   SPECIES_BY_ID,
   VARIANTS,
@@ -57,6 +58,11 @@ test('the client species table matches core POND_SPECIES exactly', async () => {
     SPECIES.map((species) => species.name),
     ['Star snapper', 'Crab', 'Pufferfish', 'Sir Blobfish'],
   )
+})
+
+test('the client net price matches POND_NET_COST', async () => {
+  const core = await import('../../../../../../packages/core/src/economy/pond.ts')
+  assert.equal(POND_NET_COST, core.POND_NET_COST)
 })
 
 test('the client bait table matches POND_BAIT_COST and POND_BAIT boosts', async () => {

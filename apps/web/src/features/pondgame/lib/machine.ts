@@ -156,24 +156,21 @@ export function isPerfectPower(power: number): boolean {
 }
 
 /** Overcharging plops the bobber short again, so the sweet zone is the deep cast. */
-export function landingForPower(power: number, narrow = false): FishPoint {
+export function landingForPower(power: number): FishPoint {
   const clamped = Math.max(0, Math.min(1, power))
   const reach = clamped <= SWEET_HIGH ? clamped : SWEET_HIGH - (clamped - SWEET_HIGH) * 1.4
-  if (narrow) {
-    return { x: 0.3 + reach * 0.18, y: 0.83 - reach * 0.06 }
-  }
   // The deepest cast stops short of the lily pad (x 0.58 to 0.77), so the bobber never sits on it.
   return { x: 0.34 + reach * 0.25, y: 0.835 - reach * 0.055 }
 }
 
-export function releaseCast(state: FishingState, narrow = false): FishingState {
+export function releaseCast(state: FishingState): FishingState {
   if (state.phase !== 'charging') return state
   return {
     ...state,
     phase: 'flying',
     elapsed: 0,
     perfectCast: isPerfectPower(state.power),
-    landing: landingForPower(state.power, narrow),
+    landing: landingForPower(state.power),
   }
 }
 

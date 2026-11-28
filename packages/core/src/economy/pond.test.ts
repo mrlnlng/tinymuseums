@@ -8,6 +8,9 @@ import {
   POND_FISH,
   POND_MAX_REEL_MS,
   POND_MIN_REEL_MS,
+  POND_NET_COST,
+  POND_NET_SPECIES,
+  POND_SCOOP_GAP_MS,
   POND_SPECIES,
   isoWeek,
   issuePondTicket,
@@ -17,6 +20,8 @@ import {
   pondChainPayout,
   pondFishFor,
   pondMoon,
+  pondNetSpeciesFor,
+  pondNetSpeciesProbability,
   pondOdds,
   pondPayoutMultiplier,
   pondSizeFor,
@@ -102,6 +107,18 @@ test('fish odds follow the base weights', () => {
   assert.equal(pondFishFor(0.949), 'puffer')
   assert.equal(pondFishFor(0.95), 'blobfish')
   assert.equal(pondFishFor(1), 'blobfish')
+})
+
+test('the net only scoops net fish at their base weights', () => {
+  assert.equal(POND_NET_COST, 100)
+  assert.deepEqual(POND_NET_SPECIES, ['star-snapper', 'crab'])
+  assert.equal(POND_SCOOP_GAP_MS, 2500)
+  assert.equal(pondNetSpeciesFor(0), 'star-snapper')
+  assert.equal(pondNetSpeciesFor(0.69), 'star-snapper')
+  assert.equal(pondNetSpeciesFor(0.7), 'crab')
+  assert.equal(pondNetSpeciesFor(1), 'crab')
+  assert.equal(pondNetSpeciesProbability('star-snapper'), 63 / 91)
+  assert.equal(pondNetSpeciesProbability('crab'), 28 / 91)
 })
 
 test('bait multiplies its species weight', () => {

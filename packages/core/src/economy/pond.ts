@@ -56,6 +56,11 @@ export const POND_SPECIES = [
   { id: 'blobfish', tier: 'legendary', weight: 3, pearls: 40, medianCm: 35, minCm: 22, maxCm: 60, fight: 3 },
 ] as const satisfies readonly PondSpecies[]
 
+/** A net is bought once and then replaces the cast-and-reel loop with a short scoop. */
+export const POND_NET_COST = 100
+export const POND_NET_SPECIES = ['star-snapper', 'crab'] as const
+export const POND_SCOOP_GAP_MS = 2500
+
 export const POND_SIGMA = 0.18
 export const POND_TROPHY_Z = 2.326
 export const POND_PITY_SOFT = 60
@@ -194,6 +199,29 @@ export function pondSpeciesFor(roll: number, config: PondOddsConfig): PondFishId
     at -= species.weight
   }
   return weights[weights.length - 1].id
+}
+
+function pondNetSpeciesWeights(): { id: (typeof POND_NET_SPECIES)[number]; weight: number }[] {
+  return POND_NET_SPECIES.map((id) => ({ id, weight: pondSpeciesById(id).weight }))
+}
+
+/** Scoops are limited to the two net fish, so their base weights share one roll. */
+export function pondNetSpeciesFor(roll: number): (typeof POND_NET_SPECIES)[number] {
+  const weights = pondNetSpeciesWeights()
+  const total = weights.reduce((sum, species) => sum + species.weight, 0)
+  let at = Math.max(0, Math.min(0.999999, roll)) * total
+  for (const species of weights) {
+    if (at < species.weight) return species.id
+    at -= species.weight
+  }
+  return weights[weights.length - 1].id
+}
+
+export function pondNetSpeciesProbability(id: PondFishId): number {
+  const weights = pondNetSpeciesWeights()
+  const total = weights.reduce((sum, species) => sum + species.weight, 0)
+  const weight = weights.find((species) => species.id === id)?.weight ?? 0
+  return total > 0 ? weight / total : 0
 }
 
 export function pondStreakMultiplier(streak: number): number {

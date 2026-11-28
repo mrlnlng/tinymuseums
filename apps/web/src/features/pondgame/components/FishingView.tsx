@@ -6,6 +6,7 @@ import { refreshWalletNow, useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { reportQuestEvent } from '@/features/letters/events'
 import { readLocal, writeLocal } from '@/shared/lib/browser-storage'
+import { assetUrl } from '@/shared/lib/assets'
 import { PondIcon } from '@/features/pondroom/lib/icons'
 import { setPondState as publishPondState } from '@/features/pondroom/lib/pond-state'
 import { usePondState } from '@/features/pondroom/lib/use-pond-state'
@@ -15,6 +16,7 @@ import {
   chainPondBait,
   fetchPondState,
   reelPond,
+  scoopPond,
   type PondWagerView,
 } from '../lib/api.ts'
 import {
@@ -49,6 +51,7 @@ import {
   type FishingState,
   type LostReason,
 } from '../lib/machine.ts'
+import { NET_COOLDOWN_MS } from '../lib/net.ts'
 import { landedRetryDelay, reportDelay } from '../lib/reel-report.ts'
 import { missWagerLabel } from '../lib/risk.ts'
 import { CAST_SFX, createPondSfx, lossSfx } from '../lib/sfx.ts'
@@ -133,6 +136,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const visualDebug = useMemo(() => debugVisuals(debug), [debug])
   const pondSnapshot = usePondState()
   const pondState = pondSnapshot.state
+  // The shared pond-room store is typed before the net, so read the new field defensively.
+  const ownsNet = wallet.isMember && (pondState as { ownsNet?: boolean } | null)?.ownsNet === true
 
   const [state, setState] = useState<FishingState>(() => createFishingState())
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-aspect-ratio: 1/1)').matches)
@@ -161,12 +166,16 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [streakLost, setStreakLost] = useState(false)
   const [tapCast, setTapCast] = useState(false)
   const [pop, setPop] = useState<{ id: number; text: string } | null>(null)
-  const [catches, setCatches] = useState(0)
+  /** The fish kept this visit, oldest first: the bucket on the bank fills with them. */
+  const [kept, setKept] = useState<readonly FishId[]>([])
   const [castStage, setCastStage] = useState<CastStage>('first')
   const [hookTip, setHookTip] = useState(false)
+  /** Rod or net, once the member owns the net; guests never see this switch. */
+  const [tool, setTool] = useState<'rod' | 'net'>('rod')
+  const [netCooling, setNetCooling] = useState(false)
+  const [scoopToken, setScoopToken] = useState(0)
 
   const stateRef = useRef(state)
-  const narrowRef = useRef(false)
   const pondStateRef = useRef(pondState)
   const memberRef = useRef(wallet.isMember)
   const selectedBaitRef = useRef<BaitId>('worm')
@@ -194,6 +203,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const pressAtRef = useRef(0)
   const tapCastRef = useRef(false)
   const touchRef = useRef(false)
+  const toolRef = useRef<'rod' | 'net'>('rod')
+  const netModeRef = useRef(false)
+  const netCooldownRef = useRef(0)
+  const netTimerRef = useRef(0)
   const reelTickAtRef = useRef(0)
   const popTimerRef = useRef(0)
   const popIdRef = useRef(0)
@@ -201,7 +214,8 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   memberRef.current = wallet.isMember
   selectedBaitRef.current = selectedBait
   easyRef.current = easyReel
-  narrowRef.current = narrow
+  toolRef.current = tool
+  netModeRef.current = ownsNet && tool === 'net'
   // On a phone a thumb covers the button, so casting is two taps and the meter sits above it.
   const touch = coarse || narrow
   touchRef.current = touch
@@ -257,8 +271,14 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       window.clearTimeout(chestTimerRef.current)
       window.clearTimeout(streakTimerRef.current)
       window.clearTimeout(popTimerRef.current)
+      window.clearTimeout(netTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    // Losing the net (a sign-out or a stale state) must not leave the view holding it.
+    if (!ownsNet && tool !== 'rod') setTool('rod')
+  }, [ownsNet, tool])
 
   // The selected bait and any live-bait chain change the server odds, so ask the
   // same shared store the room HUD reads to refresh them.
@@ -360,6 +380,94 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       showToast(`Bought ${BAIT_BY_ID[baitId].pack} ${BAIT_BY_ID[baitId].name.toLowerCase()}.`)
     },
     [play, showToast],
+  )
+
+  const selectTool = useCallback(
+    (next: 'rod' | 'net') => {
+      if (next === 'net' && !ownsNet) return
+      if (stateRef.current.phase !== 'idle' || next === toolRef.current) return
+      play('select')
+      setPickerOpen(false)
+      setTool(next)
+    },
+    [ownsNet, play],
+  )
+
+  const attemptScoop = useCallback(() => {
+    if (!netModeRef.current || stateRef.current.phase !== 'idle') return
+    if (performance.now() < netCooldownRef.current) return
+    sfx.unlock()
+    netCooldownRef.current = performance.now() + NET_COOLDOWN_MS
+    setNetCooling(true)
+    window.clearTimeout(netTimerRef.current)
+    netTimerRef.current = window.setTimeout(() => {
+      netCooldownRef.current = 0
+      setNetCooling(false)
+    }, NET_COOLDOWN_MS)
+    // Water owns the live shadow positions, so it judges this press and calls back.
+    setScoopToken((token) => token + 1)
+  }, [sfx])
+
+  const handleNetScoop = useCallback(
+    (hit: boolean) => {
+      if (!netModeRef.current) return
+      if (!hit) {
+        sfx.play('splash')
+        showToast('Missed!')
+        return
+      }
+      sfx.play('splash')
+      void scoopPond().then((result) => {
+        if (!result.ok) {
+          play('error')
+          if (result.status === 429 || result.error === 'too_soon') {
+            showToast('The water is still settling.', 'Give the shadows another moment.')
+          } else if (result.status === 409 || result.error === 'no_net') {
+            showToast('You need the fishing net for that.')
+            void refreshState()
+          } else if (result.status === 401 || result.error === 'signed_out') {
+            showToast('Sign in again to scoop.')
+          } else {
+            showToast('The scoop slipped away.', undefined, 2600)
+          }
+          return
+        }
+        const reply = result.value
+        publishPondState(reply.state)
+        pondStateRef.current = reply.state
+        const caught = reply.catch
+        const view: CatchView = {
+          id: caught.id,
+          species: caught.species,
+          tier: caught.tier,
+          variant: caught.variant,
+          sizeCm: caught.sizeCm,
+          trophy: caught.trophy,
+          pearls: caught.pearls,
+          breakdown: caught.breakdown,
+          isNewSpecies: caught.isNewSpecies,
+          isNewVariant: caught.isNewVariant,
+          personalBest: caught.personalBest,
+          treasure: reply.treasure,
+          trophyCollected: reply.trophyCollected,
+          wager: null,
+          chainPaid: null,
+          guest: false,
+          net: true,
+        }
+        commit({ ...stateRef.current, phase: 'reveal' })
+        setReveal(view)
+        const pending: Found[] = []
+        if (reply.special) pending.push({ kind: 'special', species: caught.species, variant: caught.variant, pearls: reply.special.pearls })
+        if (reply.keepsake) {
+          pending.push({ kind: 'keepsake', keepsake: reply.keepsake })
+          void refreshWalletNow()
+        }
+        pendingFoundRef.current = pending
+        onCatch?.(caught.species)
+      })
+    },
+    [commit, onCatch, play, refreshState, sfx, showToast],
   )
 
   const finishReel = useCallback(
@@ -624,7 +732,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const releaseCharge = useCallback(() => {
     const before = stateRef.current
     if (before.phase !== 'charging') return
-    const next = releaseCast(before, narrowRef.current)
+    const next = releaseCast(before)
     applyState(before, next)
     holdingRef.current = false
     tapCastRef.current = false
@@ -710,6 +818,10 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
     if (spotUnavailable) { onClose(); return }
     const before = stateRef.current
     if (before.phase === 'reveal' || before.phase === 'landing') return
+    if (netModeRef.current) {
+      attemptScoop()
+      return
+    }
     sfx.unlock()
     if (before.phase === 'idle') {
       beginCharge()
@@ -735,7 +847,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       return
     }
     if (before.phase === 'reeling') holdingRef.current = true
-  }, [applyState, beginCharge, onClose, releaseCharge, resetToIdle, sfx, spotUnavailable])
+  }, [applyState, attemptScoop, beginCharge, onClose, releaseCharge, resetToIdle, sfx, spotUnavailable])
 
   const releasePress = useCallback(() => {
     holdingRef.current = false
@@ -802,15 +914,18 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   }, [sfx])
 
   const dismissReveal = useCallback(() => {
+    if (reveal) {
+      const species = reveal.species
+      setKept((fish) => [...fish, species])
+    }
     setReveal(null)
     setFound(pendingFoundRef.current)
     pendingFoundRef.current = []
-    setCatches((count) => count + 1)
     setCastStage('caught')
     setHookTip(false)
     resetToIdle()
     bumpStreakChip()
-  }, [bumpStreakChip, resetToIdle])
+  }, [bumpStreakChip, resetToIdle, reveal])
 
   const selectBait = useCallback((bait: BaitId) => {
     play('select')
@@ -899,8 +1014,15 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
       ? { tier: visualDebug.wager.tier, payout: visualDebug.wager.multiplier, stake: visualDebug.wager.stake }
       : null
 
+  const netMode = ownsNet && tool === 'net'
   const action = (() => {
     if (spotUnavailable) return { label: 'Back to bank', sub: 'Choose another ripple' }
+    if (netMode) {
+      if (phase === 'reveal') return { label: 'Caught!', sub: 'Tap the card' }
+      if (phase !== 'idle') return { label: 'Scoop', sub: 'Wait for the shadows' }
+      if (netCooling) return { label: 'Scoop', sub: 'Let the water settle' }
+      return { label: 'Scoop', sub: 'When a shadow passes' }
+    }
     if (phase === 'idle') {
       if (mustBuy) return { label: `Buy ${selected.pack}`, sub: `${selected.cost} pearls` }
       return idlePrompt(touch, castStage)
@@ -917,6 +1039,11 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
 
   const hint = (() => {
     if (spotUnavailable) return 'Another visitor is fishing here now.'
+    if (netMode) {
+      if (phase === 'reveal') return 'Tap to keep your catch'
+      if (netCooling) return 'The water is settling — scoop again in a moment'
+      return 'Tap Scoop when a fish shadow crosses the ring'
+    }
     if (phase === 'idle') {
       if (mustBuy) return `Out of ${selected.name.toLowerCase()} — tap it to buy ${selected.pack} for ${selected.cost} pearls`
       return idleHint(touch, castStage)
@@ -963,9 +1090,11 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
         reel={state.reel}
         chest={chest}
         reduced={reduced}
-        narrow={narrow}
         pop={pop}
-        catches={catches}
+        kept={kept}
+        netMode={netMode}
+        scoopToken={scoopToken}
+        onScoop={handleNetScoop}
       />
 
       <Hud
@@ -983,6 +1112,15 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
         onToggleEasyReel={toggleEasyReel}
         onClose={onClose}
       />
+
+      {/* The pond is a wide painting; held upright, a phone is asked to turn rather than shown a cramped scene. */}
+      <div className="pond-turn" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+        <svg className="pond-turn-phone" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="20" y="8" width="24" height="48" rx="5" />
+          <circle cx="32" cy="50" r="2.2" />
+        </svg>
+        <p>Turn sideways to fish</p>
+      </div>
 
       <div className="pond-bottom" data-pond-ui>
         <WagerPicker
@@ -1018,7 +1156,33 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
           hint={hint}
           warning={Boolean(state.reel?.runActive && phase === 'reeling')}
           notice={toast}
-          extras={member ? <button
+          toolToggle={ownsNet ? (
+            <div className="pond-tool-toggle" role="group" aria-label="Fishing tool">
+              <button
+                type="button"
+                className={netMode ? 'pond-tool' : 'pond-tool is-active'}
+                aria-pressed={!netMode}
+                disabled={phase !== 'idle'}
+                title="Fish with the rod"
+                onClick={() => selectTool('rod')}
+              >
+                <PondIcon name="rod" size={18} />
+                <span>Rod</span>
+              </button>
+              <button
+                type="button"
+                className={netMode ? 'pond-tool is-active' : 'pond-tool'}
+                aria-pressed={netMode}
+                disabled={phase !== 'idle'}
+                title="Scoop small fish with the net"
+                onClick={() => selectTool('net')}
+              >
+                <img src={assetUrl('pond/net', { density: 2 })} alt="" draggable={false} />
+                <span>Net</span>
+              </button>
+            </div>
+          ) : null}
+          extras={member && !netMode ? <button
             type="button"
             className={['pond-shot', lockedWager ? 'is-locked' : ''].filter(Boolean).join(' ')}
             aria-expanded={pickerOpen}
@@ -1036,10 +1200,12 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
                 phase === 'reeling' ? 'is-reel' : '',
                 phase === 'charging' ? 'is-charging' : '',
                 phase === 'charging' && state.power >= SWEET_LOW && state.power <= SWEET_HIGH ? 'is-sweet' : '',
+                netMode ? 'is-net' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
               aria-label={action.label}
+              disabled={netMode && (netCooling || phase !== 'idle')}
               onPointerDown={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
@@ -1051,7 +1217,11 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
               }}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <PondIcon name="rod" size={30} disc={false} />
+              {netMode ? (
+                <img className="pond-action-net" src={assetUrl('pond/net', { density: 2 })} alt="" draggable={false} />
+              ) : (
+                <PondIcon name="rod" size={30} disc={false} />
+              )}
               <span className="pond-action-text">
                 <span className="pond-action-label">{action.label}</span>
                 <span className="pond-action-sub">{action.sub}</span>

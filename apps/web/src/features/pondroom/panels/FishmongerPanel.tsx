@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useSound } from '@/features/sound/components/SoundProvider'
 import { refreshWalletNow, useWallet } from '@/features/economy'
+import { assetUrl } from '@/shared/lib/assets'
+import { buyPondNet } from '../../pondgame/lib/api'
+import { POND_NET_COST } from '../../pondgame/lib/tables'
 import {
   buyPondBait,
   exchangePondPearls,
@@ -43,8 +46,12 @@ function BaitShop() {
   const snapshot = usePondState()
   const { play } = useSound()
   const [busy, setBusy] = useState<PondShopBaitId | null>(null)
+  const [netBusy, setNetBusy] = useState(false)
   const [notice, setNotice] = useState<{ tone: Tone; text: string } | null>(null)
   const pearls = snapshot.state?.pearls ?? 0
+  // pond-api predates the net, so read the new field without widening its shared type here.
+  const netOwned = Boolean((snapshot.state as (PondStateView & { ownsNet?: boolean }) | null)?.ownsNet)
+  const netShort = snapshot.isMember && snapshot.state !== null && pearls < POND_NET_COST
 
   async function buy(bait: PondShopBaitId, price: number, pack: number): Promise<void> {
     if (busy !== null) return
@@ -75,10 +82,41 @@ function BaitShop() {
     void refreshWalletNow()
   }
 
+  async function buyNet(): Promise<void> {
+    if (netBusy || busy !== null) return
+    setNetBusy(true)
+    setNotice(null)
+    const result = await buyPondNet()
+    setNetBusy(false)
+    if (!result.ok) {
+      play('error')
+      if (result.status === 401 || result.error === 'signed_out') {
+        setNotice({ tone: 'warn', text: 'Sign in to buy the fishing net.' })
+      } else if (result.status === 402 || result.error === 'insufficient') {
+        setNotice({
+          tone: 'warn',
+          text: `Not enough pearls — the net costs ${formatInteger(POND_NET_COST)} and you have ${formatInteger(pearls)}.`,
+        })
+      } else if (result.status === 409 || result.error === 'owned') {
+        setNotice({ tone: 'ok', text: 'You already own the fishing net.' })
+        void fetchPondState().then((next) => {
+          if (next.ok) setPondState(next.value)
+        })
+      } else {
+        setNotice({ tone: 'warn', text: 'The fishmonger could not find the net just now.' })
+      }
+      return
+    }
+    play('purchase')
+    setPondState(result.value)
+    setNotice({ tone: 'ok', text: `Bought the fishing net for ${formatInteger(POND_NET_COST)} pearls.` })
+    void refreshWalletNow()
+  }
+
   return (
     <div className="pond-room-shop">
       {!snapshot.isMember ? (
-        <p className="pond-room-note">Sign in to buy bait and keep your pearls between visits.</p>
+        <p className="pond-room-note">Sign in to buy bait and the fishing net, and keep your pearls between visits.</p>
       ) : null}
       {notice ? (
         <p className={`pond-room-notice is-${notice.tone}`} role="status">
@@ -93,6 +131,31 @@ function BaitShop() {
           <p className="pond-room-bait-meta">Always free · never runs out</p>
         </div>
         <span className="pond-room-bait-free">Free</span>
+      </article>
+      <article className={`pond-room-bait is-net${netShort ? ' is-short' : ''}${netOwned ? ' is-owned' : ''}`}>
+        <span className="pond-room-bait-emoji is-net" aria-hidden="true">
+          <img src={assetUrl('pond/net', { density: 2 })} alt="" draggable={false} />
+        </span>
+        <div className="pond-room-bait-info">
+          <h3 className="pond-room-bait-name">Fishing net</h3>
+          <p className="pond-room-bait-favours">Scoop the small fish that swim along the bank</p>
+          <p className="pond-room-bait-meta">
+            One-time buy · {formatInteger(POND_NET_COST)} pearls · {netOwned ? 'Owned' : 'A gentler way to fish'}
+          </p>
+        </div>
+        {netOwned ? (
+          <span className="pond-room-bait-owned">Owned</span>
+        ) : (
+          <button
+            type="button"
+            className="pond-room-button pond-room-bait-buy"
+            onClick={() => void buyNet()}
+            disabled={!snapshot.isMember || netBusy || busy !== null || netShort}
+            title={!snapshot.isMember ? 'Sign in to buy the net' : netShort ? 'You need more pearls for the net' : undefined}
+          >
+            {netBusy ? 'Buying…' : netShort ? `Need ${formatInteger(POND_NET_COST - pearls)} more` : 'Buy'}
+          </button>
+        )}
       </article>
       {POND_BAIT.map((bait) => {
         const owned = snapshot.state?.bait[bait.id] ?? 0

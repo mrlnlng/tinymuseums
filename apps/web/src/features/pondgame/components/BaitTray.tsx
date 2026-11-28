@@ -18,6 +18,8 @@ export interface BaitTrayProps {
   warning?: boolean
   notice?: { message: string; note?: string } | null
   extras?: ReactNode
+  /** The rod/net switch, shown beside the bait pouch once the net is owned. */
+  toolToggle?: ReactNode
   /** The cast and call-your-shot buttons, which sit in the panel beside the bait. */
   children?: ReactNode
 }
@@ -35,6 +37,7 @@ export default function BaitTray({
   warning,
   notice,
   extras,
+  toolToggle,
   children,
 }: BaitTrayProps) {
   const { play } = useSound()
@@ -127,6 +130,7 @@ export default function BaitTray({
         </details> : <div className="pond-free-bait" aria-label="Free unlimited worms">
           <span aria-hidden="true">🪱</span><span>Worm<small>Always free</small></span>
         </div>}
+        {toolToggle}
         {children}
       </div>
     </section>

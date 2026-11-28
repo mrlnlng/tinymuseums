@@ -14,7 +14,8 @@ import {
   type FishPoint,
   type ReelState,
 } from '../lib/machine.ts'
-import type { ShadowSize } from '../lib/tables.ts'
+import { SPECIES_BY_ID, type FishId, type ShadowSize } from '../lib/tables.ts'
+import { NET_DIP_MS, NET_SHADOWS, SCOOP_SPOT, netShadowPoint, scoopHit } from '../lib/net.ts'
 
 /** Stable rod drawing units, with the new painting's aspect ratio. */
 const STAGE = { width: 1668 * layout.scene.width / layout.scene.height, height: 1668 }
@@ -30,11 +31,7 @@ interface Pose {
   rodLength: number
 }
 
-const POSE: Record<'wide' | 'narrow', Pose> = {
-  wide: { right: 0.207, bottom: 0.82, height: 0.3, rodLength: 640 },
-  // On the bank in front of the water's left lobe (the room's own feet line), far enough right to stay on a phone.
-  narrow: { right: 0.24, bottom: 0.895, height: 0.24, rodLength: 580 },
-}
+const POSE: Pose = { right: 0.207, bottom: 0.82, height: 0.3, rodLength: 640 }
 
 /** The water's outline, traced from the scene and inset, so shadows never swim onto the grass. */
 const WATER_CLIP = `polygon(${layout.water.map(([x, y]) => `${x * 100}% ${y * 100}%`).join(', ')})`
@@ -81,6 +78,14 @@ const ROD_REACH = Math.hypot(ROD_TIP.x - ROD_GRIP.x, ROD_TIP.y - ROD_GRIP.y)
 /** The angle the rod is drawn at, in degrees above the horizon. */
 const ROD_DRAWN = (Math.atan2(ROD_GRIP.y - ROD_TIP.y, ROD_TIP.x - ROD_GRIP.x) * 180) / Math.PI
 
+/** The net master is 849x866: the handle end sits at the paw and the bag bottom does the scooping. */
+const NET_ANCHOR = { x: 5 / 849, y: 512 / 866 }
+const NET_BAG = { x: 520 / 849, y: 687 / 866 }
+const NET_DRAWN = (Math.atan2((NET_BAG.y - NET_ANCHOR.y) * 866, (NET_BAG.x - NET_ANCHOR.x) * 849) * 180) / Math.PI
+/** How far the bag sits from the handle per unit of image width, in world pixels. */
+const NET_REACH = Math.hypot((NET_BAG.x - NET_ANCHOR.x) * 849, (NET_BAG.y - NET_ANCHOR.y) * 866) / 849
+const NET_DIP_DEGREES = 12
+
 function box(entry: { x: number; y: number; w: number; h: number }): CSSProperties {
   return { left: `${entry.x * 100}%`, top: `${entry.y * 100}%`, width: `${entry.w * 100}%`, height: `${entry.h * 100}%` }
 }
@@ -91,11 +96,19 @@ const LEFT_STYLE: CSSProperties = {
 }
 
 /** Where the catch bucket stands on the bank: its foot, and its height, as fractions of the world. */
-const BUCKET: Record<'wide' | 'narrow', { x: number; bottom: number; height: number }> = {
-  wide: { x: 0.9, bottom: 0.865, height: 0.2 },
-  narrow: { x: 0.345, bottom: 0.985, height: 0.115 },
-}
+const BUCKET = { x: 0.9, bottom: 0.865, height: 0.2 }
 const BUCKET_ASPECT = 777 / 774
+/** How many of the day's fish show in the bucket at once; older ones sink out of sight. */
+const BUCKET_SHOWN = 6
+/** Where each fish stands across the bucket's opening, and its lean, in the order they land. */
+const BUCKET_SPOTS: readonly { x: number; tilt: number }[] = [
+  { x: 0.5, tilt: -8 },
+  { x: 0.32, tilt: -22 },
+  { x: 0.68, tilt: 18 },
+  { x: 0.42, tilt: 8 },
+  { x: 0.6, tilt: -14 },
+  { x: 0.25, tilt: 24 },
+]
 
 const SIGN_ASPECT = 1366 / 1156
 const SCORE_ASPECT = 922 / 1070
@@ -113,9 +126,6 @@ const SCORE_STYLE: CSSProperties = {
   width: '14%',
   aspectRatio: SCORE_ASPECT,
 }
-/** A phone sees only the left of the painting, so both signs move in beside the angler. */
-const SIGN_STYLE_NARROW: CSSProperties = { ...SIGN_STYLE, left: '13.5%', width: '20%' }
-const SCORE_STYLE_NARROW: CSSProperties = { ...SCORE_STYLE, left: '34.5%', bottom: '54.5%', width: '12%' }
 
 interface Splash {
   id: number
@@ -137,11 +147,11 @@ interface AmbientShadow {
   delay: number
 }
 
-function makeAmbient(narrow: boolean): AmbientShadow[] {
+function makeAmbient(): AmbientShadow[] {
   const count = 3 + Math.floor(Math.random() * 3)
   return Array.from({ length: count }, (_, id) => ({
     id,
-    x: narrow ? 0.26 + Math.random() * 0.2 : 0.3 + Math.random() * 0.42,
+    x: 0.3 + Math.random() * 0.42,
     y: 0.76 + Math.random() * 0.08,
     size: 0.03 + Math.random() * 0.04,
     dx: (Math.random() - 0.5) * 0.14,
@@ -160,10 +170,10 @@ interface Glint {
   delay: number
 }
 
-function makeGlints(narrow: boolean): Glint[] {
-  return Array.from({ length: narrow ? 5 : 8 }, (_, id) => ({
+function makeGlints(): Glint[] {
+  return Array.from({ length: 8 }, (_, id) => ({
     id,
-    x: narrow ? 0.24 + Math.random() * 0.26 : 0.3 + Math.random() * 0.44,
+    x: 0.3 + Math.random() * 0.44,
     y: 0.735 + Math.random() * 0.12,
     width: 0.022 + Math.random() * 0.03,
     duration: 3.6 + Math.random() * 3.4,
@@ -219,10 +229,14 @@ export interface WaterProps {
   reel: ReelState | null
   chest: boolean
   reduced: boolean
-  narrow: boolean
   pop: { id: number; text: string } | null
-  /** Fish landed this visit; the bucket hops when it goes up. */
-  catches: number
+  /** Fish kept this visit, oldest first: they pile up in the bucket, which hops as each lands. */
+  kept: readonly FishId[]
+  /** The net is out: no line or float, and the shadows can be scooped. */
+  netMode: boolean
+  /** A new value asks Water to judge the scoop against the shadows it is drawing. */
+  scoopToken: number
+  onScoop: (hit: boolean) => void
 }
 
 export default function Water({
@@ -236,25 +250,46 @@ export default function Water({
   reel,
   chest,
   reduced,
-  narrow,
   pop,
-  catches,
+  kept,
+  netMode,
+  scoopToken,
+  onScoop,
 }: WaterProps) {
-  const pose = POSE[narrow ? 'narrow' : 'wide']
+  const catches = kept.length
+  const pose = POSE
   const bunny = bunnyBox(pose)
-  const bucket = BUCKET[narrow ? 'narrow' : 'wide']
+  const bucket = BUCKET
   const [rigPaw, setRigPaw] = useState<{ x: number; y: number } | null | undefined>(undefined)
   const paw = rigPaw ? { x: rigPaw.x * STAGE.width, y: rigPaw.y * STAGE.height } : pawPoint(pose)
 
-  const [ambient, setAmbient] = useState(() => makeAmbient(narrow))
-  useEffect(() => {
-    setAmbient(makeAmbient(narrow))
-  }, [narrow])
+  const [netDip, setNetDip] = useState(false)
+  const netStartedAtRef = useRef(0)
+  const netShadowRefs = useRef<(HTMLSpanElement | null)[]>([])
+  const lastScoopTokenRef = useRef(0)
 
-  const [glints, setGlints] = useState(() => makeGlints(narrow))
+  // Shadows are moved through refs each frame: the fishing view should not re-render 60 times a second.
   useEffect(() => {
-    setGlints(makeGlints(narrow))
-  }, [narrow])
+    if (!netMode) return
+    netStartedAtRef.current = performance.now()
+    let frame = 0
+    const drift = (now: number) => {
+      const seconds = (now - netStartedAtRef.current) / 1000
+      NET_SHADOWS.forEach((spec, index) => {
+        const point = netShadowPoint(spec, seconds)
+        const shadow = netShadowRefs.current[index]
+        if (!shadow) return
+        shadow.style.left = `${point.x * 100}%`
+        shadow.style.top = `${point.y * 100}%`
+      })
+      frame = requestAnimationFrame(drift)
+    }
+    frame = requestAnimationFrame(drift)
+    return () => cancelAnimationFrame(frame)
+  }, [netMode])
+
+  const [ambient] = useState(makeAmbient)
+  const [glints] = useState(makeGlints)
   const [petals] = useState(makePetals)
 
   const [approach, setApproach] = useState<FishPoint | null>(null)
@@ -263,12 +298,12 @@ export default function Water({
       setApproach(null)
       return
     }
-    setApproach({ x: narrow ? 0.25 : 0.27, y: 0.83 })
+    setApproach({ x: 0.27, y: 0.83 })
     const frame = requestAnimationFrame(() => {
       setApproach({ x: landing.x - 0.03, y: landing.y + 0.016 })
     })
     return () => cancelAnimationFrame(frame)
-  }, [armed, shadow, landing.x, landing.y, narrow])
+  }, [armed, shadow, landing.x, landing.y])
 
   const progress = reel?.progress ?? 0
   const tension = reel?.tension ?? 0
@@ -291,6 +326,22 @@ export default function Water({
   }
   const tip = { x: rodTip.x / STAGE.width, y: rodTip.y / STAGE.height }
 
+  const netSpot = SCOOP_SPOT
+  const netDx = netSpot.x * STAGE.width - paw.x
+  const netDy = netSpot.y * STAGE.height - paw.y
+  const netLength = Math.hypot(netDx, netDy)
+  // Scale the art so the bag reaches the scoop spot, then turn its handle to the paw.
+  const netWidth = Math.max(0.1, Math.min(0.3, netLength / (STAGE.width * NET_REACH)))
+  const netAim = (Math.atan2(netDy, netDx) * 180) / Math.PI
+  const netStyle: CSSProperties = {
+    left: `${((paw.x / STAGE.width) * 100).toFixed(2)}%`,
+    top: `${((paw.y / STAGE.height) * 100).toFixed(2)}%`,
+    width: `${(netWidth * 100).toFixed(2)}%`,
+    transformOrigin: `${(NET_ANCHOR.x * 100).toFixed(2)}% ${(NET_ANCHOR.y * 100).toFixed(2)}%`,
+    transform: `translate(${(-NET_ANCHOR.x * 100).toFixed(2)}%, ${(-NET_ANCHOR.y * 100).toFixed(2)}%) rotate(${(netAim - NET_DRAWN + (netDip ? NET_DIP_DEGREES : 0)).toFixed(2)}deg)`,
+    visibility: rigPaw === undefined ? 'hidden' : undefined,
+  }
+
   let bobber: FishPoint = rest
   if (phase === 'flying') {
     const e = easeOut(flight)
@@ -305,7 +356,8 @@ export default function Water({
   }
 
   const showBobber =
-    phase === 'flying' || phase === 'waiting' || phase === 'bite' || phase === 'reeling' || phase === 'landing'
+    !netMode &&
+    (phase === 'flying' || phase === 'waiting' || phase === 'bite' || phase === 'reeling' || phase === 'landing')
 
   const lineEnd = { x: bobber.x * STAGE.width, y: bobber.y * STAGE.height }
   const span = Math.hypot(lineEnd.x - rodTip.x, lineEnd.y - rodTip.y)
@@ -348,18 +400,44 @@ export default function Water({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, nibbleActive])
 
+  // A scoop is judged against the same drift the player sees, then the dip and splash play.
+  useEffect(() => {
+    if (!netMode) {
+      lastScoopTokenRef.current = scoopToken
+      return
+    }
+    if (scoopToken === lastScoopTokenRef.current) return
+    lastScoopTokenRef.current = scoopToken
+    const hit = scoopHit((performance.now() - netStartedAtRef.current) / 1000) !== null
+    setNetDip(true)
+    const dipTimer = window.setTimeout(() => setNetDip(false), reduced ? 0 : NET_DIP_MS)
+    splashTimers.current.add(dipTimer)
+    const id = ++splashId.current
+    const kind: Splash['kind'] = hit ? 'bite' : 'nibble'
+    const at = SCOOP_SPOT
+    setSplashes((list) => [...list.slice(-3), { id, kind, at }])
+    const splashTimer = window.setTimeout(() => {
+      splashTimers.current.delete(splashTimer)
+      setSplashes((list) => list.filter((item) => item.id !== id))
+    }, SPLASH_MS[kind])
+    splashTimers.current.add(splashTimer)
+    onScoop(hit)
+  }, [netMode, onScoop, reduced, scoopToken])
+
   const lateTell = reel?.lateTell ?? 'none'
   const showAim = phase === 'charging'
-  const aim = landingForPower(power, narrow)
+  const aim = landingForPower(power)
+  const scene = assetUrl('pond/scene', { density: maxDensity(), avif: avifKnown() })
+  const sceneLeft = assetUrl('pond/scene-left', { density: maxDensity(), avif: avifKnown() })
   const treasureVisible = Boolean(reel?.treasureRevealed && !reel.treasureGrabbed)
 
   return (
     <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
-      {narrow ? null : <img className="pond-scene pond-scene-left" src={assetUrl('pond/scene-left', { density: maxDensity(), avif: avifKnown() })} alt="" style={LEFT_STYLE} draggable={false} />}
-      <img className="pond-scene" src={assetUrl('pond/scene', { density: maxDensity(), avif: avifKnown() })} alt="" draggable={false} />
+      <img className="pond-scene pond-scene-left" src={sceneLeft} alt="" style={LEFT_STYLE} draggable={false} />
+      <img className="pond-scene" src={scene} alt="" draggable={false} />
       <img className="pond-bridge" src={assetUrl('pond/bridge', { density: maxDensity() })} alt="" style={box(layout.bridge)} draggable={false} />
-      <img className="pond-sign" src={assetUrl('pond/pond-sign', { density: 3 })} alt="" style={narrow ? SIGN_STYLE_NARROW : SIGN_STYLE} draggable={false} />
-      <div className="pond-score" style={narrow ? SCORE_STYLE_NARROW : SCORE_STYLE}>
+      <img className="pond-sign" src={assetUrl('pond/pond-sign', { density: 3 })} alt="" style={SIGN_STYLE} draggable={false} />
+      <div className="pond-score" style={SCORE_STYLE}>
         <img src={assetUrl('pond/score-sign', { density: 3 })} alt="" draggable={false} />
         <span key={catches} className={catches > 0 ? 'pond-score-count is-fresh' : 'pond-score-count'}>{catches}</span>
       </div>
@@ -396,6 +474,21 @@ export default function Water({
             }
           />
         ))}
+        {netMode
+          ? NET_SHADOWS.map((spec, index) => {
+              const point = netShadowPoint(spec, 0)
+              return (
+                <span
+                  key={`net-shadow-${spec.id}`}
+                  ref={(element) => {
+                    netShadowRefs.current[index] = element
+                  }}
+                  className={`pond-shadow is-net ${SHADOW_CLASS[spec.size]}`}
+                  style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
+                />
+              )
+            })
+          : null}
         {armed && shadow && approach ? (
           <span
             className={`pond-shadow is-target ${SHADOW_CLASS[shadow]}${phase === 'reeling' ? (reel?.runActive ? ' is-running' : ' is-hooked') : ''}`}
@@ -418,6 +511,12 @@ export default function Water({
       </div>
 
       <img className="pond-lily" src={assetUrl('pond/lily', { density: maxDensity() })} alt="" style={box(layout.lily)} draggable={false} />
+
+      {netMode ? (
+        <span className="pond-scoop-spot" style={{ left: `${netSpot.x * 100}%`, top: `${netSpot.y * 100}%` }}>
+          <i />
+        </span>
+      ) : null}
 
       {phase === 'bite' ? <span className="pond-focus" style={{ left: `${rest.x * 100}%`, top: `${rest.y * 100}%` }} /> : null}
 
@@ -474,21 +573,40 @@ export default function Water({
 
       {chest ? <span className="pond-chest-fly" /> : null}
 
-      <img
+      <div
         key={`bucket-${catches}`}
         className={catches > 0 ? 'pond-bucket is-fresh' : 'pond-bucket'}
-        src={assetUrl('pond/bucket', { density: 3 })}
-        alt=""
         style={{
           left: `${bucket.x * 100}%`,
           top: `${(bucket.bottom - bucket.height) * 100}%`,
           height: `${bucket.height * 100}%`,
           aspectRatio: BUCKET_ASPECT,
         }}
-        draggable={false}
-      />
+      >
+        <img src={assetUrl('pond/bucket', { density: 3 })} alt="" draggable={false} />
+        {/* The day's catch stands up out of the water, cut off at the waterline so it sits inside. */}
+        <span className="pond-bucket-catch" aria-hidden="true">
+          {kept.slice(-BUCKET_SHOWN).map((fish, i, shown) => {
+            const spot = BUCKET_SPOTS[(kept.length - shown.length + i) % BUCKET_SPOTS.length]
+            return (
+              <img
+                key={kept.length - shown.length + i}
+                className={i === shown.length - 1 && catches > 0 ? 'is-new' : undefined}
+                src={assetUrl(SPECIES_BY_ID[fish].art, { density: 2 })}
+                alt=""
+                draggable={false}
+                style={{ left: `${spot.x * 100}%`, '--tilt': `${spot.tilt}deg` } as CSSProperties}
+              />
+            )
+          })}
+        </span>
+      </div>
 
-      <img className="pond-rod-art" src={assetUrl('pond/rod', { density: 3 })} alt="" style={rodStyle} draggable={false} />
+      {netMode ? (
+        <img className={netDip ? 'pond-net-art is-dipping' : 'pond-net-art'} src={assetUrl('pond/net', { density: 3 })} alt="" style={netStyle} draggable={false} />
+      ) : (
+        <img className="pond-rod-art" src={assetUrl('pond/rod', { density: 3 })} alt="" style={rodStyle} draggable={false} />
+      )}
       {showBobber ? (
         <svg className="pond-rod" viewBox={`0 0 ${STAGE.width} ${STAGE.height}`} preserveAspectRatio="none" aria-hidden="true">
           <path
@@ -501,7 +619,7 @@ export default function Water({
         </svg>
       ) : null}
 
-      <Angler box={bunny} reduced={reduced} swing={(lean - REST_LEAN) * ARM_SHARE} onPaw={setRigPaw} />
+      <Angler box={bunny} reduced={reduced} swing={netMode ? 0 : (lean - REST_LEAN) * ARM_SHARE} onPaw={setRigPaw} />
 
       {showBobber ? (
         <>

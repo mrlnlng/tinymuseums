@@ -8,42 +8,64 @@
   touch-action: none;
   user-select: none;
   isolation: isolate;
+  container-type: size;
 }
 
+/*
+ * The scene is one picture that only ever scales, never rearranges. Its frame is what a
+ * widescreen shows: a fifth of the painting's width of the left-hand art, the whole painting,
+ * and the painting's height shifted down 7% into the grass. That frame is fitted inside the
+ * screen and kept to its right edge; spare width shows more of the left-hand painting. Upright
+ * screens never see it: they get the turn-sideways card instead.
+ */
 .pond-world {
+  --pond-a: var(--pond-aspect, 1.480475);
+  /* The cast controls may cover the grass, never the bank: the bucket's foot is 80% down the frame. */
+  --pond-controls: 140px;
+  --pond-frame-w: min(100cqw, 100cqh * 1.2 * var(--pond-a), (100cqh - var(--pond-controls)) / 0.8 * 1.2 * var(--pond-a));
+  --pond-frame-h: calc(var(--pond-frame-w) / (1.2 * var(--pond-a)));
+  --pond-frame-top: min((100cqh - var(--pond-frame-h)) * 0.5, 100cqh - var(--pond-controls) - var(--pond-frame-h) * 0.8);
   position: absolute;
-  left: 24%;
-  bottom: clamp(80px, 13vh, 150px);
-  width: max(100%, calc(100dvh * var(--pond-aspect, 1.480475)));
+  left: calc(100cqw - var(--pond-frame-w) / 1.2);
+  top: calc(var(--pond-frame-top) - var(--pond-frame-h) * 0.07);
+  width: calc(var(--pond-frame-w) / 1.2);
   height: auto;
-  aspect-ratio: var(--pond-aspect, 1.480475);
-  transform: translateX(-24%);
+  aspect-ratio: var(--pond-a);
   pointer-events: none;
 }
 
+/* Upright screens are asked to turn: the card covers the scene and controls, under the top buttons. */
+.pond-turn { display: none; }
 @media (max-aspect-ratio: 1 / 1) {
-  .pond-fishing .pond-world {
-    bottom: clamp(150px, 25dvh, 240px);
-    width: max(100%, calc(75dvh * var(--pond-aspect, 1.480475)));
+  .pond-turn {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgb(40 66 30 / 92%);
+    color: #fff3d9;
+    touch-action: none;
   }
-
+  .pond-turn p { margin: 0; font: 18px var(--font-button); letter-spacing: 0.02em; }
+  .pond-turn-phone { width: 96px; height: 96px; fill: none; stroke: currentColor; stroke-width: 3; animation: pond-turn 2.4s ease-in-out infinite; }
+  .pond-turn-phone circle { fill: currentColor; stroke: none; }
 }
-
-@media (min-aspect-ratio: 1 / 1) and (min-height: 600px) {
-  .pond-fishing .pond-world { bottom: clamp(48px, 7vh, 90px); }
+@keyframes pond-turn {
+  0%, 25% { transform: rotate(0deg); }
+  55%, 85% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
 }
-
-@media (min-aspect-ratio: 1 / 1) and (max-height: 599.98px) {
-  .pond-fishing .pond-sign { bottom: 68.8% !important; left: 44.4% !important; width: 17% !important; }
-  .pond-fishing .pond-score { width: 8.6% !important; }
-  .pond-fishing .pond-bucket { scale: 0.7; }
-}
+@media (prefers-reduced-motion: reduce) { .pond-turn-phone { animation: none; transform: rotate(-90deg); } }
 
 .pond-world::after {
   position: absolute;
   top: calc(100% - 5vh);
   right: 0;
-  left: 0;
+  left: -61%;
   height: 65vh;
   background: linear-gradient(180deg, transparent, #6c972f 5vh);
   content: '';
@@ -2881,25 +2903,7 @@
 
 .pond-chain-line { font-size: 13px; line-height: 1.4; }
 
-@media (min-aspect-ratio: 1 / 1) {
-  .pond-fishing .pond-world { left: 15%; transform: translateX(-15%); }
-}
-
-@media (min-aspect-ratio: 1 / 1) {
-  .pond-fishing .pond-world {
-    --pond-fit: max(62.4%, calc(100dvh * var(--pond-aspect, 1.480475)));
-    left: max(calc(100% - var(--pond-fit)), calc((100% - var(--pond-fit)) * 0.15));
-    width: var(--pond-fit);
-    transform: none;
-  }
-  .pond-fishing .pond-world::after { left: -61%; }
-}
-
 .pond-room-panel .pond-room-dex-count strong { color: var(--pond-teal-deep); }
-
-@media (max-aspect-ratio: 1 / 1) {
-  .pond-fishing .pond-world { left: 20%; transform: translateX(-20%); }
-}
 
 .pond-angler { position: absolute; z-index: 5; display: block; pointer-events: none; }
 
@@ -3104,6 +3108,16 @@
 .pond-score-count { position: absolute; top: 31%; left: 52%; transform: translate(-50%, -50%) rotate(5.9deg); color: #6b3a22; font: 400 34cqw/1 var(--font-ui); }
 
 .pond-bucket { position: absolute; z-index: 3; display: block; width: auto; transform: translateX(-50%); transform-origin: 50% 100%; filter: drop-shadow(0 3px 0 rgb(40 70 20 / 28%)); pointer-events: none; user-select: none; }
+.pond-bucket > img { display: block; width: 100%; height: 100%; }
+/* The fish stand in the bucket's opening; everything below its waterline is hidden, so they sit in the water. */
+.pond-bucket-catch { position: absolute; left: 6%; right: 6%; top: -60%; height: 78%; overflow: hidden; }
+.pond-bucket-catch img { position: absolute; bottom: -14%; width: 52%; height: auto; transform: translateX(-50%) rotate(var(--tilt, 0deg)); transform-origin: 50% 100%; }
+.pond-bucket-catch img.is-new { animation: pond-bucket-splash 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes pond-bucket-splash {
+  from { transform: translateX(-50%) translateY(60%) rotate(var(--tilt, 0deg)); }
+  to { transform: translateX(-50%) rotate(var(--tilt, 0deg)); }
+}
+@media (prefers-reduced-motion: reduce) { .pond-bucket-catch img.is-new { animation: none; } }
 
 .pond-glint {
   position: absolute;
@@ -3841,4 +3855,127 @@
   .pond-room-panel-card.is-fishmonger .pond-room-panel-header { padding: 10px 10px 8px; }
 
   .pond-room-panel-card.is-fishmonger .pond-room-panel-body { padding: 9px 10px 4px; }
+}
+
+/* The fishing net: a small rod/net switch beside the bait pouch, the held net,
+   the marked scoop spot and the shadows that drift past it. */
+.pond-tool-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: stretch;
+  gap: 3px;
+  padding: 3px;
+  border: 1.5px solid #c8a47f;
+  border-radius: 10px;
+  background: #fff8ea;
+}
+
+.pond-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 42px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 10px var(--font-body);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pond-tool.is-active {
+  background: #ffe9a4;
+  box-shadow: inset 0 0 0 1px #d8b26a;
+  color: var(--ink);
+}
+
+.pond-tool:disabled { opacity: 0.5; cursor: default; }
+
+.pond-tool img,
+.pond-action-net {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.pond-net-art {
+  position: absolute;
+  z-index: 6;
+  display: block;
+  height: auto;
+  filter: drop-shadow(0 2px 0 rgb(20 50 20 / 24%));
+  pointer-events: none;
+  user-select: none;
+  transition: transform 140ms ease-out;
+}
+
+.pond-shadow.is-net {
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.pond-scoop-spot {
+  position: absolute;
+  z-index: 2;
+  width: clamp(36px, 5.4%, 64px);
+  aspect-ratio: 2.4 / 1;
+  border: 2px dashed rgb(233 248 246 / 82%);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgb(233 248 246 / 30%), inset 0 0 8px rgb(233 248 246 / 24%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pond-scoop-spot i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgb(255 252 238 / 70%);
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 560px) {
+  .pond-tool-toggle { align-self: flex-start; }
+  .pond-tool { flex: 1; flex-direction: row; min-width: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-net-art { transition: none; }
+}
+
+.pond-fishing.is-still .pond-net-art { transition: none; }
+
+/* The fishmonger's one-time net card. */
+.pond-room-bait-emoji.is-net {
+  overflow: hidden;
+  background: #eef7ee;
+}
+
+.pond-room-bait-emoji.is-net img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(1.15);
+}
+
+.pond-room-bait.is-owned {
+  border-color: #9dc89e;
+  background: #f5fbf3;
+}
+
+.pond-room-bait-owned {
+  padding: 6px 12px;
+  border: 2px dashed #6fa77e;
+  border-radius: 999px;
+  color: #3f7a52;
+  font: 12px var(--font-body);
+  white-space: nowrap;
 }

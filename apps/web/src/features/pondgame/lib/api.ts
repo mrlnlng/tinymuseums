@@ -12,6 +12,8 @@ export interface PondStateView {
   pity: number
   wageredToday: number
   moon: 'full' | 'other'
+  /** Whether this member has bought the fishing net: the client never assumes it. */
+  ownsNet: boolean
   odds: {
     tiers: Record<FishTier, number>
     payouts: Record<FishTier, number>
@@ -48,18 +50,22 @@ export interface PondCatch {
   personalBest: boolean
 }
 
-export type PondReelReply =
-  | {
-      catch: PondCatch
-      treasure: PondTreasure | null
-      special?: { pearls: number } | null
-      keepsake?: 'mp3-player' | 'camera' | null
-      wagerWon: number | null
-      chainPaid: number | null
-      trophyCollected: boolean
-      state: PondStateView
-    }
-  | { lost: true; state: PondStateView }
+/** The landed branch both a reel and a net scoop return; a lost reel adds `lost`. */
+export interface PondCatchReply {
+  catch: PondCatch
+  treasure: PondTreasure | null
+  special?: { pearls: number } | null
+  keepsake?: 'mp3-player' | 'camera' | null
+  wagerWon: number | null
+  chainPaid: number | null
+  trophyCollected: boolean
+  state: PondStateView
+}
+
+export type PondReelReply = PondCatchReply | { lost: true; state: PondStateView }
+
+/** Scooping never loses a fish, so the server only ever returns the landed branch. */
+export type PondScoopReply = PondCatchReply
 
 export type PondResult<T> =
   | { ok: true; value: T }
@@ -193,6 +199,43 @@ export async function buyPondBait(bait: BaitId): Promise<PondResult<PondStateVie
       return { ok: false, error: 'buy_failed', status: 500 }
     }
     return { ok: true, value: body.state as unknown as PondStateView }
+  } catch {
+    return { ok: false, error: 'offline', status: 0 }
+  }
+}
+
+export async function buyPondNet(): Promise<PondResult<PondStateView>> {
+  const id = memberId()
+  if (id === null) return { ok: false, error: 'signed_out', status: 401 }
+  try {
+    // No body: the price and the one-per-member rule are the server's business.
+    const { response, body } = await requestJson('/api/pond/net', {
+      method: 'POST',
+      headers: { 'X-TM-Member': id },
+    })
+    if (!response.ok) return { ok: false, error: errorOf(body, 'buy_failed'), status: response.status }
+    if (!isRecord(body) || !isRecord(body.state)) {
+      return { ok: false, error: 'buy_failed', status: 500 }
+    }
+    return { ok: true, value: body.state as unknown as PondStateView }
+  } catch {
+    return { ok: false, error: 'offline', status: 0 }
+  }
+}
+
+export async function scoopPond(): Promise<PondResult<PondScoopReply>> {
+  const id = memberId()
+  if (id === null) return { ok: false, error: 'signed_out', status: 401 }
+  try {
+    const { response, body } = await requestJson('/api/pond/scoop', {
+      method: 'POST',
+      headers: { 'X-TM-Member': id },
+    })
+    if (!response.ok) return { ok: false, error: errorOf(body, 'scoop_failed'), status: response.status }
+    if (!isRecord(body) || !isRecord(body.catch)) {
+      return { ok: false, error: 'scoop_failed', status: 500 }
+    }
+    return { ok: true, value: body as unknown as PondScoopReply }
   } catch {
     return { ok: false, error: 'offline', status: 0 }
   }

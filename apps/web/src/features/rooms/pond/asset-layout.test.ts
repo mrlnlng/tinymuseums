@@ -8,10 +8,10 @@ import { pondFloor, toFloor } from './walk.ts'
 
 const water = { outline: layout.water.map(([x, y]) => ({ x, d: y })) }
 
-test('every cast power lands inside the new water on both fishing layouts', () => {
-  for (const narrow of [false, true]) for (let power = 0; power <= 100; power++) {
-    const at = landingForPower(power / 100, narrow)
-    assert.ok(contains(water, { x: at.x, d: at.y }), `${narrow ? 'phone' : 'wide'} cast ${power}`)
+test('every cast power lands inside the new water', () => {
+  for (let power = 0; power <= 100; power++) {
+    const at = landingForPower(power / 100)
+    assert.ok(contains(water, { x: at.x, d: at.y }), `cast ${power}`)
   }
 })
 

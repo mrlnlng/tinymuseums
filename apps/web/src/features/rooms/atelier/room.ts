@@ -1,3 +1,4 @@
+import type { SpotPainting } from '@tiny/core'
 import type { Layers } from '@/features/hall/scene/layers'
 import * as THREE from 'three'
 import { outfit, restamp } from '@tiny/core/slots'
@@ -14,7 +15,7 @@ import { defaultStore } from '@/shared/lib/slots'
 import { track } from '@/shared/lib/visit'
 import type { AtelierArtwork } from '../art'
 import type { ArtistCredit } from '@/features/hall/scene/atelier-layout'
-import type { SpotPainting } from '@tiny/core'
+import type { Work } from '@/features/artwork/components/Walkthrough'
 import type { CharacterKind } from '@/features/hall/scene/rig'
 import type { JoinedRoom, RoomDef } from '../types'
 import { doorName } from '@tiny/core/rooms'
@@ -25,7 +26,7 @@ export interface AtelierHooks {
   onMirror(): void
   onCloset(): void
   /** The visitor tapped a credited painting. */
-  onArtist(artist: ArtistCredit): void
+  onPainting(works: readonly Work[], index: number): void
   /** Plays the sound that matches an outfit or character change. */
   onChange: { current: ((change: 'costume_on' | 'costume_off' | 'character') => void) | null }
   become: { current: ((kind: CharacterKind) => void) | null }
@@ -158,7 +159,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         onItem: (item) => { if (!ctx.isQuiet()) closet.tapItem(item) },
         onMirror: () => { if (!ctx.isQuiet()) openMirror() },
         onWardrobe: () => { if (!ctx.isQuiet()) openCloset() },
-        onArtist: (artist) => { if (!ctx.isQuiet()) hooks.onArtist(artist) },
+        onPainting: (works, index) => { if (!ctx.isQuiet()) hooks.onPainting(works, index) },
         onLeave: (through) => { if (!ctx.isQuiet()) leaveByDoor(through) },
       })
 

@@ -10,12 +10,18 @@ import { loadArtistPieces } from '@/features/artwork/lib/pieces'
 import { pictureSources } from '@/shared/lib/assets'
 import AssetImage from '@/shared/components/AssetImage'
 
-interface Props {
-  slug: string
-  artistId: string
-  initialPieceId: string
-  onClose: () => void
+/** What the closeup needs of a work: an artist's piece from the museum, or art the game ships. */
+export type Work = Pick<PieceDto, 'id' | 'title' | 'description' | 'imageUrl' | 'shopUrl' | 'wallpaperUrl' | 'frameWidth' | 'frameHeight'> & {
+  /** Where to find the artist, shown as buttons under the plaque. */
+  artistLinks?: readonly { label: string; href: string }[]
 }
+
+type Props = { onClose: () => void } & (
+  /** An artist's wall: every piece they have, opening on one. */
+  | { slug: string; artistId: string; initialPieceId: string; works?: never }
+  /** A fixed set of works, such as the paintings in one atelier room. */
+  | { works: readonly Work[]; initialIndex: number; slug?: never }
+)
 
 const SLIDE: Variants = {
   enter: (direction: number) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
@@ -65,9 +71,13 @@ function XIcon() {
   )
 }
 
-export default function Walkthrough({ slug, artistId, initialPieceId, onClose }: Props) {
-  const [pieces, setPieces] = useState<PieceDto[] | null>(null)
-  const [index, setIndex] = useState(0)
+export default function Walkthrough(props: Props) {
+  const { onClose } = props
+  const slug = props.works ? null : props.slug
+  const artistId = props.works ? null : props.artistId
+  const initialPieceId = props.works ? null : props.initialPieceId
+  const [pieces, setPieces] = useState<readonly Work[] | null>(props.works ?? null)
+  const [index, setIndex] = useState(props.works ? props.initialIndex : 0)
   const [direction, setDirection] = useState(0)
 
   // The screen chrome can then hide the chat dock while a closeup is open.
@@ -77,6 +87,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
   }, [])
 
   useEffect(() => {
+    if (slug === null) return
     let cancelled = false
     loadArtistPieces(slug)
       .then((ordered) => {
@@ -130,8 +141,9 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
     }
   }, [pieces, index])
 
+  // Views count for an artist's own pieces; art the game ships has no artist record to credit.
   useEffect(() => {
-    if (!piece) return
+    if (!piece || artistId === null) return
     reportQuestEvent('view-artwork', piece.id)
     void fetch('/api/events', {
       method: 'POST',
@@ -285,7 +297,7 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
             ) : null}
           </div>
 
-          {piece.shopUrl || piece.wallpaperUrl ? (
+          {piece.shopUrl || piece.wallpaperUrl || piece.artistLinks?.length ? (
             <div className="wt-actions">
               {piece.shopUrl ? (
                 <a
@@ -310,6 +322,18 @@ export default function Walkthrough({ slug, artistId, initialPieceId, onClose }:
                   Get wallpaper
                 </a>
               ) : null}
+              {piece.artistLinks?.map((link, i) => (
+                <a
+                  key={link.href}
+                  className={`button ${i === 0 ? 'secondary' : ''} wt-artist-link`}
+                  data-track="artist_link"
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.label}
+                </a>
+              ))}
             </div>
           ) : null}
 

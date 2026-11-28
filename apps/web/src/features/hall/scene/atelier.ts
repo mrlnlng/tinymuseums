@@ -8,6 +8,7 @@ import { createGalleryDoor, GALLERY_DOOR } from './gallery-door'
 import { pickPainted } from './hit'
 import { placeLabel, type Viewport } from './overlay'
 import type { SpotPainting } from '@tiny/core'
+import type { Work } from '@/features/artwork/components/Walkthrough'
 import type { CharacterKind } from './rig'
 import { ATELIER_ROOMS, ROOM_TEMPLATE, SWAG_START, SWAG_STEP, type ArtistCredit, type CollectionRoom, type FormSpot, type PlacedRoom } from './atelier-layout'
 import { CARDIGANS, COSTUMES, HIBISCUS } from './wardrobe'
@@ -85,14 +86,37 @@ export function keepName(item: ClothingItem): string {
   return name.startsWith('The ') ? name.slice(4) : name
 }
 
+/** A work the museum hung in a frame, as the closeup shows it. */
+function hungWork(spot: SpotPainting): Work {
+  return {
+    id: spot.pieceId, title: spot.title, description: spot.description, imageUrl: spot.imageUrl,
+    shopUrl: null, wallpaperUrl: null, frameWidth: spot.width, frameHeight: spot.height,
+  }
+}
+
+/** A room's own painting, shipped with the game and credited to the room's artist. */
+function roomWork(collection: CollectionRoom, painting: AtelierImage, zone: string): Work {
+  const image = manifest.atelier[painting]
+  return {
+    id: `atelier:${collection.key}.${zone}`,
+    title: collection.title,
+    description: collection.artist ? `From ${collection.title}, painted by ${collection.artist.name}.` : '',
+    imageUrl: builtUrl(image.src),
+    shopUrl: null, wallpaperUrl: null, frameWidth: image.width, frameHeight: image.height,
+    artistLinks: collection.artist
+      ? [{ label: 'Instagram', href: collection.artist.instagram }, { label: 'Website', href: collection.artist.website }]
+      : undefined,
+  }
+}
+
 export interface AtelierActions {
   onItem(item: ClothingItem): void
   /** The visitor tapped the wardrobe: the closet opens. */
   onWardrobe(): void
   /** The visitor tapped the mirror's glass. */
   onMirror(): void
-  /** The visitor tapped a painting credited to an artist. */
-  onArtist(artist: ArtistCredit): void
+  /** The visitor tapped a painting: it opens up close, as the hall's do, among its room's others. */
+  onPainting(works: readonly Work[], index: number): void
   onLeave(door: string): void
 }
 
@@ -486,6 +510,9 @@ export function createAtelierRoom(
     // the placeholder shows until it loads, or if it cannot.
     let alive = true
     const loaded: THREE.Texture[] = []
+    // The frames whose hung painting actually arrived; the rest still show the room's own.
+    const showing = new Set<string>()
+    const onShown = new Map<string, () => void>()
     function hang(mesh: Painted, spotId: string): void {
       const painting = spots[spotId]
       if (!painting) return
@@ -508,6 +535,8 @@ export function createAtelierRoom(
         loaded.push(texture)
         mesh.material.map = texture
         mesh.material.needsUpdate = true
+        showing.add(spotId)
+        onShown.get(spotId)?.()
       }).catch(() => {})
     }
 
@@ -548,14 +577,22 @@ export function createAtelierRoom(
     hang(picture(group, collection.right.painting as AtelierImage, { ...rightSpot, width: rightFrame.width * rightFrame.fill, z: 0.19 }), `${collection.key}.right`)
     picture(group, 'bruceFrameCream', { ...rightSpot, width: rightFrame.width, z: 0.2 })
 
-    // A painting by a known artist opens a small credit card; the buttons sit over both frames.
-    if (collection.artist) {
-      const artist = collection.artist
-      const label = `About the artist, ${artist.name}`
-      const open = () => actions?.onArtist(artist)
-      button(label, 'atelier-item atelier-artwork', { x: C + leftFrame.dx - out, y: leftFrame.y, width: leftFrame.width }, open)
-      button(label, 'atelier-item atelier-artwork', { x: C + rightFrame.dx + out, y: rightFrame.y, width: rightFrame.width }, open)
+    // Each painting opens up close, like the hall's, showing exactly what its frame shows: the
+    // museum's work hung there once its picture has arrived, and otherwise the room's own painting.
+    // A room without an artist only opens frames the museum has hung something in.
+    const frames = [
+      { zone: 'left', painting: collection.left.painting as AtelierImage, at: { x: C + leftFrame.dx - out, y: leftFrame.y, width: leftFrame.width } },
+      { zone: 'right', painting: collection.right.painting as AtelierImage, at: { x: C + rightFrame.dx + out, y: rightFrame.y, width: rightFrame.width } },
+    ].filter(({ zone }) => collection.artist || spots[`${collection.key}.${zone}`])
+    const shownIn = ({ zone, painting }: typeof frames[number]): Work => {
+      const spotId = `${collection.key}.${zone}`
+      return showing.has(spotId) ? hungWork(spots[spotId]) : roomWork(collection, painting, zone)
     }
+    frames.forEach((frame, index) => {
+      const node = button(`Look closer at ${shownIn(frame).title}`, 'atelier-item atelier-artwork', frame.at,
+        () => actions?.onPainting(frames.map(shownIn), index))
+      onShown.set(`${collection.key}.${frame.zone}`, () => node.setAttribute('aria-label', `Look closer at ${shownIn(frame).title}`))
+    })
 
     const { mannequin } = atelier
     const unit = units(mannequin.height) / mannequin.canvas.form[1]

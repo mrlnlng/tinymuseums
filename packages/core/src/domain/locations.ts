@@ -160,6 +160,8 @@ export async function discardLocation(location: string): Promise<PlaceResult> {
 export interface SpotPainting {
   pieceId: string
   title: string
+  /** The plaque text, for the closeup a tap opens. */
+  description: string
   imageUrl: string
   width: number
   height: number
@@ -174,8 +176,8 @@ export async function spotPaintings(location: string, which: 'published' | 'work
   if (!room) return {}
   const placements = (which === 'published' ? room.published : workingCopy(room)).filter((p) => p.kind === 'painting')
   if (placements.length === 0) return {}
-  const rows = await query<{ id: string; title: string; derivatives: Derivative[] | null }>(
-    `select p.id, p.title, a.derivatives
+  const rows = await query<{ id: string; title: string; description: string; derivatives: Derivative[] | null }>(
+    `select p.id, p.title, p.description, a.derivatives
        from pieces p
        join assets a on a.id = p.asset_id
       where p.id = any($1::uuid[]) and a.status = 'ready'`,
@@ -188,7 +190,7 @@ export async function spotPaintings(location: string, which: 'published' | 'work
     const row = byId.get(placement.ref)
     const image = row ? pickDerivative(row.derivatives ?? [], SPOT_IMAGE_WIDTH) : null
     if (!row || !image) continue
-    spots[placement.zone] = { pieceId: row.id, title: row.title, imageUrl: storage.urlFor(image.key), width: image.width, height: image.height }
+    spots[placement.zone] = { pieceId: row.id, title: row.title, description: row.description, imageUrl: storage.urlFor(image.key), width: image.width, height: image.height }
   }
   return spots
 }

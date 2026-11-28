@@ -7,9 +7,9 @@
     "ast_empty": true
   },
   "amplify.yml": {
-    "mtime": 1793479010.0123749,
-    "seen": 1793479334.245448,
-    "ast_hash": "8b14c22030f342d026826fc6841f294d",
+    "mtime": 1795824957.85522,
+    "seen": 1795826530.46715,
+    "ast_hash": "40b2fd429f94ca24fe74bc90d9152400",
     "semantic_hash": ""
   },
   "amplify/backend.ts": {
@@ -2612,15 +2612,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/components/ChatButton.tsx": {
-    "mtime": 1795767796.3093345,
-    "seen": 1795767922.214297,
-    "ast_hash": "dcf3581bfd51e8b0c3fa45cf9edfb1a0",
+    "mtime": 1795826396.9737644,
+    "seen": 1795826530.4674258,
+    "ast_hash": "6b032fd14f81fabd4466fac1b32e3bce",
     "semantic_hash": ""
   },
   "apps/web/src/features/presence/lib/room-events.ts": {
-    "mtime": 1795766864.2952237,
-    "seen": 1795766973.06035,
-    "ast_hash": "d3b813b30e9dd15c08d503ad7649329a",
+    "mtime": 1795826328.6256955,
+    "seen": 1795826530.4674358,
+    "ast_hash": "8354edf1455bf21c2246af06152dd174",
     "semantic_hash": ""
   },
   "packages/core/src/presence/messages.test.ts": {

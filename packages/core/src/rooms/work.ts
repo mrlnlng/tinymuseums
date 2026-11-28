@@ -7,15 +7,15 @@ import { THEMES } from './themes.ts'
  */
 export const CLOSET_MESSES: readonly Placement[] = [
   { id: 'mess-cobweb-door', kind: 'mess', ref: 'cobweb', zone: 'wall', x: 0.6, y: 2.85 },
-  { id: 'mess-cobweb-corner', kind: 'mess', ref: 'cobweb', zone: 'wall', x: 5.4, y: 2.85, flip: true },
-  { id: 'mess-peeling', kind: 'mess', ref: 'peeling-paper', zone: 'wall', x: 3.25, y: 1.3 },
-  { id: 'mess-stain', kind: 'mess', ref: 'stain', zone: 'wall', x: 2.3, y: 2.25 },
-  { id: 'mess-canvases', kind: 'mess', ref: 'old-canvases', zone: 'floor', x: 4.95 },
-  { id: 'mess-paint', kind: 'mess', ref: 'old-paint', zone: 'floor', x: 3.85 },
-  { id: 'mess-dust', kind: 'mess', ref: 'dust', zone: 'floor', x: 3.35 },
-  { id: 'mess-boards', kind: 'mess', ref: 'boards', zone: 'wall', x: 5.0, y: 0.1 },
-  { id: 'mess-wall-wear', kind: 'mess', ref: 'wall-wear', zone: 'wall', x: 3, y: 1 },
-  { id: 'mess-floor-wear', kind: 'mess', ref: 'floor-wear', zone: 'floor', x: 3 },
+  { id: 'mess-cobweb-corner', kind: 'mess', ref: 'cobweb', zone: 'wall', x: 11.4, y: 2.85, flip: true },
+  { id: 'mess-peeling', kind: 'mess', ref: 'peeling-paper', zone: 'wall', x: 6.6, y: 1.3 },
+  { id: 'mess-stain', kind: 'mess', ref: 'stain', zone: 'wall', x: 4.4, y: 2.25 },
+  { id: 'mess-canvases', kind: 'mess', ref: 'old-canvases', zone: 'floor', x: 9.6 },
+  { id: 'mess-paint', kind: 'mess', ref: 'old-paint', zone: 'floor', x: 7.8 },
+  { id: 'mess-dust', kind: 'mess', ref: 'dust', zone: 'floor', x: 6.4 },
+  { id: 'mess-boards', kind: 'mess', ref: 'boards', zone: 'wall', x: 11, y: 0.1 },
+  { id: 'mess-wall-wear', kind: 'mess', ref: 'wall-wear', zone: 'wall', x: 6, y: 1 },
+  { id: 'mess-floor-wear', kind: 'mess', ref: 'floor-wear', zone: 'floor', x: 6 },
 ]
 
 /** Wear spread over a whole surface: tapping anywhere on it offers to fix all of it at once. */

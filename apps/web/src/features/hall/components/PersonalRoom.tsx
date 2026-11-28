@@ -25,9 +25,10 @@ import {
   sizedTheme,
   type Placement,
 } from '@tiny/core/rooms'
-import { buy, stampLabel, useWallet } from '@/features/economy'
+import { buy, useWallet } from '@/features/economy'
 import HallSkeleton from '@/features/hall/components/HallSkeleton'
 import { useSound } from '@/features/sound/components/SoundProvider'
+import { setInOwnRoom } from '@/shared/lib/own-room'
 import LetterMailbox from '@/features/letters/components/LetterMailbox'
 import { reportQuestEvent } from '@/features/letters/events'
 import { hrefFor } from '@/features/rooms/links'
@@ -44,8 +45,6 @@ import {
   cozyLevel,
   freeX,
   isRemovedProceduralFish,
-  messLabel,
-  messNote,
   moveWithRiders,
   newPlacementId,
   propHeight,
@@ -105,13 +104,6 @@ interface Job {
   at?: { x: number; y: number }
   /** The visitor's very first clean ends with a burst and a cheer. */
   celebrate?: boolean
-}
-
-/** A piece of junk or damage on offer; `at` is where a whole-surface one was tapped. */
-interface Offer {
-  id: string
-  ref: string
-  at?: { x: number; y: number }
 }
 
 interface Puff {
@@ -236,15 +228,15 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   const [offscreen, setOffscreen] = useState({ left: 0, right: 0 })
   const [jobs, setJobs] = useState<Job[]>([])
-  const [offer, setOffer] = useState<Offer | null>(null)
-  const [paying, setPaying] = useState(false)
   const [firstCleanDone, setFirstCleanDone] = useState(false)
-  const [broomBusy, setBroomBusy] = useState(false)
+  /** Decorating places things; tidying (the broom) only cleans: no drawer, the messes lit up. */
+  const [mode, setMode] = useState<'decorate' | 'tidy'>('decorate')
+  const modeRef = useRef<'decorate' | 'tidy'>('decorate')
   const jobsRef = useRef<Job[]>([])
   const payingRef = useRef(false)
   const ringsRef = useRef(new Map<string, HTMLDivElement>())
-  const offerRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef(new Map<string, HTMLSpanElement>())
+  const repairRef = useRef(new Map<string, HTMLSpanElement>())
 
   const draftRef = useRef<Placement[]>(draft)
   draftRef.current = draft
@@ -263,6 +255,9 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   /** The most hearts reached while decorating; a level is celebrated only the first time. */
   const bestHeartsRef = useRef(0)
   const isEditingRef = useRef(false)
+  const doneRef = useRef<(message?: string, stay?: boolean) => Promise<void>>(async () => {})
+  /** Quiet publishes after each clean, one at a time. */
+  const keepChain = useRef<Promise<void>>(Promise.resolve())
 
   const { isReady, error } = useRoom({
     room,
@@ -270,6 +265,13 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     isSuspended: () => isEditing,
     onExit: (to: DoorRef) => router.push(hrefFor(to)),
   })
+
+  // The top bar hides the house (the way to your own room) while you are in it.
+  useEffect(() => {
+    if (!canEdit) return
+    setInOwnRoom(true)
+    return () => setInOwnRoom(false)
+  }, [canEdit])
 
   useEffect(() => {
     setSeen(readSeen())
@@ -323,6 +325,48 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     follow()
     return () => cancelAnimationFrame(handle)
   }, [controller, dirtyMesses, isEditing])
+
+  // Tidying: every mess still to clean glows softly in the room itself, so it is clear what to tap.
+  const tidying = isEditing && mode === 'tidy'
+  const glowKey = tidying && loaded ? dirtyMesses.map((mess) => mess.id).join(',') : ''
+  useEffect(() => {
+    controller.glow(glowKey ? glowKey.split(',') : null)
+  }, [controller, glowKey])
+
+  // Damage to repair also wears a hammer badge: over the thing, or, for wear spread across a whole
+  // wall or floor, on that surface in view. The badges let taps through to what is under them.
+  const repairs = useMemo(() => dirtyMesses.filter((mess) => isRepair(mess.ref)), [dirtyMesses])
+  useEffect(() => {
+    if (!tidying || !loaded || repairs.length === 0) return
+    let handle = 0
+    const follow = () => {
+      handle = requestAnimationFrame(follow)
+      const view = controller.viewRange()
+      for (const mess of repairs) {
+        const badge = repairRef.current.get(mess.id)
+        if (!badge) continue
+        const surface = WEAR[mess.ref]
+        const working = jobsRef.current.some((job) => job.id === mess.id)
+        let spot: { left: number; top: number } | null = null
+        if (surface && view) {
+          // Off to the side of the middle, high on the wall or low on the floor, clear of the furniture.
+          const x = surface === 'wall' ? view.left + (view.right - view.left) * 0.72 : view.left + (view.right - view.left) * 0.3
+          spot = controller.screenPoint(x, surface === 'wall' ? CEILING - 0.6 : -0.8)
+        } else if (!surface) {
+          const box = controller.screenBox(mess.id)
+          spot = box ? { left: box.left, top: (box.top + box.bottom) / 2 } : null
+        }
+        if (!spot || working) {
+          badge.style.visibility = 'hidden'
+          continue
+        }
+        badge.style.visibility = 'visible'
+        badge.style.transform = `translate3d(${spot.left.toFixed(1)}px, ${spot.top.toFixed(1)}px, 0) translate(-50%, -50%)`
+      }
+    }
+    follow()
+    return () => cancelAnimationFrame(handle)
+  }, [controller, loaded, repairs, tidying])
 
   const markSeen = useCallback((ref: string) => {
     setSeen((current) => {
@@ -588,6 +632,10 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       controller.setEditing(false)
       return
     }
+    if (mode === 'tidy') {
+      controller.setEditing(true, 0)
+      return
+    }
     const drawer = drawerRef.current
     const frame = drawer?.parentElement
     if (!drawer || !frame) return
@@ -600,7 +648,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     observer.observe(drawer)
     observer.observe(frame)
     return () => observer.disconnect()
-  }, [controller, isEditing, loaded])
+  }, [controller, isEditing, loaded, mode])
 
   // Keep the selection toolbar riding above its item as the camera glides.
   useEffect(() => {
@@ -687,30 +735,6 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controller, jobs])
 
-  // The offer to clear a piece of junk rides above it, like the toolbar.
-  useEffect(() => {
-    if (!offer) return
-    let handle = 0
-    const follow = () => {
-      handle = requestAnimationFrame(follow)
-      const box = anchorOf(offer.id, offer.at)
-      const card = offerRef.current
-      if (!card) return
-      if (!box) {
-        card.style.opacity = '0'
-        return
-      }
-      card.style.opacity = '1'
-      // Kept inside the frame, so junk at a phone's edge still shows its whole offer.
-      const frameWidth = (card.offsetParent as HTMLElement | null)?.clientWidth ?? window.innerWidth
-      const half = card.offsetWidth / 2
-      const x = Math.min(Math.max(box.left, half + 8), frameWidth - half - 8)
-      card.style.transform = `translate3d(${x.toFixed(1)}px, ${Math.max(box.top - 8, card.offsetHeight + 8).toFixed(1)}px, 0) translate(-50%, -100%)`
-    }
-    follow()
-    return () => cancelAnimationFrame(handle)
-  }, [controller, offer])
-
   const panToward = useCallback(
     (side: 'left' | 'right') => {
       const view = controller.viewRange()
@@ -735,10 +759,12 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     [controller],
   )
 
-  const enterEdit = useCallback(async () => {
+  const enterEdit = useCallback(async (nextMode: 'decorate' | 'tidy' = 'decorate') => {
     // A double tap on Decorate would load the room twice and reset the second time.
     if (isEditingRef.current) return
     isEditingRef.current = true
+    modeRef.current = nextMode
+    setMode(nextMode)
     setNotice(null)
     setSaveState('saved')
     setIsEditing(true)
@@ -751,7 +777,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     } catch {
       isEditingRef.current = false
       setIsEditing(false)
-      setNotice('Your room could not be opened for decorating just now.')
+      setNotice(nextMode === 'tidy' ? 'Your room could not be opened for tidying just now.' : 'Your room could not be opened for decorating just now.')
       play('error')
       return
     }
@@ -782,29 +808,39 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     controller.hide(null)
     controller.setCharacterOpacity(1)
     setSelected(null)
-    setOffer(null)
     isEditingRef.current = false
     setIsEditing(false)
     setLoaded(false)
     setSaveState('saved')
   }, [controller])
 
-  const done = useCallback(async () => {
-    if (payingRef.current) {
+  /**
+   * Saves and publishes the room. Pressing Done also leaves (with `savedMessage` as its toast,
+   * if any); `stay` publishes quietly and keeps the room open, so each clean is kept the moment
+   * it finishes, with nothing to remember to press.
+   */
+  const done = useCallback(async (savedMessage = 'Saved! Visitors will see your room like this.', stay = false) => {
+    if (stay) {
+      if (!isEditingRef.current) return
+    } else if (payingRef.current) {
       setNotice('Hold on, still paying for that.')
       return
     }
-    if (jobsRef.current.length > 0) {
+    if (!stay && jobsRef.current.length > 0) {
       const left = Math.max(...jobsRef.current.map((job) => job.startedAt + job.seconds * 1000 - performance.now()))
       setNotice(`Hold on, still working: about ${Math.max(1, Math.ceil(left / 1000))}s to go.`)
       return
     }
-    setNotice(null)
-    setSaving(true)
+    if (!stay) {
+      setNotice(null)
+      setSaving(true)
+      // A quiet save after a clean may still be on its way; publish after it, not beside it.
+      await keepChain.current
+    }
     clearRetry()
     const saved = await saveNow()
     if (saved !== 'saved') {
-      setSaving(false)
+      if (!stay) setSaving(false)
       if (saved === 'offline') {
         setNotice('Your room could not be saved: you seem to be offline. Your changes are kept here; press Done again once you are back.')
         saveSoon(RETRY_MS[0])
@@ -835,17 +871,22 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     }
     if (failure) {
       setNotice(failure)
-      setSaving(false)
+      if (!stay) setSaving(false)
       return
     }
     publishedRef.current = next
     savedRef.current = next
+    if (stay) return
     setSaving(false)
     leaveEdit()
     controller.setPlacements(next)
-    play('harp')
-    showToast('Saved! Visitors will see your room like this.')
+    if (savedMessage) {
+      play('harp')
+      showToast(savedMessage)
+    }
   }, [clearRetry, controller, leaveEdit, play, saveNow, saveSoon, showToast, slug])
+
+  doneRef.current = done
 
   const applyFinish = useCallback(
     (zone: FinishSlot, ref: string) => {
@@ -892,7 +933,6 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
         undo()
         return
       }
-      if (event.key === 'Escape') setOffer(null)
       if (selected === null) return
       if (event.key === 'Escape') return select(null)
       if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -1091,7 +1131,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     return carry
   }
 
-  /** Where a job's ring or an offer sits: the tapped spot for whole-surface wear, else over the thing. */
+  /** Where a job's ring sits: the tapped spot for whole-surface wear, else over the thing. */
   function anchorOf(id: string, at?: { x: number; y: number }): { left: number; top: number; bottom?: number } | null {
     if (!at) return controller.screenBox(id)
     return controller.screenPoint(at.x, at.y)
@@ -1131,6 +1171,8 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       play(job.celebrate ? 'success' : 'harp')
       showToast(job.celebrate ? 'Your first tidy-up! It already feels more like home.' : 'All clean! The place looks brighter already.')
       reportQuestEvent('room-clean')
+      // Nothing left to tidy: save the clean room for visitors and put the broom away.
+      if (modeRef.current === 'tidy') later(() => void keepChain.current.then(() => doneRef.current('')), 900)
     } else if (job.celebrate) {
       play('success')
       showToast('Lovely! One mess down, and the room is starting to shine.')
@@ -1141,6 +1183,10 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       setFirstCleanDone(true)
       writeLocal(FIRST_CLEAN_KEY, '1')
     }
+    // Tidying keeps each clean as it finishes; leaving without Done loses nothing.
+    if (!isLast && modeRef.current === 'tidy') {
+      keepChain.current = keepChain.current.then(() => doneRef.current('', true))
+    }
   }
 
   /**
@@ -1149,14 +1195,13 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
    */
   async function cleanNow(id: string, ref: string, at: { x: number; y: number } | undefined, celebrate: boolean): Promise<boolean> {
     if (payingRef.current) return false
+    setNotice(null)
     const itemId = cleanItemId(id)
     if (!wallet.items.includes(itemId)) {
-      setPaying(true)
       payingRef.current = true
       const outcome = await buy(itemId).finally(() => {
         payingRef.current = false
       })
-      setPaying(false)
       if (outcome !== 'ok') {
         setNotice(outcome === 'insufficient' ? `Not enough stamps to ${isRepair(ref) ? 'repair' : 'clear'} that yet.` : 'That could not be paid for just now.')
         play('error')
@@ -1164,7 +1209,6 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       }
       play('purchase')
     }
-    setOffer(null)
     // Paid for but not started (left Decorate meanwhile): tapping it later finishes the job for free.
     const placement = draftRef.current.find((entry) => entry.id === id)
     if (isEditingRef.current && placement) {
@@ -1172,38 +1216,6 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
       startJob(id, 'clean', celebrate ? Math.min(2, cleanupFor(ref).seconds) : cleanupFor(ref).seconds, at, celebrate)
     }
     return true
-  }
-
-  /** Pays for a piece of junk (unless it already is) and starts clearing it. */
-  async function confirmClean(): Promise<void> {
-    if (!offer || paying) return
-    await cleanNow(offer.id, offer.ref, offer.at, false)
-  }
-
-  /**
-   * The broom is the one-tap way to tidy. The first clean is deliberately easier:
-   * no offer card, no confirmation, a short job, and a celebration at the end.
-   * Later sweeps open the ordinary offer, so they still need the paid confirmation.
-   */
-  async function tidyWithBroom(): Promise<void> {
-    if (broomBusy || payingRef.current) return
-    setBroomBusy(true)
-    try {
-      if (!isEditingRef.current) await enterEdit()
-      if (!isEditingRef.current) return
-      const messes = draftRef.current.filter((placement) => placement.kind === 'mess')
-      if (messes.length === 0) return
-      const mess = [...messes].sort((a, b) => cleanupFor(a.ref).price - cleanupFor(b.ref).price)[0]
-      if (firstCleanDone) {
-        controller.panTo(mess.x)
-        setOffer({ id: mess.id, ref: mess.ref })
-        play('click')
-        return
-      }
-      await cleanNow(mess.id, mess.ref, undefined, true)
-    } finally {
-      setBroomBusy(false)
-    }
   }
 
   /** Keyboard activation of a card (Enter or Space); pointer taps go through the carry instead. */
@@ -1231,24 +1243,50 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     startCarry('new', { id: newPlacementId(), kind: 'prop', ref, zone, x: controller.centerX() }, event)
   }
 
+  /** The mess under the finger, the smallest first. */
+  function messAt(clientX: number, clientY: number, origin: DOMRect): Placement | null {
+    const x = clientX - origin.left
+    const y = clientY - origin.top
+    let best: Placement | null = null
+    let bestArea = Infinity
+    for (const mess of draftRef.current) {
+      if (mess.kind !== 'mess') continue
+      const box = controller.screenBox(mess.id)
+      if (!box || box.width === null) continue
+      // Its glow and a little more, so a faint cobweb is easy to hit.
+      const half = Math.max(44, box.width + 16) / 2
+      const height = Math.max(44, box.bottom - box.top + 16)
+      const top = (box.top + box.bottom) / 2 - height / 2
+      if (x < box.left - half || x > box.left + half || y < top || y > top + height) continue
+      const area = half * height
+      if (area < bestArea) {
+        best = mess
+        bestArea = area
+      }
+    }
+    return best
+  }
+
   function onSurfaceDown(event: ReactPointerEvent<HTMLDivElement>): void {
     if (!loaded || (event.pointerType === 'mouse' && event.button !== 0)) return
     event.preventDefault()
     setNotice(null)
-    const hit = controller.pick(event.clientX, event.clientY)
+    const tidy = modeRef.current === 'tidy'
+    const picked = tidy ? messAt(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect()) : controller.pick(event.clientX, event.clientY)
+    // Tidying only cleans; decorating never touches messes. Anything else under the finger pans.
+    const hit = picked && (picked.kind === 'mess') === tidy ? picked : null
     if (hit?.kind === 'mess') {
       select(null)
-      setOffer({ id: hit.id, ref: hit.ref })
-      play('click')
+      // One tap starts the work: paid for, then cleaned or repaired. The very first is free and quick.
+      if (!jobsRef.current.some((job) => job.id === hit.id)) void cleanNow(hit.id, hit.ref, undefined, !firstCleanDone)
       return
     }
-    setOffer(null)
     if (hit) {
       startCarry('move', hit, event)
       return
     }
-    // A tap that only closes what's open shouldn't also open the wear offer underneath.
-    const dismissing = offerRef.current !== null || selected !== null
+    // A tap that only closes what's open shouldn't also start fixing the wear underneath.
+    const dismissing = selected !== null
     panRef.current = { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: false, dismissing }
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
@@ -1277,10 +1315,10 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     panRef.current = null
     if (pan.moved) return
     select(null)
-    if (!pan.dismissing) offerWear(event.clientX, event.clientY)
+    if (!pan.dismissing && modeRef.current === 'tidy') offerWear(event.clientX, event.clientY)
   }
 
-  /** A tap on bare wall or floor: offer to fix all of its wear at once. */
+  /** A tap on bare wall or floor while tidying: fixes all of its wear at once. */
   function offerWear(clientX: number, clientY: number): void {
     const x = controller.worldXAt(clientX)
     const y = controller.worldYAt(clientY)
@@ -1288,8 +1326,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
     const surface = y >= 0 ? 'wall' : 'floor'
     const wear = draftRef.current.find((placement) => placement.kind === 'mess' && WEAR[placement.ref] === surface)
     if (!wear || jobsRef.current.some((job) => job.id === wear.id)) return
-    setOffer({ id: wear.id, ref: wear.ref, at: { x, y } })
-    play('click')
+    void cleanNow(wear.id, wear.ref, { x, y }, !firstCleanDone)
   }
 
   if (error) {
@@ -1303,11 +1340,28 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
   const selectedPlacement = selected === null ? null : draft.find((entry) => entry.id === selected) ?? null
   const broomImage = cozyPropImageUrl('broom')
   const showTidy = canEdit && isReady && !isEditing && dirtyMesses.length > 0
+  const tidyLeft = dirtyMesses.length
 
   return (
     <>
       {canEdit && isReady && !isEditing ? (
-        <div className="decor-enter-wrap">
+        // The room's own buttons share one row beside the chat bubble: the broom (while there is
+        // mess) and Decorate.
+        <div className="room-actions">
+          {showTidy ? (
+            <button
+              type="button"
+              className={`room-broom${firstCleanDone ? '' : ' is-first'}`}
+              onClick={() => void enterEdit('tidy')}
+              aria-label="Tidy up with the broom"
+              title="Tidy up"
+            >
+              {broomImage ? <img src={broomImage} alt="" draggable={false} /> : <span aria-hidden="true">{'🧹'}</span>}
+              <span className="room-broom-spark" aria-hidden="true">
+                {'✦'}
+              </span>
+            </button>
+          ) : null}
           <button type="button" className="button decor-enter" data-sound onClick={() => void enterEdit()}>
             <span aria-hidden="true">{'✦'}</span> Decorate
           </button>
@@ -1316,21 +1370,6 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
 
       {showTidy ? (
         <>
-          <div className="room-broom-wrap">
-            <p className="room-tidy-hint">Your room is dusty! Tap the broom to tidy up.</p>
-            <button
-              type="button"
-              className={`room-broom${firstCleanDone ? '' : ' is-first'}${broomBusy ? ' is-busy' : ''}`}
-              onClick={() => void tidyWithBroom()}
-              aria-label={firstCleanDone ? 'Tidy up with the broom' : 'Tidy up with the broom (your first clean is quick)'}
-              title="Tidy up"
-            >
-              {broomImage ? <img src={broomImage} alt="" draggable={false} /> : <span aria-hidden="true">{'🧹'}</span>}
-              <span className="room-broom-spark" aria-hidden="true">
-                {'✦'}
-              </span>
-            </button>
-          </div>
           <div className="room-mess-sparkles" aria-hidden="true">
             {dirtyMesses.map((mess) => (
               <span
@@ -1362,18 +1401,63 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
             />
           ) : null}
 
-          {loaded && offscreen.left > 0 ? (
+          {mode === 'tidy' ? (
+            <>
+              {/* The broom stays out and lit while tidying; tapping it again puts it away. */}
+              <div className="room-actions">
+                <button
+                  type="button"
+                  className="room-broom is-active"
+                  disabled={saving}
+                  onClick={() => void done('')}
+                  aria-label={tidyLeft > 0 ? `Stop tidying (${tidyLeft} left)` : 'Stop tidying'}
+                  aria-pressed="true"
+                  title="Done tidying"
+                >
+                  {broomImage ? <img src={broomImage} alt="" draggable={false} /> : <span aria-hidden="true">{'🧹'}</span>}
+                </button>
+              </div>
+              <div className="room-repair-badges" aria-hidden="true">
+                {repairs.map((mess) => (
+                  <span
+                    key={mess.id}
+                    ref={(element) => {
+                      if (element) repairRef.current.set(mess.id, element)
+                      else repairRef.current.delete(mess.id)
+                    }}
+                    className="room-repair-badge"
+                    style={{ visibility: 'hidden' }}
+                  >
+                    <svg viewBox="0 0 24 24">
+                      {/* A hammer, tilted: a broad head on a short handle. */}
+                      <g transform="rotate(-40 12 12)">
+                        <rect x="4.5" y="2.5" width="15" height="6.5" rx="1.8" />
+                        <rect x="10.4" y="8" width="3.2" height="13.5" rx="1.6" />
+                      </g>
+                    </svg>
+                  </span>
+                ))}
+              </div>
+              {notice ? (
+                <p className="decor-toast is-error room-tidy-notice" role="alert">
+                  {notice}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {mode === 'decorate' && loaded && offscreen.left > 0 ? (
             <button type="button" className="decor-edge is-left" onClick={() => panToward('left')} aria-label={`${offscreen.left} more to the left`}>
               {'‹'} {offscreen.left}
             </button>
           ) : null}
-          {loaded && offscreen.right > 0 ? (
+          {mode === 'decorate' && loaded && offscreen.right > 0 ? (
             <button type="button" className="decor-edge is-right" onClick={() => panToward('right')} aria-label={`${offscreen.right} more to the right`}>
               {offscreen.right} {'›'}
             </button>
           ) : null}
 
-          {selectedPlacement ? (
+          {mode === 'decorate' && selectedPlacement ? (
             <div ref={toolbarRef} className="decor-toolbar" style={{ opacity: 0 }}>
               <button type="button" onClick={() => flip(selectedPlacement.id)} aria-label="Flip">
                 {'⇄'}
@@ -1384,38 +1468,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
             </div>
           ) : null}
 
-          {offer
-            ? (() => {
-                const cost = cleanupFor(offer.ref)
-                const paid = wallet.items.includes(cleanItemId(offer.id))
-                const short = !paid && (wallet.balance ?? 0) < cost.price
-                return (
-                  <div ref={offerRef} className="decor-offer" style={{ opacity: 0 }} role="dialog" aria-label={`${isRepair(offer.ref) ? 'Repair' : 'Clear'} the ${messLabel(offer.ref).toLowerCase()}`}>
-                    <p className="decor-offer-title">{messLabel(offer.ref)}</p>
-                    {messNote(offer.ref) ? <p className="decor-offer-meta">{messNote(offer.ref)}</p> : null}
-                    <p className="decor-offer-meta">
-                      {paid ? 'Paid for' : stampLabel(cost.price)} · takes {cost.seconds}s
-                    </p>
-                    <div className="decor-offer-actions">
-                      <button type="button" className="decor-buy" disabled={paying || short} onClick={() => void confirmClean()}>
-                        {paying
-                          ? '…'
-                          : paid
-                            ? isRepair(offer.ref) ? 'Finish repairing' : 'Finish cleaning'
-                            : short
-                              ? 'Not enough stamps'
-                              : isRepair(offer.ref) ? 'Repair' : 'Clean up'}
-                      </button>
-                      <button type="button" className="decor-offer-close" onClick={() => setOffer(null)} aria-label="Never mind">
-                        {'×'}
-                      </button>
-                    </div>
-                  </div>
-                )
-              })()
-            : null}
-
-          <DecorDrawer
+          {mode === 'decorate' ? <DecorDrawer
             ref={drawerRef}
             slug={slug}
             placements={draft}
@@ -1439,7 +1492,7 @@ export default function PersonalRoom({ slug, placements, ownerName, open, canEdi
             roomSize={roomSize}
             nextSize={canEdit ? nextRoomSize(roomSize) : null}
             dirt={draft.filter((placement) => placement.kind === 'mess').length}
-          />
+          /> : null}
         </>
       ) : null}
 

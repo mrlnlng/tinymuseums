@@ -9,7 +9,12 @@ import { openAccount } from '@/features/account/lib/account'
 import { ADMIN_MODE } from '@/shared/lib/admin-mode'
 import AdminTools from './AdminTools'
 
-export default function SettingsMenu() {
+interface Props {
+  /** Back to the landing page; null where the visitor already is there. */
+  onEntrance?: (() => void) | null
+}
+
+export default function SettingsMenu({ onEntrance = null }: Props) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const host = useRef<HTMLDivElement>(null)
@@ -89,6 +94,23 @@ export default function SettingsMenu() {
           </svg>
             <span>Bug Report</span>
           </button>
+          {onEntrance ? (
+            <button type="button" className="settings-row" data-track="entrance"
+              onClick={() => open(onEntrance)} aria-label="Back to the entrance">
+              <svg viewBox="0 0 75 75" aria-hidden="true">
+                <mask id="entrance-toggle-cutout">
+                  <rect width="75" height="75" fill="white" />
+                  {/* An arched door standing ajar, its knob on the open edge. */}
+                  <path fill="black" d="M22 60V33a15.5 15.5 0 0 1 31 0v27Z" />
+                  <path fill="white" d="M27 60V34a10.5 10.5 0 0 1 21 0v26Z" />
+                  <path fill="black" d="M27 60V31l16 4v25Z" />
+                  <circle cx="39" cy="47" r="2.2" fill="white" />
+                </mask>
+                <circle cx="37.5" cy="37.5" r="37.5" mask="url(#entrance-toggle-cutout)" />
+              </svg>
+              <span>Entrance</span>
+            </button>
+          ) : null}
           <SoundToggle inSettings />
           {ADMIN_MODE ? <AdminTools /> : null}
         </div>

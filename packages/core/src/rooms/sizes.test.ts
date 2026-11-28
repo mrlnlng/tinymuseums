@@ -25,9 +25,9 @@ test('sizes grow one step at a time and stop at the studio', () => {
 })
 
 test('a closet refuses things past its right wall', () => {
-  const closet = sizedTheme(THEMES.cozy, 6)
-  const near: Placement = { id: 'near-1', kind: 'prop', ref: 'cubby', zone: 'floor', x: 5.1 }
-  const far: Placement = { id: 'far-1', kind: 'prop', ref: 'cubby', zone: 'floor', x: 9 }
+  const closet = sizedTheme(THEMES.cozy, ROOM_SIZES[0].width)
+  const near: Placement = { id: 'near-1', kind: 'prop', ref: 'cubby', zone: 'floor', x: ROOM_SIZES[0].width - 0.9 }
+  const far: Placement = { id: 'far-1', kind: 'prop', ref: 'cubby', zone: 'floor', x: ROOM_SIZES[0].width + 3 }
   assert.deepEqual(validatePlacements(closet, [near], owns), { ok: true })
   assert.equal(validatePlacements(closet, [far], owns).ok, false)
   assert.deepEqual(validatePlacements(sizedTheme(THEMES.cozy, 20), [far], owns), { ok: true })

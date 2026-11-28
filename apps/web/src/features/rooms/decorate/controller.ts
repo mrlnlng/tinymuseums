@@ -19,9 +19,12 @@ export interface DecorLive {
 }
 
 export interface ScreenBox {
+  /** The middle, across. */
   left: number
   top: number
   bottom: number
+  /** Across, in pixels; null for a whole-surface cover. */
+  width: number | null
 }
 
 export interface DecorController {
@@ -50,6 +53,8 @@ export interface DecorController {
   bounce(id: string): void
   work(id: string, kind: WorkKind, t: number | null): void
   setCharacterOpacity(opacity: number): void
+  /** Lights these placements with a soft glow; null for none. */
+  glow(ids: readonly string[] | null): void
   /** Where a placement is drawn, in pixels from the canvas's top left. */
   screenBox(id: string): ScreenBox | null
   /** A world point in pixels from the canvas's top left. */
@@ -278,13 +283,18 @@ export function createDecorController(): DecorController {
       live?.character.setOpacity(value)
     },
 
+    glow(ids) {
+      live?.layer.glow(ids)
+    },
+
     screenBox(id) {
       const bounds = live?.layer.bounds(id)
       if (!bounds) return null
       const top = toScreen(bounds.x, bounds.top)
       const bottom = toScreen(bounds.x, bounds.bottom)
       if (!top || !bottom) return null
-      return { left: top.left, top: top.top, bottom: bottom.top }
+      const right = bounds.width === null ? null : toScreen(bounds.x + bounds.width / 2, bounds.bottom)
+      return { left: top.left, top: top.top, bottom: bottom.top, width: right ? Math.abs(right.left - top.left) * 2 : null }
     },
 
     screenPoint(x, y) {

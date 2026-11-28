@@ -1568,6 +1568,8 @@ export interface PlacementBounds {
   x: number
   top: number
   bottom: number
+  /** Across, in world units; a whole-surface cover (wall or floor wear) has none. */
+  width: number | null
 }
 
 export type WorkKind = 'build' | 'clean'
@@ -1585,11 +1587,49 @@ export interface PlacementLayer {
   /** Something being built (rising from its base) or cleaned away (scrubbed and fading), `t` from 0 to 1; null when done. */
   work(id: string, kind: WorkKind, t: number | null): void
   bounds(id: string): PlacementBounds | null
+  /** A soft warm glow round each of these, following its own shape; null for none. */
+  glow(ids: readonly string[] | null): void
   update(now: number): void
   dispose(): void
 }
 
 const PROP_IMAGE_CACHE = new Map<string, string>()
+
+/** How far a glow reaches past the thing it surrounds, in world units. */
+const GLOW_REACH = 0.14
+
+const GLOW_TEXTURES = new WeakMap<THREE.Texture, THREE.CanvasTexture>()
+
+/**
+ * A soft warm halo in the shape of a drawing: its silhouette, blurred, in one colour, on a canvas
+ * padded by the glow's reach. Baked once per texture; null until the drawing has loaded.
+ */
+function haloTexture(texture: THREE.Texture, width: number, height: number): THREE.CanvasTexture | null {
+  const cached = GLOW_TEXTURES.get(texture)
+  if (cached) return cached
+  const image = texture.image as (CanvasImageSource & { width: number; height: number; complete?: boolean }) | undefined
+  if (!image || !image.width || !image.height || image.complete === false) return null
+  const scale = Math.min(1, 256 / Math.max(image.width, image.height))
+  const w = Math.round(image.width * scale)
+  const h = Math.round(image.height * scale)
+  const padX = Math.round((GLOW_REACH / width) * w)
+  const padY = Math.round((GLOW_REACH / height) * h)
+  const canvas = document.createElement('canvas')
+  canvas.width = w + padX * 2
+  canvas.height = h + padY * 2
+  const ink = canvas.getContext('2d')
+  if (!ink) return null
+  // Only the shadow lands on the canvas: the drawing itself is cast far off to one side.
+  const away = canvas.width + w
+  ink.shadowColor = 'rgb(255 214 110)'
+  ink.shadowBlur = Math.max(padX, padY) * 0.9
+  ink.shadowOffsetX = away
+  for (let pass = 0; pass < 3; pass++) ink.drawImage(image, padX - away, padY, w, h)
+  const glow = new THREE.CanvasTexture(canvas)
+  glow.colorSpace = texture.colorSpace
+  GLOW_TEXTURES.set(texture, glow)
+  return glow
+}
 
 /** The exact image the cozy room uses for a prop, as a URL for the tray. */
 export function cozyPropImageUrl(ref: string): string | null {
@@ -1665,6 +1705,39 @@ export function createPlacementLayer<Art>(
   scene.add(helpers)
   let items: { mesh: THREE.Mesh; placement: Placement; height: number; baseY: number; flip: boolean; x: number; cover?: boolean }[] = []
   const working = new Map<string, { kind: WorkKind; t: number }>()
+  let glowing = new Set<string>()
+  const halos = new Map<string, THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>>()
+
+  /** Halos for whatever should glow; they are children of their meshes, so they share every move. */
+  function applyGlow(): void {
+    for (const [id, halo] of halos) {
+      if (glowing.has(id) && items.some((item) => item.mesh === halo.parent)) continue
+      halo.parent?.remove(halo)
+      halo.geometry.dispose()
+      halo.material.dispose()
+      halos.delete(id)
+    }
+    for (const item of items) {
+      const id = item.placement.id
+      if (!glowing.has(id) || halos.has(id) || item.cover) continue
+      const material = item.mesh.material as THREE.MeshBasicMaterial
+      const geometry = item.mesh.geometry
+      if (!material.map || !(geometry instanceof THREE.PlaneGeometry)) continue
+      const { width, height } = geometry.parameters
+      const map = haloTexture(material.map, width, height)
+      if (!map) continue
+      const halo = new THREE.Mesh(
+        new THREE.PlaneGeometry(width + GLOW_REACH * 2, height + GLOW_REACH * 2),
+        new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }),
+      )
+      // Just behind its drawing, so the glow spills out round the edges.
+      halo.position.z = -0.0002
+      halo.renderOrder = -1
+      halo.raycast = () => {}
+      item.mesh.add(halo)
+      halos.set(id, halo)
+    }
+  }
   let shownWidth = roomWidth()
   let current: Placement[] = []
   let hidden = new Set<string>()
@@ -1725,6 +1798,8 @@ export function createPlacementLayer<Art>(
   }
 
   function clear(): void {
+    // The halos go with their meshes' children below.
+    halos.clear()
     for (const { mesh } of items) {
       for (const child of mesh.children as THREE.Mesh[]) {
         child.geometry.dispose()
@@ -1809,6 +1884,7 @@ export function createPlacementLayer<Art>(
         group.add(mesh)
         items.push({ mesh, placement, height: size.height, baseY, flip, x: mesh.position.x })
       }
+      applyGlow()
       drawOutline()
     },
 
@@ -1933,10 +2009,19 @@ export function createPlacementLayer<Art>(
       ;(item.mesh.material as THREE.MeshBasicMaterial).opacity = 1
     },
 
+    glow(ids) {
+      glowing = new Set(ids ?? [])
+      applyGlow()
+      if (glowing.size === 0) {
+        for (const item of items) (item.mesh.material as THREE.MeshBasicMaterial).color.setScalar(1)
+      }
+    },
+
     bounds(id) {
       const item = items.find((entry) => entry.placement.id === id)
       if (!item) return null
-      return { x: item.mesh.position.x, top: item.baseY + item.height, bottom: item.baseY }
+      const plane = item.mesh.geometry instanceof THREE.PlaneGeometry ? item.mesh.geometry.parameters.width : null
+      return { x: item.mesh.position.x, top: item.baseY + item.height, bottom: item.baseY, width: item.cover ? null : plane }
     },
 
     update(now) {
@@ -1967,6 +2052,16 @@ export function createPlacementLayer<Art>(
           item.mesh.position.set(item.x + Math.sin(now / 45) * 0.02 * (1 - job.t * 0.5), item.baseY + (item.height * shrink) / 2, item.mesh.position.z)
           material.opacity = 1 - 0.85 * job.t
         }
+      }
+      if (halos.size < glowing.size) applyGlow()
+      // Glowing things breathe: the halo swells and fades, and the drawing itself warms a little.
+      const breath = 0.5 + 0.5 * Math.sin(now / 420)
+      for (const [id, halo] of halos) {
+        const busy = working.has(id)
+        halo.visible = !busy
+        halo.material.opacity = 0.6 + 0.4 * breath
+        const material = halo.parent instanceof THREE.Mesh ? (halo.parent.material as THREE.MeshBasicMaterial) : null
+        material?.color.setRGB(1 + 0.18 * breath * (busy ? 0 : 1), 1 + 0.14 * breath * (busy ? 0 : 1), 1 + 0.04 * breath * (busy ? 0 : 1))
       }
       for (const [id, startedAt] of bouncing) {
         const item = items.find((entry) => entry.placement.id === id)

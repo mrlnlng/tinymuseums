@@ -79,10 +79,10 @@ function starterPlacements(): Placement[] {
   return [
     { id: 'finish-wallpaper', kind: 'finish', ref: 'wallpaper-plaster', zone: 'wallpaper', x: 0 },
     { id: 'finish-baseboard', kind: 'finish', ref: 'baseboard-short', zone: 'baseboard', x: 0 },
-    { id: 'starter-hooks', kind: 'prop', ref: 'wall-hooks', zone: 'wall', x: 2.35, y: 1.55 },
-    { id: 'starter-cubby', kind: 'prop', ref: 'cubby', zone: 'floor', x: 2.6 },
-    { id: 'starter-bulb', kind: 'prop', ref: 'bare-bulb', zone: 'wall', x: 3.3, y: 2.3 },
-    { id: 'starter-window', kind: 'prop', ref: 'attic-window', zone: 'wall', x: 4.2, y: 2.25 },
+    { id: 'starter-hooks', kind: 'prop', ref: 'wall-hooks', zone: 'wall', x: 3.6, y: 1.55 },
+    { id: 'starter-cubby', kind: 'prop', ref: 'cubby', zone: 'floor', x: 4.6 },
+    { id: 'starter-bulb', kind: 'prop', ref: 'bare-bulb', zone: 'wall', x: 6.2, y: 2.3 },
+    { id: 'starter-window', kind: 'prop', ref: 'attic-window', zone: 'wall', x: 8, y: 2.25 },
     ...CLOSET_MESSES,
   ]
 }

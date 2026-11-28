@@ -12,9 +12,10 @@ export interface RoomSize {
  * full studio. Each step is a `room:<id>` wallet item; the closet's marks a room that started small.
  */
 export const ROOM_SIZES: readonly RoomSize[] = [
-  { id: 'closet', label: 'Closet', width: 6 },
-  { id: 'storeroom', label: 'Storeroom', width: 10 },
-  { id: 'backroom', label: 'Back room', width: 15 },
+  // The closet is as wide as a widescreen view, so even the first room fills the screen edge to edge.
+  { id: 'closet', label: 'Closet', width: 12 },
+  { id: 'storeroom', label: 'Storeroom', width: 15 },
+  { id: 'backroom', label: 'Back room', width: 17.5 },
   { id: 'studio', label: 'Studio', width: 20 },
 ]
 

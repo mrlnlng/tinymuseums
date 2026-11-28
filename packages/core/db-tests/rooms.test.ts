@@ -92,12 +92,12 @@ test('a new room is the closet, refuses things past its wall, and grows when kno
   const actor = { memberId: owner, isOwnerArtist: false }
   const cubby = (x: number) => [...junkOf(room.draft), { id: 'draft-cubby', kind: 'prop', ref: 'cubby', zone: 'floor', x }]
 
-  assert.equal((await roomPageView(room.slug, { memberId: owner }))?.width, 6)
-  assert.deepEqual(await saveDraft(room.slug, cubby(8), actor), { ok: false, reason: 'out_of_bounds', id: 'draft-cubby' })
+  assert.equal((await roomPageView(room.slug, { memberId: owner }))?.width, 12)
+  assert.deepEqual(await saveDraft(room.slug, cubby(14), actor), { ok: false, reason: 'out_of_bounds', id: 'draft-cubby' })
 
   await query(`insert into wallet_items (member_id, item_id, price) values ($1, 'room:storeroom', 120)`, [owner])
-  assert.equal((await roomPageView(room.slug, { memberId: owner }))?.width, 10)
-  assert.equal((await saveDraft(room.slug, cubby(8), actor)).ok, true)
+  assert.equal((await roomPageView(room.slug, { memberId: owner }))?.width, 15)
+  assert.equal((await saveDraft(room.slug, cubby(14), actor)).ok, true)
 })
 
 test('a room from before closets is full size', async () => {

@@ -279,7 +279,7 @@ const DecorDrawer = forwardRef<HTMLElement, DecorDrawerProps>(function DecorDraw
 
       {dirt > 0 ? (
         <p className="decor-hint">
-          Tap junk to clear it and damage to repair it, for stamps. Tap the bare wall or floor to fix all its wear at once.
+          Messes are for the broom: press Done, then tap the broom to tidy them up.
         </p>
       ) : null}
 

@@ -3674,8 +3674,8 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondroom/PondRoom.tsx": {
-    "mtime": 1795851958.3856726,
-    "seen": 1795852081.6756475,
+    "mtime": 1795852433.8884993,
+    "seen": 1795852620.8049493,
     "ast_hash": "6ed84fed9e0e0e2decb7a80c169498ed",
     "semantic_hash": ""
   },
@@ -3776,15 +3776,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/tables.test.ts": {
-    "mtime": 1795763998.125514,
-    "seen": 1795764147.8441052,
-    "ast_hash": "f7a301bc72802985668e8d2e8c2cd880",
+    "mtime": 1795852499.7466283,
+    "seen": 1795852620.804945,
+    "ast_hash": "323dbd223618abe064edf4bc37d37ea1",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/tables.ts": {
-    "mtime": 1795850475.8351114,
-    "seen": 1795851883.387004,
-    "ast_hash": "c37929eca574410fbe4a0677d21692c1",
+    "mtime": 1795852499.7467551,
+    "seen": 1795852620.804946,
+    "ast_hash": "c0d77c41744268e10ce706cd13c82ca8",
     "semantic_hash": ""
   },
   "packages/core/src/domain/pond-boards.ts": {
@@ -3800,9 +3800,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/FishingView.tsx": {
-    "mtime": 1795851920.442075,
-    "seen": 1795852081.675624,
-    "ast_hash": "d17113591a4f0f2ad09141d5c48402bb",
+    "mtime": 1795852499.7469308,
+    "seen": 1795852620.804925,
+    "ast_hash": "825d3596ac6e660865ba11e3e86edc31",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/components/Hud.tsx": {
@@ -7579,24 +7579,6 @@
     "ast_hash": "68b6b56e7b7f02bf0a8438bc18742280",
     "semantic_hash": ""
   },
-  "apps/web/.buy.mjs": {
-    "mtime": 1795843320.6358438,
-    "seen": 1795844676.4020755,
-    "ast_hash": "4ad2f30757500019834337b41a1defd5",
-    "semantic_hash": ""
-  },
-  "apps/web/.room.mjs": {
-    "mtime": 1795849844.1467285,
-    "seen": 1795850323.001515,
-    "ast_hash": "34653bba1820e761c839db5e73cadb85",
-    "semantic_hash": ""
-  },
-  "apps/web/.signin.mjs": {
-    "mtime": 1795843373.2756183,
-    "seen": 1795844676.4020782,
-    "ast_hash": "86455fcb5c7b836c4d996faaf81b5574",
-    "semantic_hash": ""
-  },
   "apps/web/src/shared/lib/own-room.ts": {
     "mtime": 1795843868.2850237,
     "seen": 1795844676.4024997,
@@ -7613,24 +7595,6 @@
     "mtime": 1795850140.01585,
     "seen": 1795850323.001566,
     "ast_hash": "9e4deac5f421c49d55017b6c757c3459",
-    "semantic_hash": ""
-  },
-  "apps/web/.imgs.mjs": {
-    "mtime": 1795850894.2450678,
-    "seen": 1795851883.3867555,
-    "ast_hash": "9c2fd172eabbddda027c473373759d03",
-    "semantic_hash": ""
-  },
-  "apps/web/.pond.mjs": {
-    "mtime": 1795850666.2911496,
-    "seen": 1795851883.3867571,
-    "ast_hash": "8e3d72fc903c7e59228588130467183c",
-    "semantic_hash": ""
-  },
-  "apps/web/.sizes.mjs": {
-    "mtime": 1795851933.566278,
-    "seen": 1795852081.6754105,
-    "ast_hash": "c2d168898c1022a8ec2ed0baa1bf171d",
     "semantic_hash": ""
   },
   "apps/web/src/features/pondgame/lib/net.test.ts": {

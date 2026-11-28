@@ -49,7 +49,7 @@ export default function BaitTray({
   const count = bait.id === 'worm' ? '∞' : String(counts[bait.id] ?? 0)
   return (
     <section className="pond-panel pond-panel-compact" aria-label="Bait and casting">
-      <div className={warning ? 'pond-panel-bar is-warn' : 'pond-panel-bar'} role="status" aria-live="polite">
+      <div className={['pond-panel-bar', warning ? 'is-warn' : '', notice ? '' : 'is-hint'].filter(Boolean).join(' ')} role="status" aria-live="polite">
         <span className="pond-panel-instruction">{notice ? <>{notice.message}{notice.note ? ` ${notice.note}` : ''}</> : hint}</span>
       </div>
       <div className="pond-panel-body">

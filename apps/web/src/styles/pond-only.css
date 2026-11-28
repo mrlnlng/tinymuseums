@@ -21,9 +21,8 @@
 .pond-world {
   --pond-a: var(--pond-aspect, 1.480475);
   /* The cast controls may cover the grass, never the bank: the bucket's foot is 80% down the frame. */
-  --pond-controls: 140px;
-  /* ...but never so narrow that the left-hand painting (0.6 of the scene's width) stops short of the screen's edge. */
-  --pond-frame-w: max(min(100cqw, 100cqh * 1.2 * var(--pond-a), (100cqh - var(--pond-controls)) / 0.8 * 1.2 * var(--pond-a)), 100cqw * 0.75);
+  --pond-controls: 124px;
+  --pond-frame-w: min(100cqw, 100cqh * 1.2 * var(--pond-a), (100cqh - var(--pond-controls)) / 0.8 * 1.2 * var(--pond-a));
   --pond-frame-h: calc(var(--pond-frame-w) / (1.2 * var(--pond-a)));
   --pond-frame-top: min((100cqh - var(--pond-frame-h)) * 0.5, 100cqh - var(--pond-controls) - var(--pond-frame-h) * 0.8);
   position: absolute;
@@ -40,6 +39,12 @@
  * which is the only thing that folds Safari's top bar. The fishing layer is pinned to the
  * screen meanwhile, so it grows into the space the bar gives back.
  */
+/* A short screen (a phone with its browser bars showing) keeps the cast controls compact: the hint line goes. */
+@media (max-height: 360px) {
+  .pond-fishing .pond-world { --pond-controls: 92px; }
+  .pond-fishing .pond-panel-bar.is-hint { display: none; }
+}
+
 html.pond-fold-bar body { min-height: calc(100lvh + 4px); }
 html.pond-fold-bar .screen { overflow: visible; overscroll-behavior: auto; }
 html.pond-fold-bar .pond-room-fishing { position: fixed; inset: 0; }
@@ -108,7 +113,7 @@ html.pond-fold-bar .pond-room-fishing { position: fixed; inset: 0; }
   position: absolute;
   top: calc(100% - 5vh);
   right: 0;
-  left: -61%;
+  left: -185%;
   height: 65vh;
   background: linear-gradient(180deg, transparent, #6c972f 5vh);
   content: '';

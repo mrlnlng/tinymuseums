@@ -94,6 +94,15 @@ const LEFT_STYLE: CSSProperties = {
   right: `${(1 - layout.left.overlap) * 100}%`,
   width: `${layout.left.w * 100}%`,
 }
+/**
+ * More of the left-hand garden beyond it, for screens wider than the painting reaches: copies
+ * alternate mirrored and plain, so each seam meets the same edge of the painting.
+ */
+const FAR_LEFT_STYLES: readonly CSSProperties[] = [1, 2].map((n) => ({
+  right: `${(1 - (n + 1) * layout.left.overlap + n * layout.left.w) * 100}%`,
+  width: `${layout.left.w * 100}%`,
+  transform: n % 2 === 1 ? 'scaleX(-1)' : undefined,
+}))
 
 /** Where the catch bucket stands on the bank: its foot, and its height, as fractions of the world. */
 const BUCKET = { x: 0.9, bottom: 0.865, height: 0.2 }
@@ -433,6 +442,9 @@ export default function Water({
 
   return (
     <div className={reduced ? 'pond-world is-still' : 'pond-world'} style={{ '--pond-aspect': STAGE.width / STAGE.height } as CSSProperties} aria-hidden="true">
+      {FAR_LEFT_STYLES.map((style, i) => (
+        <img key={i} className="pond-scene pond-scene-left" src={sceneLeft} alt="" style={style} draggable={false} />
+      ))}
       <img className="pond-scene pond-scene-left" src={sceneLeft} alt="" style={LEFT_STYLE} draggable={false} />
       <img className="pond-scene" src={scene} alt="" draggable={false} />
       <img className="pond-bridge" src={assetUrl('pond/bridge', { density: maxDensity() })} alt="" style={box(layout.bridge)} draggable={false} />

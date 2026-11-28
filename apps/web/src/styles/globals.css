@@ -2210,8 +2210,17 @@ body.walkthrough-open .chat-dock {
   color: var(--script);
 }
 
+/* Names match the tag over each visitor's head. */
 .chat-who {
-  font-weight: 700;
+  font-family: var(--font-ui);
+}
+
+.chat-offline {
+  margin: 0 0 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink);
 }
 
 .chat-empty {
@@ -2292,7 +2301,7 @@ body.walkthrough-open .chat-dock {
 .chat-mute-all {
   min-height: 36px;
   padding: 0 10px;
-  font-family: var(--font-body);
+  font-family: var(--font-button);
   font-size: 12px;
   color: var(--script);
   background: none;

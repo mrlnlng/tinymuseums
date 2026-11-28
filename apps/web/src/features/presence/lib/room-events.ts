@@ -72,6 +72,9 @@ function sessionStorage(): { getItem(key: string): string | null; setItem(key: s
   }
 }
 
+/** Whether a museum room is on screen, connected or not: the chat button stays reachable. */
+export const hasRoom = () => room !== null
+
 /** The room whose short history the panel should show, and its saved lines for this tab. */
 export function setRoom(next: string | null): void {
   if (next === room) return

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReducedMotion } from 'motion/react'
 import { refreshWalletNow, useWallet } from '@/features/economy'
 import { useSound } from '@/features/sound/components/SoundProvider'
@@ -52,6 +53,7 @@ import {
   type LostReason,
 } from '../lib/machine.ts'
 import { NET_COOLDOWN_MS } from '../lib/net.ts'
+import { useFishingFullscreen } from '../lib/fullscreen.ts'
 import { landedRetryDelay, reportDelay } from '../lib/reel-report.ts'
 import { missWagerLabel } from '../lib/risk.ts'
 import { CAST_SFX, createPondSfx, lossSfx } from '../lib/sfx.ts'
@@ -147,6 +149,7 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [reveal, setReveal] = useState<CatchView | null>(null)
+  const { swipe } = useFishingFullscreen()
   useEffect(() => {
     if (reveal) reportQuestEvent('finish-minigame')
   }, [reveal])
@@ -1112,6 +1115,16 @@ export default function FishingView({ onClose, onCatch, spotUnavailable = false 
         onToggleEasyReel={toggleEasyReel}
         onClose={onClose}
       />
+
+      {swipe ? createPortal(
+        // On an iPhone a swipe here scrolls the page, which folds Safari's top bar away.
+        <div className="pond-fold-swipe" aria-hidden="true">
+          <svg viewBox="0 0 48 72">
+            <path d="M24 60V14M10 28l14-14 14 14" />
+          </svg>
+        </div>,
+        document.body,
+      ) : null}
 
       {/* The pond is a wide painting; held upright, a phone is asked to turn rather than shown a cramped scene. */}
       <div className="pond-turn" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>

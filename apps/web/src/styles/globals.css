@@ -78,8 +78,11 @@ body { display: flow-root; }
   .screen .coin-found-stage { left: calc((100% - var(--stage-col, 100%)) / 2); width: var(--stage-col, 100%); }
 }
 
-@media (max-width: 460px), (pointer: coarse) and (max-width: 900px) {
-  .screen {
+/* Phones fill the screen edge to edge, held upright or sideways (a sideways phone is short, not narrow). */
+@media (max-width: 460px), (pointer: coarse) and (max-width: 900px), (pointer: coarse) and (max-height: 500px) {
+  /* :has() matches the wide-screen rule's weight, so a big phone held sideways is not framed like a desktop. */
+  .screen,
+  .screen:has(> :is(.museum, .hall-skeleton, .landing)) {
     width: 100dvw;
     height: 100dvh;
     margin: 0;

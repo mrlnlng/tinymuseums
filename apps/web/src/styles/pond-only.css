@@ -22,7 +22,8 @@
   --pond-a: var(--pond-aspect, 1.480475);
   /* The cast controls may cover the grass, never the bank: the bucket's foot is 80% down the frame. */
   --pond-controls: 140px;
-  --pond-frame-w: min(100cqw, 100cqh * 1.2 * var(--pond-a), (100cqh - var(--pond-controls)) / 0.8 * 1.2 * var(--pond-a));
+  /* ...but never so narrow that the left-hand painting (0.6 of the scene's width) stops short of the screen's edge. */
+  --pond-frame-w: max(min(100cqw, 100cqh * 1.2 * var(--pond-a), (100cqh - var(--pond-controls)) / 0.8 * 1.2 * var(--pond-a)), 100cqw * 0.75);
   --pond-frame-h: calc(var(--pond-frame-w) / (1.2 * var(--pond-a)));
   --pond-frame-top: min((100cqh - var(--pond-frame-h)) * 0.5, 100cqh - var(--pond-controls) - var(--pond-frame-h) * 0.8);
   position: absolute;
@@ -33,6 +34,48 @@
   aspect-ratio: var(--pond-a);
   pointer-events: none;
 }
+
+/*
+ * iPhone, fishing: the page is a touch taller than the screen so a finger swipe can scroll it,
+ * which is the only thing that folds Safari's top bar. The fishing layer is pinned to the
+ * screen meanwhile, so it grows into the space the bar gives back.
+ */
+html.pond-fold-bar body { min-height: calc(100lvh + 4px); }
+html.pond-fold-bar .screen { overflow: visible; overscroll-behavior: auto; }
+html.pond-fold-bar .pond-room-fishing { position: fixed; inset: 0; }
+
+/* The swipe strip sits outside the game (a swipe here never casts) over the top middle of the scene. */
+.pond-fold-swipe {
+  position: fixed;
+  top: 0;
+  right: 30%;
+  left: 30%;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 55%;
+  touch-action: pan-y;
+}
+.pond-fold-swipe svg {
+  width: 40px;
+  height: 60px;
+  fill: none;
+  stroke: #fff3d9;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 3px rgb(40 30 20 / 45%));
+  animation: pond-fold-swipe 1.6s ease-in-out infinite;
+}
+@keyframes pond-fold-swipe {
+  0% { opacity: 0; transform: translateY(24px); }
+  30% { opacity: 1; }
+  80% { opacity: 1; transform: translateY(-18px); }
+  100% { opacity: 0; transform: translateY(-24px); }
+}
+@media (prefers-reduced-motion: reduce) { .pond-fold-swipe svg { animation: none; } }
+@media (max-aspect-ratio: 1 / 1) { .pond-fold-swipe { display: none; } }
 
 /* Upright screens are asked to turn: the card covers the scene and controls, under the top buttons. */
 .pond-turn { display: none; }

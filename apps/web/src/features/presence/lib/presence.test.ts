@@ -124,7 +124,7 @@ class Clock {
 }
 
 function visitor(rooms: MemoryRooms, clock: Clock, pid: string, extra: Partial<Parameters<typeof createPresence>[0]> = {}) {
-  const self: Self = { x: 0, vx: 0, facing: 1, look, sit: false, helm: false, cup: false }
+  const self: Self = { x: 0, vx: 0, facing: 1, look, top: null, sit: false, helm: false, cup: false }
   let away = false
   let tickets = 0
   const said: string[] = []

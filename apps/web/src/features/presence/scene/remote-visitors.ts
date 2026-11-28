@@ -47,6 +47,7 @@ interface Shown {
   rig: Rig | null
   costume: string | null
   bow: string | null
+  top: string | null
   motion: RigState
   tag: HTMLDivElement
   /** Tapping them opens their player card. */
@@ -195,7 +196,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
     void loadRig(null, kind, ensureLayer()).then(
       (rig) => {
         if (disposed || shown.get(entry.pid) !== entry || entry.kind !== kind) return rig.dispose()
-        rig.setCostume(entry.costume, entry.bow)
+        rig.setCostume(entry.costume, entry.bow, entry.top)
         entry.rig = rig
       },
       (error) => {
@@ -268,7 +269,7 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           host.appendChild(hit)
           entry = {
             pid: visitor.pid, kind: visitor.look.kind, rig: null,
-            costume: visitor.look.costume, bow: visitor.look.bow,
+            costume: visitor.look.costume, bow: visitor.look.bow, top: visitor.top,
             motion: createRigState(visitor.facing > 0 ? 'right' : 'left'), tag, hit, bubble: bubbleFor(host), bubbleAt: -Infinity, bubbleWidth: 0,
             perch: sprite('visitor-perch'), helm: sprite('hall-carried'), cup: sprite('hall-carried'),
           }
@@ -279,10 +280,11 @@ export function createRemoteVisitors(host: HTMLElement): RemoteVisitors {
           entry.kind = visitor.look.kind
           load(entry)
         }
-        if (visitor.look.costume !== entry.costume || visitor.look.bow !== entry.bow) {
+        if (visitor.look.costume !== entry.costume || visitor.look.bow !== entry.bow || visitor.top !== entry.top) {
           entry.costume = visitor.look.costume
           entry.bow = visitor.look.bow
-          entry.rig?.setCostume(entry.costume, entry.bow)
+          entry.top = visitor.top
+          entry.rig?.setCostume(entry.costume, entry.bow, entry.top)
         }
 
         const repeat = (names.get(visitor.name) ?? 0) + 1

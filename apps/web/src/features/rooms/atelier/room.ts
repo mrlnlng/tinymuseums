@@ -1,3 +1,4 @@
+import type { Layers } from '@/features/hall/scene/layers'
 import * as THREE from 'three'
 import { outfit, restamp } from '@tiny/core/slots'
 import { earn, getWalletSnapshot, subscribeWallet } from '@/features/economy/store'
@@ -29,7 +30,7 @@ export interface AtelierHooks {
   onChange: { current: ((change: 'costume_on' | 'costume_off' | 'character') => void) | null }
   become: { current: ((kind: CharacterKind) => void) | null }
   /** Puts on what was chosen in the closet. */
-  dress: { current: ((costume: string | null, bow: string | null) => void) | null }
+  dress: { current: ((layers: Layers, bow: string | null) => void) | null }
   /** Opens or shuts the wardrobe's doors with the closet. */
   wardrobeDoors: { current: ((open: boolean) => void) | null }
 }
@@ -102,7 +103,7 @@ export function createAtelierRoomDef(spots: Readonly<Record<string, SpotPainting
         hooks.onCloset()
       }
       hooks.become.current = (kind) => closet.tapDisplay(kind)
-      hooks.dress.current = (costume, bow) => closet.dress(costume, bow)
+      hooks.dress.current = (layers, bow) => closet.dress(layers, bow)
       hooks.wardrobeDoors.current = (open) => room.setWardrobeOpen(open)
       const reflection = createLiveReflection(ctx.characterHost, ctx.character)
       const corner = new THREE.Vector3()

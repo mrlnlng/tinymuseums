@@ -79,7 +79,7 @@ export function joinRoom({ room, host, character, traversal, pose = () => STANDI
   const presence = createPresence({
     room,
     seed,
-    self: () => ({ x: traversal.x, vx: traversal.walkVelocity, facing, look: character.look, ...pose() }),
+    self: () => ({ x: traversal.x, vx: traversal.walkVelocity, facing, look: character.look, top: character.look.top, ...pose() }),
     walkAlone: () => prefs.snapshot().walkAlone.v,
     visible: () => document.visibilityState === 'visible',
     active: turn.active,

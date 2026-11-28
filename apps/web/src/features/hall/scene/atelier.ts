@@ -63,9 +63,6 @@ export interface ClothingItem {
 type Cardigan = (typeof CARDIGANS)[number]
 const CARDIGAN_NAMES: Record<Cardigan, string> = {
   'cardigan-red': 'red',
-  'cardigan-forest-green': 'forest green',
-  'cardigan-navy-blue': 'navy blue',
-  'cardigan-butter-yellow': 'butter yellow',
 }
 const isCardigan = (id: string | null): id is Cardigan => (CARDIGANS as readonly (string | null)[]).includes(id)
 export const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunny', cat: 'Jiji', otter: 'the otter', bruce: 'Bruce' }
@@ -73,7 +70,6 @@ export const CHARACTER_NAMES: Record<CharacterKind, string> = { bunny: 'the bunn
 export function itemName({ slot, id }: ClothingItem): string {
   if (isCardigan(id)) return `The ${CARDIGAN_NAMES[id]} cardigan`
   if (id === 'blue-floral') return 'The blue floral dress'
-  if (id === 'floral-cardigan') return 'The floral dress and cardigan'
   if (id === 'flower-crown') return 'The flower crown'
   if (id === 'gold-sequin') return 'The gold sequin set'
   if (id === 'gold-cape') return 'The gold sequin set and cape'
@@ -116,7 +112,7 @@ export interface AtelierRoom {
   /** Opens the wardrobe's doors while the closet is up, and shuts them after. */
   setWardrobeOpen(open: boolean): void
   /** What the visitor wears; a worn piece leaves its stand bare. */
-  setWorn(costume: string | null, bow: string | null): void
+  setWorn(costume: string | null, bow: string | null, top?: string | null): void
   /** The member's owned catalog ids, or null while their wallet is still loading. */
   setOwned(items: readonly string[] | null): void
   /** Who the visitor is; the mirror reflects them and lights their gem. */
@@ -310,6 +306,7 @@ export function createAtelierRoom(
   // What the visitor wears, owns and is; each room reads these when it is built.
   let worn: string | null = null
   let wornBow: string | null = null
+  let wornTop: string | null = null
   let reflected = false
   let owned: Set<string> | null = null
   let visitorKind: CharacterKind | null = null
@@ -377,7 +374,7 @@ export function createAtelierRoom(
 
     function refresh(): void {
       for (const piece of pieces) {
-        const wearing = piece.wornBy(worn, wornBow)
+        const wearing = piece.wornBy(worn, wornBow) || (wornTop !== null && piece.wornBy(wornTop, null))
         piece.target = wearing ? 0 : 1
         piece.button.setAttribute('aria-pressed', String(wearing))
         piece.button.setAttribute('aria-label', `${wearing ? 'Return' : 'Try on'} ${itemName(piece.item()).toLowerCase()}`)
@@ -715,9 +712,10 @@ export function createAtelierRoom(
       return false
     },
 
-    setWorn(costume, bowId) {
+    setWorn(costume, bowId, top = null) {
       worn = costume
       wornBow = bowId
+      wornTop = top
       refreshAll()
       // The first reflection is how the room opens, not a change to animate.
       if (!reflected) for (const piece of allPieces()) piece.shown = piece.target

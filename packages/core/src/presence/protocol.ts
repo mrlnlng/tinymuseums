@@ -23,6 +23,11 @@ export interface Motion {
   vx: number
   facing: 1 | -1
   look: Look
+  /**
+   * Worn over the look's costume, such as a cardigan. It sits beside the look rather than in it
+   * so that a room from before clothes stacked still takes the motion and simply drops it.
+   */
+  top?: string | null
   /** Seated on the beanbag; x is then the seat's. */
   sit: boolean
   /** Wearing a helmet from a pedestal, or holding a cup from the café. */
@@ -123,10 +128,13 @@ function parseMotion(m: Record<string, unknown>): Motion | null {
   const helm = flag(m.helm)
   const cup = flag(m.cup)
   if (sit === null || helm === null || cup === null) return null
+  const { top } = m
+  if (top !== undefined && top !== null && !(typeof top === 'string' && CLOTHING_ID.test(top))) return null
+  const worn = top === undefined ? {} : { top: top as string | null }
   const { d } = m
-  if (d === undefined) return { x, vx, facing, look, sit, helm, cup, seq }
+  if (d === undefined) return { x, vx, facing, look, ...worn, sit, helm, cup, seq }
   if (typeof d !== 'number' || !(d >= 0 && d <= 1)) return null
-  return { x, vx, facing, look, sit, helm, cup, d, seq }
+  return { x, vx, facing, look, ...worn, sit, helm, cup, d, seq }
 }
 
 /** Unknown fields are dropped, so whatever a client adds never reaches other visitors. */

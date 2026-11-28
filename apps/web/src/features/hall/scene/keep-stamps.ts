@@ -30,5 +30,7 @@ export function keepStamps(look: Look, wallet: OwnedSnapshot | null): KeepStamp[
   if (!allowedCharacter(wallet, look.kind)) add('character', look.kind)
   if (look.costume !== null && !owns(wallet, itemIdFor('costume', look.costume))) add('costume', look.costume)
   if (look.bow !== null && !owns(wallet, itemIdFor('bow', look.bow))) add('bow', look.bow)
+  // A top is a costume in the catalog, worn over the dress.
+  if (look.top !== null && !owns(wallet, itemIdFor('costume', look.top))) add('costume', look.top)
   return stamps
 }

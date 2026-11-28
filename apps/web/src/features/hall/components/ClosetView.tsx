@@ -9,6 +9,7 @@ import { reportQuestEvent } from '@/features/letters/events'
 import { builtUrl } from '@/shared/lib/assets'
 import { keepName } from '../scene/atelier'
 import { choiceAt, HEADPIECES, OUTFITS, positionOf } from '../scene/closet'
+import { isWorn, layerOf, putOn, settleClash, type Layer, type Layers } from '../scene/layers'
 import { settle } from '../scene/mirror'
 import { pieceUrl } from '../scene/piece-art'
 import type { CharacterKind, Rig } from '../scene/rig'
@@ -27,26 +28,32 @@ const SPACING = 92
 interface Props {
   kind: CharacterKind
   costume: string | null
+  top: string | null
   bow: string | null
   kept: (itemId: string) => boolean
-  onDone: (costume: string | null, bow: string | null) => void
+  onDone: (layers: Layers, bow: string | null) => void
   onClose: () => void
 }
 
 /**
  * The closet: the visitor on a podium under a spotlight, wearing whatever is chosen, over a wheel
- * of every outfit or headpiece. The piece in the middle of the wheel is the one worn; a price
- * shows under it only while it isn't kept.
+ * of every outfit or headpiece. Clothes stack: turning a dress to the middle puts it on in place
+ * of the last, while the cardigan goes on over it only when tapped, so browsing past it changes
+ * nothing. Every worn piece wears a tick; tapping the worn piece in the middle takes it off, and
+ * tapping the empty circle takes everything off. A price shows under the middle piece while unkept.
  */
-export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }: Props) {
+export default function ClosetView({ kind, costume, top, bow, kept, onDone, onClose }: Props) {
   const { play } = useSound()
   const [slot, setSlot] = useState<Slot>('costume')
-  const [position, setPosition] = useState({ costume: positionOf(OUTFITS, costume), bow: positionOf(HEADPIECES, bow) })
+  const [position, setPosition] = useState({ costume: positionOf(OUTFITS, costume ?? top), bow: positionOf(HEADPIECES, bow) })
+  // What is wished on each layer, and which was chosen last; settleClash decides what is worn.
+  const [wish, setWish] = useState<Layers & { last: Layer }>({ costume, top, last: 'top' })
+  const worn = settleClash(wish, wish.last)
   const [loaded, setLoaded] = useState(false)
   const stage = useRef<HTMLDivElement>(null)
   const rigRef = useRef<Rig | null>(null)
   const done = useRef<HTMLButtonElement>(null)
-  const draft = { costume: choiceAt(OUTFITS, position.costume), bow: choiceAt(HEADPIECES, position.bow) }
+  const draft = { costume: worn.costume, top: worn.top, bow: choiceAt(HEADPIECES, position.bow) }
 
   // The visitor, alive on the podium: one rig, redressed as the wheel turns.
   useEffect(() => {
@@ -62,7 +69,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
     void import('../scene/rig').then(({ loadRig }) => loadRig(canvas, kind)).then((rig) => {
       if (disposed) { rig.dispose(); return }
       rigRef.current = rig
-      rig.setCostume(draft.costume, draft.bow)
+      rig.setCostume(draft.costume, draft.bow, draft.top)
       setLoaded(true)
       const motion = createRigState()
       let previous = performance.now()
@@ -94,20 +101,47 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind])
 
-  useEffect(() => { rigRef.current?.setCostume(draft.costume, draft.bow) }, [draft.costume, draft.bow])
+  useEffect(() => { rigRef.current?.setCostume(draft.costume, draft.bow, draft.top) }, [draft.costume, draft.bow, draft.top])
   useEffect(() => { done.current?.focus({ preventScroll: true }) }, [])
 
-  const turn = (by: number) => {
+  // Landing on a dress (or the empty circle) sets the dress layer. A top goes on only when tapped.
+  function wearAt(at: number, tapped: boolean): void {
+    const id = choiceAt(OUTFITS, at)
+    if (id !== null && layerOf(id) === 'top') {
+      if (tapped) setWish((w) => ({ ...w, top: id, last: 'top' }))
+      return
+    }
+    setWish((w) => ({ ...w, costume: id, last: 'costume' }))
+  }
+
+  const turn = (by: number, tapped = false) => {
     play('select')
+    if (slot === 'costume') wearAt(position.costume + by, tapped)
     setPosition((p) => ({ ...p, [slot]: p[slot] + by }))
   }
 
-  function shuffle(): void {
-    const pick = (list: readonly (string | null)[]) => Math.floor(Math.random() * list.length)
+  // The middle piece tapped: a worn one comes off, an unworn top goes on, the empty circle clears all.
+  function tapMiddle(): void {
+    if (slot !== 'costume') return
+    const id = choiceAt(OUTFITS, position.costume)
     play('select')
+    if (id === null) { setWish({ costume: null, top: null, last: 'costume' }); return }
+    const place = layerOf(id)
+    setWish((w) => (isWorn(worn, id) ? { ...w, [place]: null } : { ...w, [place]: id, last: place }))
+  }
+
+  function shuffle(): void {
+    const pick = (list: readonly (string | null)[]) => list[Math.floor(Math.random() * list.length)]
+    const dresses = OUTFITS.filter((id): id is string => id !== null && layerOf(id) === 'costume')
+    const tops = OUTFITS.filter((id): id is string => id !== null && layerOf(id) === 'top')
+    play('select')
+    // A dress, and half the time a top over it.
+    const dress = pick(dresses)!
+    const next = Math.random() < 0.5 && tops.length > 0 ? putOn(putOn({ costume: null, top: null }, dress), pick(tops)!) : putOn({ costume: null, top: null }, dress)
+    setWish({ ...next, last: next.top === null ? 'costume' : 'top' })
     setPosition((p) => ({
-      costume: p.costume + 1 + pick(OUTFITS.slice(1)),
-      bow: p.bow + 1 + pick(HEADPIECES.slice(1)),
+      costume: p.costume - (((p.costume % OUTFITS.length) + OUTFITS.length) % OUTFITS.length) + OUTFITS.indexOf(next.costume) + OUTFITS.length,
+      bow: p.bow + 1 + Math.floor(Math.random() * (HEADPIECES.length - 1)),
     }))
   }
 
@@ -128,7 +162,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
     else trapTab(event)
   }
 
-  const chosen = draft[slot]
+  const chosen = slot === 'costume' ? choiceAt(OUTFITS, position.costume) : draft.bow
   const chosenId = chosen === null ? null : itemIdFor(slot, chosen)
   const price = chosenId === null || kept(chosenId) ? null : priceOf(chosenId)
 
@@ -148,7 +182,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
       <div className={`closet-stage${loaded ? '' : ' is-loading'}`} ref={stage}>
         <img className="closet-spotlight" src={SPOTLIGHT_SRC} alt="" draggable={false} />
         <img className="closet-podium" src={PODIUM_SRC} alt="" draggable={false} />
-        <span className="closet-pop" key={`${draft.costume}|${draft.bow}`} aria-hidden="true" />
+        <span className="closet-pop" key={`${draft.costume}|${draft.top}|${draft.bow}`} aria-hidden="true" />
       </div>
 
       <div className="closet-tabs" role="tablist" aria-label="What to change">
@@ -174,7 +208,15 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
         ))}
       </div>
 
-      <Wheel key={slot} slot={slot} position={position[slot]} kept={kept} onTurn={turn} />
+      <Wheel
+        key={slot}
+        slot={slot}
+        position={position[slot]}
+        kept={kept}
+        worn={(id) => (slot === 'costume' ? isWorn(worn, id) : id !== null && id === draft.bow)}
+        onTurn={turn}
+        onTapMiddle={tapMiddle}
+      />
 
       <div className="closet-price" aria-hidden="true">
         {price !== null ? (
@@ -194,7 +236,7 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
             <circle cx="8.5" cy="15.5" r="1.3" className="pip" />
           </svg>
         </button>
-        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => { play('close'); reportQuestEvent('change-outfit'); onDone(draft.costume, draft.bow) }}>
+        <button type="button" className="closet-done" ref={done} aria-label="Wear this" onClick={() => { play('close'); reportQuestEvent('change-outfit'); onDone(worn, draft.bow) }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
         </button>
       </div>
@@ -202,8 +244,21 @@ export default function ClosetView({ kind, costume, bow, kept, onDone, onClose }
   )
 }
 
-/** A curved wheel of choices; the middle one is worn. Swipe it, or tap a choice beside the middle to turn to it. */
-function Wheel({ slot, position, kept, onTurn }: { slot: Slot; position: number; kept: (itemId: string) => boolean; onTurn: (by: number) => void }) {
+interface WheelProps {
+  slot: Slot
+  position: number
+  kept: (itemId: string) => boolean
+  worn: (id: string | null) => boolean
+  /** `tapped` when a bubble beside the middle was tapped, which also puts a top on. */
+  onTurn: (by: number, tapped?: boolean) => void
+  onTapMiddle: () => void
+}
+
+/**
+ * A curved wheel of choices. Swipe it, or tap a choice beside the middle to turn to it; tap the
+ * middle one to take it off. Every piece being worn carries a tick.
+ */
+function Wheel({ slot, position, kept, worn, onTurn, onTapMiddle }: WheelProps) {
   const [drag, setDrag] = useState(0)
   const pointer = useRef<{ id: number; x: number; t: number; moved: boolean } | null>(null)
   const swiped = useRef(false)
@@ -258,16 +313,18 @@ function Wheel({ slot, position, kept, onTurn }: { slot: Slot; position: number;
         const t = offset + shift
         const angle = t * 0.5
         const here = offset === 0
-        const name = id === null ? `No ${PLACE[slot]}` : keepName({ slot, id })
+        const wearing = worn(id)
+        const name = id === null ? `No ${PLACE[slot]}` : `${keepName({ slot, id })}${wearing ? ', wearing' : ''}`
         return (
           <button
             key={at}
             type="button"
             role="option"
             aria-selected={here}
+            aria-pressed={wearing}
             tabIndex={here ? 0 : -1}
             aria-label={name}
-            className={`closet-bubble${here ? ' is-here' : ''}`}
+            className={`closet-bubble${here ? ' is-here' : ''}${wearing ? ' is-worn' : ''}`}
             style={{
               transform: `translate(-50%, -50%) translate(${(Math.sin(angle) * SPACING * 2).toFixed(1)}px, ${((1 - Math.cos(angle)) * 70).toFixed(1)}px) scale(${Math.max(0.45, 1 - Math.abs(t) * 0.24).toFixed(3)})`,
               opacity: Math.max(0, 1 - Math.max(0, Math.abs(t) - 1.4) * 0.6),
@@ -275,11 +332,17 @@ function Wheel({ slot, position, kept, onTurn }: { slot: Slot; position: number;
             }}
             onClick={() => {
               if (swiped.current) { swiped.current = false; return }
-              if (!here) onTurn(offset)
+              if (!here) onTurn(offset, true)
+              else onTapMiddle()
             }}
           >
             {picture ? <img src={picture} alt="" draggable={false} /> : <span className="closet-none" />}
             {owned ? <span className="closet-seal" /> : null}
+            {wearing ? (
+              <span className="closet-worn" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5.5 12.5l4 4L18.5 7.5" /></svg>
+              </span>
+            ) : null}
           </button>
         )
       })}

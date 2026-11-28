@@ -2,7 +2,7 @@ import { CARDIGANS, HIBISCUS } from './wardrobe.ts'
 
 /** What the closet offers to flip through, in order; null is wearing nothing in that place. */
 export const OUTFITS: readonly (string | null)[] = [
-  null, 'kiki', ...CARDIGANS, 'blue-floral', 'floral-cardigan', 'gold-sequin', 'gold-cape', 'tutu',
+  null, 'kiki', ...CARDIGANS, 'blue-floral', 'gold-sequin', 'gold-cape', 'tutu',
 ]
 export const HEADPIECES: readonly (string | null)[] = [
   null, 'kiki', 'flower-crown', ...HIBISCUS, 'blue-cap', 'daisy-clip',

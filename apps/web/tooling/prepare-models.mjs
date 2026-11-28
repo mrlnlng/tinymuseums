@@ -207,122 +207,31 @@ let bruce = graftCostume(await master('bruce-rig.glb'), bunnyKiki, {
     bow: { dx: -16, dy: -19, scale: 0.75, rotate: -5, pivot: [636, 659] },
   },
 })
-// Each sleeve hangs from the same bone as its arm, so it is laid along that arm at rest: turned
-// about its shoulder end to the arm's angle, sized to cover the upper part of the arm so the paw
-// shows past the cuff, and its shoulder end moved onto the arm's. Ends are the shoulder and far
-// ends of each layer's opaque pixels along their main axis, in canvas px.
-const CARDIGAN_SLEEVES = { sleeve_L: [[682, 1455], [367, 1630]], sleeve_R: [[1157, 1206], [1416, 1467]] }
-function alongArm([s0, s1], [a0, a1], cover = 0.63) {
-  const angle = ([x0, y0], [x1, y1]) => Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI
-  const length = ([x0, y0], [x1, y1]) => Math.hypot(x1 - x0, y1 - y0)
-  return {
-    pivot: s0, rotate: angle(a0, a1) - angle(s0, s1), scale: cover * length(a0, a1) / length(s0, s1),
-    dx: a0[0] - s0[0], dy: a0[1] - s0[1],
-  }
-}
-const sleevesOn = (arms) => ({
-  sleeve_L: alongArm(CARDIGAN_SLEEVES.sleeve_L, arms.L),
-  sleeve_R: alongArm(CARDIGAN_SLEEVES.sleeve_R, arms.R),
+// The red cardigan handoff (2026-11-27, cardigan_costume/HANDOFF.md) drew one cardigan on the basic
+// otter and fitted it to each character by a uniform scale: a body wrap on the chest and a puff on
+// each arm bone, already in place on that character's canvas. Its id stays `cardigan-red`, which
+// players already own. The bunny's runtime chest bow goes under the collar, as in the mocks.
+const CARDIGAN = { costume: 'cardigan-red' }
+bunny = graftCostume(bunny, await master('bunny-rig-v2-cardigan.glb'), {
+  relabel: (extras) => ({ ...extras, ...CARDIGAN, hides: 'bowtie' }),
 })
-// Each body's arms, shoulder → paw (L is the near arm, R the far one).
-const ARMS = {
-  bunny: { L: [[637, 1414], [412, 1763]], R: [[1111, 1236], [1471, 1488]] },
-  cat: { L: [[626, 1425], [438, 1746]], R: [[1107, 1243], [1468, 1480]] },
-  otter: { L: [[617, 1419], [424, 1765]], R: [[1114, 1231], [1471, 1501]] },
-  bruce: { L: [[582, 1395], [452, 1744]], R: [[1161, 1306], [1406, 1578]] },
-}
-const clamp01 = (value) => Math.max(0, Math.min(1, value))
-const BRUCE_SLEEVES = (() => {
-  const { sleeve_L, sleeve_R } = sleevesOn(ARMS.bruce)
-  return { sleeve_L, sleeve_R: { ...sleeve_R, dx: sleeve_R.dx + 40, dy: sleeve_R.dy + 60 } }
-})()
-// The cardigan's flared near hem draws in to the torso.
-const BUNNY_CARDIGAN_FIT = {
-  ...sleevesOn(ARMS.bunny),
-  body: { warp: (x, y) => [x + 70 * clamp01((600 - x) / 200) * clamp01((y - 1550) / 250), y] },
-}
-const CAT_CARDIGAN_FIT = { ...BUNNY_CARDIGAN_FIT, ...sleevesOn(ARMS.cat) }
-// The cardigan's body draws under the near arm (the bunny's) and the head, so the sleeve, the arm
-// and its paw read as one, and the collar tucks under the chin.
-const BUNNY_CARDIGAN_ORDER = { body: 3.1 }
-const CAT_CARDIGAN_ORDER = { body: 3.5 }
-for (const colour of ['red', 'forest-green', 'navy-blue', 'butter-yellow']) {
-  const cardigan = await master(`bunny-rig-v2-cardigan-${colour}.glb`)
-  const costume = `cardigan-${colour}`
-  bunny = graftCostume(bunny, cardigan, {
-    relabel: (extras) => ({ ...extras, costume, hides: 'bowtie', draw_order: BUNNY_CARDIGAN_ORDER[extras.part] ?? extras.draw_order }),
-    fit: BUNNY_CARDIGAN_FIT,
-  })
-  cat = graftCostume(cat, cardigan, {
-    relabel: (extras) => ({ ...extras, costume, hides: 'cat_ribbon', draw_order: CAT_CARDIGAN_ORDER[extras.part] ?? extras.draw_order }),
-    fit: CAT_CARDIGAN_FIT,
-  })
-  otter = graftCostume(otter, cardigan, {
-    // The body draws under the near arm (3.2), so that arm comes out of its sleeve over the jacket.
-    relabel: (extras) => ({ ...extras, costume, draw_order: { body: 3.1, sleeve_R: 7.6, sleeve_L: 7.7 }[extras.part] }),
-    fit: {
-      body: { scaleX: 0.94, scaleY: 1.14, pivot: [930, 1400], dx: -10, dy: 35 },
-      ...sleevesOn(ARMS.otter),
-    },
-  })
-  bruce = graftCostume(bruce, cardigan, {
-    // The body draws under the near arm (3.2), so that arm comes out of its sleeve over the jacket.
-    relabel: (extras) => ({ ...extras, costume, hides: '', draw_order: { body: 3.1, sleeve_L: 3.8, sleeve_R: 4.5 }[extras.part] }),
-    // Bruce's far sleeve puffs above its axis, so it moves down onto the middle of the arm.
-    fit: { body: BRUCE_FIT, ...BRUCE_SLEEVES },
-  })
-}
+cat = graftCostume(cat, await master('cat-rig-cardigan.glb'), {
+  relabel: (extras) => ({ ...extras, ...CARDIGAN, hides: '' }),
+})
+otter = graftCostume(otter, await master('otter-rig-cardigan.glb'), {
+  relabel: (extras) => ({ ...extras, ...CARDIGAN, hides: '' }),
+})
+bruce = graftCostume(bruce, await master('bruce-rig-cardigan.glb'), {
+  relabel: (extras) => ({ ...extras, ...CARDIGAN, hides: '' }),
+})
 
 // How each body wears the flat artist layers, which are drawn on the bunny's 1668 × 2388 canvas:
 // what they hide, where they sit in the draw order, and where they go if not as drawn.
 const BODIES = {
-  bunny: { hides: 'bowtie', order: 9, cardigan: [13, 14, 15], cape: 16 },
-  cat: { hides: 'cat_ribbon', order: 5, cardigan: [5.1, 5.2, 5.3], cape: 5.4 },
-  otter: { hides: '', order: 7.5, cardigan: [7.6, 7.65, 7.7], cape: 7.75 },
-  bruce: { hides: '', order: 3.6, cardigan: [4.3, 4.4, 4.5], cape: 4.6, place: BRUCE_PLACE },
-}
-// The red cardigan is drawn upright on its form. Its collar tie goes to each body's neck, and
-// it is widened, shortened and turned to the torso's lean.
-const CARDIGAN_TIE = [834, 600]
-const FLORAL_CARDIGAN = {
-  bunny: { pivot: CARDIGAN_TIE, at: [930, 1340], scaleX: 1.25, scaleY: 0.65, rotate: -16 },
-  cat: { pivot: CARDIGAN_TIE, at: [930, 1340], scaleX: 1.25, scaleY: 0.65, rotate: -16 },
-  otter: { pivot: CARDIGAN_TIE, at: [930, 1340], scaleX: 1.25, scaleY: 0.65, rotate: -16 },
-  bruce: { pivot: CARDIGAN_TIE, at: [930, 1400], scaleX: 1.6, scaleY: 0.65, rotate: -8 },
-}
-// Sleeves then turn about a canvas point (degrees clockwise), move and scale, in order, to lie
-// along each arm. The last step lays the sleeve as placed above, its ends measured, onto the arm.
-const armTurn = (sleeve, arm, cover) => { const { rotate, pivot, dx, dy, scale } = alongArm(sleeve, arm, cover); return [rotate, ...pivot, dx, dy, scale] }
-const FLORAL_SLEEVES = {
-  bunny: {
-    // Its cuff stays on the arm while its top reaches in under the front panel, with no gap.
-    sleeve_L: [[0, 0, 0, -20, 0], armTurn([[773, 1352], [552, 1620]], [[747, 1394], [495, 1634]], 1)],
-    sleeve_R: [[-10, 1103, 1329, 10, 40], armTurn([[1097, 1273], [1420, 1399]], ARMS.bunny.R)],
-  },
-  cat: {
-    sleeve_L: [armTurn([[793, 1352], [572, 1620]], [[736, 1405], [508, 1627]], 1)],
-    sleeve_R: [armTurn([[1104, 1231], [1401, 1412]], ARMS.cat.R)],
-  },
-  otter: {
-    sleeve_L: [armTurn([[793, 1352], [572, 1620]], [[727, 1400], [495, 1637]], 1)],
-    sleeve_R: [armTurn([[1104, 1231], [1401, 1412]], ARMS.otter.R)],
-  },
-  bruce: {
-    sleeve_L: [armTurn([[774, 1290], [734, 1680]], [[800, 1395], [520, 1640]], 1)],
-    sleeve_R: [armTurn([[1177, 1231], [1324, 1591]], [[1201, 1366], [1446, 1638]])],
-  },
-}
-// Turn a place by `deg` about canvas point [cx, cy], scaling by k about it, then move it: places
-// map pivot → at, then scale and turn.
-function turned(place, [deg, cx, cy, dx = 0, dy = 0, k = 1]) {
-  const c = Math.cos(deg * Math.PI / 180)
-  const s = Math.sin(deg * Math.PI / 180)
-  const [x, y] = [place.at[0] - cx, place.at[1] - cy]
-  const { scale = 1, scaleX = scale, scaleY = scale } = place
-  return {
-    ...place, at: [cx + k * (c * x - s * y) + dx, cy + k * (s * x + c * y) + dy],
-    rotate: (place.rotate ?? 0) + deg, scaleX: scaleX * k, scaleY: scaleY * k,
-  }
+  bunny: { hides: 'bowtie', order: 9, cape: 16 },
+  cat: { hides: 'cat_ribbon', order: 5, cape: 5.4 },
+  otter: { hides: '', order: 7.5, cape: 7.75 },
+  bruce: { hides: '', order: 3.6, cape: 4.6, place: BRUCE_PLACE },
 }
 // The crown is drawn across the cat's head; elsewhere it moves from the middle of its art.
 const CROWN_MIDDLE = [653, 617.5]
@@ -334,26 +243,10 @@ const CROWN = {
 }
 
 async function floralOutfits(rig, kind) {
-  const { hides, order, cardigan: orders, place } = BODIES[kind]
-  for (const costume of ['blue-floral', 'floral-cardigan']) {
-    rig = await paintedCostume(rig, await master('atelier/blue-floral-dress.png'), {
-      costume, drawOrder: order, hides, place,
-    })
-  }
-  // Each sleeve hangs from its arm bone. Masks follow the artist's underarm seams with a
-  // small shared join.
-  const cardigan = await master('atelier/red-cardigan-display.png')
-  const pieces = [
-    { part: 'body', mask: 'M650 0H1040L1000 690L1015 835L1080 950V2388H620V950L690 835L705 690Z' },
-    { part: 'sleeve_L', bone: 'arm_L', mask: 'M0 0H670L720 690L705 850L650 950H0Z' },
-    { part: 'sleeve_R', bone: 'arm_R', mask: 'M1020 0H1668V950H1070L1000 850L990 690Z' },
-  ]
-  for (const [i, piece] of pieces.entries()) {
-    rig = await paintedCostume(rig, cardigan, {
-      costume: 'floral-cardigan', ...piece, hides, drawOrder: orders[i],
-      place: (FLORAL_SLEEVES[kind]?.[piece.part] ?? []).reduce(turned, FLORAL_CARDIGAN[kind]),
-    })
-  }
+  const { hides, order, place } = BODIES[kind]
+  rig = await paintedCostume(rig, await master('atelier/blue-floral-dress.png'), {
+    costume: 'blue-floral', drawOrder: order, hides, place,
+  })
   return paintedCostume(rig, await master('atelier/flower-crown.png'), {
     costume: 'flower-crown', part: 'bow', bone: 'head', drawOrder: 18, hides: '', ...CROWN[kind],
   })

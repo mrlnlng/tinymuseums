@@ -22,6 +22,7 @@ const STEP = 0.66
 interface Props {
   kind: CharacterKind
   costume: string | null
+  top: string | null
   bow: string | null
   kept: (kind: CharacterKind) => boolean
   onBecome: (kind: CharacterKind) => void
@@ -29,7 +30,7 @@ interface Props {
 }
 
 /** The mirror, close up: one character at a time in the glass, the next ones peeking in at its edges. */
-export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose }: Props) {
+export default function MirrorView({ kind, costume, top, bow, kept, onBecome, onClose }: Props) {
   const { play } = useSound()
   const [position, setPosition] = useState(() => MIRROR_KINDS.indexOf(kind))
   const [drag, setDrag] = useState(0)
@@ -53,12 +54,12 @@ export default function MirrorView({ kind, costume, bow, kept, onBecome, onClose
     // The visitor's own reflection first, then the rest in swipe order.
     const order = [...MIRROR_KINDS].sort((a, b) => Number(b === kind) - Number(a === kind))
     for (const k of order) {
-      void snapshotLook({ kind: k, costume, bow }).then((canvas) => {
+      void snapshotLook({ kind: k, costume, bow, top }).then((canvas) => {
         if (alive) setImages((all) => ({ ...all, [k]: canvas.toDataURL() }))
       }).catch((error) => console.warn('[atelier] Could not draw a reflection', error))
     }
     return () => { alive = false }
-  }, [kind, costume, bow])
+  }, [kind, costume, bow, top])
 
   useEffect(() => { centre.current?.focus({ preventScroll: true }) }, [position])
 

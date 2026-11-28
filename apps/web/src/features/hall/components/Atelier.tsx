@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { Layers } from '@/features/hall/scene/layers'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { SpotPainting } from '@tiny/core'
@@ -56,7 +57,7 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
   const [mirrorOpen, setMirrorOpen] = useState(false)
   const [becoming, setBecoming] = useState<CharacterKind | null>(null)
   const [closetOpen, setClosetOpen] = useState(false)
-  const [dressing, setDressing] = useState<{ costume: string | null; bow: string | null } | null>(null)
+  const [dressing, setDressing] = useState<{ layers: Layers; bow: string | null } | null>(null)
   const [artist, setArtist] = useState<ArtistCredit | null>(null)
   const { play } = useSound()
   const playRef = useRef(play)
@@ -84,6 +85,7 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
         character: restamp(value.character, next.kind),
         costume: restamp(value.costume, next.costume),
         bow: restamp(value.bow, next.bow),
+        top: restamp(value.top, next.top),
       }))
     }
     router.push(hrefFor(to))
@@ -100,7 +102,7 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
   useEffect(() => { hooks.wardrobeDoors.current?.(closetOpen) }, [closetOpen, hooks])
   useEffect(() => {
     if (closetOpen || dressing === null) return
-    hooks.dress.current?.(dressing.costume, dressing.bow)
+    hooks.dress.current?.(dressing.layers, dressing.bow)
     setDressing(null)
   }, [closetOpen, dressing, hooks])
 
@@ -130,9 +132,10 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
         <ClosetView
           kind={lookOf(outfitDoc).kind}
           costume={lookOf(outfitDoc).costume}
+          top={lookOf(outfitDoc).top}
           bow={lookOf(outfitDoc).bow}
           kept={(itemId) => owns(wallet, itemId)}
-          onDone={(costume, bow) => { setDressing({ costume, bow }); setClosetOpen(false) }}
+          onDone={(layers, bow) => { setDressing({ layers, bow }); setClosetOpen(false) }}
           onClose={() => setClosetOpen(false)}
         />
       ) : null}
@@ -140,6 +143,7 @@ export default function Atelier({ spots, from }: { spots: Record<string, SpotPai
         <MirrorView
           kind={lookOf(outfitDoc).kind}
           costume={lookOf(outfitDoc).costume}
+          top={lookOf(outfitDoc).top}
           bow={lookOf(outfitDoc).bow}
           kept={(kind) => allowedCharacter(wallet, kind)}
           onBecome={(kind) => { setBecoming(kind); setMirrorOpen(false) }}

@@ -77,6 +77,11 @@ export function ownedLook(look: Look, own: readonly string[]): Look {
   return { kind, costume: piece('costume', look.costume), bow: piece('bow', look.bow) }
 }
 
+/** A top is a costume in the catalog; one the visitor hasn't kept is not shown to others. */
+export function ownedTop(top: string | null, own: readonly string[]): string | null {
+  return top !== null && own.includes(itemIdFor('costume', top)) ? top : null
+}
+
 export function peerOf(attachment: Attachment): Peer | null {
   return present(attachment) && attachment.name && attachment.last
     ? { pid: attachment.pid!, name: attachment.name, ...homeOf(attachment), ...attachment.last }
@@ -148,7 +153,7 @@ export function onMessage(attachment: Attachment, message: ClientMessage | null,
       if (!paid) return strike({ ...heard, tokens: 0, refilledAt: now })
       if (heard.last && message.seq <= heard.last.seq) return { attachment: heard }
       const { t: _t, ...motion } = message
-      const safe = { ...motion, look: ownedLook(motion.look, paid.own) }
+      const safe = { ...motion, look: ownedLook(motion.look, paid.own), ...(motion.top === undefined ? {} : { top: ownedTop(motion.top, paid.own) }) }
       return { attachment: { ...paid, last: safe }, send: { to: 'others', message: { t: 'state', pid, name, ...homeOf(paid), ...safe } } }
     }
     case 'claim': {

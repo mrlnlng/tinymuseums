@@ -26,6 +26,8 @@ export interface Look {
   kind: CharacterKind
   costume: string | null
   bow: string | null
+  /** Worn over the costume, such as a cardigan. */
+  top: string | null
 }
 
 export interface Character {
@@ -132,7 +134,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
     usingRig = false
     rig?.dispose()
     rig = null
-    look = { kind: 'bunny', costume: null, bow: null }
+    look = { kind: 'bunny', costume: null, bow: null, top: null }
     canvas.hidden = true
     sprite.hidden = false
   }
@@ -153,7 +155,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         loaded.dispose()
         return false
       }
-      loaded.setCostume(next.costume, next.bow)
+      loaded.setCostume(next.costume, next.bow, next.top)
       const previous = rig
       rig = loaded
       look = { ...next }
@@ -171,7 +173,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
 
   loading = loadKind(look.kind).then((ok) => {
     if (!ok && !disposed) {
-      look = { kind: 'bunny', costume: null, bow: null }
+      look = { kind: 'bunny', costume: null, bow: null, top: null }
       loadFallbackWalk()
     }
     return ok
@@ -241,7 +243,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
       return drawnBox
     },
     get canSit() {
-      return look.kind === 'bunny' && look.costume === null && look.bow === null
+      return look.kind === 'bunny' && look.costume === null && look.bow === null && look.top === null
     },
 
     get ready() {
@@ -253,7 +255,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
         if (disposed || rigFailed) return false
         if (next.kind === look.kind && rig) {
           look = { ...next }
-          rig.setCostume(next.costume, next.bow)
+          rig.setCostume(next.costume, next.bow, next.top)
           return true
         }
         return loadKind(next.kind, next)
@@ -454,7 +456,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             if (floorShadow.hidden) floorShadow.hidden = false
           }
           const facingNow = rigFacing(motion)
-          const data = `${facingNow}|${moving}|${rig.kind}|${look.costume}|${look.bow}`
+          const data = `${facingNow}|${moving}|${rig.kind}|${look.costume}|${look.bow}|${look.top}`
           if (data !== shownData) {
             shownData = data
             canvas.dataset.facing = facingNow
@@ -462,6 +464,7 @@ export function createCharacter(assets: CharacterSprites, host: HTMLElement, ini
             canvas.dataset.kind = rig.kind
             canvas.dataset.costume = look.costume ?? ''
             canvas.dataset.bow = look.bow ?? ''
+            canvas.dataset.top = look.top ?? ''
           }
         } catch (error) {
           console.warn('[hall] rig render failed; using sprite fallback', error)

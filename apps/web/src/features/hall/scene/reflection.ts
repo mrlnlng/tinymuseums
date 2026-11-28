@@ -11,7 +11,7 @@ let idleTimer: ReturnType<typeof setTimeout> | undefined
 
 /** The character standing still in the look, trimmed to its outline. One at a time, so only one extra WebGL context is ever open. */
 export function snapshotLook(look: Look, height = 360): Promise<HTMLCanvasElement> {
-  const key = `${look.kind}|${look.costume}|${look.bow}|${height}`
+  const key = `${look.kind}|${look.costume}|${look.bow}|${look.top}|${height}`
   const hit = cache.get(key)
   if (hit) return hit
   const shot = queue.then(() => render(look, height))
@@ -30,7 +30,7 @@ async function render(look: Look, height: number): Promise<HTMLCanvasElement> {
   const shared = layer
   const rig = await loadRig(null, look.kind, shared)
   try {
-    rig.setCostume(look.costume, look.bow)
+    rig.setCostume(look.costume, look.bow, look.top)
     shared.setPixelRatio(2)
     shared.setSize(Math.ceil(height * rig.aspect), height, false)
     clearRigLayer(shared)

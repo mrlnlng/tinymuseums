@@ -41,12 +41,12 @@ export function createLiveReflection(host: HTMLElement, character: Character): L
   let disposed = false
 
   function follow(): void {
-    const { kind, costume, bow } = character.look
+    const { kind, costume, bow, top } = character.look
     if (rig && rig.kind === kind) {
-      const key = `${costume}|${bow}`
+      const key = `${costume}|${bow}|${top}`
       if (key !== dressed) {
         dressed = key
-        rig.setCostume(costume, bow)
+        rig.setCostume(costume, bow, top)
       }
       return
     }

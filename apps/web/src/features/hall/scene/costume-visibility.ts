@@ -10,12 +10,13 @@ export function setCostumeVisibility<T extends Layer>(
   find: (name: string) => T | undefined,
   dress: string | null,
   bow: string | null,
+  top: string | null = null,
 ): void {
   for (const node of hidden) node.visible = true
   hidden.clear()
   for (const [id, parts] of costumes) {
     for (const part of parts) {
-      part.visible = part.userData.part === 'bow' ? bow === id : dress === id
+      part.visible = part.userData.part === 'bow' ? bow === id : dress === id || top === id
       if (!part.visible) continue
       for (const name of String(part.userData.hides ?? '').split(',').map(name => name.trim()).filter(Boolean)) {
         const node = find(name)

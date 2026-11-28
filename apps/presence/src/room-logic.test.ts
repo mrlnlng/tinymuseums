@@ -45,6 +45,15 @@ test('others see only the pieces and characters in the signed own list', () => {
   })
 })
 
+test('others see a top only once it is kept', () => {
+  const kept = { ...ticket, own: ['costume:cardigan-red'] }
+  const stacked = { ...state(1), look: { kind: 'otter', costume: 'blue-floral', bow: null }, top: 'cardigan-red' } as ClientMessage
+  const shown = onMessage(joined(0, kept), stacked, 0, []).send?.message
+  assert.equal(shown?.t === 'state' && shown.top, 'cardigan-red')
+  const hidden = onMessage(joined(0, { ...ticket, own: [] }), stacked, 0, []).send?.message
+  assert.equal(hidden?.t === 'state' ? hidden.top : 'missing', null)
+})
+
 test('free characters always pass, and unowned pieces become none', () => {
   const none = { ...ticket, own: [] }
   const dressed = { ...state(1), look: { kind: 'cat', costume: 'kiki', bow: 'kiki' } } as ClientMessage

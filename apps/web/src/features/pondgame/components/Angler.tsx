@@ -38,7 +38,7 @@ export interface Box {
 export function currentLook(): Look {
   const look = ownedLook(lookOf(defaultStore().getSlot(outfit).snapshot()), getWalletSnapshot())
   const fitted = (id: string | null) => (id !== null && FITS[look.kind].includes(id) ? id : null)
-  return { kind: look.kind, costume: fitted(look.costume), bow: fitted(look.bow) }
+  return { kind: look.kind, costume: fitted(look.costume), bow: fitted(look.bow), top: fitted(look.top) }
 }
 
 /** How much of the figure around the paw is drawn again over the rod, as a share of its height. */
@@ -97,9 +97,9 @@ export default function Angler({ box, reduced, swing, onPaw }: { box: Box; reduc
 
     void import('@/features/hall/scene/rig').then(({ loadRig }) => loadRig(canvas, look.kind)).then(async (loaded) => {
       if (disposed) { loaded.dispose(); return }
-      loaded.setCostume(look.costume, look.bow)
+      loaded.setCostume(look.costume, look.bow, look.top)
       // A costume keeps its own headwear; everyone else borrows the pond's hat.
-      if (!look.costume) {
+      if (!look.costume && !look.top) {
         const hat = HAT[look.kind]
         await loaded.wear([{ bone: 'head', image: assetUrl('pond/fishing-hat', { density: 3 }), ...hat, height: hat.width / HAT_ASPECT, drawOrder: 12 }])
         if (disposed) { loaded.dispose(); return }

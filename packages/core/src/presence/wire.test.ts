@@ -86,6 +86,15 @@ test('state messages are validated and stripped of anything extra', () => {
   assert.equal(parseClientMessage(JSON.stringify({ ...state, seq: -1 })), null)
 })
 
+test('a top travels beside the look, and a look with a fourth field is still turned away', () => {
+  const state = { t: 'state', x: 1, vx: 0, facing: 1, look: { kind: 'cat', costume: 'blue-floral', bow: null }, sit: false, helm: false, cup: false, seq: 2 }
+  assert.deepEqual(parseClientMessage(JSON.stringify({ ...state, top: 'cardigan-red' })), { ...state, top: 'cardigan-red' })
+  assert.deepEqual(parseClientMessage(JSON.stringify({ ...state, top: null })), { ...state, top: null })
+  assert.deepEqual(parseClientMessage(JSON.stringify(state)), state)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, top: '<b>' })), null)
+  assert.equal(parseClientMessage(JSON.stringify({ ...state, look: { ...state.look, top: 'cardigan-red' } })), null)
+})
+
 test('messages, claims, hello and leave are accepted besides state', () => {
   assert.deepEqual(parseClientMessage('{"t":"say","text":"hello!","seq":1}'), { t: 'say', text: 'hello!', seq: 1 })
   assert.equal(parseClientMessage(JSON.stringify({ t: 'say', text: 'x'.repeat(401), seq: 1 })), null)

@@ -21,6 +21,7 @@ interface Entry {
   name: string
   home: string | null
   look: Look
+  top: string | null
   facing: 1 | -1
   sit: boolean
   helm: boolean
@@ -37,6 +38,8 @@ export interface RemoteVisitor {
   /** Their own room's slug, for the player card's door. */
   home: string | null
   look: Look
+  /** Worn over their costume, such as a cardigan. */
+  top: string | null
   facing: 1 | -1
   sit: boolean
   helm: boolean
@@ -72,7 +75,7 @@ export class PeerTable {
     const sample = { at: now, x: peer.x, vx: peer.vx, d: peer.d ?? 0 }
     if (!entry) {
       this.entries.set(peer.pid, {
-        pid: peer.pid, name: peer.name, home: peer.home ?? null, look: peer.look, facing: peer.facing,
+        pid: peer.pid, name: peer.name, home: peer.home ?? null, look: peer.look, top: peer.top ?? null, facing: peer.facing,
         sit: peer.sit, helm: peer.helm, cup: peer.cup, seq: peer.seq,
         heardAt: now, samples: [sample], said: null,
       })
@@ -81,6 +84,7 @@ export class PeerTable {
     entry.name = peer.name
     entry.home = peer.home ?? null
     entry.look = peer.look
+    entry.top = peer.top ?? null
     entry.facing = peer.facing
     entry.sit = peer.sit
     entry.helm = peer.helm
@@ -122,7 +126,7 @@ export class PeerTable {
     for (const entry of this.entries.values()) {
       const { x, vx, d } = positionAt(entry.samples, at)
       visitors.push({
-        pid: entry.pid, name: entry.name, home: entry.home, look: entry.look, facing: entry.facing,
+        pid: entry.pid, name: entry.name, home: entry.home, look: entry.look, top: entry.top, facing: entry.facing,
         sit: entry.sit, helm: entry.helm, cup: entry.cup, x, vx, d, said: entry.said,
       })
     }

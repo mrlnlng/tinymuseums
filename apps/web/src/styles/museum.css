@@ -3598,6 +3598,21 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
   background: radial-gradient(circle at 35% 30%, #ffe7a3, #f2c14e 55%, #b07a1c);
   box-shadow: 0 0 0 1.5px #8a5a12;
 }
+/* Every piece being worn: clothes stack, so the dress and the cardigan can both carry one. */
+.closet-worn {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #c43a6b;
+  box-shadow: 0 0 0 2.5px #fbe8c8, 0 2px 5px rgb(30 4 4 / 0.4);
+  animation: keep-drop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.closet-worn svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .closet-price { min-height: 24px; display: flex; justify-content: center; }
 .closet-price .keep-stamp-price { animation: keep-drop 280ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .closet-actions {
@@ -3638,7 +3653,7 @@ button.room-open-sign:focus-visible { outline: 3px solid #fff3d6; outline-offset
   .closet-done:hover, .closet-round:hover, .closet-tab:hover { filter: brightness(1.1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .closet-view, .closet-stage, .closet-pop, .closet-price .keep-stamp-price, .closet-stage.is-loading::before { animation: none; }
+  .closet-view, .closet-stage, .closet-pop, .closet-price .keep-stamp-price, .closet-worn, .closet-stage.is-loading::before { animation: none; }
   .closet-bubble { transition: none; }
 }
 .room-arrival {

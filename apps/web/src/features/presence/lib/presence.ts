@@ -79,6 +79,8 @@ export interface Self {
   vx: number
   facing: 1 | -1
   look: Look
+  /** Worn over the costume; sent beside the look, never in it. */
+  top: string | null
   sit: boolean
   helm: boolean
   cup: boolean
@@ -130,7 +132,7 @@ export interface Presence {
 }
 
 const sameLook = (a: Look, b: Look) => a.kind === b.kind && a.costume === b.costume && a.bow === b.bow
-const samePose = (a: Self, b: Self) => a.sit === b.sit && a.helm === b.helm && a.cup === b.cup
+const samePose = (a: Self, b: Self) => a.sit === b.sit && a.helm === b.helm && a.cup === b.cup && a.top === b.top
 
 export function createPresence(options: PresenceOptions): Presence {
   const now = options.now ?? (() => performance.now())
@@ -266,8 +268,10 @@ export function createPresence(options: PresenceOptions): Presence {
   function sendState(self: Self, at: number): void {
     seq = Math.max(seq + 1, Math.floor(wallClock()))
     const depth = self.d ? { d: Math.round(Math.min(1, Math.max(0, self.d)) * 1000) / 1000 } : {}
-    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look: self.look, sit: self.sit, helm: self.helm, cup: self.cup, ...depth, seq })
-    lastSent = { ...self, look: { ...self.look }, at }
+    // The look goes out with exactly its three fields: the room turns any other shape away.
+    const look = { kind: self.look.kind, costume: self.look.costume, bow: self.look.bow }
+    send({ t: 'state', x: self.x, vx: self.vx, facing: self.facing, look, top: self.top, sit: self.sit, helm: self.helm, cup: self.cup, ...depth, seq })
+    lastSent = { ...self, look, at }
   }
 
   function maybeSend(at: number): void {

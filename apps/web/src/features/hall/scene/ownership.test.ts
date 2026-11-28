@@ -3,14 +3,14 @@ import { test } from 'node:test'
 import { ownedLook, shouldRewriteOutfit } from './wardrobe.ts'
 import type { OwnedSnapshot } from '../../economy/lib/ownership.ts'
 
-const look = { kind: 'otter', costume: 'kiki', bow: 'kiki' } as const
+const look = { kind: 'otter', costume: 'kiki', bow: 'kiki', top: null } as const
 const nonMember: OwnedSnapshot = { isMember: false, balance: null, items: [] }
 const loadingMember: OwnedSnapshot = { isMember: true, balance: null, items: [] }
 const loadedMember: OwnedSnapshot = { isMember: true, balance: 120, items: ['bow:kiki'] }
 
 test('a non-member immediately loses unowned pieces and characters', () => {
-  assert.deepEqual(ownedLook(look, nonMember), { kind: 'bunny', costume: null, bow: null })
-  assert.deepEqual(ownedLook({ ...look, kind: 'cat' }, nonMember), { kind: 'cat', costume: null, bow: null })
+  assert.deepEqual(ownedLook(look, nonMember), { kind: 'bunny', costume: null, bow: null, top: null })
+  assert.deepEqual(ownedLook({ ...look, kind: 'cat' }, nonMember), { kind: 'cat', costume: null, bow: null, top: null })
   assert.equal(shouldRewriteOutfit(look, nonMember), true)
 })
 
@@ -20,11 +20,11 @@ test('a member still loading their wallet is left untouched', () => {
 })
 
 test('a loaded member keeps only owned pieces and allowed characters', () => {
-  assert.deepEqual(ownedLook(look, loadedMember), { kind: 'bunny', costume: null, bow: 'kiki' })
+  assert.deepEqual(ownedLook(look, loadedMember), { kind: 'bunny', costume: null, bow: 'kiki', top: null })
   assert.equal(shouldRewriteOutfit(look, loadedMember), true)
   assert.equal(shouldRewriteOutfit({ ...look, kind: 'cat', bow: 'kiki' }, loadedMember), true)
   assert.equal(
-    shouldRewriteOutfit({ ...look, kind: 'cat', costume: null, bow: 'kiki' }, loadedMember),
+    shouldRewriteOutfit({ ...look, kind: 'cat', costume: null, bow: 'kiki', top: null }, loadedMember),
     false,
   )
 })

@@ -71,6 +71,9 @@ const SPECS: Record<CharacterKind, RigSpec> = {
 
 const canvasToModel = (x: number, y: number) => new THREE.Vector3((x - 834) / 1000, (1194 - y) / 1000, 0)
 
+/** Where a dress draws while a top is worn over it: above the torso (3) and far arm (3.2). */
+const DRESS_UNDER_TOP = 3.4
+
 export interface RigAttachment {
   bone: string
   /** Position and width in the author's 1668 × 2388 layer canvas. */
@@ -110,7 +113,7 @@ export interface Rig {
   readonly feet: number
   readonly cycleSeconds: number
   readonly costumes: readonly string[]
-  setCostume(id: string | null, bow?: string | null): void
+  setCostume(id: string | null, bow?: string | null, top?: string | null): void
   /** Dresses this rig in pieces that are not part of the shared wardrobe. */
   wear(pieces: readonly RigPiece[]): Promise<void>
   /**
@@ -391,8 +394,21 @@ export async function loadRig(canvas: HTMLCanvasElement | null, kind: CharacterK
   }
 
   const baseHidden = new Set<THREE.Object3D>()
-  function setCostume(id: string | null, bow: string | null = id): void {
-    setCostumeVisibility(costumeParts, baseHidden, name => model.getObjectByName(name), id, bow)
+  function setCostume(id: string | null, bow: string | null = id, top: string | null = null): void {
+    const stacked = top !== null && top !== id
+    setCostumeVisibility(costumeParts, baseHidden, name => model.getObjectByName(name), id, bow, stacked ? top : null)
+    // Under a top, the dress drops just beneath it (the top's lowest piece is 3.5) and above the
+    // torso and far arm, so the head and face still draw over everything.
+    for (const [costume, parts] of costumeParts) {
+      for (const part of parts) {
+        const own = Number(part.userData.draw_order ?? 0)
+        const under = stacked && costume === id && part.userData.part !== 'bow' && own > DRESS_UNDER_TOP
+        part.traverse((node) => {
+          const base = (node.userData.baseOrder ??= node.renderOrder) as number
+          node.renderOrder = under ? DRESS_UNDER_TOP + (own % 1) / 100 : base
+        })
+      }
+    }
   }
 
   const shadowCanvas = document.createElement('canvas')

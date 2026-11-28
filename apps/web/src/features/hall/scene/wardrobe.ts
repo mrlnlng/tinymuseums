@@ -5,11 +5,13 @@ import { allowedCharacter, owns, walletReady, type OwnedSnapshot } from '../../e
 import type { AtelierRoom, ClothingItem } from './atelier'
 import type { Character, Look } from './character'
 import type { CharacterKind } from './rig'
+import { layerOf, toggle, type Layers } from './layers.ts'
 
-export const CARDIGANS = ['cardigan-red', 'cardigan-forest-green', 'cardigan-navy-blue', 'cardigan-butter-yellow'] as const
+// One red cardigan, refitted to every character (2026-11-27). The old colourways are retired.
+export const CARDIGANS = ['cardigan-red'] as const
 export const HIBISCUS = ['hibiscus-blue', 'hibiscus-yellow', 'hibiscus-pink'] as const
 export const COSTUMES = [
-  'kiki', ...CARDIGANS, 'blue-floral', 'floral-cardigan', 'flower-crown',
+  'kiki', ...CARDIGANS, 'blue-floral', 'flower-crown',
   'gold-sequin', 'gold-cape', ...HIBISCUS, 'blue-cap', 'daisy-clip', 'tutu',
 ] as const
 
@@ -23,7 +25,7 @@ export const FITS: Record<CharacterKind, readonly string[]> = {
 
 export function lookOf(outfit: Outfit): Look {
   const known = (id: string | null) => id !== null && (COSTUMES as readonly string[]).includes(id) ? id : null
-  return { kind: outfit.character.v, costume: known(outfit.costume.v), bow: known(outfit.bow.v) }
+  return { kind: outfit.character.v, costume: known(outfit.costume.v), bow: known(outfit.bow.v), top: known(outfit.top.v) }
 }
 
 export function ownedLook(look: Look, snapshot: OwnedSnapshot | null): Look {
@@ -34,13 +36,15 @@ export function ownedLook(look: Look, snapshot: OwnedSnapshot | null): Look {
     kind: allowedCharacter(snapshot, look.kind) ? look.kind : 'bunny',
     costume: piece('costume', look.costume),
     bow: piece('bow', look.bow),
+    // A top is a costume in the catalog; it is only worn on its own layer.
+    top: piece('costume', look.top),
   }
 }
 
 export function shouldRewriteOutfit(look: Look, snapshot: OwnedSnapshot | null): boolean {
   if (!walletReady(snapshot)) return false
   const next = ownedLook(look, snapshot)
-  return next.kind !== look.kind || next.costume !== look.costume || next.bow !== look.bow
+  return next.kind !== look.kind || next.costume !== look.costume || next.bow !== look.bow || next.top !== look.top
 }
 
 export function followOutfit(
@@ -72,24 +76,31 @@ export function followOutfit(
 }
 
 /**
- * The two places a costume can sit. Each holds one item at a time: putting on another in the
- * same place replaces only that place, and putting the worn one on again takes it off. The
- * catalog's `collection` names (dress, cardigan, set, bow) all resolve to one of these places.
+ * Where worn pieces sit. A headpiece has its own place. Clothes stack in two layers: a dress or
+ * set, and a top (the cardigan) over it. A tap puts a piece on its own place or layer and leaves
+ * the rest as it is; tapping a worn piece takes it off. See `layers.ts` for the cape rule.
  */
-export type WornSlot = 'costume' | 'bow'
+export type WornSlot = 'costume' | 'bow' | 'top'
 
 /** The item as it should be worn after a tap, or null when it doesn't fit this character. */
 export function toggleWorn(look: Look, item: ClothingItem, fits: (id: string) => boolean): Look | null {
   if (!fits(item.id)) return null
-  return { ...look, [item.slot]: look[item.slot] === item.id ? null : item.id }
+  if (item.slot === 'bow') return { ...look, bow: look.bow === item.id ? null : item.id }
+  return { ...look, ...toggle({ costume: look.costume, top: look.top }, item.id) }
+}
+
+/** The outfit document after a change: only the places that changed are restamped. */
+function restampChanged(o: Outfit, next: Look): Outfit {
+  const places = ['costume', 'bow', 'top'] as const
+  return places.reduce((doc, place) => (doc[place].v === next[place] ? doc : { ...doc, [place]: restamp(doc[place], next[place]) }), o)
 }
 
 export interface Wardrobe {
   readonly busy: boolean
   reflect(): void
   tapItem(item: ClothingItem): void
-  /** Puts on a whole outfit and headpiece at once, as chosen in the closet. */
-  dress(costume: string | null, bow: string | null): void
+  /** Puts on a whole outfit (both layers) and headpiece at once, as chosen in the closet. */
+  dress(layers: Layers, bow: string | null): void
   tapDisplay(kind: CharacterKind): void
   dispose(): void
 }
@@ -108,9 +119,9 @@ export function createWardrobe({ character, room, outfit, onChange, onIdle }: Op
   let pending = 0
   let disposed = false
   function reflect(): void {
-    const { kind, costume, bow } = character.look
+    const { kind, costume, bow, top } = character.look
     const fitted = (id: string | null) => id !== null && FITS[kind].includes(id) ? id : null
-    room.setWorn(fitted(costume), fitted(bow))
+    room.setWorn(fitted(costume), fitted(bow), fitted(top))
     room.setVisitor(kind)
   }
   function enqueue(change: () => Promise<void>): void {
@@ -133,29 +144,27 @@ export function createWardrobe({ character, room, outfit, onChange, onIdle }: Op
       enqueue(async () => {
         const next = toggleWorn(character.look, item, (id) => FITS[character.look.kind].includes(id))
         if (next === null) return
-        const wearing = character.look[item.slot] === item.id
+        const place = item.slot === 'bow' ? 'bow' : layerOf(item.id)
+        const wearing = character.look[place] === item.id
         if (!await character.wear(next)) return
         if (disposed) return
-        // Only this place is restamped; the other stays exactly as it was.
-        outfit.update((o) => ({ ...o, [item.slot]: restamp(o[item.slot], next[item.slot]) }))
+        // Only the places that changed are restamped; the rest stay exactly as they were.
+        outfit.update((o) => restampChanged(o, next))
         onChange(wearing ? 'costume_off' : 'costume_on')
       })
     },
-    dress(costume, bow) {
+    dress(layers, bow) {
       enqueue(async () => {
         const { kind } = character.look
         const fit = (id: string | null) => id !== null && FITS[kind].includes(id) ? id : null
-        const next = { ...character.look, costume: fit(costume), bow: fit(bow) }
-        if (next.costume === character.look.costume && next.bow === character.look.bow) return
+        const next = { ...character.look, costume: fit(layers.costume), top: fit(layers.top), bow: fit(bow) }
+        const look = character.look
+        if (next.costume === look.costume && next.bow === look.bow && next.top === look.top) return
         if (!await character.wear(next)) return
         if (disposed) return
         // Stacking: a changed place is replaced; an unchanged one keeps its old stamp.
-        outfit.update((o) => ({
-          ...o,
-          ...(o.costume.v !== next.costume ? { costume: restamp(o.costume, next.costume) } : {}),
-          ...(o.bow.v !== next.bow ? { bow: restamp(o.bow, next.bow) } : {}),
-        }))
-        onChange(next.costume === null && next.bow === null ? 'costume_off' : 'costume_on')
+        outfit.update((o) => restampChanged(o, next))
+        onChange(next.costume === null && next.bow === null && next.top === null ? 'costume_off' : 'costume_on')
       })
     },
     tapDisplay(kind) {

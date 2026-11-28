@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_packages_core_schema_sketch_sql", "label": "sketch.sql", "file_type": "code", "source_file": "packages/core/schema/sketch.sql", "source_location": null}, {"id": "pieces", "label": "pieces", "file_type": "code", "source_file": "", "source_location": "", "origin_file": "$graphify-root$/packages/core/schema/sketch.sql"}], "edges": []}

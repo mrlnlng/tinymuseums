@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_packages_core_schema_epochs_sql", "label": "epochs.sql", "file_type": "code", "source_file": "packages/core/schema/epochs.sql", "source_location": null}, {"id": "museum_epochs", "label": "museum_epochs", "file_type": "code", "source_file": "", "source_location": "", "origin_file": "$graphify-root$/packages/core/schema/epochs.sql"}], "edges": []}
